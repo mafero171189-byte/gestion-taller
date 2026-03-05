@@ -9,11 +9,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #27ae60; --wapp: #25d366; --danger: #e53e3e; }
-        body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; padding: 15px; padding-bottom: 100px; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; padding: 15px; padding-bottom: 50px; color: #333; }
         .container { max-width: 1150px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e0e6ed; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; margin-bottom: 5px; font-weight: 700; color: #555; font-size: 0.70rem; text-transform: uppercase; }
@@ -25,20 +27,26 @@
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
         .btn-cancel { background: #94a3b8; width: 100%; margin-top: 10px; display: none; }
+        
+        .btn-excel { background: #f8fafc; color: #94a3b8; font-size: 10px; padding: 6px 12px; border: 1px solid #e2e8f0; margin-top: 25px; float: right; font-weight: normal; text-transform: none; border-radius: 4px; cursor: pointer; }
+        .btn-excel:hover { background: #f1f5f9; color: #475569; }
+        
         .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; border:none; cursor:pointer;}
         .btn-historial { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; color: #4a5568;}
         
         .actions-cell { display: flex; gap: 10px; align-items: center; justify-content: flex-start; }
         .btn-action { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; transition: 0.2s; color: #4a5568; }
-        .btn-action:hover { transform: scale(1.15); color: var(--secondary); }
+        .btn-action:hover { transform: scale(1.1); color: var(--secondary); }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
         th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
         .order-tag { font-family: 'Courier New', monospace; font-weight: bold; color: var(--secondary); background: #ebf8ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #bee3f8; }
-        .search-bar { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e0; outline: none; box-sizing: border-box;}
         
-        .toggle-table { cursor: pointer; font-size: 20px; color: var(--secondary); padding-right: 10px; transition: 0.3s; display: inline-block;}
+        .search-container { display: flex; align-items: center; margin-bottom: 20px; gap: 10px; }
+        .search-bar { flex-grow: 1; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e0; outline: none; }
+        
+        .toggle-table { cursor: pointer; font-size: 20px; color: var(--secondary); transition: 0.3s; }
         .rotate { transform: rotate(-90deg); }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
         .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; }
@@ -84,9 +92,9 @@
         </div>
     </form>
 
-    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+    <div class="search-container">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre, orden o equipo..." onkeyup="dibujarTabla()">
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre, orden o imei..." onkeyup="dibujarTabla()">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto; display: block;">
@@ -94,7 +102,7 @@
             <thead>
                 <tr>
                     <th>Orden</th>
-                    <th>Cliente / Contacto</th>
+                    <th>Cliente</th>
                     <th>Equipo / Falla</th>
                     <th>Estado</th>
                     <th>Monto / Saldo</th>
@@ -104,6 +112,9 @@
             <tbody id="tableBody"></tbody>
         </table>
     </div>
+
+    <button class="btn-excel" onclick="exportarExcel()">📥 Descargar reporte de datos (.xlsx)</button>
+    <div style="clear: both;"></div>
 </div>
 
 <div id="historialModal" class="modal">
@@ -188,7 +199,7 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
+        registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus) || r.imei.toLowerCase().includes(bus)).reverse().forEach(r => {
             const saldo = r.precio - r.sena;
             const statusLabel = (saldo <= 0) ? '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
             
@@ -255,18 +266,13 @@
     function toggleTablaCompleta() {
         const wrap = document.getElementById('tableWrapper');
         const arrow = document.getElementById('arrowToggle');
-        if (wrap.style.display === "none") {
-            wrap.style.display = "block";
-            arrow.classList.remove("rotate");
-        } else {
-            wrap.style.display = "none";
-            arrow.classList.add("rotate");
-        }
+        if (wrap.style.display === "none") { wrap.style.display = "block"; arrow.classList.remove("rotate"); } 
+        else { wrap.style.display = "none"; arrow.classList.add("rotate"); }
     }
 
     function enviarWapp(id) {
         const r = registros.find(x => x.fireId === id);
-        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n🎨 *Color:* ${r.color}\n🆔 *IMEI:* ${r.imei}\n⚠️ *Falla:* ${r.falla}\n✅ *ESTADO:* ${r.estado.toUpperCase()}\n\n_Mensaje automático._`;
+        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n🎨 *Color:* ${r.color}\n🆔 *IMEI:* ${r.imei}\n⚠️ *Falla:* ${r.falla}\n✅ *ESTADO:* ${r.estado.toUpperCase()}\n\n_⚠️ Este es un mensaje automático, por favor no lo responda._`;
         window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
@@ -279,10 +285,34 @@
     function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
     function borrar(id) { if(confirm('¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
 
+    function exportarExcel() {
+        if (registros.length === 0) return alert("No hay datos.");
+        const dataExcel = registros.map(r => ({
+            "Orden": r.orden,
+            "Fecha": r.fecha,
+            "Cliente": r.cliente,
+            "WhatsApp": r.tel,
+            "Equipo": r.modelo,
+            "Color": r.color,
+            "IMEI": r.imei,
+            "Falla": r.falla,
+            "Estado": r.estado,
+            "Precio": r.precio,
+            "Seña": r.sena,
+            "Saldo": r.precio - r.sena,
+            "Costo": r.costoRepuesto || 0,
+            "Ganancia": r.precio - (r.costoRepuesto || 0)
+        }));
+        const ws = XLSX.utils.json_to_sheet(dataExcel);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
+        XLSX.writeFile(wb, `ST_Matias_Data.xlsx`);
+    }
+
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 160] }); 
+        const doc = new jsPDF({ unit: "mm", format: [80, 150] }); 
         const centro = 40;
         const margin = 5;
         const width = 70;
@@ -329,31 +359,4 @@
 
         y += 15;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("RESUMEN DE CUENTA", margin, y);
-        y += 2; doc.line(margin, y, margin + width, y);
-        y += 6; doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text("Presupuesto Final:", margin + 2, y);
-        doc.text(`$ ${r.precio.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        y += 5; doc.text("Seña Recibida:", margin + 2, y);
-        doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        
-        y += 6;
-        const saldo = r.precio - r.sena;
-        doc.setFontSize(10); doc.setFont("helvetica", "bold");
-        if (saldo <= 0) {
-            doc.setTextColor(39, 174, 96);
-            doc.text("✅ TOTALMENTE PAGADO", centro, y, {align:'center'});
-        } else {
-            doc.text("SALDO A PAGAR:", margin + 2, y);
-            doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        }
-
-        y += 15;
-        doc.setTextColor(40);
-        doc.setFontSize(9); doc.setFont("helvetica", "bold");
-        doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
-
-        doc.save(`Ticket_${r.orden}.pdf`);
-    }
-</script>
-</body>
-</html>
+        y += 2; doc.line(margin, y, margin + width, 
