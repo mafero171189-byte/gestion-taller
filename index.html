@@ -45,7 +45,7 @@
 <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
         <h2 style="color: var(--primary); margin:0;">📱 S.T. <span style="color: var(--secondary);">MATIAS</span></h2>
-        <div id="status" style="font-size: 12px; font-weight: bold; border-radius: 20px; padding: 5px 15px; background: #eee;">Conectando...</div>
+        <div id="status" style="font-size: 12px; font-weight: bold; border-radius: 20px; padding: 5px 15px; background: #eee;">CONECTANDO...</div>
     </div>
     
     <form id="repairForm">
@@ -79,7 +79,7 @@
 
     <div class="search-container">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre u orden..." onkeyup="dibujarTabla()">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto; display: block;">
@@ -112,7 +112,7 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE (Verificada)
+    // 1. CONFIGURACIÓN (Corregida sin comas extras y link directo)
     const firebaseConfig = {
         apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
         authDomain: "github-c3e96.firebaseapp.com",
@@ -123,15 +123,18 @@
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
 
-    // Inicialización explícita
-    firebase.initializeApp(firebaseConfig);
+    // 2. INICIALIZACIÓN FORZADA
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
 
     let registros = [];
     let idEditando = null;
 
-    // Monitor de conexión mejorado
+    // 3. MONITOR DE ESTADO (Inmediato)
     db.ref(".info/connected").on("value", (snap) => {
         const s = document.getElementById('status');
         if (snap.val() === true) {
@@ -145,6 +148,7 @@
         }
     });
 
+    // --- FUNCIONES DE LÓGICA ---
     function toggleCosto() {
         const wrap = document.getElementById('costoWrapper');
         wrap.style.display = wrap.style.display === "none" ? "block" : "none";
@@ -183,6 +187,7 @@
         }
     });
 
+    // Escucha de datos
     dbRef.on('value', (snap) => {
         const data = snap.val();
         registros = data ? Object.keys(data).map(key => ({ fireId: key, ...data[key] })) : [];
@@ -283,20 +288,10 @@
     function exportarExcel() {
         if (registros.length === 0) return alert("No hay datos.");
         const dataExcel = registros.map(r => ({
-            "Orden": r.orden,
-            "Fecha": r.fecha,
-            "Cliente": r.cliente,
-            "WhatsApp": r.tel,
-            "Equipo": r.modelo,
-            "Color": r.color,
-            "IMEI": r.imei,
-            "Falla": r.falla,
-            "Estado": r.estado,
-            "Precio": r.precio,
-            "Seña": r.sena,
-            "Saldo": r.precio - r.sena,
-            "Costo": r.costoRepuesto || 0,
-            "Ganancia": r.precio - (r.costoRepuesto || 0)
+            "Orden": r.orden, "Fecha": r.fecha, "Cliente": r.cliente, "WhatsApp": r.tel,
+            "Equipo": r.modelo, "Color": r.color, "IMEI": r.imei, "Falla": r.falla,
+            "Estado": r.estado, "Precio": r.precio, "Seña": r.sena, "Saldo": r.precio - r.sena,
+            "Costo": r.costoRepuesto || 0, "Ganancia": r.precio - (r.costoRepuesto || 0)
         }));
         const ws = XLSX.utils.json_to_sheet(dataExcel);
         const wb = XLSX.utils.book_new();
@@ -328,19 +323,16 @@
         y += 6;
         doc.setFontSize(8); doc.setFont("helvetica", "normal");
         doc.text(`Fecha: ${r.fecha.split(',')[0] || r.fecha}`, centro, y, {align:'center'});
-
         y += 5;
         doc.setFillColor(245, 247, 250); doc.roundedRect(margin, y, width, 12, 2, 2, 'F');
         doc.setFontSize(12); doc.setFont("Courier", "bold");
         doc.text(`NRO. ORDEN: ${r.orden}`, centro, y + 8, {align:'center'});
-
         y += 20;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("CLIENTE", margin, y);
         y += 2; doc.line(margin, y, margin + width, y);
         y += 5; doc.setFontSize(8); doc.setFont("helvetica", "normal");
         doc.text(`Nombre: ${r.cliente}`, margin + 2, y);
         y += 5; doc.text(`WhatsApp: ${r.tel}`, margin + 2, y);
-
         y += 10;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("EQUIPO", margin, y);
         y += 2; doc.line(margin, y, margin + width, y);
@@ -351,7 +343,6 @@
         doc.setFont("helvetica", "normal");
         const fLines = doc.splitTextToSize(r.falla, width - 15);
         doc.text(fLines, margin + 12, y);
-
         y += 15;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("RESUMEN DE CUENTA", margin, y);
         y += 2; doc.line(margin, y, margin + width, y);
@@ -360,7 +351,6 @@
         doc.text(`$ ${r.precio.toFixed(2)}`, margin + width - 2, y, {align:'right'});
         y += 5; doc.text("Seña Recibida:", margin + 2, y);
         doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        
         y += 6;
         const saldo = r.precio - r.sena;
         doc.setFontSize(10); doc.setFont("helvetica", "bold");
@@ -371,12 +361,10 @@
             doc.text("SALDO A PAGAR:", margin + 2, y);
             doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
         }
-
         y += 15;
         doc.setTextColor(40);
         doc.setFontSize(9); doc.setFont("helvetica", "bold");
         doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
-
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 </script>
