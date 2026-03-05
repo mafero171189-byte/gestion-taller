@@ -73,7 +73,7 @@
                 </div>
                 <div>
                     <label>&nbsp;</label>
-                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn" title="Mostrar/Ocultar Costo">🔓</button>
+                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn">🔓</button>
                 </div>
             </div>
             
@@ -94,7 +94,7 @@
 
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" placeholder="🔎 Buscar por nombre, equipo, orden o IMEI..." onkeyup="dibujarTabla()" style="flex-grow: 1; padding:12px; border-radius:10px; border:1px solid #cbd5e0; outline:none;">
+        <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()" style="flex-grow: 1; padding:12px; border-radius:10px; border:1px solid #cbd5e0;">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto;">
@@ -102,10 +102,10 @@
             <thead>
                 <tr>
                     <th>Orden</th>
-                    <th>Cliente / Contacto</th>
-                    <th>Equipo / Falla</th>
+                    <th>Cliente</th>
+                    <th>Equipo</th>
                     <th>Estado</th>
-                    <th>Monto / Saldo</th>
+                    <th>Monto</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -113,7 +113,7 @@
         </table>
     </div>
 
-    <button onclick="exportarExcel()" class="btn btn-excel">📥 EXPORTAR BASE DE DATOS (EXCEL)</button>
+    <button onclick="exportarExcel()" class="btn btn-excel">📥 EXPORTAR EXCEL</button>
 </div>
 
 <div id="historialModal" class="modal">
@@ -126,7 +126,7 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN DE FIREBASE ACTUALIZADA
+    // CONFIGURACIÓN DE FIREBASE (Tus credenciales reales)
     const firebaseConfig = {
       apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
       authDomain: "github-c3e96.firebaseapp.com",
@@ -144,32 +144,7 @@
     let registros = [];
     let idEditando = null;
 
-    // Funciones de Interfaz
-    function toggleTablaCompleta() {
-        const wrapper = document.getElementById('tableWrapper');
-        const arrow = document.getElementById('arrowToggle');
-        if (wrapper.style.display === "none") {
-            wrapper.style.display = "block";
-            arrow.classList.remove('rotate');
-        } else {
-            wrapper.style.display = "none";
-            arrow.classList.add('rotate');
-        }
-    }
-
-    function toggleCosto() {
-        const wrapper = document.getElementById('costoWrapper');
-        const btn = document.getElementById('lockBtn');
-        if (wrapper.style.display === "none" || wrapper.style.display === "") {
-            wrapper.style.display = "block";
-            btn.innerText = "🔒";
-        } else {
-            wrapper.style.display = "none";
-            btn.innerText = "🔓";
-        }
-    }
-
-    // Conexión en Tiempo Real
+    // Lógica de Conexión
     db.ref(".info/connected").on("value", (snap) => {
         const btn = document.getElementById('btnSubmit');
         const status = document.getElementById('status');
@@ -234,17 +209,16 @@
         registros.filter(r => 
             r.cliente.toLowerCase().includes(busqueda) || 
             r.modelo.toLowerCase().includes(busqueda) || 
-            r.orden.toLowerCase().includes(busqueda) ||
-            (r.imei && r.imei.toLowerCase().includes(busqueda))
+            r.orden.toLowerCase().includes(busqueda)
         ).reverse().forEach(r => {
             const saldo = r.pago ? 0 : (r.precio - r.sena);
             tbody.innerHTML += `
                 <tr>
-                    <td><span class="order-tag">${r.orden}</span><br><small>${r.fecha.split(',')[0]}</small></td>
+                    <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
-                    <td><b>${r.modelo}</b> (${r.color || 'S/C'})<br><small>Falla: ${r.falla}</small></td>
+                    <td><b>${r.modelo}</b><br><small>${r.falla}</small></td>
                     <td>
-                        <select onchange="cambiarEstado('${r.fireId}', this.value)" style="font-weight:bold; color:var(--secondary); border:none; background:transparent;">
+                        <select onchange="cambiarEstado('${r.fireId}', this.value)">
                             <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                             <option ${r.estado=='En Revisión'?'selected':''}>En Revisión</option>
                             <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
@@ -252,69 +226,44 @@
                         </select>
                         <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Historial</button>
                     </td>
-                    <td><b>$${r.precio}</b><br><small style="color:${saldo>0?'#e53e3e':'#38a169'}">${r.pago?'PAGADO':'Debe $'+saldo}</small></td>
+                    <td><b>$${r.precio}</b><br><small style="color:${saldo>0?'red':'green'}">${r.pago?'PAGADO':'Debe $'+saldo}</small></td>
                     <td>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="editar('${r.fireId}')" style="background:none; border:none; cursor:pointer;">✏️</button>
-                            <button onclick="generarPDF('${r.fireId}')" style="background:none; border:none; cursor:pointer;">📄</button>
-                            <button onclick="borrar('${r.fireId}')" style="background:none; border:none; cursor:pointer; color:red;">🗑️</button>
-                        </div>
+                        <button onclick="editar('${r.fireId}')">✏️</button>
+                        <button onclick="generarPDF('${r.fireId}')">📄</button>
+                        <button onclick="borrar('${r.fireId}')">🗑️</button>
                     </td>
                 </tr>`;
         });
     }
 
-    // PDF RESTAURADO AL FORMATO TICKET
+    function enviarWapp(id) {
+        const r = registros.find(x => x.fireId === id);
+        const estadoMsg = r.estado.toUpperCase();
+        const msg = `*S.T. MATIAS - NOTIFICACIÓN*\n\nEstimado/a *${r.cliente}*,\nLe informamos sobre el estado de su equipo:\n\n• *Orden:* ${r.orden}\n• *Equipo:* ${r.modelo}\n• *Estado Actual:* ✅ ${estadoMsg}\n\n_Mensaje automático._`;
+        window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
+    }
+
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 160] });
-        const centro = 40;
-
+        const doc = new jsPDF({ unit: "mm", format: [80, 150] });
         doc.setFillColor(26, 42, 58);
         doc.rect(0, 0, 80, 25, 'F');
         doc.setTextColor(255);
         doc.setFontSize(14);
-        doc.text("S.T. MATIAS", centro, 12, {align:'center'});
-        doc.setFontSize(8);
-        doc.text("Servicio Técnico Profesional", centro, 18, {align:'center'});
-
+        doc.text("S.T. MATIAS", 40, 12, {align:'center'});
         doc.setTextColor(40);
-        doc.setDrawColor(200);
-        doc.roundedRect(5, 30, 70, 12, 2, 2, 'S');
-        doc.setFont("helvetica", "bold");
-        doc.text(`ORDEN: ${r.orden}`, centro, 37.5, {align:'center'});
-
+        doc.setFontSize(10);
+        doc.text(`ORDEN: ${r.orden}`, 40, 35, {align:'center'});
         doc.setFontSize(8);
-        doc.text(`CLIENTE: ${r.cliente}`, 8, 50);
-        doc.text(`FECHA: ${r.fecha.split(',')[0]}`, 8, 56);
-        doc.line(8, 60, 72, 60);
-        
-        doc.text(`EQUIPO: ${r.modelo} (${r.color || 'S/C'})`, 8, 68);
-        doc.text(`IMEI: ${r.imei || 'N/A'}`, 8, 74);
-        doc.text("FALLA:", 8, 80);
-        doc.setFont("helvetica", "normal");
-        const fallaL = doc.splitTextToSize(r.falla, 65);
-        doc.text(fallaL, 8, 84);
-
-        let yM = 100 + (fallaL.length * 2);
-        doc.setFillColor(245);
-        doc.rect(5, yM, 70, 25, 'F');
-        doc.text(`TOTAL: $${r.precio}`, 10, yM + 7);
-        doc.text(`SEÑA: $${r.sena}`, 10, yM + 13);
+        doc.text(`Cliente: ${r.cliente}`, 10, 50);
+        doc.text(`Equipo: ${r.modelo}`, 10, 56);
+        doc.text(`Falla: ${r.falla}`, 10, 62);
+        doc.text(`Total: $${r.precio}`, 10, 75);
+        doc.text(`Seña: $${r.sena}`, 10, 81);
         const saldo = r.pago ? 0 : (r.precio - r.sena);
-        doc.setFont("helvetica", "bold");
-        doc.text(`SALDO: $${saldo}`, 10, yM + 20);
-
+        doc.text(`SALDO: $${saldo}`, 10, 87);
         doc.save(`Ticket_${r.orden}.pdf`);
-    }
-
-    function enviarWapp(id) {
-        const r = registros.find(x => x.fireId === id);
-        const msg = `*S.T. MATIAS - NOTIFICACIÓN*\n\n` +
-                    `Hola *${r.cliente}*, su equipo *${r.modelo}* (Orden ${r.orden}) se encuentra: *${r.estado.toUpperCase()}*.\n\n` +
-                    `_Mensaje automático._`;
-        window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
     function cambiarEstado(id, nuevo) {
@@ -322,6 +271,59 @@
         const h = r.historial || [];
         h.push({ estado: nuevo, fecha: new Date().toLocaleString('es-AR') });
         db.ref('reparaciones/' + id).update({ estado: nuevo, historial: h });
+    }
+
+    function toggleTablaCompleta() {
+        const w = document.getElementById('tableWrapper');
+        w.style.display = (w.style.display === "none") ? "block" : "none";
+    }
+
+    function toggleCosto() {
+        const cw = document.getElementById('costoWrapper');
+        cw.style.display = (cw.style.display === "none" || cw.style.display === "") ? "block" : "none";
+    }
+
+    function abrirHistorial(id) {
+        const r = registros.find(x => x.fireId === id);
+        document.getElementById('modalSub').innerText = r.orden;
+        document.getElementById('modalLista').innerHTML = (r.historial || []).map(h => `<li>${h.estado} - ${h.fecha}</li>`).join('');
+        document.getElementById('historialModal').style.display = 'block';
+    }
+
+    function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
+    function borrar(id) { if(confirm('¿Eliminar?')) db.ref('reparaciones/' + id).remove(); }
+    
+    function editar(id) {
+        const r = registros.find(x => x.fireId === id);
+        document.getElementById('nroOrden').value = r.orden;
+        document.getElementById('cliente').value = r.cliente;
+        document.getElementById('tel').value = r.tel;
+        document.getElementById('modelo').value = r.modelo;
+        document.getElementById('precio').value = r.precio;
+        document.getElementById('sena').value = r.sena;
+        document.getElementById('falla').value = r.falla;
+        idEditando = id;
+        document.getElementById('btnSubmit').innerText = "💾 GUARDAR";
+        document.getElementById('btnCancelEdit').style.display = "block";
+    }
+
+    function cancelarEdicion() {
+        document.getElementById('repairForm').reset();
+        idEditando = null;
+        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
+        document.getElementById('btnCancelEdit').style.display = "none";
+    }
+
+    function exportarExcel() {
+        const ws = XLSX.utils.json_to_sheet(registros);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, "Reporte.xlsx");
+    }
+</script>
+</body>
+</html>
+te({ estado: nuevo, historial: h });
     }
 
     function abrirHistorial(id) {
