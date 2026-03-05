@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S.T. Matias - Gestión Pro</title>
-    <link rel="icon" href="data:,">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -15,37 +14,26 @@
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #27ae60; --wapp: #25d366; --danger: #e53e3e; }
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; padding: 15px; padding-bottom: 50px; color: #333; }
         .container { max-width: 1150px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e0e6ed; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; margin-bottom: 5px; font-weight: 700; color: #555; font-size: 0.70rem; text-transform: uppercase; }
         input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        
         .costo-privado { display: flex; align-items: flex-end; gap: 5px; }
         .btn-lock { background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 16px; height: 41px; display: flex; align-items: center; justify-content: center; width: 45px;}
-        
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
         .btn-cancel { background: #94a3b8; width: 100%; margin-top: 10px; display: none; }
-        
-        .btn-excel { background: #f8fafc; color: #94a3b8; font-size: 10px; padding: 6px 12px; border: 1px solid #e2e8f0; margin-top: 25px; float: right; font-weight: normal; text-transform: none; border-radius: 4px; cursor: pointer; }
-        .btn-excel:hover { background: #f1f5f9; color: #475569; }
-        
+        .btn-excel { background: #f8fafc; color: #94a3b8; font-size: 10px; padding: 6px 12px; border: 1px solid #e2e8f0; margin-top: 25px; float: right; border-radius: 4px; cursor: pointer; }
         .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; border:none; cursor:pointer;}
         .btn-historial { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; color: #4a5568;}
-        
         .actions-cell { display: flex; gap: 10px; align-items: center; justify-content: flex-start; }
-        .btn-action { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; transition: 0.2s; color: #4a5568; }
-        .btn-action:hover { transform: scale(1.1); color: var(--secondary); }
-
+        .btn-action { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; color: #4a5568; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
         th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
         .order-tag { font-family: 'Courier New', monospace; font-weight: bold; color: var(--secondary); background: #ebf8ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #bee3f8; }
-        
         .search-container { display: flex; align-items: center; margin-bottom: 20px; gap: 10px; }
         .search-bar { flex-grow: 1; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e0; outline: none; }
-        
         .toggle-table { cursor: pointer; font-size: 20px; color: var(--secondary); transition: 0.3s; }
         .rotate { transform: rotate(-90deg); }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
@@ -70,7 +58,6 @@
             <div><label>IMEI / Serie</label><input type="text" id="imei" placeholder="15 dígitos"></div>
             <div><label>Precio Final $</label><input type="number" id="precio" value="0"></div>
             <div><label>Seña $</label><input type="number" id="sena" value="0"></div>
-
             <div class="costo-privado">
                 <div id="costoWrapper" style="display: none; flex-grow: 1;">
                     <label>Costo Repuesto $</label>
@@ -78,13 +65,11 @@
                 </div>
                 <div>
                     <label>&nbsp;</label>
-                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn" title="Ver/Ocultar costo">🔓</button>
+                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn">🔓</button>
                 </div>
             </div>
-
             <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
             <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
-            
             <div class="full">
                 <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
                 <button type="button" id="btnCancelEdit" class="btn btn-cancel" onclick="cancelarEdicion()">CANCELAR EDICIÓN</button>
@@ -94,7 +79,7 @@
 
     <div class="search-container">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre, orden o imei..." onkeyup="dibujarTabla()">
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto; display: block;">
@@ -120,34 +105,44 @@
 <div id="historialModal" class="modal">
     <div class="modal-content">
         <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size: 24px;" onclick="cerrarModal()">&times;</span>
-        <h3 style="margin:0; color:var(--primary);">🕒 Historial de Estados</h3>
+        <h3 style="margin:0; color:var(--primary);">🕒 Historial</h3>
         <p id="modalSub" style="font-size:12px; color:#64748b; margin-top: 5px;"></p>
         <ul id="modalLista" style="list-style: none; padding: 0; margin-top: 15px; border-top: 1px solid #eee;"></ul>
     </div>
 </div>
 
 <script>
+    // CONFIGURACIÓN FIREBASE (Verificada)
     const firebaseConfig = {
-      apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
-      authDomain: "github-c3e96.firebaseapp.com",
-      databaseURL: "https://github-c3e96-default-rtdb.firebaseio.com",
-      projectId: "github-c3e96",
-      storageBucket: "github-c3e96.firebasestorage.app",
-      messagingSenderId: "403618822429",
-      appId: "1:403618822429:web:ace2540068e2edba9809f4",
+        apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
+        authDomain: "github-c3e96.firebaseapp.com",
+        databaseURL: "https://github-c3e96-default-rtdb.firebaseio.com",
+        projectId: "github-c3e96",
+        storageBucket: "github-c3e96.firebasestorage.app",
+        messagingSenderId: "403618822429",
+        appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
 
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    // Inicialización explícita
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
+
     let registros = [];
     let idEditando = null;
 
+    // Monitor de conexión mejorado
     db.ref(".info/connected").on("value", (snap) => {
         const s = document.getElementById('status');
-        s.innerText = snap.val() ? "ONLINE" : "OFFLINE";
-        s.style.background = snap.val() ? "#dcfce7" : "#fee2e2";
-        s.style.color = snap.val() ? "#166534" : "#991b1b";
+        if (snap.val() === true) {
+            s.innerText = "ONLINE";
+            s.style.background = "#dcfce7";
+            s.style.color = "#166534";
+        } else {
+            s.innerText = "OFFLINE";
+            s.style.background = "#fee2e2";
+            s.style.color = "#991b1b";
+        }
     });
 
     function toggleCosto() {
@@ -199,7 +194,7 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus) || r.imei.toLowerCase().includes(bus)).reverse().forEach(r => {
+        registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
             const saldo = r.precio - r.sena;
             const statusLabel = (saldo <= 0) ? '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
             
@@ -215,14 +210,14 @@
                             <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                             <option ${r.estado=='Entregado'?'selected':''}>Entregado</option>
                         </select>
-                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Historial</button>
+                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Ver Historial</button>
                     </td>
                     <td>$${r.precio}<br>${statusLabel}</td>
                     <td>
                         <div class="actions-cell">
-                            <button class="btn-action" onclick="editar('${r.fireId}')" title="Editar">✏️</button>
-                            <button class="btn-action" onclick="generarPDF('${r.fireId}')" title="PDF">📄</button>
-                            <button class="btn-action" onclick="borrar('${r.fireId}')" title="Eliminar" style="color:red;">🗑️</button>
+                            <button class="btn-action" onclick="editar('${r.fireId}')">✏️</button>
+                            <button class="btn-action" onclick="generarPDF('${r.fireId}')">📄</button>
+                            <button class="btn-action" onclick="borrar('${r.fireId}')" style="color:red;">🗑️</button>
                         </div>
                     </td>
                 </tr>`;
@@ -283,7 +278,7 @@
         document.getElementById('historialModal').style.display = 'block';
     }
     function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
-    function borrar(id) { if(confirm('¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
+    function borrar(id) { if(confirm('¿Borrar registro?')) db.ref('reparaciones/' + id).remove(); }
 
     function exportarExcel() {
         if (registros.length === 0) return alert("No hay datos.");
@@ -306,7 +301,7 @@
         const ws = XLSX.utils.json_to_sheet(dataExcel);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
-        XLSX.writeFile(wb, `ST_Matias_Data.xlsx`);
+        XLSX.writeFile(wb, `Reporte_ST_Matias.xlsx`);
     }
 
     function generarPDF(id) {
@@ -359,4 +354,31 @@
 
         y += 15;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("RESUMEN DE CUENTA", margin, y);
-        y += 2; doc.line(margin, y, margin + width, 
+        y += 2; doc.line(margin, y, margin + width, y);
+        y += 6; doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text("Presupuesto Final:", margin + 2, y);
+        doc.text(`$ ${r.precio.toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        y += 5; doc.text("Seña Recibida:", margin + 2, y);
+        doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        
+        y += 6;
+        const saldo = r.precio - r.sena;
+        doc.setFontSize(10); doc.setFont("helvetica", "bold");
+        if (saldo <= 0) {
+            doc.setTextColor(39, 174, 96);
+            doc.text("✅ TOTALMENTE PAGADO", centro, y, {align:'center'});
+        } else {
+            doc.text("SALDO A PAGAR:", margin + 2, y);
+            doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        }
+
+        y += 15;
+        doc.setTextColor(40);
+        doc.setFontSize(9); doc.setFont("helvetica", "bold");
+        doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
+
+        doc.save(`Ticket_${r.orden}.pdf`);
+    }
+</script>
+</body>
+</html>
