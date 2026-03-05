@@ -79,7 +79,7 @@
 
     <div class="search-container">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre u orden..." onkeyup="dibujarTabla()">
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto; display: block;">
@@ -112,7 +112,6 @@
 </div>
 
 <script>
-    // 1. CONFIGURACIÓN (Corregida sin comas extras y link directo)
     const firebaseConfig = {
         apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
         authDomain: "github-c3e96.firebaseapp.com",
@@ -123,18 +122,13 @@
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
 
-    // 2. INICIALIZACIÓN FORZADA
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
 
     let registros = [];
     let idEditando = null;
 
-    // 3. MONITOR DE ESTADO (Inmediato)
     db.ref(".info/connected").on("value", (snap) => {
         const s = document.getElementById('status');
         if (snap.val() === true) {
@@ -148,7 +142,6 @@
         }
     });
 
-    // --- FUNCIONES DE LÓGICA ---
     function toggleCosto() {
         const wrap = document.getElementById('costoWrapper');
         wrap.style.display = wrap.style.display === "none" ? "block" : "none";
@@ -187,7 +180,6 @@
         }
     });
 
-    // Escucha de datos
     dbRef.on('value', (snap) => {
         const data = snap.val();
         registros = data ? Object.keys(data).map(key => ({ fireId: key, ...data[key] })) : [];
@@ -361,10 +353,12 @@
             doc.text("SALDO A PAGAR:", margin + 2, y);
             doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
         }
+        
         y += 15;
         doc.setTextColor(40);
         doc.setFontSize(9); doc.setFont("helvetica", "bold");
         doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
+        
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 </script>
