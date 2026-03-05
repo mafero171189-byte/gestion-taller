@@ -14,34 +14,18 @@
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #27ae60; --wapp: #25d366; --danger: #e53e3e; }
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; margin: 0; padding: 15px; padding-bottom: 100px; color: #333; }
         .container { max-width: 1150px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e0e6ed; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
-
         label { display: block; margin-bottom: 5px; font-weight: 700; color: #555; font-size: 0.70rem; text-transform: uppercase; }
         input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        
-        .costo-privado { display: flex; align-items: flex-end; gap: 5px; }
-        .btn-lock { background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 16px; transition: 0.3s; height: 41px; display: flex; align-items: center; justify-content: center; width: 45px;}
-        
-        .pago-container { display: flex; align-items: center; gap: 8px; padding-top: 28px; }
-        .pago-container input { width: auto; cursor: pointer; }
-        
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
-        .btn-excel { background: #1d6f42; margin: 20px auto; width: 100%; max-width: 300px; font-size: 13px; }
-        .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; text-decoration:none; margin-top:5px; border:none; cursor:pointer;}
-        .btn-historial { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; color: #4a5568;}
-        
+        .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; text-decoration:none; cursor:pointer; border:none;}
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
-        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
-        
-        .toggle-table { cursor: pointer; font-size: 20px; user-select: none; transition: 0.3s; display: inline-block; color: var(--secondary); }
-        .rotate { transform: rotate(-90deg); }
-
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .order-tag { font-family: 'Courier New', monospace; font-weight: bold; color: var(--secondary); background: #ebf8ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #bee3f8; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
         .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; }
     </style>
 </head>
@@ -58,75 +42,37 @@
             <div><label>Orden</label><input type="text" id="nroOrden" readonly placeholder="AUTO"></div>
             <div><label>Cliente</label><input type="text" id="cliente" required oninput="generarOrden()"></div>
             <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
-            
             <div><label>Modelo</label><input type="text" id="modelo" required></div>
             <div><label>Color</label><input type="text" id="color" placeholder="Ej: Azul"></div>
             <div><label>IMEI / Serie</label><input type="text" id="imei" placeholder="15 dígitos"></div>
-            
             <div><label>Precio Final $</label><input type="number" id="precio" value="0"></div>
             <div><label>Seña $</label><input type="number" id="sena" value="0"></div>
-
-            <div class="costo-privado">
-                <div id="costoWrapper" style="display: none; flex-grow: 1;">
-                    <label>Costo Repuesto $</label>
-                    <input type="number" id="costoRepuesto" value="0">
-                </div>
-                <div>
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn">🔓</button>
-                </div>
-            </div>
-            
-            <div class="pago-container">
-                <input type="checkbox" id="pagoCheck">
-                <label for="pagoCheck">PAGO TOTAL</label>
-            </div>
-
             <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
-            <div class="full"><label>Observaciones (Interno)</label><input type="text" id="observaciones"></div>
-            
             <div class="full">
-                <button type="submit" id="btnSubmit" class="btn btn-main" disabled>CARGANDO...</button>
-                <button type="button" id="btnCancelEdit" class="btn" style="display:none; background:#94a3b8; margin-top:10px; width:100%;" onclick="cancelarEdicion()">CANCELAR EDICIÓN</button>
+                <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
             </div>
         </div>
     </form>
 
-    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-        <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" placeholder="🔎 Buscar por nombre, equipo u orden..." onkeyup="dibujarTabla()" style="flex-grow: 1; padding:12px; border-radius:10px; border:1px solid #cbd5e0;">
-    </div>
-
-    <div id="tableWrapper" style="overflow-x: auto;">
+    <div style="overflow-x: auto;">
         <table id="mainTable">
             <thead>
                 <tr>
                     <th>Orden</th>
-                    <th>Cliente / Contacto</th>
-                    <th>Equipo / Falla</th>
+                    <th>Cliente</th>
+                    <th>Equipo</th>
                     <th>Estado</th>
-                    <th>Monto / Saldo</th>
+                    <th>Monto</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
         </table>
     </div>
-
-    <button onclick="exportarExcel()" class="btn btn-excel">📥 EXPORTAR BASE DE DATOS (EXCEL)</button>
-</div>
-
-<div id="historialModal" class="modal">
-    <div class="modal-content">
-        <span class="close" style="position:absolute; right:20px; top:15px; cursor:pointer;" onclick="cerrarModal()">&times;</span>
-        <h3 style="margin:0; color:var(--primary);">🕒 Historial de Estados</h3>
-        <p id="modalSub" style="font-size:12px; color:#64748b;"></p>
-        <ul id="modalLista" style="list-style: none; padding: 0; margin-top: 15px;"></ul>
-    </div>
 </div>
 
 <script>
-    // CONFIGURACIÓN DE TU FIREBASE REAL
+    // CREDENCIALES
     const firebaseConfig = {
       apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
       authDomain: "github-c3e96.firebaseapp.com",
@@ -138,26 +84,26 @@
       measurementId: "G-QLTQ8VD3WY"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    // Inicialización forzada
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
     let registros = [];
-    let idEditando = null;
 
-    // Control de Conexión
+    // Chequeo de estado
     db.ref(".info/connected").on("value", (snap) => {
-        const btn = document.getElementById('btnSubmit');
         const status = document.getElementById('status');
         if (snap.val() === true) {
-            btn.disabled = false; btn.innerText = idEditando ? "💾 GUARDAR CAMBIOS" : "REGISTRAR EQUIPO";
             status.innerText = "ONLINE"; status.style.background = "#dcfce7"; status.style.color = "#166534";
         } else {
-            btn.disabled = true; status.innerText = "OFFLINE"; status.style.background = "#fee2e2"; status.style.color = "#991b1b";
+            status.innerText = "OFFLINE"; status.style.background = "#fee2e2"; status.style.color = "#991b1b";
         }
     });
 
     function generarOrden() {
-        if (!idEditando && document.getElementById('cliente').value.length > 0 && !document.getElementById('nroOrden').value) {
+        if (document.getElementById('cliente').value.length > 0 && !document.getElementById('nroOrden').value) {
             document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random() * 90000 + 10000);
         }
     }
@@ -172,219 +118,66 @@
             color: document.getElementById('color').value || 'S/C',
             imei: document.getElementById('imei').value || 'N/A',
             precio: parseFloat(document.getElementById('precio').value) || 0,
-            costoRepuesto: parseFloat(document.getElementById('costoRepuesto').value) || 0,
             sena: parseFloat(document.getElementById('sena').value) || 0,
-            pago: document.getElementById('pagoCheck').checked,
             falla: document.getElementById('falla').value,
-            observaciones: document.getElementById('observaciones').value || ''
+            estado: 'Pendiente',
+            fecha: new Date().toLocaleString('es-AR')
         };
 
-        if (idEditando) {
-            db.ref('reparaciones/' + idEditando).update(data).then(() => {
-                alert("✅ Actualizado correctamente");
-                cancelarEdicion();
-            });
-        } else {
-            data.estado = 'Pendiente';
-            data.fecha = new Date().toLocaleString('es-AR');
-            data.historial = [{ estado: 'Ingreso', fecha: data.fecha }];
-            dbRef.push(data).then(() => {
-                alert("✅ Registrado con éxito");
-                cancelarEdicion();
-            });
-        }
+        dbRef.push(data).then(() => {
+            alert("✅ Registrado");
+            document.getElementById('repairForm').reset();
+            document.getElementById('nroOrden').value = "";
+        }).catch(err => alert("Error: " + err.message));
     });
 
     dbRef.on('value', (snapshot) => {
         const data = snapshot.val();
         registros = data ? Object.keys(data).map(key => ({ fireId: key, ...data[key] })) : [];
-        dibujarTabla();
-    });
-
-    function dibujarTabla() {
-        const busqueda = document.getElementById('search').value.toLowerCase();
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        registros.filter(r => 
-            r.cliente.toLowerCase().includes(busqueda) || 
-            r.modelo.toLowerCase().includes(busqueda) || 
-            r.orden.toLowerCase().includes(busqueda)
-        ).reverse().forEach(r => {
-            const saldo = r.pago ? 0 : (r.precio - r.sena);
+        registros.reverse().forEach(r => {
+            const saldo = r.precio - r.sena;
             tbody.innerHTML += `
                 <tr>
                     <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
-                    <td><b>${r.modelo}</b> (${r.color})<br><small>Falla: ${r.falla}</small></td>
+                    <td><b>${r.modelo}</b><br><small>${r.falla}</small></td>
+                    <td>${r.estado}</td>
+                    <td>$${r.precio}<br><small style="color:red">Debe $${saldo}</small></td>
                     <td>
-                        <select onchange="cambiarEstado('${r.fireId}', this.value)" style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
-                            <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
-                            <option ${r.estado=='En Revisión'?'selected':''}>En Revisión</option>
-                            <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
-                            <option ${r.estado=='Entregado'?'selected':''}>Entregado</option>
-                        </select>
-                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Ver Historial</button>
-                    </td>
-                    <td><b>$${r.precio}</b><br><small style="color:${saldo>0?'red':'green'}; font-weight:bold;">${r.pago?'PAGADO':'Debe $'+saldo}</small></td>
-                    <td>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="editar('${r.fireId}')" title="Editar">✏️</button>
-                            <button onclick="generarPDF('${r.fireId}')" title="Ticket PDF">📄</button>
-                            <button onclick="borrar('${r.fireId}')" title="Eliminar" style="color:red;">🗑️</button>
-                        </div>
+                        <button onclick="generarPDF('${r.fireId}')">📄 PDF</button>
+                        <button onclick="borrar('${r.fireId}')">🗑️</button>
                     </td>
                 </tr>`;
         });
-    }
+    });
 
-    // MODIFICACIÓN WHATSAPP: Mensaje con todos los datos
     function enviarWapp(id) {
         const r = registros.find(x => x.fireId === id);
-        const estadoMsg = r.estado.toUpperCase();
-        const saldo = r.pago ? 0 : (r.precio - r.sena);
-        
-        const msg = `*S.T. MATIAS - REPARACIONES*\n\n` +
-                    `Hola *${r.cliente}*, te informamos el estado de tu equipo:\n\n` +
-                    `📌 *Orden:* ${r.orden}\n` +
-                    `📱 *Equipo:* ${r.modelo}\n` +
-                    `🎨 *Color:* ${r.color}\n` +
-                    `🆔 *IMEI/Serie:* ${r.imei}\n` +
-                    `⚠️ *Falla:* ${r.falla}\n` +
-                    `✅ *ESTADO:* ${estadoMsg}\n\n` +
-                    `💰 *Presupuesto:* $${r.precio}\n` +
-                    `💵 *Seña:* $${r.sena}\n` +
-                    `🔴 *SALDO PENDIENTE: $${saldo}*\n\n` +
-                    `_Este es un mensaje automático generado por nuestro sistema de gestión._`;
-        
+        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*,\nOrden: ${r.orden}\nEquipo: ${r.modelo}\nColor: ${r.color}\nIMEI: ${r.imei}\nFalla: ${r.falla}\n\n*Estado:* ${r.estado}\n*Saldo Pendiente:* $${r.precio - r.sena}\n\n_Mensaje automático._`;
         window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
-    // MODIFICACIÓN PDF: Ticket completo con datos del celular
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 180] }); // Un poco más largo para que entre todo
-        
-        // Cabecera Profesional
-        doc.setFillColor(26, 42, 58);
-        doc.rect(0, 0, 80, 25, 'F');
-        doc.setTextColor(255);
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("S.T. MATIAS", 40, 12, {align:'center'});
+        const doc = new jsPDF({ unit: "mm", format: [80, 150] });
+        doc.setFontSize(14); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
+        doc.setFontSize(10); doc.text(`ORDEN: ${r.orden}`, 40, 25, {align:'center'});
         doc.setFontSize(8);
-        doc.setFont("helvetica", "normal");
-        doc.text("SERVICIO TÉCNICO PROFESIONAL", 40, 18, {align:'center'});
-
-        // Datos de la Orden
-        doc.setTextColor(40);
-        doc.setDrawColor(200);
-        doc.roundedRect(5, 30, 70, 12, 2, 2, 'S');
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.text(`ORDEN: ${r.orden}`, 40, 37.5, {align:'center'});
-
-        // Ficha del Cliente y Equipo
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "bold");
-        doc.text("DATOS DEL CLIENTE:", 8, 50);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Nombre: ${r.cliente}`, 8, 55);
-        doc.text(`Fecha: ${r.fecha.split(',')[0]}`, 8, 60);
-        
-        doc.line(8, 65, 72, 65);
-        
-        doc.setFont("helvetica", "bold");
-        doc.text("DETALLES DEL EQUIPO:", 8, 72);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Modelo: ${r.modelo}`, 8, 77);
-        doc.text(`Color: ${r.color}`, 8, 82);
-        doc.text(`IMEI/Serie: ${r.imei}`, 8, 87);
-        
-        doc.line(8, 92, 72, 92);
-        
-        doc.setFont("helvetica", "bold");
-        doc.text("FALLA REPORTADA:", 8, 99);
-        doc.setFont("helvetica", "normal");
-        const fallaSplit = doc.splitTextToSize(r.falla, 65);
-        doc.text(fallaSplit, 8, 104);
-
-        // Bloque de Montos
-        let yMonto = 125;
-        doc.setFillColor(245, 247, 250);
-        doc.rect(5, yMonto, 70, 30, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.text(`PRESUPUESTO TOTAL: $${r.precio}`, 10, yMonto + 8);
-        doc.setFont("helvetica", "normal");
-        doc.text(`SEÑA RECIBIDA: $${r.sena}`, 10, yMonto + 16);
-        
-        const saldo = r.pago ? 0 : (r.precio - r.sena);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.text(`SALDO A PAGAR: $${saldo}`, 10, yMonto + 25);
-
-        // Pie de página
-        doc.setFontSize(7);
-        doc.setFont("helvetica", "italic");
-        doc.text("Gracias por confiar en nuestro servicio.", 40, 170, {align:'center'});
-
+        doc.text(`Cliente: ${r.cliente}`, 10, 40);
+        doc.text(`Equipo: ${r.modelo}`, 10, 46);
+        doc.text(`IMEI: ${r.imei}`, 10, 52);
+        doc.text(`Falla: ${r.falla}`, 10, 58);
+        doc.text(`Total: $${r.precio}`, 10, 70);
+        doc.text(`Seña: $${r.sena}`, 10, 76);
+        doc.text(`SALDO: $${r.precio - r.sena}`, 10, 82);
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
-    function cambiarEstado(id, nuevo) {
-        const r = registros.find(x => x.fireId === id);
-        const h = r.historial || [];
-        h.push({ estado: nuevo, fecha: new Date().toLocaleString('es-AR') });
-        db.ref('reparaciones/' + id).update({ estado: nuevo, historial: h });
-    }
-
-    function toggleTablaCompleta() {
-        const wrapper = document.getElementById('tableWrapper');
-        wrapper.style.display = (wrapper.style.display === "none") ? "block" : "none";
-    }
-
-    function toggleCosto() {
-        const wrapper = document.getElementById('costoWrapper');
-        wrapper.style.display = (wrapper.style.display === "none" || wrapper.style.display === "") ? "block" : "none";
-    }
-
-    function abrirHistorial(id) {
-        const r = registros.find(x => x.fireId === id);
-        document.getElementById('modalSub').innerText = `${r.orden} | ${r.modelo}`;
-        document.getElementById('modalLista').innerHTML = (r.historial || []).map(h => `<li>${h.estado} - ${h.fecha}</li>`).join('');
-        document.getElementById('historialModal').style.display = 'block';
-    }
-
-    function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
-    function borrar(id) { if(confirm('¿Seguro quieres eliminar este registro?')) db.ref('reparaciones/' + id).remove(); }
-    
-    function editar(id) {
-        const r = registros.find(x => x.fireId === id);
-        document.getElementById('nroOrden').value = r.orden;
-        document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel;
-        document.getElementById('modelo').value = r.modelo;
-        document.getElementById('color').value = r.color || '';
-        document.getElementById('imei').value = r.imei || '';
-        document.getElementById('precio').value = r.precio;
-        document.getElementById('sena').value = r.sena;
-        document.getElementById('falla').value = r.falla;
-        document.getElementById('observaciones').value = r.observaciones || '';
-        idEditando = id;
-        document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
-        document.getElementById('btnCancelEdit').style.display = "block";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelarEdicion() {
-        document.getElementById('repairForm').reset();
-        idEditando = null;
-        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
-        document.getElementById('btnCancelEdit').style.display = "none";
-        document.getElementById('nroOrden').value = "";
-    }
-
-    function exportarExcel() {
-        const ws = XLSX.utils.json_to_sheet(registros);
-        const wb = XLS
+    function borrar(id) { if(confirm('¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
+</script>
+</body>
+</html>
