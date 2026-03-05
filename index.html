@@ -83,7 +83,7 @@
             </div>
 
             <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
-            <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
+            <div class="full"><label>Observaciones (Interno)</label><input type="text" id="observaciones"></div>
             
             <div class="full">
                 <button type="submit" id="btnSubmit" class="btn btn-main" disabled>CARGANDO...</button>
@@ -169,14 +169,14 @@
             cliente: document.getElementById('cliente').value,
             tel: document.getElementById('tel').value,
             modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value,
-            imei: document.getElementById('imei').value,
+            color: document.getElementById('color').value || 'S/C',
+            imei: document.getElementById('imei').value || 'N/A',
             precio: parseFloat(document.getElementById('precio').value) || 0,
             costoRepuesto: parseFloat(document.getElementById('costoRepuesto').value) || 0,
             sena: parseFloat(document.getElementById('sena').value) || 0,
             pago: document.getElementById('pagoCheck').checked,
             falla: document.getElementById('falla').value,
-            observaciones: document.getElementById('observaciones').value
+            observaciones: document.getElementById('observaciones').value || ''
         };
 
         if (idEditando) {
@@ -216,7 +216,7 @@
                 <tr>
                     <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
-                    <td><b>${r.modelo}</b><br><small>Falla: ${r.falla}</small></td>
+                    <td><b>${r.modelo}</b> (${r.color})<br><small>Falla: ${r.falla}</small></td>
                     <td>
                         <select onchange="cambiarEstado('${r.fireId}', this.value)" style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
                             <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
@@ -229,56 +229,105 @@
                     <td><b>$${r.precio}</b><br><small style="color:${saldo>0?'red':'green'}; font-weight:bold;">${r.pago?'PAGADO':'Debe $'+saldo}</small></td>
                     <td>
                         <div style="display:flex; gap:10px;">
-                            <button onclick="editar('${r.fireId}')" style="background:none; border:none; cursor:pointer; font-size:18px;">✏️</button>
-                            <button onclick="generarPDF('${r.fireId}')" style="background:none; border:none; cursor:pointer; font-size:18px;">📄</button>
-                            <button onclick="borrar('${r.fireId}')" style="background:none; border:none; cursor:pointer; font-size:18px; color:red;">🗑️</button>
+                            <button onclick="editar('${r.fireId}')" title="Editar">✏️</button>
+                            <button onclick="generarPDF('${r.fireId}')" title="Ticket PDF">📄</button>
+                            <button onclick="borrar('${r.fireId}')" title="Eliminar" style="color:red;">🗑️</button>
                         </div>
                     </td>
                 </tr>`;
         });
     }
 
+    // MODIFICACIÓN WHATSAPP: Mensaje con todos los datos
     function enviarWapp(id) {
         const r = registros.find(x => x.fireId === id);
         const estadoMsg = r.estado.toUpperCase();
-        const msg = `*S.T. MATIAS - NOTIFICACIÓN DE SERVICIO*\n\nEstimado/a *${r.cliente}*,\nLe informamos sobre el estado de su equipo:\n\n• *Orden:* ${r.orden}\n• *Equipo:* ${r.modelo}\n• *Estado Actual:* ✅ ${estadoMsg}\n\n_Este es un mensaje automático._`;
+        const saldo = r.pago ? 0 : (r.precio - r.sena);
+        
+        const msg = `*S.T. MATIAS - REPARACIONES*\n\n` +
+                    `Hola *${r.cliente}*, te informamos el estado de tu equipo:\n\n` +
+                    `📌 *Orden:* ${r.orden}\n` +
+                    `📱 *Equipo:* ${r.modelo}\n` +
+                    `🎨 *Color:* ${r.color}\n` +
+                    `🆔 *IMEI/Serie:* ${r.imei}\n` +
+                    `⚠️ *Falla:* ${r.falla}\n` +
+                    `✅ *ESTADO:* ${estadoMsg}\n\n` +
+                    `💰 *Presupuesto:* $${r.precio}\n` +
+                    `💵 *Seña:* $${r.sena}\n` +
+                    `🔴 *SALDO PENDIENTE: $${saldo}*\n\n` +
+                    `_Este es un mensaje automático generado por nuestro sistema de gestión._`;
+        
         window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
+    // MODIFICACIÓN PDF: Ticket completo con datos del celular
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 160] });
+        const doc = new jsPDF({ unit: "mm", format: [80, 180] }); // Un poco más largo para que entre todo
         
+        // Cabecera Profesional
         doc.setFillColor(26, 42, 58);
         doc.rect(0, 0, 80, 25, 'F');
         doc.setTextColor(255);
         doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
         doc.text("S.T. MATIAS", 40, 12, {align:'center'});
         doc.setFontSize(8);
-        doc.text("Gestión de Reparaciones Profesionales", 40, 18, {align:'center'});
+        doc.setFont("helvetica", "normal");
+        doc.text("SERVICIO TÉCNICO PROFESIONAL", 40, 18, {align:'center'});
 
+        // Datos de la Orden
         doc.setTextColor(40);
         doc.setDrawColor(200);
         doc.roundedRect(5, 30, 70, 12, 2, 2, 'S');
+        doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.text(`ORDEN: ${r.orden}`, 40, 37.5, {align:'center'});
 
+        // Ficha del Cliente y Equipo
         doc.setFontSize(8);
-        doc.text(`Cliente: ${r.cliente}`, 8, 50);
-        doc.text(`Fecha: ${r.fecha.split(',')[0]}`, 8, 56);
-        doc.line(8, 60, 72, 60);
+        doc.setFont("helvetica", "bold");
+        doc.text("DATOS DEL CLIENTE:", 8, 50);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Nombre: ${r.cliente}`, 8, 55);
+        doc.text(`Fecha: ${r.fecha.split(',')[0]}`, 8, 60);
         
-        doc.text(`Equipo: ${r.modelo} (${r.color || 'S/C'})`, 8, 68);
-        doc.text(`Falla: ${r.falla}`, 8, 74);
+        doc.line(8, 65, 72, 65);
         
-        let yFinal = 100;
-        doc.setFillColor(245);
-        doc.rect(5, yFinal, 70, 25, 'F');
-        doc.text(`PRECIO TOTAL: $${r.precio}`, 10, yFinal + 7);
-        doc.text(`SEÑA: $${r.sena}`, 10, yFinal + 13);
+        doc.setFont("helvetica", "bold");
+        doc.text("DETALLES DEL EQUIPO:", 8, 72);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Modelo: ${r.modelo}`, 8, 77);
+        doc.text(`Color: ${r.color}`, 8, 82);
+        doc.text(`IMEI/Serie: ${r.imei}`, 8, 87);
+        
+        doc.line(8, 92, 72, 92);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text("FALLA REPORTADA:", 8, 99);
+        doc.setFont("helvetica", "normal");
+        const fallaSplit = doc.splitTextToSize(r.falla, 65);
+        doc.text(fallaSplit, 8, 104);
+
+        // Bloque de Montos
+        let yMonto = 125;
+        doc.setFillColor(245, 247, 250);
+        doc.rect(5, yMonto, 70, 30, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.text(`PRESUPUESTO TOTAL: $${r.precio}`, 10, yMonto + 8);
+        doc.setFont("helvetica", "normal");
+        doc.text(`SEÑA RECIBIDA: $${r.sena}`, 10, yMonto + 16);
+        
         const saldo = r.pago ? 0 : (r.precio - r.sena);
-        doc.text(`SALDO PENDIENTE: $${saldo}`, 10, yFinal + 20);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(`SALDO A PAGAR: $${saldo}`, 10, yMonto + 25);
+
+        // Pie de página
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "italic");
+        doc.text("Gracias por confiar en nuestro servicio.", 40, 170, {align:'center'});
 
         doc.save(`Ticket_${r.orden}.pdf`);
     }
@@ -338,10 +387,4 @@
 
     function exportarExcel() {
         const ws = XLSX.utils.json_to_sheet(registros);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
-        XLSX.writeFile(wb, "ST_Matias_Data.xlsx");
-    }
-</script>
-</body>
-</html>
+        const wb = XLS
