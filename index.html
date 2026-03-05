@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S.T. Matias - Gestión Pro</title>
+    <link rel="icon" href="data:,">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #27ae60; --wapp: #25d366; --danger: #e53e3e; }
@@ -18,14 +18,29 @@
         .full { grid-column: 1 / -1; }
         label { display: block; margin-bottom: 5px; font-weight: 700; color: #555; font-size: 0.70rem; text-transform: uppercase; }
         input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        
+        .costo-privado { display: flex; align-items: flex-end; gap: 5px; }
+        .btn-lock { background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 16px; height: 41px; display: flex; align-items: center; justify-content: center; width: 45px;}
+        
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
-        .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; text-decoration:none; cursor:pointer; border:none;}
+        .btn-cancel { background: #94a3b8; width: 100%; margin-top: 10px; display: none; }
+        .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; border:none; cursor:pointer;}
+        .btn-historial { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; color: #4a5568;}
+        
+        .actions-cell { display: flex; gap: 10px; align-items: center; justify-content: flex-start; }
+        .btn-action { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; transition: 0.2s; color: #4a5568; }
+        .btn-action:hover { transform: scale(1.15); color: var(--secondary); }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
-        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
         .order-tag { font-family: 'Courier New', monospace; font-weight: bold; color: var(--secondary); background: #ebf8ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #bee3f8; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
+        .search-bar { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e0; outline: none; box-sizing: border-box;}
+        
+        .toggle-table { cursor: pointer; font-size: 20px; color: var(--secondary); padding-right: 10px; transition: 0.3s; display: inline-block;}
+        .rotate { transform: rotate(-90deg); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
         .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; }
     </style>
 </head>
@@ -43,26 +58,46 @@
             <div><label>Cliente</label><input type="text" id="cliente" required oninput="generarOrden()"></div>
             <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
             <div><label>Modelo</label><input type="text" id="modelo" required></div>
-            <div><label>Color</label><input type="text" id="color" placeholder="Ej: Azul"></div>
+            <div><label>Color</label><input type="text" id="color" placeholder="Ej: Negro"></div>
             <div><label>IMEI / Serie</label><input type="text" id="imei" placeholder="15 dígitos"></div>
             <div><label>Precio Final $</label><input type="number" id="precio" value="0"></div>
             <div><label>Seña $</label><input type="number" id="sena" value="0"></div>
+
+            <div class="costo-privado">
+                <div id="costoWrapper" style="display: none; flex-grow: 1;">
+                    <label>Costo Repuesto $</label>
+                    <input type="number" id="costoRepuesto" value="0">
+                </div>
+                <div>
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn" title="Ver/Ocultar costo">🔓</button>
+                </div>
+            </div>
+
             <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
+            <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
+            
             <div class="full">
                 <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
+                <button type="button" id="btnCancelEdit" class="btn btn-cancel" onclick="cancelarEdicion()">CANCELAR EDICIÓN</button>
             </div>
         </div>
     </form>
 
-    <div style="overflow-x: auto;">
-        <table id="mainTable">
+    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
+    </div>
+
+    <div id="tableWrapper" style="overflow-x: auto; display: block;">
+        <table>
             <thead>
                 <tr>
                     <th>Orden</th>
-                    <th>Cliente</th>
-                    <th>Equipo</th>
+                    <th>Cliente / Contacto</th>
+                    <th>Equipo / Falla</th>
                     <th>Estado</th>
-                    <th>Monto</th>
+                    <th>Monto / Saldo</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -71,8 +106,17 @@
     </div>
 </div>
 
+<div id="historialModal" class="modal">
+    <div class="modal-content">
+        <span style="position:absolute; right:20px; top:15px; cursor:pointer; font-size: 24px;" onclick="cerrarModal()">&times;</span>
+        <h3 style="margin:0; color:var(--primary);">🕒 Historial de Estados</h3>
+        <p id="modalSub" style="font-size:12px; color:#64748b; margin-top: 5px;"></p>
+        <ul id="modalLista" style="list-style: none; padding: 0; margin-top: 15px; border-top: 1px solid #eee;"></ul>
+    </div>
+</div>
+
 <script>
-    // CREDENCIALES
+    // CONFIGURACIÓN FIREBASE (Mantén estas claves si ya tenías datos)
     const firebaseConfig = {
       apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
       authDomain: "github-c3e96.firebaseapp.com",
@@ -81,35 +125,35 @@
       storageBucket: "github-c3e96.firebasestorage.app",
       messagingSenderId: "403618822429",
       appId: "1:403618822429:web:ace2540068e2edba9809f4",
-      measurementId: "G-QLTQ8VD3WY"
     };
 
-    // Inicialización forzada
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
     let registros = [];
+    let idEditando = null;
 
-    // Chequeo de estado
     db.ref(".info/connected").on("value", (snap) => {
-        const status = document.getElementById('status');
-        if (snap.val() === true) {
-            status.innerText = "ONLINE"; status.style.background = "#dcfce7"; status.style.color = "#166534";
-        } else {
-            status.innerText = "OFFLINE"; status.style.background = "#fee2e2"; status.style.color = "#991b1b";
-        }
+        const s = document.getElementById('status');
+        s.innerText = snap.val() ? "ONLINE" : "OFFLINE";
+        s.style.background = snap.val() ? "#dcfce7" : "#fee2e2";
+        s.style.color = snap.val() ? "#166534" : "#991b1b";
     });
 
+    function toggleCosto() {
+        const wrap = document.getElementById('costoWrapper');
+        wrap.style.display = wrap.style.display === "none" ? "block" : "none";
+    }
+
     function generarOrden() {
-        if (document.getElementById('cliente').value.length > 0 && !document.getElementById('nroOrden').value) {
+        if (!idEditando && document.getElementById('cliente').value.length > 0 && !document.getElementById('nroOrden').value) {
             document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random() * 90000 + 10000);
         }
     }
 
     document.getElementById('repairForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        const fechaActual = new Date().toLocaleString('es-AR');
         const data = {
             orden: document.getElementById('nroOrden').value,
             cliente: document.getElementById('cliente').value,
@@ -119,65 +163,195 @@
             imei: document.getElementById('imei').value || 'N/A',
             precio: parseFloat(document.getElementById('precio').value) || 0,
             sena: parseFloat(document.getElementById('sena').value) || 0,
+            costoRepuesto: parseFloat(document.getElementById('costoRepuesto').value) || 0,
             falla: document.getElementById('falla').value,
-            estado: 'Pendiente',
-            fecha: new Date().toLocaleString('es-AR')
+            observaciones: document.getElementById('observaciones').value || ''
         };
 
-        dbRef.push(data).then(() => {
-            alert("✅ Registrado");
-            document.getElementById('repairForm').reset();
-            document.getElementById('nroOrden').value = "";
-        }).catch(err => alert("Error: " + err.message));
+        if (idEditando) {
+            db.ref('reparaciones/' + idEditando).update(data).then(() => { alert("✅ Guardado"); cancelarEdicion(); });
+        } else {
+            data.estado = 'Pendiente';
+            data.fecha = fechaActual;
+            data.historial = [{ estado: 'Ingreso', fecha: data.fecha }];
+            dbRef.push(data).then(() => { alert("✅ Registrado"); cancelarEdicion(); });
+        }
     });
 
-    dbRef.on('value', (snapshot) => {
-        const data = snapshot.val();
+    dbRef.on('value', (snap) => {
+        const data = snap.val();
         registros = data ? Object.keys(data).map(key => ({ fireId: key, ...data[key] })) : [];
+        dibujarTabla();
+    });
+
+    function dibujarTabla() {
+        const bus = document.getElementById('search').value.toLowerCase();
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        registros.reverse().forEach(r => {
+        registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
             const saldo = r.precio - r.sena;
             tbody.innerHTML += `
                 <tr>
                     <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
-                    <td><b>${r.modelo}</b><br><small>${r.falla}</small></td>
-                    <td>${r.estado}</td>
-                    <td>$${r.precio}<br><small style="color:red">Debe $${saldo}</small></td>
+                    <td><b>${r.modelo}</b> (${r.color})<br><small>Falla: ${r.falla}</small></td>
                     <td>
-                        <button onclick="generarPDF('${r.fireId}')">📄 PDF</button>
-                        <button onclick="borrar('${r.fireId}')">🗑️</button>
+                        <select onchange="cambiarEstado('${r.fireId}', this.value)" style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
+                            <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
+                            <option ${r.estado=='En Revisión'?'selected':''}>En Revisión</option>
+                            <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
+                            <option ${r.estado=='Entregado'?'selected':''}>Entregado</option>
+                        </select>
+                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Ver Historial</button>
+                    </td>
+                    <td>$${r.precio}<br><small style="color:${saldo>0?'red':'green'}; font-weight:bold;">${saldo==0?'PAGADO':'Debe $'+saldo}</small></td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn-action" onclick="editar('${r.fireId}')" title="Editar">✏️</button>
+                            <button class="btn-action" onclick="generarPDF('${r.fireId}')" title="PDF">📄</button>
+                            <button class="btn-action" onclick="borrar('${r.fireId}')" title="Eliminar" style="color:red;">🗑️</button>
+                        </div>
                     </td>
                 </tr>`;
         });
-    });
+    }
+
+    function cambiarEstado(id, nuevo) {
+        const r = registros.find(x => x.fireId === id);
+        const h = r.historial || [];
+        h.push({ estado: nuevo, fecha: new Date().toLocaleString('es-AR') });
+        db.ref('reparaciones/' + id).update({ estado: nuevo, historial: h });
+    }
+
+    function editar(id) {
+        const r = registros.find(x => x.fireId === id);
+        document.getElementById('nroOrden').value = r.orden;
+        document.getElementById('cliente').value = r.cliente;
+        document.getElementById('tel').value = r.tel;
+        document.getElementById('modelo').value = r.modelo;
+        document.getElementById('color').value = r.color;
+        document.getElementById('imei').value = r.imei;
+        document.getElementById('precio').value = r.precio;
+        document.getElementById('sena').value = r.sena;
+        document.getElementById('costoRepuesto').value = r.costoRepuesto || 0;
+        document.getElementById('falla').value = r.falla;
+        document.getElementById('observaciones').value = r.observaciones;
+        idEditando = id;
+        document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
+        document.getElementById('btnCancelEdit').style.display = "block";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicion() {
+        document.getElementById('repairForm').reset();
+        idEditando = null;
+        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
+        document.getElementById('btnCancelEdit').style.display = "none";
+        document.getElementById('nroOrden').value = "";
+    }
+
+    function toggleTablaCompleta() {
+        const wrap = document.getElementById('tableWrapper');
+        const arrow = document.getElementById('arrowToggle');
+        if (wrap.style.display === "none") {
+            wrap.style.display = "block";
+            arrow.classList.remove("rotate");
+        } else {
+            wrap.style.display = "none";
+            arrow.classList.add("rotate");
+        }
+    }
 
     function enviarWapp(id) {
         const r = registros.find(x => x.fireId === id);
-        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*,\nOrden: ${r.orden}\nEquipo: ${r.modelo}\nColor: ${r.color}\nIMEI: ${r.imei}\nFalla: ${r.falla}\n\n*Estado:* ${r.estado}\n*Saldo Pendiente:* $${r.precio - r.sena}\n\n_Mensaje automático._`;
+        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n🎨 *Color:* ${r.color}\n🆔 *IMEI:* ${r.imei}\n⚠️ *Falla:* ${r.falla}\n✅ *ESTADO:* ${r.estado.toUpperCase()}\n\n_Mensaje automático._`;
         window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
+    function abrirHistorial(id) {
+        const r = registros.find(x => x.fireId === id);
+        document.getElementById('modalSub').innerText = `${r.orden} | ${r.modelo}`;
+        document.getElementById('modalLista').innerHTML = (r.historial || []).map(h => `<li><b>${h.estado}</b> - <small>${h.fecha}</small></li>`).join('');
+        document.getElementById('historialModal').style.display = 'block';
+    }
+    function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
+    function borrar(id) { if(confirm('¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
+
+    // PDF REDISEÑADO: Sin garantía ni firma, con WhatsApp del técnico
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 150] });
-        doc.setFontSize(14); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        doc.setFontSize(10); doc.text(`ORDEN: ${r.orden}`, 40, 25, {align:'center'});
-        doc.setFontSize(8);
-        doc.text(`Cliente: ${r.cliente}`, 10, 40);
-        doc.text(`Equipo: ${r.modelo}`, 10, 46);
-        doc.text(`IMEI: ${r.imei}`, 10, 52);
-        doc.text(`Falla: ${r.falla}`, 10, 58);
-        doc.text(`Total: $${r.precio}`, 10, 70);
-        doc.text(`Seña: $${r.sena}`, 10, 76);
-        doc.text(`SALDO: $${r.precio - r.sena}`, 10, 82);
+        const doc = new jsPDF({ unit: "mm", format: [80, 160] }); 
+        
+        const centro = 40;
+        const margin = 5;
+        const width = 70;
+
+        // -- CABECERA --
+        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 26, 'F');
+        doc.setTextColor(255);
+        doc.setFontSize(16); doc.setFont("helvetica", "bold");
+        doc.text("S.T. MATIAS", centro, 10, {align:'center'});
+        doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text("Servicio Técnico Profesional", centro, 16, {align:'center'});
+        doc.setFont("helvetica", "bold");
+        doc.text("WhatsApp: 11 3565-4094", centro, 21, {align:'center'});
+
+        // -- TICKET INFO --
+        let y = 35;
+        doc.setTextColor(40);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text("COMPROBANTE DE INGRESO", centro, y, {align:'center'});
+        y += 6;
+        doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text(`Fecha: ${r.fecha.split(',')[0] || r.fecha}`, centro, y, {align:'center'});
+
+        // -- ORDEN --
+        y += 5;
+        doc.setFillColor(245, 247, 250); doc.roundedRect(margin, y, width, 12, 2, 2, 'F');
+        doc.setFontSize(12); doc.setFont("Courier", "bold");
+        doc.text(`NRO. ORDEN: ${r.orden}`, centro, y + 8, {align:'center'});
+
+        // -- DATOS --
+        y += 20;
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("CLIENTE", margin, y);
+        y += 2; doc.line(margin, y, margin + width, y);
+        y += 5; doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text(`Nombre: ${r.cliente}`, margin + 2, y);
+        y += 5; doc.text(`WhatsApp: ${r.tel}`, margin + 2, y);
+
+        y += 10;
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("EQUIPO", margin, y);
+        y += 2; doc.line(margin, y, margin + width, y);
+        y += 5; doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text(`Modelo: ${r.modelo} (${r.color})`, margin + 2, y);
+        y += 5; doc.text(`IMEI/Serie: ${r.imei}`, margin + 2, y);
+        y += 5; doc.setFont("helvetica", "bold"); doc.text("Falla:", margin + 2, y);
+        doc.setFont("helvetica", "normal");
+        const fLines = doc.splitTextToSize(r.falla, width - 15);
+        doc.text(fLines, margin + 12, y);
+
+        // -- IMPORTES --
+        y += 15;
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("RESUMEN DE CUENTA", margin, y);
+        y += 2; doc.line(margin, y, margin + width, y);
+        y += 6; doc.setFontSize(8); doc.setFont("helvetica", "normal");
+        doc.text("Presupuesto Final:", margin + 2, y);
+        doc.text(`$ ${r.precio.toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        y += 5; doc.text("Seña Recibida:", margin + 2, y);
+        doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        y += 6; doc.setFontSize(10); doc.setFont("helvetica", "bold");
+        doc.text("SALDO A PAGAR:", margin + 2, y);
+        doc.text(`$ ${(r.precio - r.sena).toFixed(2)}`, margin + width - 2, y, {align:'right'});
+
+        // -- CIERRE --
+        y += 15;
+        doc.setFontSize(9); doc.setFont("helvetica", "bold");
+        doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
+
         doc.save(`Ticket_${r.orden}.pdf`);
     }
-
-    function borrar(id) { if(confirm('¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
 </script>
 </body>
 </html>
