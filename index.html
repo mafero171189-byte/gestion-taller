@@ -86,7 +86,7 @@
 
     <div style="display: flex; align-items: center; margin-bottom: 20px;">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre, orden o equipo..." onkeyup="dibujarTabla()">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto; display: block;">
@@ -116,7 +116,6 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE (Mantén estas claves si ya tenías datos)
     const firebaseConfig = {
       apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
       authDomain: "github-c3e96.firebaseapp.com",
@@ -191,6 +190,8 @@
 
         registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
             const saldo = r.precio - r.sena;
+            const statusLabel = (saldo <= 0) ? '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
+            
             tbody.innerHTML += `
                 <tr>
                     <td><span class="order-tag">${r.orden}</span></td>
@@ -203,9 +204,9 @@
                             <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                             <option ${r.estado=='Entregado'?'selected':''}>Entregado</option>
                         </select>
-                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Ver Historial</button>
+                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Historial</button>
                     </td>
-                    <td>$${r.precio}<br><small style="color:${saldo>0?'red':'green'}; font-weight:bold;">${saldo==0?'PAGADO':'Debe $'+saldo}</small></td>
+                    <td>$${r.precio}<br>${statusLabel}</td>
                     <td>
                         <div class="actions-cell">
                             <button class="btn-action" onclick="editar('${r.fireId}')" title="Editar">✏️</button>
@@ -278,17 +279,14 @@
     function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
     function borrar(id) { if(confirm('¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
 
-    // PDF REDISEÑADO: Sin garantía ni firma, con WhatsApp del técnico
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: "mm", format: [80, 160] }); 
-        
         const centro = 40;
         const margin = 5;
         const width = 70;
 
-        // -- CABECERA --
         doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 26, 'F');
         doc.setTextColor(255);
         doc.setFontSize(16); doc.setFont("helvetica", "bold");
@@ -298,7 +296,6 @@
         doc.setFont("helvetica", "bold");
         doc.text("WhatsApp: 11 3565-4094", centro, 21, {align:'center'});
 
-        // -- TICKET INFO --
         let y = 35;
         doc.setTextColor(40);
         doc.setFontSize(11); doc.setFont("helvetica", "bold");
@@ -307,13 +304,11 @@
         doc.setFontSize(8); doc.setFont("helvetica", "normal");
         doc.text(`Fecha: ${r.fecha.split(',')[0] || r.fecha}`, centro, y, {align:'center'});
 
-        // -- ORDEN --
         y += 5;
         doc.setFillColor(245, 247, 250); doc.roundedRect(margin, y, width, 12, 2, 2, 'F');
         doc.setFontSize(12); doc.setFont("Courier", "bold");
         doc.text(`NRO. ORDEN: ${r.orden}`, centro, y + 8, {align:'center'});
 
-        // -- DATOS --
         y += 20;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("CLIENTE", margin, y);
         y += 2; doc.line(margin, y, margin + width, y);
@@ -332,7 +327,6 @@
         const fLines = doc.splitTextToSize(r.falla, width - 15);
         doc.text(fLines, margin + 12, y);
 
-        // -- IMPORTES --
         y += 15;
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("RESUMEN DE CUENTA", margin, y);
         y += 2; doc.line(margin, y, margin + width, y);
@@ -341,12 +335,20 @@
         doc.text(`$ ${r.precio.toFixed(2)}`, margin + width - 2, y, {align:'right'});
         y += 5; doc.text("Seña Recibida:", margin + 2, y);
         doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        y += 6; doc.setFontSize(10); doc.setFont("helvetica", "bold");
-        doc.text("SALDO A PAGAR:", margin + 2, y);
-        doc.text(`$ ${(r.precio - r.sena).toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        
+        y += 6;
+        const saldo = r.precio - r.sena;
+        doc.setFontSize(10); doc.setFont("helvetica", "bold");
+        if (saldo <= 0) {
+            doc.setTextColor(39, 174, 96);
+            doc.text("✅ TOTALMENTE PAGADO", centro, y, {align:'center'});
+        } else {
+            doc.text("SALDO A PAGAR:", margin + 2, y);
+            doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
+        }
 
-        // -- CIERRE --
         y += 15;
+        doc.setTextColor(40);
         doc.setFontSize(9); doc.setFont("helvetica", "bold");
         doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
 
