@@ -18,7 +18,8 @@
         .full { grid-column: 1 / -1; }
         label { display: block; margin-bottom: 5px; font-weight: 700; color: #555; font-size: 0.70rem; text-transform: uppercase; }
         input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .costo-privado { display: flex; align-items: flex-end; gap: 5px; }
+        .check-container { display: flex; align-items: center; gap: 8px; padding-top: 5px; }
+        .check-container input { width: auto; cursor: pointer; }
         .btn-lock { background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 16px; height: 41px; display: flex; align-items: center; justify-content: center; width: 45px;}
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
@@ -57,7 +58,13 @@
             <div><label>Color</label><input type="text" id="color" placeholder="Ej: Negro"></div>
             <div><label>IMEI / Serie</label><input type="text" id="imei" placeholder="15 dígitos"></div>
             <div><label>Precio Final $</label><input type="number" id="precio" value="0"></div>
-            <div><label>Seña $</label><input type="number" id="sena" value="0"></div>
+            <div>
+                <label>Seña $</label>
+                <input type="number" id="sena" value="0">
+                <div class="check-container">
+                    <input type="checkbox" id="esPagada"> <label style="margin:0; font-size:11px; cursor:pointer;" for="esPagada">PAGADO</label>
+                </div>
+            </div>
             <div class="costo-privado">
                 <div id="costoWrapper" style="display: none; flex-grow: 1;">
                     <label>Costo Repuesto $</label>
@@ -155,7 +162,6 @@
 
     document.getElementById('repairForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const fechaActual = new Date().toLocaleString('es-AR');
         const data = {
             orden: document.getElementById('nroOrden').value,
             cliente: document.getElementById('cliente').value,
@@ -165,6 +171,7 @@
             imei: document.getElementById('imei').value || 'N/A',
             precio: parseFloat(document.getElementById('precio').value) || 0,
             sena: parseFloat(document.getElementById('sena').value) || 0,
+            pagada: document.getElementById('esPagada').checked,
             costoRepuesto: parseFloat(document.getElementById('costoRepuesto').value) || 0,
             falla: document.getElementById('falla').value,
             observaciones: document.getElementById('observaciones').value || ''
@@ -174,7 +181,7 @@
             db.ref('reparaciones/' + idEditando).update(data).then(() => { alert("✅ Guardado"); cancelarEdicion(); });
         } else {
             data.estado = 'Pendiente';
-            data.fecha = fechaActual;
+            data.fecha = new Date().toLocaleString('es-AR');
             data.historial = [{ estado: 'Ingreso', fecha: data.fecha }];
             dbRef.push(data).then(() => { alert("✅ Registrado"); cancelarEdicion(); });
         }
@@ -193,8 +200,9 @@
 
         registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
             const saldo = r.precio - r.sena;
-            // CORRECCIÓN AQUÍ: Texto "PAGADO" con tilde
-            const statusLabel = (saldo <= 0) ? '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
+            const statusLabel = r.pagada ? 
+                '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : 
+                `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
             
             tbody.innerHTML += `
                 <tr>
@@ -222,13 +230,6 @@
         });
     }
 
-    function cambiarEstado(id, nuevo) {
-        const r = registros.find(x => x.fireId === id);
-        const h = r.historial || [];
-        h.push({ estado: nuevo, fecha: new Date().toLocaleString('es-AR') });
-        db.ref('reparaciones/' + id).update({ estado: nuevo, historial: h });
-    }
-
     function editar(id) {
         const r = registros.find(x => x.fireId === id);
         document.getElementById('nroOrden').value = r.orden;
@@ -239,6 +240,7 @@
         document.getElementById('imei').value = r.imei;
         document.getElementById('precio').value = r.precio;
         document.getElementById('sena').value = r.sena;
+        document.getElementById('esPagada').checked = r.pagada || false;
         document.getElementById('costoRepuesto').value = r.costoRepuesto || 0;
         document.getElementById('falla').value = r.falla;
         document.getElementById('observaciones').value = r.observaciones;
@@ -254,6 +256,13 @@
         document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
         document.getElementById('btnCancelEdit').style.display = "none";
         document.getElementById('nroOrden').value = "";
+    }
+
+    function cambiarEstado(id, nuevo) {
+        const r = registros.find(x => x.fireId === id);
+        const h = r.historial || [];
+        h.push({ estado: nuevo, fecha: new Date().toLocaleString('es-AR') });
+        db.ref('reparaciones/' + id).update({ estado: nuevo, historial: h });
     }
 
     function toggleTablaCompleta() {
@@ -283,8 +292,8 @@
         const dataExcel = registros.map(r => ({
             "Orden": r.orden, "Fecha": r.fecha, "Cliente": r.cliente, "WhatsApp": r.tel,
             "Equipo": r.modelo, "Color": r.color, "IMEI": r.imei, "Falla": r.falla,
-            "Estado": r.estado, "Precio": r.precio, "Seña": r.sena, "Saldo": r.precio - r.sena,
-            "Costo": r.costoRepuesto || 0, "Ganancia": r.precio - (r.costoRepuesto || 0)
+            "Estado": r.estado, "Precio": r.precio, "Seña": r.sena, "Pagado": r.pagada ? 'SÍ' : 'NO',
+            "Costo": r.costoRepuesto || 0
         }));
         const ws = XLSX.utils.json_to_sheet(dataExcel);
         const wb = XLSX.utils.book_new();
@@ -315,7 +324,7 @@
         doc.text("COMPROBANTE DE INGRESO", centro, y, {align:'center'});
         y += 6;
         doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text(`Fecha: ${r.fecha.split(',')[0] || r.fecha}`, centro, y, {align:'center'});
+        doc.text(`Fecha: ${r.fecha ? r.fecha.split(',')[0] : ''}`, centro, y, {align:'center'});
         y += 5;
         doc.setFillColor(245, 247, 250); doc.roundedRect(margin, y, width, 12, 2, 2, 'F');
         doc.setFontSize(12); doc.setFont("Courier", "bold");
@@ -345,12 +354,13 @@
         y += 5; doc.text("Seña Recibida:", margin + 2, y);
         doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
         y += 6;
-        const saldo = r.precio - r.sena;
+        
         doc.setFontSize(10); doc.setFont("helvetica", "bold");
-        if (saldo <= 0) {
+        if (r.pagada) {
             doc.setTextColor(39, 174, 96);
             doc.text("✅ PAGADO", centro, y, {align:'center'});
         } else {
+            const saldo = r.precio - r.sena;
             doc.text("SALDO A PAGAR:", margin + 2, y);
             doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
         }
@@ -359,7 +369,6 @@
         doc.setTextColor(40);
         doc.setFontSize(9); doc.setFont("helvetica", "bold");
         doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
-        
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 </script>
