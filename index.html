@@ -94,7 +94,7 @@
 
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()" style="flex-grow: 1; padding:12px; border-radius:10px; border:1px solid #cbd5e0;">
+        <input type="text" id="search" placeholder="🔎 Buscar por nombre, equipo u orden..." onkeyup="dibujarTabla()" style="flex-grow: 1; padding:12px; border-radius:10px; border:1px solid #cbd5e0;">
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto;">
@@ -102,10 +102,10 @@
             <thead>
                 <tr>
                     <th>Orden</th>
-                    <th>Cliente</th>
-                    <th>Equipo</th>
+                    <th>Cliente / Contacto</th>
+                    <th>Equipo / Falla</th>
                     <th>Estado</th>
-                    <th>Monto</th>
+                    <th>Monto / Saldo</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -113,7 +113,7 @@
         </table>
     </div>
 
-    <button onclick="exportarExcel()" class="btn btn-excel">📥 EXPORTAR EXCEL</button>
+    <button onclick="exportarExcel()" class="btn btn-excel">📥 EXPORTAR BASE DE DATOS (EXCEL)</button>
 </div>
 
 <div id="historialModal" class="modal">
@@ -126,7 +126,7 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN DE FIREBASE (Tus credenciales reales)
+    // CONFIGURACIÓN DE TU FIREBASE REAL
     const firebaseConfig = {
       apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
       authDomain: "github-c3e96.firebaseapp.com",
@@ -144,7 +144,7 @@
     let registros = [];
     let idEditando = null;
 
-    // Lógica de Conexión
+    // Control de Conexión
     db.ref(".info/connected").on("value", (snap) => {
         const btn = document.getElementById('btnSubmit');
         const status = document.getElementById('status');
@@ -181,7 +181,7 @@
 
         if (idEditando) {
             db.ref('reparaciones/' + idEditando).update(data).then(() => {
-                alert("✅ Actualizado");
+                alert("✅ Actualizado correctamente");
                 cancelarEdicion();
             });
         } else {
@@ -189,7 +189,7 @@
             data.fecha = new Date().toLocaleString('es-AR');
             data.historial = [{ estado: 'Ingreso', fecha: data.fecha }];
             dbRef.push(data).then(() => {
-                alert("✅ Registrado");
+                alert("✅ Registrado con éxito");
                 cancelarEdicion();
             });
         }
@@ -216,21 +216,23 @@
                 <tr>
                     <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
-                    <td><b>${r.modelo}</b><br><small>${r.falla}</small></td>
+                    <td><b>${r.modelo}</b><br><small>Falla: ${r.falla}</small></td>
                     <td>
-                        <select onchange="cambiarEstado('${r.fireId}', this.value)">
+                        <select onchange="cambiarEstado('${r.fireId}', this.value)" style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
                             <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                             <option ${r.estado=='En Revisión'?'selected':''}>En Revisión</option>
                             <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                             <option ${r.estado=='Entregado'?'selected':''}>Entregado</option>
                         </select>
-                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Historial</button>
+                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Ver Historial</button>
                     </td>
-                    <td><b>$${r.precio}</b><br><small style="color:${saldo>0?'red':'green'}">${r.pago?'PAGADO':'Debe $'+saldo}</small></td>
+                    <td><b>$${r.precio}</b><br><small style="color:${saldo>0?'red':'green'}; font-weight:bold;">${r.pago?'PAGADO':'Debe $'+saldo}</small></td>
                     <td>
-                        <button onclick="editar('${r.fireId}')">✏️</button>
-                        <button onclick="generarPDF('${r.fireId}')">📄</button>
-                        <button onclick="borrar('${r.fireId}')">🗑️</button>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="editar('${r.fireId}')" style="background:none; border:none; cursor:pointer; font-size:18px;">✏️</button>
+                            <button onclick="generarPDF('${r.fireId}')" style="background:none; border:none; cursor:pointer; font-size:18px;">📄</button>
+                            <button onclick="borrar('${r.fireId}')" style="background:none; border:none; cursor:pointer; font-size:18px; color:red;">🗑️</button>
+                        </div>
                     </td>
                 </tr>`;
         });
@@ -239,30 +241,45 @@
     function enviarWapp(id) {
         const r = registros.find(x => x.fireId === id);
         const estadoMsg = r.estado.toUpperCase();
-        const msg = `*S.T. MATIAS - NOTIFICACIÓN*\n\nEstimado/a *${r.cliente}*,\nLe informamos sobre el estado de su equipo:\n\n• *Orden:* ${r.orden}\n• *Equipo:* ${r.modelo}\n• *Estado Actual:* ✅ ${estadoMsg}\n\n_Mensaje automático._`;
+        const msg = `*S.T. MATIAS - NOTIFICACIÓN DE SERVICIO*\n\nEstimado/a *${r.cliente}*,\nLe informamos sobre el estado de su equipo:\n\n• *Orden:* ${r.orden}\n• *Equipo:* ${r.modelo}\n• *Estado Actual:* ✅ ${estadoMsg}\n\n_Este es un mensaje automático._`;
         window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
     function generarPDF(id) {
         const r = registros.find(x => x.fireId === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 150] });
+        const doc = new jsPDF({ unit: "mm", format: [80, 160] });
+        
         doc.setFillColor(26, 42, 58);
         doc.rect(0, 0, 80, 25, 'F');
         doc.setTextColor(255);
         doc.setFontSize(14);
         doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        doc.setTextColor(40);
-        doc.setFontSize(10);
-        doc.text(`ORDEN: ${r.orden}`, 40, 35, {align:'center'});
         doc.setFontSize(8);
-        doc.text(`Cliente: ${r.cliente}`, 10, 50);
-        doc.text(`Equipo: ${r.modelo}`, 10, 56);
-        doc.text(`Falla: ${r.falla}`, 10, 62);
-        doc.text(`Total: $${r.precio}`, 10, 75);
-        doc.text(`Seña: $${r.sena}`, 10, 81);
+        doc.text("Gestión de Reparaciones Profesionales", 40, 18, {align:'center'});
+
+        doc.setTextColor(40);
+        doc.setDrawColor(200);
+        doc.roundedRect(5, 30, 70, 12, 2, 2, 'S');
+        doc.setFont("helvetica", "bold");
+        doc.text(`ORDEN: ${r.orden}`, 40, 37.5, {align:'center'});
+
+        doc.setFontSize(8);
+        doc.text(`Cliente: ${r.cliente}`, 8, 50);
+        doc.text(`Fecha: ${r.fecha.split(',')[0]}`, 8, 56);
+        doc.line(8, 60, 72, 60);
+        
+        doc.text(`Equipo: ${r.modelo} (${r.color || 'S/C'})`, 8, 68);
+        doc.text(`Falla: ${r.falla}`, 8, 74);
+        
+        let yFinal = 100;
+        doc.setFillColor(245);
+        doc.rect(5, yFinal, 70, 25, 'F');
+        doc.text(`PRECIO TOTAL: $${r.precio}`, 10, yFinal + 7);
+        doc.text(`SEÑA: $${r.sena}`, 10, yFinal + 13);
         const saldo = r.pago ? 0 : (r.precio - r.sena);
-        doc.text(`SALDO: $${saldo}`, 10, 87);
+        doc.text(`SALDO PENDIENTE: $${saldo}`, 10, yFinal + 20);
+
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
@@ -274,56 +291,13 @@
     }
 
     function toggleTablaCompleta() {
-        const w = document.getElementById('tableWrapper');
-        w.style.display = (w.style.display === "none") ? "block" : "none";
+        const wrapper = document.getElementById('tableWrapper');
+        wrapper.style.display = (wrapper.style.display === "none") ? "block" : "none";
     }
 
     function toggleCosto() {
-        const cw = document.getElementById('costoWrapper');
-        cw.style.display = (cw.style.display === "none" || cw.style.display === "") ? "block" : "none";
-    }
-
-    function abrirHistorial(id) {
-        const r = registros.find(x => x.fireId === id);
-        document.getElementById('modalSub').innerText = r.orden;
-        document.getElementById('modalLista').innerHTML = (r.historial || []).map(h => `<li>${h.estado} - ${h.fecha}</li>`).join('');
-        document.getElementById('historialModal').style.display = 'block';
-    }
-
-    function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
-    function borrar(id) { if(confirm('¿Eliminar?')) db.ref('reparaciones/' + id).remove(); }
-    
-    function editar(id) {
-        const r = registros.find(x => x.fireId === id);
-        document.getElementById('nroOrden').value = r.orden;
-        document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel;
-        document.getElementById('modelo').value = r.modelo;
-        document.getElementById('precio').value = r.precio;
-        document.getElementById('sena').value = r.sena;
-        document.getElementById('falla').value = r.falla;
-        idEditando = id;
-        document.getElementById('btnSubmit').innerText = "💾 GUARDAR";
-        document.getElementById('btnCancelEdit').style.display = "block";
-    }
-
-    function cancelarEdicion() {
-        document.getElementById('repairForm').reset();
-        idEditando = null;
-        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
-        document.getElementById('btnCancelEdit').style.display = "none";
-    }
-
-    function exportarExcel() {
-        const ws = XLSX.utils.json_to_sheet(registros);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Data");
-        XLSX.writeFile(wb, "Reporte.xlsx");
-    }
-</script>
-</body>
-</html>
-te({ estado: nuevo, historial: h });
+        const wrapper = document.getElementById('costoWrapper');
+        wrapper.style.display = (wrapper.style.display === "none" || wrapper.style.display === "") ? "block" : "none";
     }
 
     function abrirHistorial(id) {
@@ -334,7 +308,7 @@ te({ estado: nuevo, historial: h });
     }
 
     function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
-    function borrar(id) { if(confirm('¿Eliminar?')) db.ref('reparaciones/' + id).remove(); }
+    function borrar(id) { if(confirm('¿Seguro quieres eliminar este registro?')) db.ref('reparaciones/' + id).remove(); }
     
     function editar(id) {
         const r = registros.find(x => x.fireId === id);
@@ -363,27 +337,11 @@ te({ estado: nuevo, historial: h });
     }
 
     function exportarExcel() {
-        const dataExcel = registros.map(r => ({
-                "ORDEN": r.orden, "FECHA": r.fecha, "CLIENTE": r.cliente, "EQUIPO": r.modelo,
-                "IMEI": r.imei || "", "ESTADO": r.estado, "PRECIO": r.precio, "SALDO": r.pago ? 0 : (r.precio - r.sena)
-        }));
-        const ws = XLSX.utils.json_to_sheet(dataExcel);
+        const ws = XLSX.utils.json_to_sheet(registros);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
-        XLSX.writeFile(wb, "ST_Matias.xlsx");
+        XLSX.writeFile(wb, "ST_Matias_Data.xlsx");
     }
 </script>
 </body>
 </html>
-stimado/a *${r.cliente}*,\n` +
-                    `Le informamos sobre el estado de su equipo:\n\n` +
-                    `• *Orden:* ${r.orden}\n` +
-                    `• *Equipo:* ${r.modelo}\n` +
-                    `• *IMEI:* ${r.imei || 'N/A'}\n` +
-                    `• *Estado Actual:* ✅ ${estadoMsg}\n\n` +
-                    `_Este es un mensaje automático generado por nuestro sistema de gestión. Por favor, no responda a este chat._`;
-        window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
-    }
-
-    function cambiarEstado(id, nuevo) {
-        const r = registros.find(x => x.
