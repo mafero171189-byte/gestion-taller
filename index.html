@@ -193,6 +193,7 @@
 
         registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
             const saldo = r.precio - r.sena;
+            // CORRECCIÓN AQUÍ: Texto "PAGADO" con tilde
             const statusLabel = (saldo <= 0) ? '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
             
             tbody.innerHTML += `
@@ -348,7 +349,7 @@
         doc.setFontSize(10); doc.setFont("helvetica", "bold");
         if (saldo <= 0) {
             doc.setTextColor(39, 174, 96);
-            doc.text("✅ TOTALMENTE PAGADO", centro, y, {align:'center'});
+            doc.text("✅ PAGADO", centro, y, {align:'center'});
         } else {
             doc.text("SALDO A PAGAR:", margin + 2, y);
             doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
