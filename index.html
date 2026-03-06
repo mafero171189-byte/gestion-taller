@@ -18,15 +18,11 @@
         .full { grid-column: 1 / -1; }
         label { display: block; margin-bottom: 5px; font-weight: 700; color: #555; font-size: 0.70rem; text-transform: uppercase; }
         input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .check-container { display: flex; align-items: center; gap: 8px; padding-top: 5px; }
-        .check-container input { width: auto; cursor: pointer; }
         .btn-lock { background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 16px; height: 41px; display: flex; align-items: center; justify-content: center; width: 45px;}
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
-        .btn-cancel { background: #94a3b8; width: 100%; margin-top: 10px; display: none; }
         .btn-excel { background: #27ae60; color: white; font-size: 12px; padding: 10px 20px; border: none; margin-top: 25px; float: right; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; border:none; cursor:pointer;}
-        .btn-historial { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; color: #4a5568;}
         .btn-archive-view { background: #64748b; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .actions-cell { display: flex; gap: 10px; align-items: center; justify-content: flex-start; }
         .btn-action { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; color: #4a5568; }
@@ -36,11 +32,8 @@
         .order-tag { font-family: 'Courier New', monospace; font-weight: bold; color: var(--secondary); background: #ebf8ff; padding: 4px 10px; border-radius: 6px; border: 1px solid #bee3f8; }
         .search-container { display: flex; align-items: center; margin-bottom: 20px; gap: 10px; }
         .search-bar { flex-grow: 1; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e0; outline: none; }
-        .toggle-table { cursor: pointer; font-size: 20px; color: var(--secondary); transition: 0.3s; }
-        .rotate { transform: rotate(-90deg); }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
         .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; }
-        .badge-archive { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -48,7 +41,7 @@
 <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
         <h2 style="color: var(--primary); margin:0;">📱 S.T. <span style="color: var(--secondary);">MATIAS</span></h2>
-        <div id="status" style="font-size: 12px; font-weight: bold; border-radius: 20px; padding: 5px 15px; background: #eee;">CONECTANDO...</div>
+        <div id="status" style="font-size: 12px; font-weight: bold; border-radius: 20px; padding: 5px 15px; background: #ff9800; color: white;">CONECTANDO...</div>
     </div>
     
     <form id="repairForm">
@@ -63,8 +56,8 @@
             <div>
                 <label>Seña $</label>
                 <input type="number" id="sena" value="0">
-                <div class="check-container">
-                    <input type="checkbox" id="esPagada"> <label style="margin:0; font-size:11px; cursor:pointer;" for="esPagada">PAGADO</label>
+                <div style="display:flex; align-items:center; gap:5px; margin-top:5px;">
+                    <input type="checkbox" id="esPagada" style="width:auto;"> <label style="margin:0; font-size:10px;">PAGADO</label>
                 </div>
             </div>
             <div style="display: flex; align-items: flex-end; gap: 5px;">
@@ -72,27 +65,23 @@
                     <label>Costo Repuesto $</label>
                     <input type="number" id="costoRepuesto" value="0">
                 </div>
-                <div>
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn">🔓</button>
-                </div>
+                <button type="button" class="btn-lock" onclick="toggleCosto()" id="lockBtn">🔓</button>
             </div>
             <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
             <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
             <div class="full">
                 <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
-                <button type="button" id="btnCancelEdit" class="btn btn-cancel" onclick="cancelarEdicion()">CANCELAR EDICIÓN</button>
+                <button type="button" id="btnCancelEdit" class="btn" style="background:#94a3b8; margin-top:10px; display:none;" onclick="cancelarEdicion()">CANCELAR EDICIÓN</button>
             </div>
         </div>
     </form>
 
     <div class="search-container">
-        <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
-        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
+        <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar por nombre, orden o modelo..." onkeyup="dibujarTabla()">
         <button class="btn-archive-view" id="btnToggleArchive" onclick="toggleModoArchivo()">📁 VER ARCHIVADOS</button>
     </div>
 
-    <div id="tableWrapper" style="overflow-x: auto; display: block;">
+    <div id="tableWrapper" style="overflow-x: auto;">
         <h3 id="tableTitle" style="font-size: 14px; color: var(--primary); margin-bottom: 10px;">LISTA DE TRABAJO ACTIVA</h3>
         <table>
             <thead>
@@ -109,8 +98,7 @@
         </table>
     </div>
 
-    <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Reporte Completo (Excel)</button>
-    <div style="clear: both;"></div>
+    <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Reporte (Excel)</button>
 </div>
 
 <div id="historialModal" class="modal">
@@ -123,6 +111,7 @@
 </div>
 
 <script>
+    // Configuración Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
         authDomain: "github-c3e96.firebaseapp.com",
@@ -141,12 +130,13 @@
     let idEditando = null;
     let modoArchivo = false;
 
+    // Monitor de Conexión
     db.ref(".info/connected").on("value", (snap) => {
         const s = document.getElementById('status');
         if (snap.val() === true) {
-            s.innerText = "ONLINE"; s.style.background = "#dcfce7"; s.style.color = "#166534";
+            s.innerText = "ONLINE"; s.style.background = "#27ae60";
         } else {
-            s.innerText = "OFFLINE"; s.style.background = "#fee2e2"; s.style.color = "#991b1b";
+            s.innerText = "DESCONECTADO"; s.style.background = "#e53e3e";
         }
     });
 
@@ -198,12 +188,19 @@
         };
 
         if (idEditando) {
-            db.ref('reparaciones/' + idEditando).update(data).then(() => { alert("✅ Guardado"); cancelarEdicion(); });
+            db.ref('reparaciones/' + idEditando).update(data).then(() => { 
+                alert("✅ Guardado"); 
+                cancelarEdicion(); 
+            });
         } else {
             data.estado = 'Pendiente';
             data.fecha = new Date().toLocaleString('es-AR');
             data.historial = [{ estado: 'Ingreso', fecha: data.fecha }];
-            dbRef.push(data).then(() => { alert("✅ Registrado"); cancelarEdicion(); });
+            dbRef.push(data).then(() => { 
+                alert("✅ Registrado"); 
+                document.getElementById('repairForm').reset();
+                document.getElementById('nroOrden').value = "";
+            });
         }
     });
 
@@ -218,39 +215,36 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        const listaFiltrada = registros.filter(r => {
-            const coincideBusqueda = r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus);
-            return (modoArchivo ? r.archivado === true : !r.archivado) && coincideBusqueda;
+        const filtrados = registros.filter(r => {
+            const match = r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus);
+            return (modoArchivo ? r.archivado : !r.archivado) && match;
         });
 
-        listaFiltrada.reverse().forEach(r => {
+        filtrados.reverse().forEach(r => {
             const saldo = r.precio - r.sena;
-            const statusLabel = r.pagada ? 
-                '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : 
-                `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
+            const statusLabel = r.pagada ? '<b style="color:green;">PAGADO</b>' : `<b style="color:red;">DEBE $${saldo}</b>`;
             
-            // ACCIONES SEGÚN MODO
-            let botonesAccion = "";
+            let acciones = "";
             if(modoArchivo) {
-                botonesAccion = `
-                    <button class="btn-action" onclick="restaurar('${r.fireId}')" title="Restaurar a Activos">⏪</button>
-                    <button class="btn-action" onclick="borrarDefinitivo('${r.fireId}')" style="color:red;" title="BORRAR DEFINITIVO (ELIMINA DEL EXCEL)">❌</button>
+                acciones = `
+                    <button class="btn-action" onclick="restaurar('${r.fireId}')">⏪</button>
+                    <button class="btn-action" onclick="borrarDefinitivo('${r.fireId}')" style="color:red;">❌</button>
                 `;
             } else {
-                botonesAccion = `
+                acciones = `
                     <button class="btn-action" onclick="editar('${r.fireId}')">✏️</button>
                     <button class="btn-action" onclick="generarPDF('${r.fireId}')">📄</button>
-                    <button class="btn-action" onclick="archivar('${r.fireId}')" style="color:red;" title="Archivar">🗑️</button>
+                    <button class="btn-action" onclick="archivar('${r.fireId}')" style="color:red;">🗑️</button>
                 `;
             }
 
             tbody.innerHTML += `
                 <tr>
-                    <td><span class="order-tag">${r.orden}</span> ${modoArchivo ? '<br><span class="badge-archive">ARCHIVADO</span>' : ''}</td>
+                    <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
-                    <td><b>${r.modelo}</b> (${r.color})<br><small>Falla: ${r.falla}</small></td>
+                    <td><b>${r.modelo}</b><br><small>${r.falla}</small></td>
                     <td>
-                        <select onchange="cambiarEstado('${r.fireId}', this.value)" ${modoArchivo ? 'disabled' : ''} style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
+                        <select onchange="cambiarEstado('${r.fireId}', this.value)" ${modoArchivo ? 'disabled' : ''}>
                             <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                             <option ${r.estado=='En Revisión'?'selected':''}>En Revisión</option>
                             <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
@@ -259,59 +253,14 @@
                         <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Historial</button>
                     </td>
                     <td>$${r.precio}<br>${statusLabel}</td>
-                    <td><div class="actions-cell">${botonesAccion}</div></td>
+                    <td><div class="actions-cell">${acciones}</div></td>
                 </tr>`;
         });
     }
 
-    function archivar(id) {
-        if(confirm('¿Archivar equipo? Desaparecerá de la lista activa pero seguirá en el Excel.')) {
-            db.ref('reparaciones/' + id).update({ archivado: true });
-        }
-    }
-
-    function restaurar(id) {
-        if(confirm('¿Restaurar equipo a la lista activa?')) {
-            db.ref('reparaciones/' + id).update({ archivado: false });
-        }
-    }
-
-    // FUNCIÓN DE BORRADO TOTAL
-    function borrarDefinitivo(id) {
-        if(confirm('🚨 ¡ATENCIÓN! Esto eliminará el registro para SIEMPRE de la base de datos y del Excel. ¿Estás seguro?')) {
-            db.ref('reparaciones/' + id).remove().then(() => {
-                alert("Registro eliminado totalmente.");
-            });
-        }
-    }
-
-    function editar(id) {
-        const r = registros.find(x => x.fireId === id);
-        document.getElementById('nroOrden').value = r.orden;
-        document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel;
-        document.getElementById('modelo').value = r.modelo;
-        document.getElementById('color').value = r.color;
-        document.getElementById('imei').value = r.imei;
-        document.getElementById('precio').value = r.precio;
-        document.getElementById('sena').value = r.sena;
-        document.getElementById('esPagada').checked = r.pagada || false;
-        document.getElementById('costoRepuesto').value = r.costoRepuesto || 0;
-        document.getElementById('falla').value = r.falla;
-        document.getElementById('observaciones').value = r.observaciones;
-        idEditando = id;
-        document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
-        document.getElementById('btnCancelEdit').style.display = "block";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelarEdicion() {
-        document.getElementById('repairForm').reset();
-        idEditando = null;
-        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
-        document.getElementById('btnCancelEdit').style.display = "none";
-        document.getElementById('nroOrden').value = "";
-    }
+    function archivar(id) { if(confirm('¿Archivar? (Sigue en Excel)')) db.ref('reparaciones/' + id).update({ archivado: true }); }
+    function restaurar(id) { db.ref('reparaciones/' + id).update({ archivado: false }); }
+    function borrarDefinitivo(id) { if(confirm('🚨 SE ELIMINARÁ TAMBIÉN DEL EXCEL. ¿Borrar?')) db.ref('reparaciones/' + id).remove(); }
 
     function cambiarEstado(id, nuevo) {
         const r = registros.find(x => x.fireId === id);
@@ -320,37 +269,75 @@
         db.ref('reparaciones/' + id).update({ estado: nuevo, historial: h });
     }
 
-    function toggleTablaCompleta() {
-        const wrap = document.getElementById('tableWrapper');
-        const arrow = document.getElementById('arrowToggle');
-        if (wrap.style.display === "none") { wrap.style.display = "block"; arrow.classList.remove("rotate"); } 
-        else { wrap.style.display = "none"; arrow.classList.add("rotate"); }
+    function editar(id) {
+        const r = registros.find(x => x.fireId === id);
+        document.getElementById('nroOrden').value = r.orden;
+        document.getElementById('cliente').value = r.cliente;
+        document.getElementById('tel').value = r.tel;
+        document.getElementById('modelo').value = r.modelo;
+        document.getElementById('precio').value = r.precio;
+        document.getElementById('sena').value = r.sena;
+        document.getElementById('falla').value = r.falla;
+        idEditando = id;
+        document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
+        document.getElementById('btnCancelEdit').style.display = "block";
     }
 
-    function enviarWapp(id) {
-        const r = registros.find(x => x.fireId === id);
-        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n🎨 *Color:* ${r.color}\n🆔 *IMEI:* ${r.imei}\n⚠️ *Falla:* ${r.falla}\n✅ *ESTADO:* ${r.estado.toUpperCase()}\n\n_⚠️ Este es un mensaje automático, por favor no lo responda._`;
-        window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
+    function cancelarEdicion() {
+        idEditando = null;
+        document.getElementById('repairForm').reset();
+        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
+        document.getElementById('btnCancelEdit').style.display = "none";
     }
 
     function abrirHistorial(id) {
         const r = registros.find(x => x.fireId === id);
-        document.getElementById('modalSub').innerText = `${r.orden} | ${r.modelo}`;
-        document.getElementById('modalLista').innerHTML = (r.historial || []).map(h => `<li><b>${h.estado}</b> - <small>${h.fecha}</small></li>`).join('');
+        document.getElementById('modalSub').innerText = r.orden;
+        document.getElementById('modalLista').innerHTML = (r.historial || []).map(h => `<li><b>${h.estado}</b> - ${h.fecha}</li>`).join('');
         document.getElementById('historialModal').style.display = 'block';
     }
     function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
 
+    function enviarWapp(id) {
+        const r = registros.find(x => x.fireId === id);
+        const msg = `S.T. MATIAS\nOrden: ${r.orden}\nEquipo: ${r.modelo}\nEstado: ${r.estado}`;
+        window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
+    }
+
     function exportarExcel() {
-        if (registros.length === 0) return alert("No hay datos.");
-        const dataExcel = registros.map(r => {
-            const p = parseFloat(r.precio) || 0;
-            const c = parseFloat(r.costoRepuesto) || 0;
-            return {
-                "Fecha": r.fecha || "-",
-                "Orden": r.orden, 
-                "Cliente": r.cliente, 
-                "WhatsApp": r.tel,
-                "Equipo": r.modelo,
-                "Color": r.color,
-                "IMEI
+        const data = registros.map(r => ({
+            Fecha: r.fecha, Orden: r.orden, Cliente: r.cliente, 
+            Equipo: r.modelo, Precio: r.precio, Costo: r.costoRepuesto, 
+            Ganancia: (r.precio - r.costoRepuesto), Estado: r.estado, 
+            Archivado: r.archivado ? 'SI' : 'NO'
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ganancias");
+        XLSX.writeFile(wb, "Contabilidad_ST_Matias.xlsx");
+    }
+
+    function generarPDF(id) {
+        const r = registros.find(x => x.fireId === id);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: "mm", format: [80, 150] });
+        
+        doc.setFontSize(14); doc.text("S.T. MATIAS", 40, 10, {align:'center'});
+        doc.setFontSize(10); doc.text(`ORDEN: ${r.orden}`, 40, 20, {align:'center'});
+        doc.setFontSize(8);
+        doc.text(`Cliente: ${r.cliente}`, 10, 35);
+        doc.text(`Equipo: ${r.modelo}`, 10, 42);
+        doc.text(`Falla: ${r.falla}`, 10, 49);
+        doc.text(`Precio: $${r.precio}`, 10, 60);
+        doc.text(`Seña: $${r.sena}`, 10, 67);
+        doc.text(`Pendiente: $${r.precio - r.sena}`, 10, 74);
+
+        // "Muchas gracias" en gris y chico
+        doc.setTextColor(150); doc.setFontSize(6);
+        doc.text("muchas gracias", 40, 100, {align:'center'});
+        
+        doc.save(`Ticket_${r.orden}.pdf`);
+    }
+</script>
+</body>
+</html>
