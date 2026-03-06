@@ -24,6 +24,7 @@
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        input:focus { outline: 2px solid var(--secondary); border-color: transparent; }
         
         .flex-align-bottom { display: flex; align-items: flex-end; gap: 8px; }
         .check-container { display: flex; align-items: center; gap: 8px; height: 41px; cursor: pointer; font-size: 12px; font-weight: bold; color: #1a2a3a; }
@@ -34,31 +35,16 @@
         .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; margin-top: 5px; border-radius: 6px; border:none; cursor:pointer;}
         .btn-lock { background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 8px; padding: 10px; cursor: pointer; font-size: 16px; height: 41px; display: flex; align-items: center; justify-content: center; width: 45px; box-sizing: border-box;}
         
-        .btn-excel-discreto {
-            background: #f8fafc;
-            color: #94a3b8;
-            border: 1px solid #e2e8f0;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            float: right;
-            margin-top: 20px;
-            transition: all 0.2s;
-        }
-        .btn-excel-discreto:hover {
-            background: #f1f5f9;
-            color: #64748b;
-            border-color: #cbd5e0;
-        }
+        .btn-excel-discreto { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; float: right; margin-top: 20px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 850px; }
         th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; text-transform: uppercase;}
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle;}
         .order-tag { background: #ebf8ff; color: #2b6cb0; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-family: monospace; border: 1px solid #bee3f8;}
-        .archive-badge { background: #f1f5f9; color: #64748b; font-size: 10px; padding: 2px 5px; border-radius: 4px; border: 1px solid #e2e8f0; margin-left: 5px; }
         
+        .badge-pagado { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .badge-debe { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; backdrop-filter: blur(3px); }
         .modal-content { background: white; width: 90%; max-width: 400px; margin: 10% auto; padding: 25px; border-radius: 15px; position: relative;}
     </style>
@@ -74,7 +60,7 @@
     <form id="repairForm">
         <div class="form-grid">
             <div><label>N° Orden</label><input type="text" id="nroOrden" readonly placeholder="AUTO"></div>
-            <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()"></div>
+            <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()" autofocus></div>
             <div><label>WhatsApp Cliente</label><input type="text" id="tel" required placeholder="549..."></div>
             <div><label>Modelo</label><input type="text" id="modelo" required></div>
             <div><label>Color</label><input type="text" id="color"></div>
@@ -162,6 +148,9 @@
     let idEditando = null;
     let modoArchivo = false;
 
+    // Formateador de moneda
+    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+
     db.ref(".info/connected").on("value", s => {
         const div = document.getElementById('status');
         div.innerText = s.val() ? "ONLINE" : "CONECTANDO...";
@@ -199,15 +188,19 @@
             falla: document.getElementById('falla').value,
             observaciones: document.getElementById('observaciones').value || '',
             archivado: false,
-            estado: esPagado ? "Pagado" : "Pendiente"
+            estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
         };
 
         if (idEditando) {
-            db.ref('reparaciones/' + idEditando).update(data).then(() => { alert("✅ Actualizado"); cancelarEdicion(); });
+            db.ref('reparaciones/' + idEditando).update(data).then(() => { cancelarEdicion(); });
         } else {
             data.fecha = new Date().toLocaleString();
             data.historial = [{ e: data.estado, f: data.fecha }];
-            dbRef.push(data).then(() => { alert("✅ Registrado"); document.getElementById('repairForm').reset(); document.getElementById('nroOrden').value=""; });
+            dbRef.push(data).then(() => { 
+                document.getElementById('repairForm').reset(); 
+                document.getElementById('nroOrden').value=""; 
+                document.getElementById('cliente').focus();
+            });
         }
     });
 
@@ -224,11 +217,7 @@
 
         const filtrados = registros.filter(r => {
             const coincide = r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus);
-            
-            // Si hay búsqueda, mostrar todo lo que coincida (ignora filtro de archivo)
             if (bus.length > 0) return coincide;
-            
-            // Si NO hay búsqueda, respetar el modoArchivo
             return (modoArchivo ? r.archivado : !r.archivado);
         });
 
@@ -237,7 +226,7 @@
             const esArchivado = r.archivado;
             body.innerHTML += `
                 <tr style="${esArchivado && bus.length > 0 ? 'background: #f9fafb; opacity: 0.8;' : ''}">
-                    <td><span class="order-tag">${r.orden}</span>${esArchivado ? '<span class="archive-badge">ARCHIVADO</span>' : ''}</td>
+                    <td><span class="order-tag">${r.orden}</span></td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.id}')">📲 WhatsApp</button></td>
                     <td><b>${r.modelo}</b><br><small>Falla: ${r.falla}</small></td>
                     <td>
@@ -246,19 +235,21 @@
                             <option value="Revision" ${r.estado=='Revision'?'selected':''}>Revisión</option>
                             <option value="Reparado" ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                             <option value="Entregado" ${r.estado=='Entregado'?'selected':''}>Entregado</option>
-                            <option value="Pagado" ${r.estado=='Pagado'?'selected':''}>Pagado</option>
                         </select>
                         <button style="border:none; background:none; cursor:pointer; font-size:11px; display:block; margin-top:5px; color:blue;" onclick="verHistorial('${r.id}')">Ver Historial</button>
                     </td>
-                    <td>$${r.precio}<br><b style="color:${saldo>0?'red':'green'}">${saldo>0?'Debe: $'+saldo : 'PAGADO'}</b></td>
+                    <td>
+                        <small>Total: ${fmt.format(r.precio)}</small><br>
+                        ${saldo > 0 ? `<span class="badge-debe">Debe: ${fmt.format(saldo)}</span>` : `<span class="badge-pagado">PAGADO</span>`}
+                    </td>
                     <td>
                         <div style="display:flex; gap:8px;">
                         ${esArchivado ? 
-                            `<button onclick="restaurar('${r.id}')" title="Restaurar">⏪</button> 
-                             <button onclick="borrarDefinitivo('${r.id}')" title="Borrar para siempre" style="color:red">❌</button>` : 
-                            `<button onclick="editar('${r.id}')" title="Editar">✏️</button> 
-                             <button onclick="imprimir('${r.id}')" title="Imprimir Ticket">📄</button> 
-                             <button onclick="archivar('${r.id}')" title="Archivar" style="color:red">🗑️</button>`
+                            `<button onclick="restaurar('${r.id}')">⏪</button> 
+                             <button onclick="borrarDefinitivo('${r.id}')" style="color:var(--danger); font-weight:bold;">❌</button>` : 
+                            `<button onclick="editar('${r.id}')">✏️</button> 
+                             <button onclick="imprimir('${r.id}')">📄</button> 
+                             <button onclick="archivar('${r.id}')" style="color:var(--danger)">🗑️</button>`
                         }
                         </div>
                     </td>
@@ -268,7 +259,7 @@
 
     function enviarWapp(id) {
         const r = registros.find(x => x.id === id);
-        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n🎨 *Color:* ${r.color}\n🆔 *IMEI:* ${r.imei}\n⚠️ *Falla:* ${r.falla}\n✅ *ESTADO:* ${r.estado.toUpperCase()}\n\n_⚠️ Este es un mensaje automático, por favor no lo responda._`;
+        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n✅ *Tu equipo está en estado:* ${r.estado.toUpperCase()}\n\n_⚠️ Este es un mensaje automático, por favor no lo responda._`;
         window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
     }
 
@@ -276,30 +267,23 @@
         const r = registros.find(x => x.id === id);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: [80, 150] });
+        const saldo = r.precio - r.sena;
 
-        const colorAzul = [26, 42, 58];
-        const colorGrisSuave = [150, 150, 150];
-
-        doc.setFillColor(...colorAzul);
+        doc.setFillColor(26, 42, 58);
         doc.rect(0, 0, 80, 15, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
         doc.text("S.T. MATIAS", 40, 10, {align:'center'});
 
-        doc.setTextColor(...colorAzul);
+        doc.setTextColor(26, 42, 58);
         doc.setFontSize(9);
         doc.text("COMPROBANTE DE INGRESO", 40, 20, {align:'center'});
         doc.setFontSize(11);
         doc.text("ORDEN: " + r.orden, 40, 26, {align:'center'});
-        doc.setFontSize(8);
-        doc.text("WhatsApp: 11 3565-4094", 40, 31, {align:'center'});
         
-        doc.setDrawColor(...colorAzul);
-        doc.line(5, 33, 75, 33);
+        doc.setDrawColor(26, 42, 58); doc.line(5, 33, 75, 33);
 
-        doc.setTextColor(40, 40, 40);
-        doc.setFontSize(8);
+        doc.setTextColor(40, 40, 40); doc.setFontSize(8);
         let y = 39;
         const printRow = (l, v) => {
             doc.setFont("helvetica", "bold"); doc.text(l, 5, y);
@@ -312,31 +296,23 @@
         printRow("COLOR:", r.color);
         printRow("IMEI:", r.imei);
         printRow("FALLA:", r.falla);
-        if(r.observaciones) { 
-            doc.setFont("helvetica", "bold"); doc.text("OBSERV.:", 5, y);
-            const splitObs = doc.splitTextToSize(r.observaciones, 53);
-            doc.setFont("helvetica", "normal"); doc.text(splitObs, 22, y); 
-            y += (splitObs.length * 4) + 2;
-        }
-        y += 2;
-        doc.setDrawColor(200, 200, 200);
-        doc.line(5, y, 75, y); y += 6;
+        
+        y += 2; doc.setDrawColor(200, 200, 200); doc.line(5, y, 75, y); y += 6;
+        
         doc.setFontSize(9);
-        doc.text("PRECIO TOTAL:", 5, y);
-        doc.text("$" + r.precio, 75, y, {align:'right'}); y += 5;
-        doc.text("SEÑA:", 5, y);
-        doc.text("$" + r.sena, 75, y, {align:'right'}); y += 7;
-        doc.setFillColor(245, 245, 245);
-        doc.rect(4, y-4, 72, 8, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text("SALDO PENDIENTE:", 6, y+1.5);
-        doc.text("$" + (r.precio - r.sena), 74, y+1.5, {align:'right'});
-        y += 12;
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...colorGrisSuave);
-        doc.setFontSize(8);
-        doc.text("muchas gracias", 40, y, {align:'center'});
+        doc.text("TOTAL:", 5, y); doc.text(fmt.format(r.precio), 75, y, {align:'right'}); y += 5;
+        doc.text("SEÑA:", 5, y); doc.text(fmt.format(r.sena), 75, y, {align:'right'}); y += 7;
+
+        if(saldo <= 0) {
+            doc.setFillColor(220, 255, 220); doc.rect(4, y-4, 72, 8, 'F');
+            doc.setFontSize(10); doc.text("EQUIPO PAGADO TOTALMENTE", 40, y+1.5, {align:'center'});
+        } else {
+            doc.setFillColor(245, 245, 245); doc.rect(4, y-4, 72, 8, 'F');
+            doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+            doc.text("SALDO PENDIENTE:", 6, y+1.5);
+            doc.text(fmt.format(saldo), 74, y+1.5, {align:'right'});
+        }
+        
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
@@ -349,13 +325,12 @@
 
     function archivar(id) { if(confirm("¿Archivar equipo?")) db.ref('reparaciones/'+id).update({archivado: true}); }
     function restaurar(id) { db.ref('reparaciones/'+id).update({archivado: false}); }
-    function borrarDefinitivo(id) { if(confirm("🚨 ¿Borrar permanentemente?")) db.ref('reparaciones/'+id).remove(); }
+    function borrarDefinitivo(id) { if(confirm("🚨 ¡ATENCIÓN! ¿Borrar permanentemente este registro?")) db.ref('reparaciones/'+id).remove(); }
     
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
         const btn = document.getElementById('btnArchivo');
         btn.innerText = modoArchivo ? "⬅️ VOLVER A ACTIVOS" : "📁 VER ARCHIVADOS";
-        btn.style.background = modoArchivo ? "#1a2a3a" : "#64748b";
         renderTable(); 
     }
 
@@ -381,20 +356,17 @@
         document.getElementById('costoRepuesto').value = r.costoRepuesto;
         document.getElementById('falla').value = r.falla;
         document.getElementById('observaciones').value = r.observaciones;
-        document.getElementById('esPagado').checked = (r.estado === "Pagado");
+        document.getElementById('esPagado').checked = (r.precio > 0 && r.sena === r.precio);
         document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
         document.getElementById('btnCancel').style.display = "block";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function cancelarEdicion() { idEditando = null; document.getElementById('repairForm').reset(); document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO"; document.getElementById('btnCancel').style.display = "none"; }
+    function cancelarEdicion() { idEditando = null; document.getElementById('repairForm').reset(); document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cliente').focus(); }
     
     function exportarExcel() {
-        if(registros.length === 0) return alert("No hay datos");
         const data = registros.map(r => ({
-            Fecha: r.fecha, Orden: r.orden, Cliente: r.cliente, WhatsApp: r.tel, Equipo: r.modelo, Color: r.color,
-            IMEI: r.imei, Falla: r.falla, Precio: r.precio, Costo: r.costoRepuesto, Ganancia: (r.precio - r.costoRepuesto), 
-            Estado: r.estado, Situacion: r.archivado ? "Archivado" : "Activo"
+            Fecha: r.fecha, Orden: r.orden, Cliente: r.cliente, Equipo: r.modelo, Falla: r.falla, Precio: r.precio, Costo: r.costoRepuesto, Estado: r.estado
         }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
