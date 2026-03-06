@@ -24,9 +24,10 @@
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; text-transform: uppercase; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); width: 100%; }
         .btn-cancel { background: #94a3b8; width: 100%; margin-top: 10px; display: none; }
-        .btn-excel { background: #f8fafc; color: #94a3b8; font-size: 10px; padding: 6px 12px; border: 1px solid #e2e8f0; margin-top: 25px; float: right; border-radius: 4px; cursor: pointer; }
+        .btn-excel { background: #27ae60; color: white; font-size: 12px; padding: 10px 20px; border: none; margin-top: 25px; float: right; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-wapp { background: var(--wapp); font-size: 11px; padding: 6px 12px; border-radius: 6px; color:white; border:none; cursor:pointer;}
         .btn-historial { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 5px; font-weight: bold; width: 100%; color: #4a5568;}
+        .btn-archive-view { background: #64748b; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .actions-cell { display: flex; gap: 10px; align-items: center; justify-content: flex-start; }
         .btn-action { background: none; border: none; cursor: pointer; font-size: 18px; padding: 5px; color: #4a5568; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
@@ -39,6 +40,7 @@
         .rotate { transform: rotate(-90deg); }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
         .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; }
+        .badge-archive { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -65,7 +67,7 @@
                     <input type="checkbox" id="esPagada"> <label style="margin:0; font-size:11px; cursor:pointer;" for="esPagada">PAGADO</label>
                 </div>
             </div>
-            <div class="costo-privado">
+            <div style="display: flex; align-items: flex-end; gap: 5px;">
                 <div id="costoWrapper" style="display: none; flex-grow: 1;">
                     <label>Costo Repuesto $</label>
                     <input type="number" id="costoRepuesto" value="0">
@@ -87,9 +89,11 @@
     <div class="search-container">
         <span class="toggle-table" id="arrowToggle" onclick="toggleTablaCompleta()">▼</span>
         <input type="text" id="search" class="search-bar" placeholder="🔎 Buscar..." onkeyup="dibujarTabla()">
+        <button class="btn-archive-view" id="btnToggleArchive" onclick="toggleModoArchivo()">📁 VER ARCHIVADOS</button>
     </div>
 
     <div id="tableWrapper" style="overflow-x: auto; display: block;">
+        <h3 id="tableTitle" style="font-size: 14px; color: var(--primary); margin-bottom: 10px;">LISTA DE TRABAJO ACTIVA</h3>
         <table>
             <thead>
                 <tr>
@@ -105,7 +109,7 @@
         </table>
     </div>
 
-    <button class="btn-excel" onclick="exportarExcel()">📥 Descargar reporte de datos (.xlsx)</button>
+    <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Reporte Completo (Excel)</button>
     <div style="clear: both;"></div>
 </div>
 
@@ -135,17 +139,14 @@
 
     let registros = [];
     let idEditando = null;
+    let modoArchivo = false;
 
     db.ref(".info/connected").on("value", (snap) => {
         const s = document.getElementById('status');
         if (snap.val() === true) {
-            s.innerText = "ONLINE";
-            s.style.background = "#dcfce7";
-            s.style.color = "#166534";
+            s.innerText = "ONLINE"; s.style.background = "#dcfce7"; s.style.color = "#166534";
         } else {
-            s.innerText = "OFFLINE";
-            s.style.background = "#fee2e2";
-            s.style.color = "#991b1b";
+            s.innerText = "OFFLINE"; s.style.background = "#fee2e2"; s.style.color = "#991b1b";
         }
     });
 
@@ -158,6 +159,24 @@
         if (!idEditando && document.getElementById('cliente').value.length > 0 && !document.getElementById('nroOrden').value) {
             document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random() * 90000 + 10000);
         }
+    }
+
+    function toggleModoArchivo() {
+        modoArchivo = !modoArchivo;
+        const btn = document.getElementById('btnToggleArchive');
+        const title = document.getElementById('tableTitle');
+        if(modoArchivo) {
+            btn.innerText = "⬅️ VOLVER A ACTIVOS";
+            btn.style.background = "#1a2a3a";
+            title.innerText = "EQUIPOS ARCHIVADOS (OPCIONES DE RESTAURAR O BORRAR FINAL)";
+            title.style.color = "red";
+        } else {
+            btn.innerText = "📁 VER ARCHIVADOS";
+            btn.style.background = "#64748b";
+            title.innerText = "LISTA DE TRABAJO ACTIVA";
+            title.style.color = "#1a2a3a";
+        }
+        dibujarTabla();
     }
 
     document.getElementById('repairForm').addEventListener('submit', function(e) {
@@ -174,7 +193,8 @@
             pagada: document.getElementById('esPagada').checked,
             costoRepuesto: parseFloat(document.getElementById('costoRepuesto').value) || 0,
             falla: document.getElementById('falla').value,
-            observaciones: document.getElementById('observaciones').value || ''
+            observaciones: document.getElementById('observaciones').value || '',
+            archivado: false
         };
 
         if (idEditando) {
@@ -198,36 +218,71 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        registros.filter(r => r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus)).reverse().forEach(r => {
+        const listaFiltrada = registros.filter(r => {
+            const coincideBusqueda = r.cliente.toLowerCase().includes(bus) || r.modelo.toLowerCase().includes(bus) || r.orden.toLowerCase().includes(bus);
+            return (modoArchivo ? r.archivado === true : !r.archivado) && coincideBusqueda;
+        });
+
+        listaFiltrada.reverse().forEach(r => {
             const saldo = r.precio - r.sena;
             const statusLabel = r.pagada ? 
                 '<small style="color:green; font-weight:bold;">✅ PAGADO</small>' : 
                 `<small style="color:red; font-weight:bold;">Debe $${saldo}</small>`;
             
+            // ACCIONES SEGÚN MODO
+            let botonesAccion = "";
+            if(modoArchivo) {
+                botonesAccion = `
+                    <button class="btn-action" onclick="restaurar('${r.fireId}')" title="Restaurar a Activos">⏪</button>
+                    <button class="btn-action" onclick="borrarDefinitivo('${r.fireId}')" style="color:red;" title="BORRAR DEFINITIVO (ELIMINA DEL EXCEL)">❌</button>
+                `;
+            } else {
+                botonesAccion = `
+                    <button class="btn-action" onclick="editar('${r.fireId}')">✏️</button>
+                    <button class="btn-action" onclick="generarPDF('${r.fireId}')">📄</button>
+                    <button class="btn-action" onclick="archivar('${r.fireId}')" style="color:red;" title="Archivar">🗑️</button>
+                `;
+            }
+
             tbody.innerHTML += `
                 <tr>
-                    <td><span class="order-tag">${r.orden}</span></td>
+                    <td><span class="order-tag">${r.orden}</span> ${modoArchivo ? '<br><span class="badge-archive">ARCHIVADO</span>' : ''}</td>
                     <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.fireId}')">📲 WhatsApp</button></td>
                     <td><b>${r.modelo}</b> (${r.color})<br><small>Falla: ${r.falla}</small></td>
                     <td>
-                        <select onchange="cambiarEstado('${r.fireId}', this.value)" style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
+                        <select onchange="cambiarEstado('${r.fireId}', this.value)" ${modoArchivo ? 'disabled' : ''} style="border:none; background:transparent; font-weight:bold; color:var(--secondary);">
                             <option ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                             <option ${r.estado=='En Revisión'?'selected':''}>En Revisión</option>
                             <option ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                             <option ${r.estado=='Entregado'?'selected':''}>Entregado</option>
                         </select>
-                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Ver Historial</button>
+                        <button class="btn-historial" onclick="abrirHistorial('${r.fireId}')">🕒 Historial</button>
                     </td>
                     <td>$${r.precio}<br>${statusLabel}</td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="btn-action" onclick="editar('${r.fireId}')">✏️</button>
-                            <button class="btn-action" onclick="generarPDF('${r.fireId}')">📄</button>
-                            <button class="btn-action" onclick="borrar('${r.fireId}')" style="color:red;">🗑️</button>
-                        </div>
-                    </td>
+                    <td><div class="actions-cell">${botonesAccion}</div></td>
                 </tr>`;
         });
+    }
+
+    function archivar(id) {
+        if(confirm('¿Archivar equipo? Desaparecerá de la lista activa pero seguirá en el Excel.')) {
+            db.ref('reparaciones/' + id).update({ archivado: true });
+        }
+    }
+
+    function restaurar(id) {
+        if(confirm('¿Restaurar equipo a la lista activa?')) {
+            db.ref('reparaciones/' + id).update({ archivado: false });
+        }
+    }
+
+    // FUNCIÓN DE BORRADO TOTAL
+    function borrarDefinitivo(id) {
+        if(confirm('🚨 ¡ATENCIÓN! Esto eliminará el registro para SIEMPRE de la base de datos y del Excel. ¿Estás seguro?')) {
+            db.ref('reparaciones/' + id).remove().then(() => {
+                alert("Registro eliminado totalmente.");
+            });
+        }
     }
 
     function editar(id) {
@@ -285,92 +340,17 @@
         document.getElementById('historialModal').style.display = 'block';
     }
     function cerrarModal() { document.getElementById('historialModal').style.display = 'none'; }
-    function borrar(id) { if(confirm('¿Borrar registro?')) db.ref('reparaciones/' + id).remove(); }
 
     function exportarExcel() {
         if (registros.length === 0) return alert("No hay datos.");
-        const dataExcel = registros.map(r => ({
-            "Orden": r.orden, "Fecha": r.fecha, "Cliente": r.cliente, "WhatsApp": r.tel,
-            "Equipo": r.modelo, "Color": r.color, "IMEI": r.imei, "Falla": r.falla,
-            "Estado": r.estado, "Precio": r.precio, "Seña": r.sena, "Pagado": r.pagada ? 'SÍ' : 'NO',
-            "Costo": r.costoRepuesto || 0
-        }));
-        const ws = XLSX.utils.json_to_sheet(dataExcel);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
-        XLSX.writeFile(wb, `Reporte_ST_Matias.xlsx`);
-    }
-
-    function generarPDF(id) {
-        const r = registros.find(x => x.fireId === id);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: "mm", format: [80, 150] }); 
-        const centro = 40;
-        const margin = 5;
-        const width = 70;
-
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 26, 'F');
-        doc.setTextColor(255);
-        doc.setFontSize(16); doc.setFont("helvetica", "bold");
-        doc.text("S.T. MATIAS", centro, 10, {align:'center'});
-        doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text("Servicio Técnico Profesional", centro, 16, {align:'center'});
-        doc.setFont("helvetica", "bold");
-        doc.text("WhatsApp: 11 3565-4094", centro, 21, {align:'center'});
-
-        let y = 35;
-        doc.setTextColor(40);
-        doc.setFontSize(11); doc.setFont("helvetica", "bold");
-        doc.text("COMPROBANTE DE INGRESO", centro, y, {align:'center'});
-        y += 6;
-        doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text(`Fecha: ${r.fecha ? r.fecha.split(',')[0] : ''}`, centro, y, {align:'center'});
-        y += 5;
-        doc.setFillColor(245, 247, 250); doc.roundedRect(margin, y, width, 12, 2, 2, 'F');
-        doc.setFontSize(12); doc.setFont("Courier", "bold");
-        doc.text(`NRO. ORDEN: ${r.orden}`, centro, y + 8, {align:'center'});
-        y += 20;
-        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("CLIENTE", margin, y);
-        y += 2; doc.line(margin, y, margin + width, y);
-        y += 5; doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text(`Nombre: ${r.cliente}`, margin + 2, y);
-        y += 5; doc.text(`WhatsApp: ${r.tel}`, margin + 2, y);
-        y += 10;
-        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("EQUIPO", margin, y);
-        y += 2; doc.line(margin, y, margin + width, y);
-        y += 5; doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text(`Modelo: ${r.modelo} (${r.color})`, margin + 2, y);
-        y += 5; doc.text(`IMEI/Serie: ${r.imei}`, margin + 2, y);
-        y += 5; doc.setFont("helvetica", "bold"); doc.text("Falla:", margin + 2, y);
-        doc.setFont("helvetica", "normal");
-        const fLines = doc.splitTextToSize(r.falla, width - 15);
-        doc.text(fLines, margin + 12, y);
-        y += 15;
-        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("RESUMEN DE CUENTA", margin, y);
-        y += 2; doc.line(margin, y, margin + width, y);
-        y += 6; doc.setFontSize(8); doc.setFont("helvetica", "normal");
-        doc.text("Presupuesto Final:", margin + 2, y);
-        doc.text(`$ ${r.precio.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        y += 5; doc.text("Seña Recibida:", margin + 2, y);
-        doc.text(`$ ${r.sena.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        y += 6;
-        
-        doc.setFontSize(10); doc.setFont("helvetica", "bold");
-        if (r.pagada) {
-            doc.setTextColor(39, 174, 96);
-            doc.text("✅ PAGADO", centro, y, {align:'center'});
-        } else {
-            const saldo = r.precio - r.sena;
-            doc.text("SALDO A PAGAR:", margin + 2, y);
-            doc.text(`$ ${saldo.toFixed(2)}`, margin + width - 2, y, {align:'right'});
-        }
-        
-        y += 15;
-        doc.setTextColor(40);
-        doc.setFontSize(9); doc.setFont("helvetica", "bold");
-        doc.text("¡Gracias por elegir S.T. MATIAS!", centro, y, {align:'center'});
-        doc.save(`Ticket_${r.orden}.pdf`);
-    }
-</script>
-</body>
-</html>
+        const dataExcel = registros.map(r => {
+            const p = parseFloat(r.precio) || 0;
+            const c = parseFloat(r.costoRepuesto) || 0;
+            return {
+                "Fecha": r.fecha || "-",
+                "Orden": r.orden, 
+                "Cliente": r.cliente, 
+                "WhatsApp": r.tel,
+                "Equipo": r.modelo,
+                "Color": r.color,
+                "IMEI
