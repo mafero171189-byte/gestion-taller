@@ -137,9 +137,14 @@
                         <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
                     </div>
                 </div>
-                <div>
-                    <span id="btn-lock" style="cursor:pointer; font-size:20px;" onclick="revelarCosto()">🔒</span>
-                    <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()"></div>
+                <div class="full" style="display: flex; align-items: flex-end; gap: 10px;">
+                    <div style="padding-bottom: 5px;">
+                        <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
+                    </div>
+                    <div id="costo-inner" style="display:none;">
+                        <label>Costo</label>
+                        <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" style="width: 120px;">
+                    </div>
                 </div>
                 <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
                 <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
@@ -294,13 +299,17 @@
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
             const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
             return matchBusqueda && matchArchivo;
-        }).reverse();
+        }).sort((a, b) => b.orden.localeCompare(a.orden, undefined, { numeric: true }));
 
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
             const canEdit = !r.archivado;
             body.innerHTML += `<tr>
-                <td><b>${r.orden}</b> <span style="cursor:pointer; margin-left:5px;" onclick="openHistory('${r.id}')">🕒</span></td>
+                <td>
+                    <b>${r.orden}</b> <span style="cursor:pointer; margin-left:5px;" onclick="openHistory('${r.id}')">🕒</span>
+                    <br>
+                    <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span>
+                </td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
                 <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" 
@@ -334,7 +343,6 @@
         const textoBtn = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS";
         const msjToast = modoArchivo ? "VIENDO ARCHIVADOS 📁" : "VIENDO ACTIVOS 🛠️";
         const colorToast = modoArchivo ? "#475569" : "#3498db";
-
         document.getElementById('btnArchivo').innerText = textoBtn; 
         showToast(msjToast, colorToast);
         renderTable(); 
@@ -420,19 +428,10 @@
 
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
-        
-        // --- AJUSTE: VALIDACIÓN DE PRECIO ---
         const precioVal = parseMoney(document.getElementById('precio').value);
         const senaVal = parseMoney(document.getElementById('sena').value);
-        
-        if(precioVal <= 0) {
-            showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22");
-            return;
-        }
-        if(senaVal > precioVal) {
-            showToast("LA SEÑA NO PUEDE SUPERAR EL PRECIO ⚠️", "#e67e22");
-            return;
-        }
+        if(precioVal <= 0) { showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22"); return; }
+        if(senaVal > precioVal) { showToast("LA SEÑA NO PUEDE SUPERAR EL PRECIO ⚠️", "#e67e22"); return; }
 
         const data = {
             orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
@@ -451,11 +450,7 @@
             dbRef.push(data);
             showToast("REGISTRADO ✅", "#2ecc71");
         }
-        idEditando = null; 
-        document.getElementById('repairForm').reset(); 
-        document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        localStorage.removeItem('st_matias_draft');
-        document.getElementById('cliente').focus();
+        clickLimpiar();
     };
 
     function editar(id) {
@@ -474,10 +469,7 @@
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
-        
-        // --- AJUSTE: LIMPIEZA DE NÚMERO ---
         const numeroLimpio = String(r.tel).replace(/\D/g, ''); 
-        
         const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
         window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
     }
