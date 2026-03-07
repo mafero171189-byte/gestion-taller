@@ -156,18 +156,21 @@
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
 
-    // --- SEGURIDAD: CONTROL DE ACCESO ---
+    // --- SEGURIDAD: CONTROL DE ACCESO (MÉTODO REDIRECT) ---
     const MI_CORREO_AUTORIZADO = "mafero171189@gmail.com"; 
     const provider = new firebase.auth.GoogleAuthProvider();
 
     firebase.auth().onAuthStateChanged(user => {
-        if (user && user.email === MI_CORREO_AUTORIZADO) {
-            document.getElementById('main-wrapper').style.display = 'block';
-        } else if (user) {
-            alert("No tienes permiso de acceso con este correo.");
-            firebase.auth().signOut();
+        if (user) {
+            if (user.email === MI_CORREO_AUTORIZADO) {
+                document.getElementById('main-wrapper').style.display = 'block';
+            } else {
+                alert("Acceso denegado: " + user.email);
+                firebase.auth().signOut();
+            }
         } else {
-            firebase.auth().signInWithPopup(provider);
+            // Si no hay usuario, redirigimos a Google
+            firebase.auth().signInWithRedirect(provider);
         }
     });
 
@@ -340,4 +343,80 @@
             estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
         };
         if (idEditando) db.ref('reparaciones/' + idEditando).update(data);
-   
+        else { 
+            const d = new Date();
+            data.fecha = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            dbRef.push(data); 
+        }
+        cancelarEdicion();
+    });
+
+    function autoOrden() {
+        if (!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) {
+            document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random() * 90000 + 10000);
+        }
+    }
+
+    function editar(id) {
+        if (modoArchivo) return;
+        const r = registros.find(x => x.id === id);
+        idEditando = id;
+        document.getElementById('nroOrden').value = r.orden;
+        document.getElementById('cliente').value = r.cliente;
+        document.getElementById('tel').value = r.tel;
+        document.getElementById('modelo').value = r.modelo;
+        document.getElementById('color').value = r.color || '';
+        document.getElementById('imei').value = r.imei || '';
+        document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
+        document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
+        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
+        document.getElementById('falla').value = r.falla;
+        document.getElementById('observaciones').value = r.observaciones || '';
+        document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
+        window.scrollTo(0,0);
+        document.getElementById('cliente').focus();
+    }
+
+    function renderContabilidad() {
+        let ingresos = 0, costos = 0, pendiente = 0;
+        registros.forEach(r => {
+            let saldo = r.precio - r.sena;
+            if (saldo > 0) pendiente += saldo;
+            if (r.estado === "Entregado") { ingresos += r.precio; costos += (r.costoRepuesto || 0); }
+        });
+        document.getElementById('stat-ventas').innerText = fmt.format(ingresos);
+        document.getElementById('stat-costos').innerText = fmt.format(costos);
+        document.getElementById('stat-ganancia').innerText = fmt.format(ingresos - costos);
+        document.getElementById('stat-pendiente').innerText = fmt.format(pendiente);
+    }
+
+    function cambiarEstado(id, v) { db.ref('reparaciones/'+id).update({estado: v}); }
+    function toggleArchivo() { modoArchivo = !modoArchivo; document.getElementById('btnArchivo').innerText = modoArchivo ? "⬅️ VOLVER" : "📁 ARCHIVADOS"; renderTable(); }
+    function revelarCosto() {
+        const inner = document.getElementById('costo-inner');
+        inner.style.display = inner.style.display === "none" ? "block" : "none";
+        document.getElementById('btn-lock').innerText = inner.style.display === "none" ? "🔒" : "🔓";
+    }
+
+    function exportarExcel() {
+        const ws = XLSX.utils.json_to_sheet(registros.map(r => ({Orden: r.orden, Fecha: r.fecha, Cliente: r.cliente, Equipo: r.modelo, Falla: r.falla, Precio: r.precio, Costo: r.costoRepuesto, Estado: r.estado})));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
+        XLSX.writeFile(wb, "Reporte_Matias.xlsx");
+    }
+
+    dbRef.on('value', snap => {
+        const val = snap.val();
+        registros = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : [];
+        renderTable();
+        renderContabilidad();
+    });
+
+    db.ref(".info/connected").on("value", s => {
+        const st = document.getElementById('status');
+        st.innerText = s.val() ? "ONLINE" : "OFFLINE";
+        st.className = s.val() ? "online" : "offline";
+    });
+</script>
+</body>
+</html>
