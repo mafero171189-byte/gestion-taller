@@ -17,44 +17,86 @@
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
-        #toast-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px 20px; border-radius: 20px; color: white; font-weight: bold; z-index: 5000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 13px; }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 4000; }
-        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 300px; text-align: center; }
-        .page { display: none; }
-        .page.active { display: block; }
+        #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
         
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(2px); }
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        
+        .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
+        .opt-pendiente { background: #fff9c4; color: #856404; }
+        .opt-reparado { background: #c8e6c9; color: #1b5e20; }
+        .opt-entregado { background: #e2e8f0; color: #475569; }
+
+        .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
+        .history-item::before { content: ''; position: absolute; left: -8px; top: 0; width: 12px; height: 12px; background: var(--secondary); border-radius: 50%; }
+        .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
+        .history-item span { font-size: 14px; display: block; margin-top: 2px; }
+
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        input { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
-        select.st-pendiente, select.st-reparado, select.st-entregado { padding: 4px; font-size: 12px; height: 32px; border-radius: 6px; border: 1px solid #cbd5e0; width: auto; min-width: 110px; font-weight: bold; cursor: pointer; }
-        .st-pendiente { background-color: #fff9c4 !important; color: #856404 !important; }
-        .st-reparado { background-color: #c8e6c9 !important; color: #1b5e20 !important; }
-        .st-entregado { background-color: #e2e8f0 !important; color: #475569 !important; }
+        .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
+        .badge-disabled { cursor: not-allowed; opacity: 0.7; }
+        .st-pendiente { background: #fff9c4; color: #856404; }
+        .st-reparado { background: #c8e6c9; color: #1b5e20; }
+        .st-entregado { background: #e2e8f0; color: #475569; }
 
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
         .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
-        #status { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        #status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
         .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
         .offline { background: #95a5a6; }
-        .table-wrapper { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background 0.3s; }
         th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .action-btns { display: flex; gap: 4px; }
-        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; }
+        
+        .modo-archivo-activo { background: #f1f5f9 !important; }
+        .btn-archivo-on { background: #475569 !important; border: 2px solid #3498db !important; }
 
-        .filter-bar { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
-        .filter-btn { padding: 6px 14px; font-size: 11px; border-radius: 20px; border: 1px solid #cbd5e0; background: white; cursor: pointer; white-space: nowrap; font-weight: bold; }
-        .filter-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
+        .card-stats { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
+        .card-stats b { font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .card-stats p { font-size: 24px; font-weight: bold; margin: 10px 0 0 0; }
     </style>
 </head>
 <body onload="loadDraft()">
 
 <div id="toast-alert"></div>
+
+<div id="statusModal" class="modal-overlay">
+    <div class="modal-box">
+        <p><b>Cambiar Estado</b></p>
+        <button class="status-option opt-pendiente" onclick="confirmarEstado('Pendiente')">⏳ Pendiente</button>
+        <button class="status-option opt-reparado" onclick="confirmarEstado('Reparado')">✅ Reparado</button>
+        <button class="status-option opt-entregado" onclick="confirmarEstado('Entregado')">📦 Entregado</button>
+        <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer;">Cerrar</button>
+    </div>
+</div>
+
+<div id="historyModal" class="modal-overlay">
+    <div class="modal-box" style="width:280px;">
+        <p><b>🕒 Historial de la Orden</b></p>
+        <div id="historyContent" style="margin:20px 0;"></div>
+        <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
+    </div>
+</div>
+
+<div id="priceModal" class="modal-overlay">
+    <div class="modal-box">
+        <p><b>Actualizar Precio Final</b></p>
+        <input type="text" id="newPriceInput" placeholder="0" oninput="formatInput(this)" style="margin-top:15px; text-align:center; font-weight:bold; font-size:20px;">
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="closePriceModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
+            <button id="confirmPriceBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--secondary); color:white;">GUARDAR</button>
+        </div>
+    </div>
+</div>
 
 <div id="deleteModal" class="modal-overlay">
     <div class="modal-box">
@@ -73,13 +115,13 @@
 
 <div id="gesture-zone-top">
     <div style="display:flex; justify-content: space-between; align-items: center;">
-        <h2 id="title-label" style="margin:0;">📱 Panel de Gestión</h2>
-        <div id="status" class="offline"></div>
+        <h2 style="margin:0;">📱 Panel S.T. MATIAS</h2>
+        <div id="status-dot" class="offline"></div>
     </div>
 </div>
 
 <div class="container">
-    <div id="page-gestion" class="page active">
+    <div id="page-gestion" class="page active" style="display:block;">
         <form id="repairForm">
             <div class="form-grid">
                 <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
@@ -87,12 +129,12 @@
                 <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
                 <div><label>Modelo</label><input type="text" id="modelo" required oninput="saveDraft()"></div>
                 <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
-                <div><label>IMEI/Serie</label><input type="text" id="imei" placeholder="-" oninput="saveDraft()"></div>
+                <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
                 <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
                 <div>
                     <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
                     <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#475569;">
-                        <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm(); saveDraft()"> PAGO TOTAL
+                        <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
                     </div>
                 </div>
                 <div>
@@ -100,7 +142,7 @@
                     <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()"></div>
                 </div>
                 <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
-                <div class="full"><label>Observaciones (OBS)</label><input type="text" id="obs" placeholder="Detalles adicionales..." oninput="saveDraft()"></div>
+                <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                 <div class="full" style="display:flex; gap:10px;">
                     <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR</button>
                     <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="clickLimpiar()">LIMPIAR</button>
@@ -108,37 +150,30 @@
             </div>
         </form>
 
-        <div style="display:flex; gap:10px; margin-bottom:5px;">
-            <input type="text" id="search" placeholder="🔎 Buscar por nombre o modelo..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
             <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
         </div>
 
-        <div class="filter-bar">
-            <button class="filter-btn active" onclick="setFiltro('Todos', this)">Todos</button>
-            <button class="filter-btn" onclick="setFiltro('Pendiente', this)">Pendiente</button>
-            <button class="filter-btn" onclick="setFiltro('Reparado', this)">Reparado</button>
-            <button class="filter-btn" onclick="setFiltro('Entregado', this)">Entregado</button>
-        </div>
-
-        <div class="table-wrapper">
-            <table>
+        <div class="table-wrapper" style="overflow-x:auto;">
+            <table id="mainTable">
                 <thead>
-                    <tr><th>Orden</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
+                    <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="page-contabilidad" class="page">
-        <div style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
-            <h2>💰 Balance Mensual</h2>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <select id="selectMes" onchange="renderContabilidad()" style="width: 150px;"></select>
-                <button class="btn" style="background: var(--success); color:white; padding: 8px 15px; font-size: 13px;" onclick="exportarExcel()">📥 EXCEL COMPLETO</button>
+    <div id="page-contabilidad" class="page" style="display:none;">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin:0;">💰 Contabilidad</h2>
+            <div style="display:flex; gap:10px;">
+                <select id="selectMes" onchange="renderContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
+                <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px;" onclick="exportarExcel()">📊 EXCEL</button>
             </div>
         </div>
-        <div id="stats-container"></div>
+        <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;"></div>
     </div>
 </div>
 
@@ -160,7 +195,8 @@
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
-    let filtroEstado = 'Todos';
+    let idParaEstado = null;
+    let idParaPrecio = null;
     let idParaBorrar = null;
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
@@ -174,46 +210,10 @@
         selectMes.appendChild(opt);
     });
 
-    function saveDraft() {
-        if(idEditando) return;
-        const draft = {
-            cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value,
-            modelo: document.getElementById('modelo').value, color: document.getElementById('color').value,
-            imei: document.getElementById('imei').value, precio: document.getElementById('precio').value,
-            sena: document.getElementById('sena').value, costo: document.getElementById('costoRepuesto').value,
-            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value
-        };
-        localStorage.setItem('st_matias_draft', JSON.stringify(draft));
-    }
-
-    function loadDraft() {
-        const saved = localStorage.getItem('st_matias_draft');
-        if(saved && !idEditando) {
-            const d = JSON.parse(saved);
-            document.getElementById('cliente').value = d.cliente || "";
-            document.getElementById('tel').value = d.tel || "";
-            document.getElementById('modelo').value = d.modelo || "";
-            document.getElementById('color').value = d.color || "";
-            document.getElementById('imei').value = d.imei || "";
-            document.getElementById('precio').value = d.precio || "";
-            document.getElementById('sena').value = d.sena || "";
-            document.getElementById('costoRepuesto').value = d.costo || "";
-            document.getElementById('falla').value = d.falla || "";
-            document.getElementById('obs').value = d.obs || "";
-        }
-    }
-
-    function setFiltro(val, btn) {
-        filtroEstado = val;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderTable();
-    }
-
     function showToast(text, color) {
         const t = document.getElementById('toast-alert');
         t.innerText = text; t.style.background = color; t.style.display = "block";
-        setTimeout(() => t.style.display = "none", 2000);
+        setTimeout(() => t.style.display = "none", 2500);
     }
 
     function togglePagoForm() {
@@ -224,82 +224,239 @@
 
     function togglePago(id) {
         const r = registros.find(x => x.id === id);
+        if(r.archivado) return;
         const estaPagado = (r.precio - r.sena) === 0;
         db.ref('reparaciones/'+id).update({ sena: estaPagado ? 0 : r.precio });
         showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
     }
 
+    function openStatusModal(id) {
+        const r = registros.find(x => x.id === id);
+        if(r.archivado) return;
+        idParaEstado = id;
+        document.getElementById('statusModal').style.display = 'flex';
+    }
+    function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
+    
+    function confirmarEstado(nuevo) {
+        const fechaActual = new Date().toLocaleString('es-AR');
+        let updates = { estado: nuevo };
+        if (nuevo === "Reparado") updates.fechaReparado = fechaActual;
+        if (nuevo === "Entregado") updates.fechaEntregado = fechaActual;
+        db.ref('reparaciones/' + idParaEstado).update(updates);
+        closeStatusModal();
+        showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, "#3498db");
+    }
+
+    function openPriceModal(id) {
+        const r = registros.find(x => x.id === id);
+        if(r.archivado) return;
+        idParaPrecio = id;
+        document.getElementById('newPriceInput').value = r.precio.toLocaleString('es-AR');
+        document.getElementById('priceModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('newPriceInput').focus(), 100);
+    }
+    function closePriceModal() { document.getElementById('priceModal').style.display = 'none'; }
+    document.getElementById('confirmPriceBtn').onclick = () => {
+        const nuevo = parseMoney(document.getElementById('newPriceInput').value);
+        db.ref('reparaciones/' + idParaPrecio).update({ precio: nuevo });
+        closePriceModal();
+        showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
+    };
+
+    function openHistory(id) {
+        const r = registros.find(x => x.id === id);
+        let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
+        if(r.fechaReparado) h += `<div class="history-item"><b>Reparado</b><span>${r.fechaReparado}</span></div>`;
+        if(r.fechaEntregado) h += `<div class="history-item"><b>Entregado</b><span>${r.fechaEntregado}</span></div>`;
+        document.getElementById('historyContent').innerHTML = h;
+        document.getElementById('historyModal').style.display = 'flex';
+    }
+    function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
+
     function renderTable() {
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
+        const table = document.getElementById('mainTable');
+        const btnArch = document.getElementById('btnArchivo');
+        
         body.innerHTML = "";
         
+        if(modoArchivo) {
+            table.classList.add('modo-archivo-activo');
+            btnArch.classList.add('btn-archivo-on');
+        } else {
+            table.classList.remove('modo-archivo-activo');
+            btnArch.classList.remove('btn-archivo-on');
+        }
+
         const filtrados = registros.filter(r => {
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
             const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
-            const matchEstado = (filtroEstado === 'Todos' || r.estado === filtroEstado);
-            return matchBusqueda && matchArchivo && matchEstado;
-        });
-        
-        filtrados.reverse().slice(0, 50).forEach(r => {
+            return matchBusqueda && matchArchivo;
+        }).reverse();
+
+        filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
-            const claseEstado = `st-${r.estado.toLowerCase()}`;
+            const canEdit = !r.archivado;
             body.innerHTML += `<tr>
-                <td><b>${r.orden}</b><br><small style="color:#64748b; font-size:10px;">${r.fecha || ''}</small></td>
+                <td><b>${r.orden}</b> <span style="cursor:pointer; margin-left:5px;" onclick="openHistory('${r.id}')">🕒</span></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
-                <td>${r.modelo} <br><small>${r.color || ''}</small></td>
-                <td><select class="${claseEstado}" onchange="cambiarEstado('${r.id}', this.value)" ${modoArchivo ? 'disabled' : ''}>
-                    <option value="Pendiente" ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
-                    <option value="Reparado" ${r.estado=='Reparado'?'selected':''}>Reparado</option>
-                    <option value="Entregado" ${r.estado=='Entregado'?'selected':''}>Entregado</option>
-                </select></td>
-                <td>${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}</td>
+                <td>${r.modelo}</td>
+                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" 
+                    onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
+                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
+                </td>
                 <td class="action-btns">
-                    <button onclick="togglePago('${r.id}')">✅</button>
+                    <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✅</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')" ${r.archivado ? 'disabled style="opacity:0.5;"' : ''}>✏️</button>
+                    <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✏️</button>
                     <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
         });
     }
 
+    dbRef.on('value', snap => {
+        const v = snap.val(); 
+        registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+        renderTable(); 
+    });
+
+    function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
+    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
+    function autoOrden() { if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random()*90000+10000); } }
+    function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
+    
+    function toggleArchivo() { 
+        modoArchivo = !modoArchivo; 
+        const textoBtn = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS";
+        const msjToast = modoArchivo ? "VIENDO ARCHIVADOS 📁" : "VIENDO ACTIVOS 🛠️";
+        const colorToast = modoArchivo ? "#475569" : "#3498db";
+
+        document.getElementById('btnArchivo').innerText = textoBtn; 
+        showToast(msjToast, colorToast);
+        renderTable(); 
+    }
+    
+    function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
+    function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
+    function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
+    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
+
+    function clickLimpiar() { 
+        idEditando = null; 
+        document.getElementById('repairForm').reset(); 
+        document.getElementById('btnSubmit').innerText = "REGISTRAR";
+        localStorage.removeItem('st_matias_draft');
+        showToast("LIMPIO ✨", "#64748b");
+        document.getElementById('cliente').focus(); // Foco automático en Cliente
+    }
+
+    function saveDraft() {
+        if(idEditando) return;
+        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value };
+        localStorage.setItem('st_matias_draft', JSON.stringify(draft));
+    }
+
+    function loadDraft() {
+        const saved = localStorage.getItem('st_matias_draft');
+        if(saved && !idEditando) {
+            const d = JSON.parse(saved);
+            document.getElementById('cliente').value = d.cliente || "";
+            document.getElementById('tel').value = d.tel || "";
+            document.getElementById('modelo').value = d.modelo || "";
+            document.getElementById('falla').value = d.falla || "";
+        }
+    }
+
     function showPage(p) {
-        document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+        document.getElementById('page-gestion').style.display = p === 'gestion' ? 'block' : 'none';
+        document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('page-'+p).classList.add('active');
         document.getElementById('btn-nav-'+p).classList.add('active');
         if(p === 'contabilidad') renderContabilidad();
     }
 
     function renderContabilidad() {
-        const mesSeleccionado = parseInt(document.getElementById('selectMes').value);
-        let dineroIngresado = 0, inversionRepuestos = 0, porCobrarTotal = 0;
+        const mes = parseInt(document.getElementById('selectMes').value);
+        let caja = 0, gastos = 0, porIngresar = 0;
         registros.forEach(r => {
-            if(!r.fecha) return;
-            const partesFecha = r.fecha.split('/');
-            const mesRegistro = parseInt(partesFecha[1]) - 1; 
-            if(mesRegistro === mesSeleccionado) {
-                dineroIngresado += (r.sena || 0);
-                inversionRepuestos += (r.costoRepuesto || 0);
-                const saldo = r.precio - r.sena;
-                if(saldo > 0) porCobrarTotal += saldo;
+            const m = r.fecha ? parseInt(r.fecha.split('/')[1]) - 1 : -1;
+            if(m === mes) { 
+                caja += (r.sena || 0); 
+                gastos += (r.costoRepuesto || 0); 
+                const saldo = (r.precio || 0) - (r.sena || 0);
+                if (saldo > 0 && !r.archivado) { porIngresar += saldo; }
             }
         });
         document.getElementById('stats-container').innerHTML = `
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#2ecc71;"><h3>Dinero en Caja</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado)}</p></div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#e53e3e;"><h3>Inversión</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(inversionRepuestos)}</p></div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#3498db;"><h3>Ganancia</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado - inversionRepuestos)}</p></div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#1a2a3a;"><h3>Por Cobrar</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(porCobrarTotal)}</p></div>
+            <div class="card-stats" style="border-left: 5px solid var(--success);">
+                <b>Ingresos (Caja)</b><p style="color:var(--success);">${fmt.format(caja)}</p>
+            </div>
+            <div class="card-stats" style="border-left: 5px solid var(--warning);">
+                <b>Plata a Ingresar</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p>
+            </div>
+            <div class="card-stats" style="border-left: 5px solid var(--danger);">
+                <b>Gastos Repuestos</b><p style="color:var(--danger);">${fmt.format(gastos)}</p>
+            </div>
+            <div class="card-stats" style="border-left: 5px solid var(--primary); grid-column: span 1;">
+                <b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p>
             </div>`;
     }
 
-    dbRef.on('value', snap => {
-        const v = snap.val(); registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-        renderTable(); 
-        if(document.getElementById('page-contabilidad').classList.contains('active')) renderContabilidad();
-    });
+    function exportarExcel() {
+        let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
+        registros.forEach(r => { 
+            let c = r.costoRepuesto || 0; 
+            csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; 
+        });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        link.download = `ST_MATIAS_REPORTE.csv`;
+        link.click();
+    }
+
+    document.getElementById('repairForm').onsubmit = e => {
+        e.preventDefault();
+        const data = {
+            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
+            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
+            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
+            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
+            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
+            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
+            archivado: false, estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
+        };
+        if(idEditando) {
+            db.ref('reparaciones/'+idEditando).update(data);
+            showToast("ACTUALIZADO ✅", "#3498db");
+        } else {
+            data.fecha = new Date().toLocaleString('es-AR');
+            dbRef.push(data);
+            showToast("REGISTRADO ✅", "#2ecc71");
+        }
+        idEditando = null; 
+        document.getElementById('repairForm').reset(); 
+        document.getElementById('btnSubmit').innerText = "REGISTRAR";
+        localStorage.removeItem('st_matias_draft');
+        document.getElementById('cliente').focus(); // Foco automático tras registro
+    };
+
+    function editar(id) {
+        idEditando = id; const r = registros.find(x => x.id === id);
+        if(r.archivado) return;
+        document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
+        document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
+        document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
+        document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
+        document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
+        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
+        document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
+        document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
@@ -331,70 +488,8 @@
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
-    function cambiarEstado(id, v) { let up = { estado: v }; if(v === "Entregado") up.archivado = true; db.ref('reparaciones/'+id).update(up); }
-    function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
-    function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
-    function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
-    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#333"); };
-    function toggleArchivo() { modoArchivo = !modoArchivo; document.getElementById('btnArchivo').innerText = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS"; renderTable(); }
-    function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
-    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
-    function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
-    function autoOrden() { if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random()*90000+10000); } }
-    
-    function editar(id) {
-        idEditando = id; const r = registros.find(x => x.id === id);
-        document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
-        document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
-        document.getElementById('precio').value = r.precio.toLocaleString('es-AR'); document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
-        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
-        document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
-        document.getElementById('checkPagoTotal').checked = (r.precio === r.sena);
-        document.getElementById('btnSubmit').innerText = "ACTUALIZAR"; window.scrollTo({top:0, behavior:'smooth'});
-    }
-
-    function clickLimpiar() { limpiarFormulario(); showToast("LIMPIADO 🧹", "#64748b"); }
-    function limpiarFormulario() {
-        idEditando = null; document.getElementById('repairForm').reset(); 
-        document.getElementById('checkPagoTotal').checked = false;
-        document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        localStorage.removeItem('st_matias_draft');
-        setTimeout(() => document.getElementById('cliente').focus(), 150);
-    }
-    
-    document.getElementById('repairForm').onsubmit = e => {
-        e.preventDefault();
-        const data = {
-            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
-            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
-            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
-            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
-            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
-            archivado: false, estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
-        };
-        if(idEditando) {
-            db.ref('reparaciones/'+idEditando).update(data);
-            showToast("ACTUALIZADO ✅", "#3498db");
-        } else {
-            data.fecha = new Date().toLocaleString('es-AR');
-            dbRef.push(data);
-            showToast("REGISTRADO ✅", "#2ecc71");
-        }
-        limpiarFormulario();
-    };
-
-    function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
-        registros.forEach(r => { let c = r.costoRepuesto || 0; csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; });
-        const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = "Reporte_ST_MATIAS.csv"; link.click();
-    }
-
     db.ref(".info/connected").on("value", s => {
-        let st = document.getElementById('status');
-        if(st) st.className = s.val() ? "online" : "offline";
+        document.getElementById('status-dot').className = s.val() ? "online" : "offline";
     });
 </script>
 </body>
