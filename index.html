@@ -82,7 +82,7 @@
 <div id="historyModal" class="modal-overlay">
     <div class="modal-box" style="width:280px;">
         <p><b>🕒 Historial de la Orden</b></p>
-        <div id="historyContent" style="margin:20px 0;"></div>
+        <div id="historyContent" style="margin:20px 0; max-height: 300px; overflow-y: auto;"></div>
         <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
     </div>
 </div>
@@ -115,7 +115,7 @@
 
 <div id="gesture-zone-top">
     <div style="display:flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin:0;">📱 Panel S.T. MATIAS</h2>
+        <h2 style="margin:0;">📱 Servicio Técnico MATIAS</h2>
         <div id="status-dot" class="offline"></div>
     </div>
 </div>
@@ -244,13 +244,16 @@
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
     function confirmarEstado(nuevo) {
+        const r = registros.find(x => x.id === idParaEstado);
         const fechaActual = new Date().toLocaleString('es-AR');
-        let updates = { estado: nuevo };
-        if (nuevo === "Reparado") updates.fechaReparado = fechaActual;
-        if (nuevo === "Entregado") updates.fechaEntregado = fechaActual;
+        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569' };
+        const nuevoEvento = { estado: nuevo, fecha: fechaActual };
+        let historialActual = r.historialEstados || [];
+        historialActual.push(nuevoEvento);
+        let updates = { estado: nuevo, historialEstados: historialActual };
         db.ref('reparaciones/' + idParaEstado).update(updates);
         closeStatusModal();
-        showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, "#3498db");
+        showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
     }
 
     function openPriceModal(id) {
@@ -272,8 +275,9 @@
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
-        if(r.fechaReparado) h += `<div class="history-item"><b>Reparado</b><span>${r.fechaReparado}</span></div>`;
-        if(r.fechaEntregado) h += `<div class="history-item"><b>Entregado</b><span>${r.fechaEntregado}</span></div>`;
+        if(r.historialEstados && r.historialEstados.length > 0) {
+            r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
+        }
         document.getElementById('historyContent').innerHTML = h;
         document.getElementById('historyModal').style.display = 'flex';
     }
@@ -284,9 +288,7 @@
         const body = document.getElementById('tableBody');
         const table = document.getElementById('mainTable');
         const btnArch = document.getElementById('btnArchivo');
-        
         body.innerHTML = "";
-        
         if(modoArchivo) {
             table.classList.add('modo-archivo-activo');
             btnArch.classList.add('btn-archivo-on');
@@ -294,12 +296,19 @@
             table.classList.remove('modo-archivo-activo');
             btnArch.classList.remove('btn-archivo-on');
         }
-
+        
+        // FILTRADO Y ORDENAMIENTO RECIENTE
         const filtrados = registros.filter(r => {
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
             const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
             return matchBusqueda && matchArchivo;
-        }).sort((a, b) => b.orden.localeCompare(a.orden, undefined, { numeric: true }));
+        }).sort((a, b) => {
+            // Se asume que el ID de Firebase o el campo fecha sirven para el orden cronológico
+            // Convertimos la fecha DD/MM/YYYY, HH:MM:SS a objeto Date para comparar
+            const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
+            const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
+            return fechaB - fechaA; // El más reciente primero
+        });
 
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
@@ -353,14 +362,20 @@
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
     document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
 
-    function clickLimpiar() { 
+    function ejecutarLimpieza(mostrarMensaje) {
         idEditando = null; 
         document.getElementById('repairForm').reset(); 
+        document.querySelectorAll('#repairForm input').forEach(input => {
+            if(input.type !== 'checkbox') input.value = "";
+            else input.checked = false;
+        });
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         localStorage.removeItem('st_matias_draft');
-        showToast("LIMPIO ✨", "#64748b");
-        document.getElementById('cliente').focus();
+        if(mostrarMensaje) showToast("Limpio", "#64748b");
+        setTimeout(() => document.getElementById('cliente').focus(), 50);
     }
+
+    function clickLimpiar() { ejecutarLimpieza(true); }
 
     function saveDraft() {
         if(idEditando) return;
@@ -432,7 +447,6 @@
         const senaVal = parseMoney(document.getElementById('sena').value);
         if(precioVal <= 0) { showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22"); return; }
         if(senaVal > precioVal) { showToast("LA SEÑA NO PUEDE SUPERAR EL PRECIO ⚠️", "#e67e22"); return; }
-
         const data = {
             orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
             tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
@@ -448,9 +462,9 @@
         } else {
             data.fecha = new Date().toLocaleString('es-AR');
             dbRef.push(data);
-            showToast("REGISTRADO ✅", "#2ecc71");
+            showToast("Registrado", "#2ecc71"); 
         }
-        clickLimpiar();
+        ejecutarLimpieza(false);
     };
 
     function editar(id) {
