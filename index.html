@@ -351,7 +351,7 @@
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         localStorage.removeItem('st_matias_draft');
         showToast("LIMPIO ✨", "#64748b");
-        document.getElementById('cliente').focus(); // Foco automático en Cliente
+        document.getElementById('cliente').focus();
     }
 
     function saveDraft() {
@@ -420,11 +420,25 @@
 
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
+        
+        // --- AJUSTE: VALIDACIÓN DE PRECIO ---
+        const precioVal = parseMoney(document.getElementById('precio').value);
+        const senaVal = parseMoney(document.getElementById('sena').value);
+        
+        if(precioVal <= 0) {
+            showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22");
+            return;
+        }
+        if(senaVal > precioVal) {
+            showToast("LA SEÑA NO PUEDE SUPERAR EL PRECIO ⚠️", "#e67e22");
+            return;
+        }
+
         const data = {
             orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
             tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
             color: document.getElementById('color').value, imei: document.getElementById('imei').value,
-            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
+            precio: precioVal, sena: senaVal,
             costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
             falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
             archivado: false, estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
@@ -441,7 +455,7 @@
         document.getElementById('repairForm').reset(); 
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         localStorage.removeItem('st_matias_draft');
-        document.getElementById('cliente').focus(); // Foco automático tras registro
+        document.getElementById('cliente').focus();
     };
 
     function editar(id) {
@@ -460,7 +474,10 @@
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
+        
+        // --- AJUSTE: LIMPIEZA DE NÚMERO ---
         const numeroLimpio = String(r.tel).replace(/\D/g, ''); 
+        
         const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
         window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
     }
