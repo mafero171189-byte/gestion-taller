@@ -8,116 +8,106 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; overflow-x: hidden; touch-action: pan-y; }
-        
+        html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         nav { background: var(--primary); padding: 10px 0; display: flex; justify-content: center; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; }
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
-
-        .container { max-width: 1150px; margin: 20px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; }
-        .page { display: none; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-
+        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
+        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
+        #toast-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px 20px; border-radius: 20px; color: white; font-weight: bold; z-index: 5000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 13px; animation: pop 0.3s ease-out; }
+        @keyframes pop { from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 4000; }
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 300px; text-align: center; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
-        .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; margin-top: 5px; border-radius: 6px; border:none; cursor:pointer;}
-        
-        #status { font-weight: bold; font-size: 11px; padding: 4px 12px; border-radius: 20px; }
-        .online { color: #fff; background: #2ecc71 !important; }
-        .offline { color: #fff; background: #95a5a6; }
-
+        .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
+        #status { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+        .offline { background: #95a5a6; }
         .table-wrapper { overflow-x: auto; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
-        
-        .action-btns { display: flex; gap: 6px; }
-        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 16px; min-width: 40px; }
-
-        #pago-toast {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(46, 204, 113, 0.95); color: white; padding: 8px 20px; border-radius: 30px;
-            font-weight: bold; font-size: 14px; z-index: 3000; display: none; pointer-events: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes pop { from { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-
-        .date-label { display: block; font-size: 10px; color: #94a3b8; font-weight: normal; margin-top: 2px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .stat-card { padding: 25px; border-radius: 12px; color: white; text-align: center; }
-        .card-blue { background: #3498db; } .card-green { background: #27ae60; } .card-red { background: #e53e3e; } .card-dark { background: #1a2a3a; }
-        .btn-excel { background: #27ae60; color: white; width: 100%; }
+        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .action-btns { display: flex; gap: 4px; }
+        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .alerta-deuda { background: #fff5f5; border: 2px solid var(--danger); padding: 15px; border-radius: 10px; margin-bottom: 15px; color: #c53030; }
     </style>
 </head>
-<body id="main-body">
+<body>
 
-<div id="pago-toast">PAGADO ✅</div>
+<div id="toast-alert"></div>
 
-<nav id="nav-header">
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-box">
+        <p><b>¿Eliminar definitivamente?</b></p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">NO</button>
+            <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white;">SI, BORRAR</button>
+        </div>
+    </div>
+</div>
+
+<nav>
     <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
     <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
 </nav>
 
-<div class="container" id="swipe-container">
-    <div id="page-gestion" class="page active">
-        <div id="header-gesture-zone">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0;">📱 Panel de Gestión</h2>
-                <div id="status" class="offline">CONECTANDO...</div>
-            </div>
+<div id="gesture-zone-top">
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <h2 id="title-label" style="margin:0;">📱 Panel de Gestión</h2>
+        <div id="status" class="offline"></div>
+    </div>
+</div>
 
-            <form id="repairForm">
-                <div class="form-grid">
-                    <div><label>N° Orden</label><input type="text" id="nroOrden" readonly placeholder="AUTO"></div>
-                    <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()" autofocus></div>
-                    <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
-                    <div><label>Modelo</label><input type="text" id="modelo" required></div>
-                    <div><label>Color</label><input type="text" id="color"></div>
-                    <div><label>IMEI / Serie</label><input type="text" id="imei"></div>
-                    <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this)"></div>
-                    <div>
-                        <label>Seña $</label>
-                        <input type="text" id="sena" placeholder="0" oninput="formatInput(this)">
-                        <label style="display:flex; align-items:center; gap:5px; margin-top:5px; font-size:10px; cursor:pointer;">
-                            <input type="checkbox" id="checkPagoTotal" onchange="togglePagoTotal()"> PAGO TOTAL
-                        </label>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span id="btn-lock" style="cursor:pointer; font-size:20px;" onclick="revelarCosto()">🔒</span>
-                        <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this)"></div>
-                    </div>
-                    <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
-                    <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
-                    <div class="full" style="display:flex; gap:10px;">
-                        <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
-                        <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="cancelarEdicion()">LIMPIAR</button>
+<div class="container">
+    <div id="page-gestion" class="page active">
+        <form id="repairForm">
+            <div class="form-grid">
+                <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
+                <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()"></div>
+                <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
+                <div><label>Modelo</label><input type="text" id="modelo" required></div>
+                <div><label>Color</label><input type="text" id="color"></div>
+                <div><label>IMEI/Serie</label><input type="text" id="imei" placeholder="-"></div>
+                <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this)"></div>
+                <div>
+                    <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this)">
+                    <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#475569;">
+                        <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
                     </div>
                 </div>
-            </form>
-
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
-                <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
+                <div>
+                    <span id="btn-lock" style="cursor:pointer; font-size:20px;" onclick="revelarCosto()">🔒</span>
+                    <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this)"></div>
+                </div>
+                <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
+                <div class="full"><label>Observaciones (OBS)</label><input type="text" id="obs" placeholder="Detalles adicionales..."></div>
+                <div class="full" style="display:flex; gap:10px;">
+                    <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR</button>
+                    <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="cancelarEdicion()">LIMPIAR</button>
+                </div>
             </div>
+        </form>
+
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+            <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
         </div>
 
         <div class="table-wrapper">
-            <table id="dataTable">
+            <table>
                 <thead>
-                    <tr><th>Orden</th><th>Cliente</th><th>Equipo / Falla</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
+                    <tr><th>Orden</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -125,14 +115,15 @@
     </div>
 
     <div id="page-contabilidad" class="page">
-        <h2 style="margin-bottom:25px;">💰 Balance Contable</h2>
-        <div class="stats-grid">
-            <div class="stat-card card-blue"><h3>Ingresos</h3><p id="stat-ventas">$ 0</p></div>
-            <div class="stat-card card-red"><h3>Inversión</h3><p id="stat-costos">$ 0</p></div>
-            <div class="stat-card card-green"><h3>Ganancia</h3><p id="stat-ganancia">$ 0</p></div>
-            <div class="stat-card card-dark"><h3>Por Cobrar</h3><p id="stat-pendiente">$ 0</p></div>
+        <div style="display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+            <h2>💰 Balance Mensual</h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="selectMes" onchange="renderContabilidad()" style="width: 150px;"></select>
+                <button class="btn" style="background: var(--success); color:white; padding: 8px 15px; font-size: 13px;" onclick="exportarExcel()">📥 EXCEL COMPLETO</button>
+            </div>
         </div>
-        <button class="btn btn-excel" onclick="exportarExcel()">📊 DESCARGAR REPORTE EXCEL</button>
+        <div id="avisoHistorico"></div>
+        <div id="stats-container"></div>
     </div>
 </div>
 
@@ -146,6 +137,7 @@
         messagingSenderId: "403618822429",
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
@@ -153,99 +145,87 @@
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
-    let activePage = 'gestion';
+    let idParaBorrar = null;
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
-    // --- LÓGICA DE GESTO LIMITADA A LA ZONA SUPERIOR ---
-    let touchstartX = 0;
-    let touchendX = 0;
-    
-    function checkDirection() {
-        const threshold = 80;
-        if (touchendX < touchstartX - threshold) { if (activePage === 'gestion') showPage('contabilidad'); }
-        if (touchendX > touchstartX + threshold) { if (activePage === 'contabilidad') showPage('gestion'); }
-    }
-
-    // Se aplica solo a la navegación y al formulario/busqueda
-    const gestureZone = document.getElementById('header-gesture-zone');
-    const navZone = document.getElementById('nav-header');
-    const contabilidadZone = document.getElementById('page-contabilidad');
-
-    const handleStart = e => { touchstartX = e.changedTouches[0].screenX; };
-    const handleEnd = e => { touchendX = e.changedTouches[0].screenX; checkDirection(); };
-
-    [gestureZone, navZone, contabilidadZone].forEach(zone => {
-        zone.addEventListener('touchstart', handleStart, false);
-        zone.addEventListener('touchend', handleEnd, false);
+    const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const selectMes = document.getElementById('selectMes');
+    const mesActual = new Date().getMonth();
+    mesesNombres.forEach((m, i) => {
+        let opt = document.createElement('option');
+        opt.value = i; opt.text = m;
+        if(i === mesActual) opt.selected = true;
+        selectMes.appendChild(opt);
     });
 
-    function showPage(pageId) {
-        activePage = pageId;
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('page-' + pageId).classList.add('active');
-        document.getElementById('btn-nav-' + pageId).classList.add('active');
-        if(pageId === 'contabilidad') renderContabilidad();
+    function showToast(text, color) {
+        const t = document.getElementById('toast-alert');
+        t.innerText = text; t.style.background = color; t.style.display = "block";
+        setTimeout(() => t.style.display = "none", 2000);
     }
 
-    function mostrarToast(texto, color) {
-        const toast = document.getElementById('pago-toast');
-        toast.innerText = texto;
-        toast.style.background = color;
-        toast.style.display = "block";
-        setTimeout(() => { toast.style.display = "none"; }, 1500);
-    }
-
-    function formatInput(input) {
-        let value = input.value.replace(/\D/g, "");
-        input.value = value ? parseInt(value).toLocaleString('es-AR') : "";
-    }
-
-    function parseMoney(str) { if (!str) return 0; return parseFloat(String(str).replace(/\./g, "")) || 0; }
-
-    function togglePagoTotal() {
-        const check = document.getElementById('checkPagoTotal');
+    function togglePagoForm() {
+        const chk = document.getElementById('checkPagoTotal');
         const precio = document.getElementById('precio').value;
-        document.getElementById('sena').value = check.checked ? precio : "";
+        document.getElementById('sena').value = chk.checked ? precio : "";
     }
 
-    function cancelarEdicion() {
-        idEditando = null; document.getElementById('repairForm').reset();
-        document.getElementById('nroOrden').value = "";
-        document.getElementById('btnSubmit').innerText = "REGISTRAR EQUIPO";
-        document.getElementById('cliente').focus();
-    }
-
-    function enviarWapp(id) {
+    function togglePago(id) {
         const r = registros.find(x => x.id === id);
-        const msg = `*S.T. MATIAS - REPARACIONES*\n\nHola *${r.cliente}*:\n📌 *Orden:* ${r.orden}\n📱 *Equipo:* ${r.modelo}\n✅ *Estado:* ${r.estado.toUpperCase()}\n\n*⚠️ Este es un mensaje automático, por favor NO RESPONDER.*`;
-        window.open(`https://wa.me/${r.tel}?text=${encodeURIComponent(msg)}`);
+        const estaPagado = (r.precio - r.sena) === 0;
+        if (estaPagado) {
+            db.ref('reparaciones/'+id).update({ sena: 0 });
+            showToast("PAGO CANCELADO ❌", "#e53e3e");
+        } else {
+            db.ref('reparaciones/'+id).update({ sena: r.precio });
+            showToast("PAGADO ✅", "#2ecc71");
+        }
     }
 
     function imprimir(id) {
         const r = registros.find(x => x.id === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        const saldo = r.precio - r.sena;
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 22, 'F');
-        doc.setTextColor(255); doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-        doc.text("S.T. MATIAS", 40, 10, {align:'center'});
-        doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.text("Servicio Técnico", 40, 14, {align:'center'});
-        doc.setFontSize(8); doc.text("WhatsApp: 1135654094", 40, 18, {align:'center'});
-        doc.setTextColor(26, 42, 58); doc.setFontSize(9); doc.text("COMPROBANTE DE INGRESO", 40, 30, {align:'center'});
-        doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.text("ORDEN: " + r.orden, 40, 36, {align:'center'});
-        doc.setDrawColor(180); doc.line(5, 40, 75, 40);
-        doc.setFontSize(9); doc.setTextColor(40);
-        let y = 48;
-        const row = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, 5, y); doc.setFont("helvetica", "normal"); doc.text(String(v), 28, y); y += 6; };
-        row("FECHA:", r.fecha || '-'); row("CLIENTE:", r.cliente); row("EQUIPO:", r.modelo); row("COLOR:", r.color || '-'); row("IMEI:", r.imei || '-'); row("FALLA:", r.falla);
-        y += 2; doc.line(5, y, 75, y); y += 8;
-        doc.text("TOTAL: $ " + r.precio.toLocaleString('es-AR'), 5, y); y += 6;
-        doc.text("SEÑA: $ " + r.sena.toLocaleString('es-AR'), 5, y); y += 4;
-        doc.setFillColor(245); doc.rect(4, y, 72, 10, 'F');
-        doc.setFontSize(11); doc.setFont("helvetica", "bold");
-        doc.text("SALDO: $ " + saldo.toLocaleString('es-AR'), 40, y + 6.5, {align:'center'});
+        const doc = new jsPDF({ unit: 'mm', format: [80, 190] });
+
+        doc.setFillColor(26, 42, 58);
+        doc.rect(0, 0, 80, 25, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.text("S.T. MATIAS", 40, 10, {align:'center'});
+        doc.setFontSize(10); doc.text("Servicio Técnico", 40, 16, {align:'center'});
+        doc.setFontSize(9); doc.text("WhatsApp: 1135654094", 40, 21, {align:'center'});
+
+        doc.setTextColor(26, 42, 58); doc.setFontSize(10);
+        doc.text("COMPROBANTE DE INGRESO", 40, 32, {align:'center'});
+        doc.setFontSize(14); doc.text("ORDEN: " + r.orden, 40, 40, {align:'center'});
+        doc.setLineWidth(0.2); doc.line(10, 43, 70, 43);
+
+        doc.setFontSize(9); doc.setTextColor(50, 50, 50);
+        let y = 52;
+        doc.setFont("helvetica", "bold"); doc.text("FECHA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.fecha || "", 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("CLIENTE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.cliente, 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("EQUIPO:", 10, y); doc.setFont("helvetica", "normal"); doc.text(`${r.modelo} (${r.color || 'N/A'})`, 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("IMEI/SERIE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.imei || "-", 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("FALLA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.falla, 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("OBS:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.obs || "-", 30, y); y+=10;
+
+        doc.line(10, y-2, 70, y-2);
+        doc.text("TOTAL: " + fmt.format(r.precio), 10, y+5);
+        doc.text("SEÑA: " + fmt.format(r.sena), 10, y+11); y+=18;
+
+        doc.setFillColor(240, 240, 240); doc.rect(10, y, 60, 10, 'F');
+        doc.setFontSize(12); doc.setFont("helvetica", "bold");
+        doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y+7, {align:'center'});
+
+        doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(150, 150, 150);
+        doc.text("Muchas gracias!", 40, y+25, {align:'center'});
+
         doc.save(`Ticket_${r.orden}.pdf`);
+    }
+
+    function enviarWhatsApp(id) {
+        const r = registros.find(x => x.id === id);
+        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || 'N/A'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+        window.open(`https://wa.me/${r.tel}?text=${msj}`);
     }
 
     function renderTable() {
@@ -253,89 +233,132 @@
         const body = document.getElementById('tableBody');
         body.innerHTML = "";
         const filtrados = registros.filter(r => {
-            const match = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || (r.orden||"").toLowerCase().includes(bus);
+            const match = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
             return bus.length > 0 ? match : (modoArchivo ? r.archivado : !r.archivado);
         });
         filtrados.reverse().forEach(r => {
             const saldo = r.precio - r.sena;
-            const estaPagado = (saldo <= 0 && r.precio > 0);
             body.innerHTML += `<tr>
-                <td><b>${r.orden}</b><span class="date-label">${r.fecha || ''}</span></td>
-                <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.id}')">📲 WhatsApp</button></td>
-                <td>${r.modelo}<br><small>${r.falla}</small></td>
+                <td><b>${r.orden}</b></td>
+                <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
+                <td>${r.modelo} <br><small>${r.color || ''}</small></td>
                 <td><select onchange="cambiarEstado('${r.id}', this.value)" ${modoArchivo ? 'disabled' : ''}>
                     <option value="Pendiente" ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                     <option value="Reparado" ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                     <option value="Entregado" ${r.estado=='Entregado'?'selected':''}>Entregado</option>
                 </select></td>
-                <td>${saldo > 0 ? `<span style="color:red; font-weight:bold;">${fmt.format(saldo)}</span>` : `<span style="color:green; font-weight:bold;">PAGADO</span>`}</td>
+                <td>${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}</td>
                 <td class="action-btns">
-                    ${modoArchivo ? 
-                    `<button onclick="restaurar('${r.id}')">⏪</button><button onclick="borrarDefinitivo('${r.id}')" style="color:red">❌</button>` : 
-                    `<button onclick="pagoRapido('${r.id}')" style="border-color:#2ecc71; color:${estaPagado?'white':'#2ecc71'}; background:${estaPagado?'#2ecc71':'white'}">✅</button>
-                     <button onclick="editar('${r.id}')">✏️</button>
-                     <button onclick="imprimir('${r.id}')">📄</button>
-                     <button onclick="archivar('${r.id}')">🗑️</button>`}
+                    <button onclick="togglePago('${r.id}')">✅</button>
+                    <button onclick="imprimir('${r.id}')">📄</button>
+                    <button onclick="editar('${r.id}')">✏️</button>
+                    <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
+                    <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
         });
     }
 
-    function pagoRapido(id) {
-        const r = registros.find(x => x.id === id);
-        const estaPagado = (r.precio - r.sena <= 0 && r.precio > 0);
-        if (estaPagado) {
-            db.ref('reparaciones/' + id).update({ sena: r.senaPrevia || 0, senaPrevia: null });
-            mostrarToast("PAGO ANULADO ↩️", "#64748b");
-        } else {
-            db.ref('reparaciones/' + id).update({ senaPrevia: r.sena, sena: r.precio });
-            mostrarToast("PAGADO ✅", "#2ecc71");
-        }
+    function showPage(p) {
+        document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-'+p).classList.add('active');
+        document.getElementById('btn-nav-'+p).classList.add('active');
+        if(p === 'contabilidad') renderContabilidad();
     }
 
-    function borrarDefinitivo(id) { if(confirm("¿Eliminar definitivamente?")) db.ref('reparaciones/'+id).remove(); }
-    function restaurar(id) { db.ref('reparaciones/'+id).update({archivado: false}); }
-    function archivar(id) { db.ref('reparaciones/'+id).update({archivado: true}); }
+    function renderContabilidad() {
+        const mesSeleccionado = parseInt(document.getElementById('selectMes').value);
+        let ing = 0, cos = 0, pen = 0, deudaEnero = 0;
+        registros.forEach(r => {
+            if(!r.fecha) return;
+            const partes = r.fecha.split('/');
+            const mesRegistro = parseInt(partes[1]) - 1;
+            const saldo = r.precio - r.sena;
+            if(mesRegistro === mesSeleccionado) {
+                if(r.estado === "Entregado") { ing += r.precio; cos += (r.costoRepuesto || 0); }
+                if(saldo > 0) pen += saldo;
+            }
+            if(mesRegistro === 0 && saldo > 0) deudaEnero += saldo;
+        });
+        const avisoH = document.getElementById('avisoHistorico');
+        avisoH.innerHTML = (mesSeleccionado === 2 && deudaEnero > 0) ? `<div class="alerta-deuda">⚠️ <b>RECORDATORIO:</b> Tienes cobros pendientes de <b>Enero</b> por <b>${fmt.format(deudaEnero)}</b>.</div>` : "";
+        document.getElementById('stats-container').innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#3498db;"><h3>Ingresos</h3><p>${fmt.format(ing)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#e53e3e;"><h3>Inversión</h3><p>${fmt.format(cos)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#27ae60;"><h3>Ganancia</h3><p>${fmt.format(ing - cos)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#1a2a3a;"><h3>Por Cobrar</h3><p>${fmt.format(pen)}</p></div>
+            </div>`;
+    }
 
-    document.getElementById('repairForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const data = {
-            orden: document.getElementById('nroOrden').value,
-            cliente: document.getElementById('cliente').value,
-            tel: document.getElementById('tel').value,
-            modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value || '',
-            imei: document.getElementById('imei').value || '',
-            precio: parseMoney(document.getElementById('precio').value),
-            sena: parseMoney(document.getElementById('sena').value),
-            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value),
-            falla: document.getElementById('falla').value,
-            observaciones: document.getElementById('observaciones').value || '',
-            archivado: false,
-            estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
-        };
-        if (idEditando) db.ref('reparaciones/' + idEditando).update(data);
-        else { 
-            const d = new Date();
-            data.fecha = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            dbRef.push(data); 
-        }
-        cancelarEdicion();
+    function exportarExcel() {
+        let csv = "Fecha;Orden;Cliente;Equipo;Color;Precio;Sena;Saldo;Estado\n";
+        registros.forEach(r => csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.color||''};${r.precio};${r.sena};${r.precio-r.sena};${r.estado}\n`);
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        link.download = "Reporte_Completo_ST_MATIAS.csv"; link.click();
+    }
+
+    dbRef.on('value', snap => {
+        const v = snap.val(); registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+        renderTable(); 
     });
 
-    function autoOrden() {
-        if (!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) {
-            document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random() * 90000 + 10000);
-        }
+    function cambiarEstado(id, v) { let up = { estado: v }; if(v === "Entregado") up.archivado = true; db.ref('reparaciones/'+id).update(up); }
+    function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
+    function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
+    function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
+    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#333"); };
+    function toggleArchivo() { modoArchivo = !modoArchivo; document.getElementById('btnArchivo').innerText = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS"; renderTable(); }
+    function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
+    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "")) || 0; }
+    function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
+    function autoOrden() { if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random()*90000+10000); } }
+    
+    function editar(id) {
+        idEditando = id; const r = registros.find(x => x.id === id);
+        document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
+        document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
+        document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
+        document.getElementById('precio').value = r.precio.toLocaleString('es-AR'); document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
+        document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
+        document.getElementById('checkPagoTotal').checked = (r.precio === r.sena);
+        document.getElementById('btnSubmit').innerText = "ACTUALIZAR"; window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    function editar(id) {
-        if (modoArchivo) return;
-        const r = registros.find(x => x.id === id);
-        idEditando = id;
-        document.getElementById('nroOrden').value = r.orden;
-        document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel;
-        document.getElementById('modelo').value = r.modelo;
-        document.getElementById('color').value = r.color || '';
-        document.getElementById('imei').value = r.imei || '';
-        document.getElementById('precio').value = r.precio.toLocaleSt
+    function cancelarEdicion() { 
+        idEditando = null; 
+        document.getElementById('repairForm').reset(); 
+        document.getElementById('checkPagoTotal').checked = false;
+        document.getElementById('btnSubmit').innerText = "REGISTRAR"; 
+        document.getElementById('cliente').focus();
+    }
+    
+    document.getElementById('repairForm').onsubmit = e => {
+        e.preventDefault();
+        const data = {
+            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
+            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
+            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
+            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
+            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
+            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
+            archivado: false, estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
+        };
+        if(idEditando) {
+            db.ref('reparaciones/'+idEditando).update(data);
+            showToast("ACTUALIZADO ✅", "#3498db");
+        } else {
+            data.fecha = new Date().toLocaleDateString();
+            dbRef.push(data);
+            showToast("REGISTRADO ✅", "#2ecc71");
+        }
+        cancelarEdicion();
+    };
+    db.ref(".info/connected").on("value", s => {
+        let st = document.getElementById('status');
+        st.className = s.val() ? "online" : "offline";
+    });
+</script>
+</body>
+</html>
