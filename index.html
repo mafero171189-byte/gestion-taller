@@ -41,6 +41,29 @@
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
         .alerta-deuda { background: #fff5f5; border: 2px solid var(--danger); padding: 15px; border-radius: 10px; margin-bottom: 15px; color: #c53030; }
+
+        /* NUEVO ESTILO MINIMALISTA PARA EL SELECTOR DE ESTADO */
+        td select {
+            background-color: #f1f5f9 !important; /* Gris claro sutil */
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 6px !important;
+            padding: 5px 10px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #475569 !important;
+            cursor: pointer;
+            outline: none;
+            appearance: none; /* Quita la flecha por defecto para hacerlo más limpio */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 25px !important;
+        }
+        
+        td select:focus {
+            border-color: var(--secondary) !important;
+            background-color: #fff !important;
+        }
     </style>
 </head>
 <body>
@@ -357,7 +380,7 @@
     };
     db.ref(".info/connected").on("value", s => {
         let st = document.getElementById('status');
-        st.className = s.val() ? "online" : "offline";
+        if(st) st.className = s.val() ? "online" : "offline";
     });
 </script>
 </body>
