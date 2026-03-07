@@ -7,8 +7,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -16,8 +14,6 @@
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; overflow-x: hidden; touch-action: pan-y; }
         
-        #main-wrapper { display: none; }
-
         nav { background: var(--primary); padding: 10px 0; display: flex; justify-content: center; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; }
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
@@ -68,77 +64,75 @@
 </head>
 <body id="main-body">
 
-<div id="main-wrapper"> 
-    <div id="pago-toast">PAGADO ✅</div>
+<div id="pago-toast">PAGADO ✅</div>
 
-    <nav id="nav-header">
-        <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
-        <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
-    </nav>
+<nav id="nav-header">
+    <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
+    <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
+</nav>
 
-    <div class="container" id="swipe-container">
-        <div id="page-gestion" class="page active">
-            <div id="header-gesture-zone">
-                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin:0;">📱 Panel de Gestión</h2>
-                    <div id="status" class="offline">CONECTANDO...</div>
-                </div>
+<div class="container" id="swipe-container">
+    <div id="page-gestion" class="page active">
+        <div id="header-gesture-zone">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">📱 Panel de Gestión</h2>
+                <div id="status" class="offline">CONECTANDO...</div>
+            </div>
 
-                <form id="repairForm">
-                    <div class="form-grid">
-                        <div><label>N° Orden</label><input type="text" id="nroOrden" readonly placeholder="AUTO"></div>
-                        <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()" autofocus></div>
-                        <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
-                        <div><label>Modelo</label><input type="text" id="modelo" required></div>
-                        <div><label>Color</label><input type="text" id="color"></div>
-                        <div><label>IMEI / Serie</label><input type="text" id="imei"></div>
-                        <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this)"></div>
-                        <div>
-                            <label>Seña $</label>
-                            <input type="text" id="sena" placeholder="0" oninput="formatInput(this)">
-                            <label style="display:flex; align-items:center; gap:5px; margin-top:5px; font-size:10px; cursor:pointer;">
-                                <input type="checkbox" id="checkPagoTotal" onchange="togglePagoTotal()"> PAGO TOTAL
-                            </label>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span id="btn-lock" style="cursor:pointer; font-size:20px;" onclick="revelarCosto()">🔒</span>
-                            <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this)"></div>
-                        </div>
-                        <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
-                        <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
-                        <div class="full" style="display:flex; gap:10px;">
-                            <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
-                            <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="cancelarEdicion()">LIMPIAR</button>
-                        </div>
+            <form id="repairForm">
+                <div class="form-grid">
+                    <div><label>N° Orden</label><input type="text" id="nroOrden" readonly placeholder="AUTO"></div>
+                    <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()" autofocus></div>
+                    <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
+                    <div><label>Modelo</label><input type="text" id="modelo" required></div>
+                    <div><label>Color</label><input type="text" id="color"></div>
+                    <div><label>IMEI / Serie</label><input type="text" id="imei"></div>
+                    <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this)"></div>
+                    <div>
+                        <label>Seña $</label>
+                        <input type="text" id="sena" placeholder="0" oninput="formatInput(this)">
+                        <label style="display:flex; align-items:center; gap:5px; margin-top:5px; font-size:10px; cursor:pointer;">
+                            <input type="checkbox" id="checkPagoTotal" onchange="togglePagoTotal()"> PAGO TOTAL
+                        </label>
                     </div>
-                </form>
-
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
-                    <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="btn-lock" style="cursor:pointer; font-size:20px;" onclick="revelarCosto()">🔒</span>
+                        <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this)"></div>
+                    </div>
+                    <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
+                    <div class="full"><label>Observaciones</label><input type="text" id="observaciones"></div>
+                    <div class="full" style="display:flex; gap:10px;">
+                        <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR EQUIPO</button>
+                        <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="cancelarEdicion()">LIMPIAR</button>
+                    </div>
                 </div>
-            </div>
+            </form>
 
-            <div class="table-wrapper">
-                <table id="dataTable">
-                    <thead>
-                        <tr><th>Orden</th><th>Cliente</th><th>Equipo / Falla</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+                <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
             </div>
         </div>
 
-        <div id="page-contabilidad" class="page">
-            <h2 style="margin-bottom:25px;">💰 Balance Contable</h2>
-            <div class="stats-grid">
-                <div class="stat-card card-blue"><h3>Ingresos</h3><p id="stat-ventas">$ 0</p></div>
-                <div class="stat-card card-red"><h3>Inversión</h3><p id="stat-costos">$ 0</p></div>
-                <div class="stat-card card-green"><h3>Ganancia</h3><p id="stat-ganancia">$ 0</p></div>
-                <div class="stat-card card-dark"><h3>Por Cobrar</h3><p id="stat-pendiente">$ 0</p></div>
-            </div>
-            <button class="btn btn-excel" onclick="exportarExcel()">📊 DESCARGAR REPORTE EXCEL</button>
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead>
+                    <tr><th>Orden</th><th>Cliente</th><th>Equipo / Falla</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
         </div>
+    </div>
+
+    <div id="page-contabilidad" class="page">
+        <h2 style="margin-bottom:25px;">💰 Balance Contable</h2>
+        <div class="stats-grid">
+            <div class="stat-card card-blue"><h3>Ingresos</h3><p id="stat-ventas">$ 0</p></div>
+            <div class="stat-card card-red"><h3>Inversión</h3><p id="stat-costos">$ 0</p></div>
+            <div class="stat-card card-green"><h3>Ganancia</h3><p id="stat-ganancia">$ 0</p></div>
+            <div class="stat-card card-dark"><h3>Por Cobrar</h3><p id="stat-pendiente">$ 0</p></div>
+        </div>
+        <button class="btn btn-excel" onclick="exportarExcel()">📊 DESCARGAR REPORTE EXCEL</button>
     </div>
 </div>
 
@@ -156,37 +150,13 @@
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
 
-    // --- SEGURIDAD: CONTROL DE ACCESO (MÉTODO REDIRECT) ---
-    const MI_CORREO_AUTORIZADO = "mafero171189@gmail.com"; 
-    const provider = new firebase.auth.GoogleAuthProvider();
-
-    firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-            if (user.email === MI_CORREO_AUTORIZADO) {
-                document.getElementById('main-wrapper').style.display = 'block';
-            } else {
-                alert("Acceso denegado: " + user.email);
-                firebase.auth().signOut();
-            }
-        } else {
-            // Si no hay usuario, redirigimos a Google
-            firebase.auth().signInWithRedirect(provider);
-        }
-    });
-
-    function clean(str) {
-        if (!str) return "";
-        let temp = document.createElement('div');
-        temp.textContent = str;
-        return temp.innerHTML;
-    }
-
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
     let activePage = 'gestion';
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
+    // --- LÓGICA DE GESTO LIMITADA A LA ZONA SUPERIOR ---
     let touchstartX = 0;
     let touchendX = 0;
     
@@ -196,6 +166,7 @@
         if (touchendX > touchstartX + threshold) { if (activePage === 'contabilidad') showPage('gestion'); }
     }
 
+    // Se aplica solo a la navegación y al formulario/busqueda
     const gestureZone = document.getElementById('header-gesture-zone');
     const navZone = document.getElementById('nav-header');
     const contabilidadZone = document.getElementById('page-contabilidad');
@@ -289,9 +260,9 @@
             const saldo = r.precio - r.sena;
             const estaPagado = (saldo <= 0 && r.precio > 0);
             body.innerHTML += `<tr>
-                <td><b>${clean(r.orden)}</b><span class="date-label">${clean(r.fecha)}</span></td>
-                <td><b>${clean(r.cliente)}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.id}')">📲 WhatsApp</button></td>
-                <td>${clean(r.modelo)}<br><small>${clean(r.falla)}</small></td>
+                <td><b>${r.orden}</b><span class="date-label">${r.fecha || ''}</span></td>
+                <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWapp('${r.id}')">📲 WhatsApp</button></td>
+                <td>${r.modelo}<br><small>${r.falla}</small></td>
                 <td><select onchange="cambiarEstado('${r.id}', this.value)" ${modoArchivo ? 'disabled' : ''}>
                     <option value="Pendiente" ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                     <option value="Reparado" ${r.estado=='Reparado'?'selected':''}>Reparado</option>
@@ -367,56 +338,4 @@
         document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || '';
         document.getElementById('imei').value = r.imei || '';
-        document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
-        document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
-        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
-        document.getElementById('falla').value = r.falla;
-        document.getElementById('observaciones').value = r.observaciones || '';
-        document.getElementById('btnSubmit').innerText = "💾 GUARDAR CAMBIOS";
-        window.scrollTo(0,0);
-        document.getElementById('cliente').focus();
-    }
-
-    function renderContabilidad() {
-        let ingresos = 0, costos = 0, pendiente = 0;
-        registros.forEach(r => {
-            let saldo = r.precio - r.sena;
-            if (saldo > 0) pendiente += saldo;
-            if (r.estado === "Entregado") { ingresos += r.precio; costos += (r.costoRepuesto || 0); }
-        });
-        document.getElementById('stat-ventas').innerText = fmt.format(ingresos);
-        document.getElementById('stat-costos').innerText = fmt.format(costos);
-        document.getElementById('stat-ganancia').innerText = fmt.format(ingresos - costos);
-        document.getElementById('stat-pendiente').innerText = fmt.format(pendiente);
-    }
-
-    function cambiarEstado(id, v) { db.ref('reparaciones/'+id).update({estado: v}); }
-    function toggleArchivo() { modoArchivo = !modoArchivo; document.getElementById('btnArchivo').innerText = modoArchivo ? "⬅️ VOLVER" : "📁 ARCHIVADOS"; renderTable(); }
-    function revelarCosto() {
-        const inner = document.getElementById('costo-inner');
-        inner.style.display = inner.style.display === "none" ? "block" : "none";
-        document.getElementById('btn-lock').innerText = inner.style.display === "none" ? "🔒" : "🔓";
-    }
-
-    function exportarExcel() {
-        const ws = XLSX.utils.json_to_sheet(registros.map(r => ({Orden: r.orden, Fecha: r.fecha, Cliente: r.cliente, Equipo: r.modelo, Falla: r.falla, Precio: r.precio, Costo: r.costoRepuesto, Estado: r.estado})));
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reparaciones");
-        XLSX.writeFile(wb, "Reporte_Matias.xlsx");
-    }
-
-    dbRef.on('value', snap => {
-        const val = snap.val();
-        registros = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })) : [];
-        renderTable();
-        renderContabilidad();
-    });
-
-    db.ref(".info/connected").on("value", s => {
-        const st = document.getElementById('status');
-        st.innerText = s.val() ? "ONLINE" : "OFFLINE";
-        st.className = s.val() ? "online" : "offline";
-    });
-</script>
-</body>
-</html>
+        document.getElementById('precio').value = r.precio.toLocaleSt
