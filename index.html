@@ -40,7 +40,7 @@
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-        
+
         td select {
             background-color: #f1f5f9 !important;
             border: 1px solid #e2e8f0 !important;
@@ -276,14 +276,12 @@
         if(document.getElementById('page-contabilidad').classList.contains('active')) renderContabilidad();
     });
 
-    // --- WHATSAPP RESTAURADO ---
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
         const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || 'N/A'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
         window.open(`https://wa.me/${r.tel}?text=${msj}`);
     }
 
-    // --- PDF RESTAURADO (ESTILO PROFESIONAL) ---
     function imprimir(id) {
         const r = registros.find(x => x.id === id);
         const { jsPDF } = window.jspdf;
@@ -340,6 +338,7 @@
         idEditando = null; document.getElementById('repairForm').reset(); 
         document.getElementById('checkPagoTotal').checked = false;
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
+        if(document.activeElement) document.activeElement.blur(); // CIERRA TECLADO
     }
     
     document.getElementById('repairForm').onsubmit = e => {
@@ -362,6 +361,7 @@
             showToast("REGISTRADO ✅", "#2ecc71");
         }
         limpiarFormulario();
+        if(document.activeElement) document.activeElement.blur(); // CIERRA TECLADO
     };
 
     function exportarExcel() {
