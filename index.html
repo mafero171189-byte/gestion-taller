@@ -40,11 +40,9 @@
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-        .alerta-deuda { background: #fff5f5; border: 2px solid var(--danger); padding: 15px; border-radius: 10px; margin-bottom: 15px; color: #c53030; }
-
-        /* NUEVO ESTILO MINIMALISTA PARA EL SELECTOR DE ESTADO */
+        
         td select {
-            background-color: #f1f5f9 !important; /* Gris claro sutil */
+            background-color: #f1f5f9 !important;
             border: 1px solid #e2e8f0 !important;
             border-radius: 6px !important;
             padding: 5px 10px !important;
@@ -53,16 +51,11 @@
             color: #475569 !important;
             cursor: pointer;
             outline: none;
-            appearance: none; /* Quita la flecha por defecto para hacerlo más limpio */
+            appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 8px center;
             padding-right: 25px !important;
-        }
-        
-        td select:focus {
-            border-color: var(--secondary) !important;
-            background-color: #fff !important;
         }
     </style>
 </head>
@@ -117,7 +110,7 @@
                 <div class="full"><label>Observaciones (OBS)</label><input type="text" id="obs" placeholder="Detalles adicionales..."></div>
                 <div class="full" style="display:flex; gap:10px;">
                     <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR</button>
-                    <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="cancelarEdicion()">LIMPIAR</button>
+                    <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="clickLimpiar()">LIMPIAR</button>
                 </div>
             </div>
         </form>
@@ -145,7 +138,6 @@
                 <button class="btn" style="background: var(--success); color:white; padding: 8px 15px; font-size: 13px;" onclick="exportarExcel()">📥 EXCEL COMPLETO</button>
             </div>
         </div>
-        <div id="avisoHistorico"></div>
         <div id="stats-container"></div>
     </div>
 </div>
@@ -205,52 +197,6 @@
         }
     }
 
-    function imprimir(id) {
-        const r = registros.find(x => x.id === id);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 190] });
-
-        doc.setFillColor(26, 42, 58);
-        doc.rect(0, 0, 80, 25, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.text("S.T. MATIAS", 40, 10, {align:'center'});
-        doc.setFontSize(10); doc.text("Servicio Técnico", 40, 16, {align:'center'});
-        doc.setFontSize(9); doc.text("WhatsApp: 1135654094", 40, 21, {align:'center'});
-
-        doc.setTextColor(26, 42, 58); doc.setFontSize(10);
-        doc.text("COMPROBANTE DE INGRESO", 40, 32, {align:'center'});
-        doc.setFontSize(14); doc.text("ORDEN: " + r.orden, 40, 40, {align:'center'});
-        doc.setLineWidth(0.2); doc.line(10, 43, 70, 43);
-
-        doc.setFontSize(9); doc.setTextColor(50, 50, 50);
-        let y = 52;
-        doc.setFont("helvetica", "bold"); doc.text("FECHA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.fecha || "", 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("CLIENTE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.cliente, 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("EQUIPO:", 10, y); doc.setFont("helvetica", "normal"); doc.text(`${r.modelo} (${r.color || 'N/A'})`, 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("IMEI/SERIE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.imei || "-", 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("FALLA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.falla, 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("OBS:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.obs || "-", 30, y); y+=10;
-
-        doc.line(10, y-2, 70, y-2);
-        doc.text("TOTAL: " + fmt.format(r.precio), 10, y+5);
-        doc.text("SEÑA: " + fmt.format(r.sena), 10, y+11); y+=18;
-
-        doc.setFillColor(240, 240, 240); doc.rect(10, y, 60, 10, 'F');
-        doc.setFontSize(12); doc.setFont("helvetica", "bold");
-        doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y+7, {align:'center'});
-
-        doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(150, 150, 150);
-        doc.text("Muchas gracias!", 40, y+25, {align:'center'});
-
-        doc.save(`Ticket_${r.orden}.pdf`);
-    }
-
-    function enviarWhatsApp(id) {
-        const r = registros.find(x => x.id === id);
-        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || 'N/A'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-        window.open(`https://wa.me/${r.tel}?text=${msj}`);
-    }
-
     function renderTable() {
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
@@ -262,7 +208,7 @@
         filtrados.reverse().forEach(r => {
             const saldo = r.precio - r.sena;
             body.innerHTML += `<tr>
-                <td><b>${r.orden}</b></td>
+                <td><b>${r.orden}</b><br><small style="color:#64748b; font-size:10px;">${r.fecha || ''}</small></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo} <br><small>${r.color || ''}</small></td>
                 <td><select onchange="cambiarEstado('${r.id}', this.value)" ${modoArchivo ? 'disabled' : ''}>
@@ -291,41 +237,80 @@
 
     function renderContabilidad() {
         const mesSeleccionado = parseInt(document.getElementById('selectMes').value);
-        let ing = 0, cos = 0, pen = 0, deudaEnero = 0;
+        let dineroIngresado = 0, inversionRepuestos = 0, porCobrarTotal = 0;
         registros.forEach(r => {
             if(!r.fecha) return;
-            const partes = r.fecha.split('/');
-            const mesRegistro = parseInt(partes[1]) - 1;
-            const saldo = r.precio - r.sena;
+            const partesFecha = r.fecha.split('/');
+            const mesRegistro = parseInt(partesFecha[1]) - 1; 
             if(mesRegistro === mesSeleccionado) {
-                if(r.estado === "Entregado") { ing += r.precio; cos += (r.costoRepuesto || 0); }
-                if(saldo > 0) pen += saldo;
+                dineroIngresado += (r.sena || 0);
+                inversionRepuestos += (r.costoRepuesto || 0);
+                const saldo = r.precio - r.sena;
+                if(saldo > 0) porCobrarTotal += saldo;
             }
-            if(mesRegistro === 0 && saldo > 0) deudaEnero += saldo;
         });
-        const avisoH = document.getElementById('avisoHistorico');
-        avisoH.innerHTML = (mesSeleccionado === 2 && deudaEnero > 0) ? `<div class="alerta-deuda">⚠️ <b>RECORDATORIO:</b> Tienes cobros pendientes de <b>Enero</b> por <b>${fmt.format(deudaEnero)}</b>.</div>` : "";
         document.getElementById('stats-container').innerHTML = `
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#3498db;"><h3>Ingresos</h3><p>${fmt.format(ing)}</p></div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#e53e3e;"><h3>Inversión</h3><p>${fmt.format(cos)}</p></div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#27ae60;"><h3>Ganancia</h3><p>${fmt.format(ing - cos)}</p></div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#1a2a3a;"><h3>Por Cobrar</h3><p>${fmt.format(pen)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#2ecc71;">
+                    <h3>Dinero en Caja</h3><p style="font-size:11px; opacity:0.8;">(Pagos y Señas recibidas)</p>
+                    <p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado)}</p>
+                </div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#e53e3e;">
+                    <h3>Inversión</h3><p style="font-size:11px; opacity:0.8;">(Costos de Repuestos)</p>
+                    <p style="font-size:24px; font-weight:bold;">${fmt.format(inversionRepuestos)}</p>
+                </div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#3498db;">
+                    <h3>Ganancia</h3><p style="font-size:11px; opacity:0.8;">(Caja menos Inversión)</p>
+                    <p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado - inversionRepuestos)}</p>
+                </div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#1a2a3a;">
+                    <h3>Restante por Cobrar</h3><p style="font-size:11px; opacity:0.8;">(Saldos pendientes)</p>
+                    <p style="font-size:24px; font-weight:bold;">${fmt.format(porCobrarTotal)}</p>
+                </div>
             </div>`;
-    }
-
-    function exportarExcel() {
-        let csv = "Fecha;Orden;Cliente;Equipo;Color;Precio;Sena;Saldo;Estado\n";
-        registros.forEach(r => csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.color||''};${r.precio};${r.sena};${r.precio-r.sena};${r.estado}\n`);
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = "Reporte_Completo_ST_MATIAS.csv"; link.click();
     }
 
     dbRef.on('value', snap => {
         const v = snap.val(); registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
         renderTable(); 
+        if(document.getElementById('page-contabilidad').classList.contains('active')) renderContabilidad();
     });
+
+    // --- WHATSAPP RESTAURADO ---
+    function enviarWhatsApp(id) {
+        const r = registros.find(x => x.id === id);
+        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || 'N/A'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+        window.open(`https://wa.me/${r.tel}?text=${msj}`);
+    }
+
+    // --- PDF RESTAURADO (ESTILO PROFESIONAL) ---
+    function imprimir(id) {
+        const r = registros.find(x => x.id === id);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: [80, 190] });
+        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 25, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.text("S.T. MATIAS", 40, 10, {align:'center'});
+        doc.setFontSize(10); doc.text("Servicio Técnico", 40, 16, {align:'center'});
+        doc.setFontSize(9); doc.text("WhatsApp: 1135654094", 40, 21, {align:'center'});
+        doc.setTextColor(26, 42, 58); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 32, {align:'center'});
+        doc.setFontSize(14); doc.text("ORDEN: " + r.orden, 40, 40, {align:'center'});
+        doc.setLineWidth(0.2); doc.line(10, 43, 70, 43);
+        doc.setFontSize(9); doc.setTextColor(50, 50, 50);
+        let y = 52;
+        doc.setFont("helvetica", "bold"); doc.text("FECHA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.fecha || "", 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("CLIENTE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.cliente, 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("EQUIPO:", 10, y); doc.setFont("helvetica", "normal"); doc.text(`${r.modelo} (${r.color || 'N/A'})`, 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("IMEI/SERIE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.imei || "-", 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("FALLA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.falla, 30, y); y+=6;
+        doc.setFont("helvetica", "bold"); doc.text("OBS:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.obs || "-", 30, y); y+=10;
+        doc.line(10, y-2, 70, y-2);
+        doc.text("TOTAL: " + fmt.format(r.precio), 10, y+5); doc.text("SEÑA: " + fmt.format(r.sena), 10, y+11); y+=18;
+        doc.setFillColor(240, 240, 240); doc.rect(10, y, 60, 10, 'F'); doc.setFontSize(12); doc.setFont("helvetica", "bold");
+        doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y+7, {align:'center'});
+        doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(150, 150, 150);
+        doc.text("Muchas gracias!", 40, y+25, {align:'center'});
+        doc.save(`Ticket_${r.orden}.pdf`);
+    }
 
     function cambiarEstado(id, v) { let up = { estado: v }; if(v === "Entregado") up.archivado = true; db.ref('reparaciones/'+id).update(up); }
     function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
@@ -334,7 +319,7 @@
     document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#333"); };
     function toggleArchivo() { modoArchivo = !modoArchivo; document.getElementById('btnArchivo').innerText = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS"; renderTable(); }
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
-    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "")) || 0; }
+    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
     function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
     function autoOrden() { if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random()*90000+10000); } }
     
@@ -344,17 +329,17 @@
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
         document.getElementById('precio').value = r.precio.toLocaleString('es-AR'); document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
+        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
         document.getElementById('checkPagoTotal').checked = (r.precio === r.sena);
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR"; window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    function cancelarEdicion() { 
-        idEditando = null; 
-        document.getElementById('repairForm').reset(); 
+    function clickLimpiar() { limpiarFormulario(); showToast("LIMPIADO 🧹", "#64748b"); }
+    function limpiarFormulario() {
+        idEditando = null; document.getElementById('repairForm').reset(); 
         document.getElementById('checkPagoTotal').checked = false;
-        document.getElementById('btnSubmit').innerText = "REGISTRAR"; 
-        document.getElementById('cliente').focus();
+        document.getElementById('btnSubmit').innerText = "REGISTRAR";
     }
     
     document.getElementById('repairForm').onsubmit = e => {
@@ -372,12 +357,21 @@
             db.ref('reparaciones/'+idEditando).update(data);
             showToast("ACTUALIZADO ✅", "#3498db");
         } else {
-            data.fecha = new Date().toLocaleDateString();
+            data.fecha = new Date().toLocaleString('es-AR');
             dbRef.push(data);
             showToast("REGISTRADO ✅", "#2ecc71");
         }
-        cancelarEdicion();
+        limpiarFormulario();
     };
+
+    function exportarExcel() {
+        let csv = "Fecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Estado\n";
+        registros.forEach(r => csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.estado}\n`);
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        link.download = "Reporte_ST_MATIAS.csv"; link.click();
+    }
+
     db.ref(".info/connected").on("value", s => {
         let st = document.getElementById('status');
         if(st) st.className = s.val() ? "online" : "offline";
