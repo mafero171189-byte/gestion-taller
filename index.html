@@ -10,24 +10,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; }
+        :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         nav { background: var(--primary); padding: 10px 0; display: flex; justify-content: center; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; }
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
-        #toast-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px 20px; border-radius: 20px; color: white; font-weight: bold; z-index: 5000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 13px; animation: pop 0.3s ease-out; }
-        @keyframes pop { from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+        #toast-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 10px 20px; border-radius: 20px; color: white; font-weight: bold; z-index: 5000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 13px; }
+        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 4000; }
         .modal-box { background: white; padding: 25px; border-radius: 15px; width: 300px; text-align: center; }
         .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .page.active { display: block; }
+        
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        select.st-pendiente, select.st-reparado, select.st-entregado { padding: 4px; font-size: 12px; height: 32px; border-radius: 6px; border: 1px solid #cbd5e0; width: auto; min-width: 110px; font-weight: bold; cursor: pointer; }
+        .st-pendiente { background-color: #fff9c4 !important; color: #856404 !important; }
+        .st-reparado { background-color: #c8e6c9 !important; color: #1b5e20 !important; }
+        .st-entregado { background-color: #e2e8f0 !important; color: #475569 !important; }
+
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
         .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
@@ -41,25 +47,12 @@
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px; }
 
-        td select {
-            background-color: #f1f5f9 !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 6px !important;
-            padding: 5px 10px !important;
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            color: #475569 !important;
-            cursor: pointer;
-            outline: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            padding-right: 25px !important;
-        }
+        .filter-bar { display: flex; gap: 5px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { padding: 6px 14px; font-size: 11px; border-radius: 20px; border: 1px solid #cbd5e0; background: white; cursor: pointer; white-space: nowrap; font-weight: bold; }
+        .filter-btn.active { background: var(--secondary); color: white; border-color: var(--secondary); }
     </style>
 </head>
-<body>
+<body onload="loadDraft()">
 
 <div id="toast-alert"></div>
 
@@ -90,24 +83,24 @@
         <form id="repairForm">
             <div class="form-grid">
                 <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
-                <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden()"></div>
-                <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..."></div>
-                <div><label>Modelo</label><input type="text" id="modelo" required></div>
-                <div><label>Color</label><input type="text" id="color"></div>
-                <div><label>IMEI/Serie</label><input type="text" id="imei" placeholder="-"></div>
-                <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this)"></div>
+                <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()"></div>
+                <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
+                <div><label>Modelo</label><input type="text" id="modelo" required oninput="saveDraft()"></div>
+                <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
+                <div><label>IMEI/Serie</label><input type="text" id="imei" placeholder="-" oninput="saveDraft()"></div>
+                <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
                 <div>
-                    <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this)">
+                    <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
                     <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#475569;">
-                        <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
+                        <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm(); saveDraft()"> PAGO TOTAL
                     </div>
                 </div>
                 <div>
                     <span id="btn-lock" style="cursor:pointer; font-size:20px;" onclick="revelarCosto()">🔒</span>
-                    <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this)"></div>
+                    <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()"></div>
                 </div>
-                <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required></div>
-                <div class="full"><label>Observaciones (OBS)</label><input type="text" id="obs" placeholder="Detalles adicionales..."></div>
+                <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
+                <div class="full"><label>Observaciones (OBS)</label><input type="text" id="obs" placeholder="Detalles adicionales..." oninput="saveDraft()"></div>
                 <div class="full" style="display:flex; gap:10px;">
                     <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR</button>
                     <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="clickLimpiar()">LIMPIAR</button>
@@ -115,9 +108,16 @@
             </div>
         </form>
 
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+        <div style="display:flex; gap:10px; margin-bottom:5px;">
+            <input type="text" id="search" placeholder="🔎 Buscar por nombre o modelo..." onkeyup="renderTable()" style="flex-grow:1; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
             <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
+        </div>
+
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="setFiltro('Todos', this)">Todos</button>
+            <button class="filter-btn" onclick="setFiltro('Pendiente', this)">Pendiente</button>
+            <button class="filter-btn" onclick="setFiltro('Reparado', this)">Reparado</button>
+            <button class="filter-btn" onclick="setFiltro('Entregado', this)">Entregado</button>
         </div>
 
         <div class="table-wrapper">
@@ -160,6 +160,7 @@
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
+    let filtroEstado = 'Todos';
     let idParaBorrar = null;
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
@@ -172,6 +173,42 @@
         if(i === mesActual) opt.selected = true;
         selectMes.appendChild(opt);
     });
+
+    function saveDraft() {
+        if(idEditando) return;
+        const draft = {
+            cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value,
+            modelo: document.getElementById('modelo').value, color: document.getElementById('color').value,
+            imei: document.getElementById('imei').value, precio: document.getElementById('precio').value,
+            sena: document.getElementById('sena').value, costo: document.getElementById('costoRepuesto').value,
+            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value
+        };
+        localStorage.setItem('st_matias_draft', JSON.stringify(draft));
+    }
+
+    function loadDraft() {
+        const saved = localStorage.getItem('st_matias_draft');
+        if(saved && !idEditando) {
+            const d = JSON.parse(saved);
+            document.getElementById('cliente').value = d.cliente || "";
+            document.getElementById('tel').value = d.tel || "";
+            document.getElementById('modelo').value = d.modelo || "";
+            document.getElementById('color').value = d.color || "";
+            document.getElementById('imei').value = d.imei || "";
+            document.getElementById('precio').value = d.precio || "";
+            document.getElementById('sena').value = d.sena || "";
+            document.getElementById('costoRepuesto').value = d.costo || "";
+            document.getElementById('falla').value = d.falla || "";
+            document.getElementById('obs').value = d.obs || "";
+        }
+    }
+
+    function setFiltro(val, btn) {
+        filtroEstado = val;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable();
+    }
 
     function showToast(text, color) {
         const t = document.getElementById('toast-alert');
@@ -188,30 +225,30 @@
     function togglePago(id) {
         const r = registros.find(x => x.id === id);
         const estaPagado = (r.precio - r.sena) === 0;
-        if (estaPagado) {
-            db.ref('reparaciones/'+id).update({ sena: 0 });
-            showToast("PAGO CANCELADO ❌", "#e53e3e");
-        } else {
-            db.ref('reparaciones/'+id).update({ sena: r.precio });
-            showToast("PAGADO ✅", "#2ecc71");
-        }
+        db.ref('reparaciones/'+id).update({ sena: estaPagado ? 0 : r.precio });
+        showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
     }
 
     function renderTable() {
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
         body.innerHTML = "";
+        
         const filtrados = registros.filter(r => {
-            const match = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
-            return bus.length > 0 ? match : (modoArchivo ? r.archivado : !r.archivado);
+            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
+            const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
+            const matchEstado = (filtroEstado === 'Todos' || r.estado === filtroEstado);
+            return matchBusqueda && matchArchivo && matchEstado;
         });
-        filtrados.reverse().forEach(r => {
+        
+        filtrados.reverse().slice(0, 50).forEach(r => {
             const saldo = r.precio - r.sena;
+            const claseEstado = `st-${r.estado.toLowerCase()}`;
             body.innerHTML += `<tr>
                 <td><b>${r.orden}</b><br><small style="color:#64748b; font-size:10px;">${r.fecha || ''}</small></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo} <br><small>${r.color || ''}</small></td>
-                <td><select onchange="cambiarEstado('${r.id}', this.value)" ${modoArchivo ? 'disabled' : ''}>
+                <td><select class="${claseEstado}" onchange="cambiarEstado('${r.id}', this.value)" ${modoArchivo ? 'disabled' : ''}>
                     <option value="Pendiente" ${r.estado=='Pendiente'?'selected':''}>Pendiente</option>
                     <option value="Reparado" ${r.estado=='Reparado'?'selected':''}>Reparado</option>
                     <option value="Entregado" ${r.estado=='Entregado'?'selected':''}>Entregado</option>
@@ -220,7 +257,7 @@
                 <td class="action-btns">
                     <button onclick="togglePago('${r.id}')">✅</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')">✏️</button>
+                    <button onclick="editar('${r.id}')" ${r.archivado ? 'disabled style="opacity:0.5;"' : ''}>✏️</button>
                     <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
@@ -251,22 +288,10 @@
         });
         document.getElementById('stats-container').innerHTML = `
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#2ecc71;">
-                    <h3>Dinero en Caja</h3><p style="font-size:11px; opacity:0.8;">(Pagos y Señas recibidas)</p>
-                    <p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado)}</p>
-                </div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#e53e3e;">
-                    <h3>Inversión</h3><p style="font-size:11px; opacity:0.8;">(Costos de Repuestos)</p>
-                    <p style="font-size:24px; font-weight:bold;">${fmt.format(inversionRepuestos)}</p>
-                </div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#3498db;">
-                    <h3>Ganancia</h3><p style="font-size:11px; opacity:0.8;">(Caja menos Inversión)</p>
-                    <p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado - inversionRepuestos)}</p>
-                </div>
-                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#1a2a3a;">
-                    <h3>Restante por Cobrar</h3><p style="font-size:11px; opacity:0.8;">(Saldos pendientes)</p>
-                    <p style="font-size:24px; font-weight:bold;">${fmt.format(porCobrarTotal)}</p>
-                </div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#2ecc71;"><h3>Dinero en Caja</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#e53e3e;"><h3>Inversión</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(inversionRepuestos)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#3498db;"><h3>Ganancia</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(dineroIngresado - inversionRepuestos)}</p></div>
+                <div style="padding:25px; border-radius:12px; color:white; text-align:center; background:#1a2a3a;"><h3>Por Cobrar</h3><p style="font-size:24px; font-weight:bold;">${fmt.format(porCobrarTotal)}</p></div>
             </div>`;
     }
 
@@ -278,35 +303,31 @@
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
-        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || 'N/A'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-        window.open(`https://wa.me/${r.tel}?text=${msj}`);
+        const numeroLimpio = String(r.tel).replace(/\D/g, ''); 
+        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+        window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
     }
 
     function imprimir(id) {
         const r = registros.find(x => x.id === id);
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 190] });
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 25, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.text("S.T. MATIAS", 40, 10, {align:'center'});
-        doc.setFontSize(10); doc.text("Servicio Técnico", 40, 16, {align:'center'});
-        doc.setFontSize(9); doc.text("WhatsApp: 1135654094", 40, 21, {align:'center'});
-        doc.setTextColor(26, 42, 58); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 32, {align:'center'});
-        doc.setFontSize(14); doc.text("ORDEN: " + r.orden, 40, 40, {align:'center'});
-        doc.setLineWidth(0.2); doc.line(10, 43, 70, 43);
-        doc.setFontSize(9); doc.setTextColor(50, 50, 50);
-        let y = 52;
-        doc.setFont("helvetica", "bold"); doc.text("FECHA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.fecha || "", 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("CLIENTE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.cliente, 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("EQUIPO:", 10, y); doc.setFont("helvetica", "normal"); doc.text(`${r.modelo} (${r.color || 'N/A'})`, 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("IMEI/SERIE:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.imei || "-", 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("FALLA:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.falla, 30, y); y+=6;
-        doc.setFont("helvetica", "bold"); doc.text("OBS:", 10, y); doc.setFont("helvetica", "normal"); doc.text(r.obs || "-", 30, y); y+=10;
-        doc.line(10, y-2, 70, y-2);
-        doc.text("TOTAL: " + fmt.format(r.precio), 10, y+5); doc.text("SEÑA: " + fmt.format(r.sena), 10, y+11); y+=18;
-        doc.setFillColor(240, 240, 240); doc.rect(10, y, 60, 10, 'F'); doc.setFontSize(12); doc.setFont("helvetica", "bold");
-        doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y+7, {align:'center'});
-        doc.setFontSize(8); doc.setFont("helvetica", "italic"); doc.setTextColor(150, 150, 150);
-        doc.text("Muchas gracias!", 40, y+25, {align:'center'});
+        const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'});
+        doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
+        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
+        doc.setFontSize(18); doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
+        doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+        doc.setFontSize(10);
+        let y = 58; const col1 = 12; const col2 = 35; const lineH = 7;
+        const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`); printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
+        y += 3; doc.line(10, y, 70, y); y += 10;
+        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("Muchas gracias!", 40, 153, {align:'center'});
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
@@ -338,7 +359,8 @@
         idEditando = null; document.getElementById('repairForm').reset(); 
         document.getElementById('checkPagoTotal').checked = false;
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        if(document.activeElement) document.activeElement.blur(); // CIERRA TECLADO
+        localStorage.removeItem('st_matias_draft');
+        setTimeout(() => document.getElementById('cliente').focus(), 150);
     }
     
     document.getElementById('repairForm').onsubmit = e => {
@@ -361,14 +383,12 @@
             showToast("REGISTRADO ✅", "#2ecc71");
         }
         limpiarFormulario();
-        if(document.activeElement) document.activeElement.blur(); // CIERRA TECLADO
     };
 
     function exportarExcel() {
-        let csv = "Fecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Estado\n";
-        registros.forEach(r => csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.estado}\n`);
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
+        registros.forEach(r => { let c = r.costoRepuesto || 0; csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; });
+        const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
         link.download = "Reporte_ST_MATIAS.csv"; link.click();
     }
 
