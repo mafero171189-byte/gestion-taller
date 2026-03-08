@@ -382,7 +382,6 @@
         if(idParaFotos && document.getElementById('photoModal').style.display === 'flex') {
             abrirFotos(idParaFotos);
         }
-        // Auto-archivo cada vez que cambian los datos (con delay)
         setTimeout(verificarAutoArchivo, 2000);
     });
 
@@ -404,7 +403,22 @@
         } 
     }
 
-    function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
+    function revelarCosto() { 
+        let c = document.getElementById('costo-inner'); 
+        c.style.display = c.style.display === "none" ? "block" : "none"; 
+        if(c.style.display === "block") { document.getElementById('costoRepuesto').focus(); }
+    }
+
+    document.getElementById('costoRepuesto').addEventListener('blur', function() {
+        setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200);
+    });
+
+    document.getElementById('costoRepuesto').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('costo-inner').style.display = "none";
+            document.getElementById('falla').focus();
+        }
+    });
     
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
