@@ -67,7 +67,6 @@
         .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
 
-        /* Estilos específicos para el visualizador con ZOOM */
         #viewerModal { background: rgba(0,0,0,0.95); z-index: 5000; overflow: hidden; touch-action: none; display: none; flex-direction: column; }
         #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
@@ -191,7 +190,7 @@
         </form>
 
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
+            <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
             <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
         </div>
 
@@ -327,6 +326,7 @@
         const table = document.getElementById('mainTable');
         const btnArch = document.getElementById('btnArchivo');
         body.innerHTML = "";
+        
         if(modoArchivo) {
             table.classList.add('modo-archivo-activo');
             btnArch.classList.add('btn-archivo-on');
@@ -336,7 +336,10 @@
         }
         
         const filtrados = registros.filter(r => {
-            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
+            const cliente = (r.cliente || "").toLowerCase();
+            const modelo = (r.modelo || "").toLowerCase();
+            const orden = (r.orden || "").toLowerCase();
+            const matchBusqueda = cliente.includes(bus) || modelo.includes(bus) || orden.includes(bus);
             const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
             return matchBusqueda && matchArchivo;
         }).sort((a, b) => {
@@ -379,6 +382,8 @@
         if(idParaFotos && document.getElementById('photoModal').style.display === 'flex') {
             abrirFotos(idParaFotos);
         }
+        // Auto-archivo cada vez que cambian los datos (con delay)
+        setTimeout(verificarAutoArchivo, 2000);
     });
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
@@ -533,7 +538,6 @@
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
-        
         fotosTemporales = r.fotos || [];
         actualizarMiniaturasForm();
         window.scrollTo({top:0, behavior:'smooth'});
@@ -541,7 +545,8 @@
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
-        const numeroLimpio = String(r.tel).replace(/\D/g, ''); 
+        let numeroLimpio = String(r.tel).replace(/\D/g, ''); 
+        if (!numeroLimpio.startsWith('54')) { numeroLimpio = '549' + numeroLimpio; }
         const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
         window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
     }
@@ -569,27 +574,28 @@
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
-    // --- FUNCIONES DE FOTOS ---
     function agregarFotoTemporal(input) {
         if (input.files && input.files[0]) {
-            if (fotosTemporales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const maxW = 800;
-                    const scale = maxW / img.width;
-                    canvas.width = maxW;
-                    canvas.height = img.height * scale;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
-                    actualizarMiniaturasForm();
+            try {
+                if (fotosTemporales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const maxW = 800; const scale = maxW / img.width;
+                            canvas.width = maxW; canvas.height = img.height * scale;
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
+                            actualizarMiniaturasForm();
+                        } catch (err) { showToast("ERROR AL PROCESAR IMAGEN ❌", "#e53e3e"); }
+                    };
                 };
-            };
-            reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(input.files[0]);
+            } catch (err) { showToast("ERROR AL CARGAR ARCHIVO ❌", "#e53e3e"); }
         }
     }
 
@@ -601,21 +607,16 @@
         });
     }
 
-    function quitarFotoForm(index) {
-        fotosTemporales.splice(index, 1);
-        actualizarMiniaturasForm();
-    }
+    function quitarFotoForm(index) { fotosTemporales.splice(index, 1); actualizarMiniaturasForm(); }
 
     function abrirFotos(id) {
-        idParaFotos = id;
-        const r = registros.find(x => x.id === id);
+        idParaFotos = id; const r = registros.find(x => x.id === id);
         const gallery = document.getElementById('photoGallery');
         gallery.innerHTML = "";
         const fotos = r.fotos || [];
         if(fotos.length > 0) {
             fotos.forEach((src, index) => {
-                gallery.innerHTML += `
-                    <div style="position:relative;">
+                gallery.innerHTML += `<div style="position:relative;">
                         <img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover; cursor:pointer;" onclick="verImagenFull('${src}')">
                         <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:rgba(229,62,62,0.9); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-weight:bold;">X</button>
                     </div>`;
@@ -631,18 +632,13 @@
             if (fotosActuales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
+                const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     canvas.width = 800; canvas.height = img.height * (800 / img.width);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const nuevaFoto = canvas.toDataURL('image/jpeg', 0.7);
-                    fotosActuales.push(nuevaFoto);
-                    db.ref('reparaciones/' + idParaFotos).update({ fotos: fotosActuales }).then(() => {
-                        abrirFotos(idParaFotos);
-                    });
+                    fotosActuales.push(canvas.toDataURL('image/jpeg', 0.7));
+                    db.ref('reparaciones/' + idParaFotos).update({ fotos: fotosActuales }).then(() => abrirFotos(idParaFotos));
                 };
             };
             reader.readAsDataURL(input.files[0]);
@@ -653,52 +649,48 @@
         const r = registros.find(x => x.id === id);
         let fotos = [...(r.fotos || [])];
         fotos.splice(index, 1);
-        db.ref('reparaciones/' + id).update({ fotos: fotos }).then(() => {
-            abrirFotos(id);
+        db.ref('reparaciones/' + id).update({ fotos: fotos }).then(() => abrirFotos(id));
+    }
+
+    function verificarAutoArchivo() {
+        const ahora = new Date();
+        registros.forEach(r => {
+            if (r.estado === 'Entregado' && !r.archivado) {
+                if (r.historialEstados && r.historialEstados.length > 0) {
+                    const eventosEntregado = r.historialEstados.filter(h => h.estado === 'Entregado');
+                    if (eventosEntregado.length > 0) {
+                        const ultimoEvento = eventosEntregado[eventosEntregado.length - 1];
+                        const partes = ultimoEvento.fecha.split(', ');
+                        const fechaPartes = partes[0].split('/');
+                        const horaPartes = partes[1].split(':');
+                        const fechaEntrega = new Date(fechaPartes[2], fechaPartes[1] - 1, fechaPartes[0], horaPartes[0], horaPartes[1], horaPartes[2]);
+                        const diferenciaMs = ahora - fechaEntrega;
+                        const unDiaMs = 24 * 60 * 60 * 1000;
+                        if (diferenciaMs >= unDiaMs) { db.ref('reparaciones/' + r.id).update({ archivado: true }); }
+                    }
+                }
+            }
         });
     }
 
-    // --- Lógica del Visualizador con ZOOM Táctil ---
     let scale = 1, lastScale = 1;
     let pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
     const viewer = document.getElementById('viewerModal');
     const imgFull = document.getElementById('imgFull');
 
-    function verImagenFull(src) {
-        imgFull.src = src;
-        scale = 1; pointX = 0; pointY = 0;
-        updateTransform();
-        viewer.style.display = 'flex';
-    }
-
-    function closeViewer() {
-        viewer.style.display = 'none';
-    }
-
-    function updateTransform() {
-        imgFull.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-    }
+    function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
+    function closeViewer() { viewer.style.display = 'none'; }
+    function updateTransform() { imgFull.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
     viewer.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-            isDragging = true;
-            startX = e.touches[0].clientX - pointX;
-            startY = e.touches[0].clientY - pointY;
-        } else if (e.touches.length === 2) {
-            isDragging = false;
-            lastScale = scale;
-            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            viewer.initialDist = dist;
-        }
+        if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; }
+        else if (e.touches.length === 2) { isDragging = false; lastScale = scale; const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); viewer.initialDist = dist; }
     });
 
     viewer.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        if (isDragging && e.touches.length === 1 && scale > 1) {
-            pointX = e.touches[0].clientX - startX;
-            pointY = e.touches[0].clientY - startY;
-            updateTransform();
-        } else if (e.touches.length === 2) {
+        if (isDragging && e.touches.length === 1 && scale > 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); }
+        else if (e.touches.length === 2) {
             const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             scale = Math.min(Math.max(1, lastScale * (dist / viewer.initialDist)), 4);
             if(scale === 1) { pointX = 0; pointY = 0; }
@@ -707,10 +699,7 @@
     }, {passive: false});
 
     viewer.addEventListener('touchend', () => { isDragging = false; });
-
-    db.ref(".info/connected").on("value", s => {
-        document.getElementById('status-dot').className = s.val() ? "online" : "offline";
-    });
+    db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
 </script>
 </body>
 </html>
