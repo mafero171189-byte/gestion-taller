@@ -18,89 +18,82 @@
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
         
+        /* --- ESTILOS MODO OSCURO --- */
+        .dark-mode body { background: #0f172a; color: #f1f5f9; }
+        .dark-mode .container, 
+        .dark-mode #gesture-zone-top,
+        .dark-mode .card-stats,
+        .dark-mode .modal-box,
+        .dark-mode .form-grid { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+        .dark-mode input, .dark-mode select, .dark-mode #search { background: #0f172a; border-color: #475569; color: #ffffff; }
+        .dark-mode th { background: #334155; color: #cbd5e1; }
+        .dark-mode td { border-bottom-color: #334155; color: #e2e8f0; }
+        .dark-mode label { color: #94a3b8; }
+        .dark-mode .action-btns button { background: #334155; border-color: #475569; color: white; }
+        .dark-mode .opt-entregado { background: #334155; color: #cbd5e1; }
+        .dark-mode .history-item b { color: #888; }
+        .dark-mode .card-stats p { color: #f1f5f9 !important; }
+        .dark-mode .modo-archivo-activo { background: #020617 !important; }
+
+        /* Estilos generales restantes */
         #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
-        
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(2px); }
         .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        
         .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
         .opt-pendiente { background: #fff9c4; color: #856404; }
         .opt-reparado { background: #c8e6c9; color: #1b5e20; }
         .opt-entregado { background: #e2e8f0; color: #475569; }
-
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
         .history-item::before { content: ''; position: absolute; left: -8px; top: 0; width: 12px; height: 12px; background: var(--secondary); border-radius: 50%; }
         .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
         .history-item span { font-size: 14px; display: block; margin-top: 2px; }
-
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        
         .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
-        .badge-disabled { cursor: not-allowed; opacity: 0.7; }
         .st-pendiente { background: #fff9c4; color: #856404; }
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
         .st-entregado { background: #e2e8f0; color: #475569; }
-
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
         .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
         #status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
         .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
         .offline { background: #95a5a6; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background 0.3s; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; }
-        
-        .modo-archivo-activo { background: #f1f5f9 !important; }
-        .btn-archivo-on { background: #475569 !important; border: 2px solid #3498db !important; }
-
         .card-stats { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
-        .card-stats b { font-size: 12px; color: #64748b; text-transform: uppercase; }
         .card-stats p { font-size: 24px; font-weight: bold; margin: 10px 0 0 0; }
-
-        .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
-
-        #viewerModal { background: rgba(0,0,0,0.95); z-index: 5000; overflow: hidden; touch-action: none; display: none; flex-direction: column; }
-        #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-        #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
-        #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
-
-        /* --- MODO OSCURO --- */
-        body.dark-mode { background: #0f172a; color: #f1f5f9; }
-        body.dark-mode .container, 
-        body.dark-mode #gesture-zone-top,
-        body.dark-mode .card-stats,
-        body.dark-mode .modal-box,
-        body.dark-mode .form-grid { background: #1e293b; border-color: #334155; color: #f1f5f9; }
-        body.dark-mode input, body.dark-mode select, body.dark-mode #search { background: #0f172a; border-color: #475569; color: #ffffff; }
-        body.dark-mode th { background: #334155; color: #cbd5e1; }
-        body.dark-mode td { border-bottom-color: #334155; color: #e2e8f0; }
-        body.dark-mode label { color: #94a3b8; }
-        body.dark-mode .action-btns button { background: #334155; border-color: #475569; color: white; }
-        body.dark-mode .opt-entregado { background: #334155; color: #cbd5e1; }
-        body.dark-mode .history-item b { color: #888; }
-        body.dark-mode .card-stats p { color: #f1f5f9 !important; }
-        body.dark-mode .modo-archivo-activo { background: #020617 !important; }
     </style>
 
     <script>
-        const configFirebaseLoad = {
+        // --- MEMORIA INSTANTÁNEA ---
+        if (localStorage.getItem('modoNoche') === 'true') {
+            document.documentElement.classList.add('dark-mode');
+        }
+
+        const firebaseConfig = {
             apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
             databaseURL: "https://github-c3e96-default-rtdb.firebaseio.com",
             projectId: "github-c3e96"
         };
-        firebase.initializeApp(configFirebaseLoad);
-        const dbPreLoad = firebase.database();
-        dbPreLoad.ref('configuracion/modoNoche').once('value', snap => {
-            if (snap.val() === true) {
-                document.documentElement.classList.add('dark-mode');
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const dbRef = db.ref('reparaciones');
+
+        // Sincronización de fondo con Firebase
+        db.ref('configuracion/modoNoche').once('value', snap => {
+            const esOscuro = snap.val();
+            if (esOscuro !== null) {
+                if (esOscuro) document.documentElement.classList.add('dark-mode');
+                else document.documentElement.classList.remove('dark-mode');
+                localStorage.setItem('modoNoche', esOscuro);
             }
         });
     </script>
@@ -108,13 +101,6 @@
 <body onload="loadDraft()">
 
 <div id="toast-alert"></div>
-
-<div id="viewerModal" class="modal-overlay">
-    <button id="btnCloseViewer" onclick="closeViewer()">X</button>
-    <div id="imgContainer">
-        <img id="imgFull" src="">
-    </div>
-</div>
 
 <div id="statusModal" class="modal-overlay">
     <div class="modal-box">
@@ -198,22 +184,15 @@
                     </div>
                 </div>
                 <div class="full" style="display: flex; align-items: flex-end; gap: 10px;">
-                    <div style="padding-bottom: 5px;">
-                        <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
-                    </div>
-                    <div id="costo-inner" style="display:none;">
-                        <label>Costo</label>
-                        <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" style="width: 120px;">
-                    </div>
+                    <div style="padding-bottom: 5px;"><span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span></div>
+                    <div id="costo-inner" style="display:none;"><label>Costo</label><input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" style="width: 120px;"></div>
                 </div>
                 <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
                 <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
-                
                 <div class="full" style="display:flex; flex-direction: column; gap:5px;">
                     <button type="button" class="btn" style="background:#6c5ce7; color:white; width: 60px; height: 45px;" onclick="document.getElementById('inputFoto').click()">📷</button>
                     <div id="formThumbnails" class="thumb-container"></div>
                 </div>
-
                 <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
                     <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
                     <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
@@ -223,15 +202,13 @@
         </form>
 
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
+            <input type="text" id="search" placeholder="🔎 Buscar..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
             <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
         </div>
 
         <div class="table-wrapper" style="overflow-x:auto;">
             <table id="mainTable">
-                <thead>
-                    <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
-                </thead>
+                <thead><tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -240,19 +217,13 @@
     <div id="page-contabilidad" class="page" style="display:none;">
         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="margin:0;">💰 Contabilidad</h2>
-            <div style="display:flex; gap:10px;">
-                <select id="selectMes" onchange="renderContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
-                <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px;" onclick="exportarExcel()">📊 EXCEL</button>
-            </div>
+            <select id="selectMes" onchange="renderContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
         </div>
         <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;"></div>
     </div>
 </div>
 
 <script>
-    const db = firebase.database();
-    const dbRef = db.ref('reparaciones');
-
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
@@ -261,17 +232,25 @@
     let idParaBorrar = null;
     let idParaFotos = null;
     let fotosTemporales = [];
-
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
-    const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const selectMes = document.getElementById('selectMes');
-    const mesActual = new Date().getMonth();
-    mesesNombres.forEach((m, i) => {
-        let opt = document.createElement('option');
-        opt.value = i; opt.text = m;
-        if(i === mesActual) opt.selected = true;
-        selectMes.appendChild(opt);
+    // --- FUNCIONES CORE ---
+    function toggleTheme() {
+        const html = document.documentElement;
+        const btn = document.getElementById('btn-theme');
+        const esOscuro = html.classList.toggle('dark-mode');
+        
+        btn.innerText = esOscuro ? "☀️" : "🌙";
+        localStorage.setItem('modoNoche', esOscuro);
+        db.ref('configuracion').update({ modoNoche: esOscuro });
+    }
+
+    // Inicializar emoji del botón según el estado
+    window.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('btn-theme');
+        if (document.documentElement.classList.contains('dark-mode')) {
+            btn.innerText = "☀️";
+        }
     });
 
     function showToast(text, color) {
@@ -280,117 +259,50 @@
         setTimeout(() => t.style.display = "none", 2500);
     }
 
-    function togglePagoForm() {
-        const chk = document.getElementById('checkPagoTotal');
-        const precio = document.getElementById('precio').value;
-        document.getElementById('sena').value = chk.checked ? precio : "";
+    function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
+    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
+
+    function autoOrden() { 
+        if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
+            let proximoNumero = 100;
+            if (registros.length > 0) {
+                const numeros = registros.map(r => {
+                    const co = r.orden ? r.orden.match(/\d+/) : null;
+                    return co ? parseInt(co[0]) : 0;
+                });
+                proximoNumero = Math.max(...numeros, 99) + 1;
+            }
+            document.getElementById('nroOrden').value = "MAT-" + proximoNumero; 
+        } 
     }
 
-    function togglePago(id) {
-        const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
-        const estaPagado = (r.precio - r.sena) === 0;
-        db.ref('reparaciones/'+id).update({ sena: estaPagado ? 0 : r.precio });
-        showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
+    function revelarCosto() { 
+        let c = document.getElementById('costo-inner'); 
+        c.style.display = c.style.display === "none" ? "block" : "none"; 
+        if(c.style.display === "block") document.getElementById('costoRepuesto').focus();
     }
-
-    function openStatusModal(id) {
-        const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
-        idParaEstado = id;
-        document.getElementById('statusModal').style.display = 'flex';
-    }
-    function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
-    
-    function confirmarEstado(nuevo) {
-        const r = registros.find(x => x.id === idParaEstado);
-        const fechaActual = new Date().toLocaleString('es-AR');
-        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569' };
-        const nuevoEvento = { estado: nuevo, fecha: fechaActual };
-        let historialActual = r.historialEstados || [];
-        historialActual.push(nuevoEvento);
-        let updates = { estado: nuevo, historialEstados: historialActual };
-        db.ref('reparaciones/' + idParaEstado).update(updates);
-        closeStatusModal();
-        showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
-    }
-
-    function openPriceModal(id) {
-        const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
-        idParaPrecio = id;
-        document.getElementById('newPriceInput').value = r.precio.toLocaleString('es-AR');
-        document.getElementById('priceModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('newPriceInput').focus(), 100);
-    }
-    function closePriceModal() { document.getElementById('priceModal').style.display = 'none'; }
-    document.getElementById('confirmPriceBtn').onclick = () => {
-        const nuevo = parseMoney(document.getElementById('newPriceInput').value);
-        db.ref('reparaciones/' + idParaPrecio).update({ precio: nuevo });
-        closePriceModal();
-        showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
-    };
-
-    function openHistory(id) {
-        const r = registros.find(x => x.id === id);
-        let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
-        if(r.historialEstados && r.historialEstados.length > 0) {
-            r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
-        }
-        document.getElementById('historyContent').innerHTML = h;
-        document.getElementById('historyModal').style.display = 'flex';
-    }
-    function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
     function renderTable() {
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
-        const table = document.getElementById('mainTable');
-        const btnArch = document.getElementById('btnArchivo');
         body.innerHTML = "";
         
-        if(modoArchivo) {
-            table.classList.add('modo-archivo-activo');
-            btnArch.classList.add('btn-archivo-on');
-        } else {
-            table.classList.remove('modo-archivo-activo');
-            btnArch.classList.remove('btn-archivo-on');
-        }
-        
-        const filtrados = registros.filter(r => {
-            const cliente = (r.cliente || "").toLowerCase();
-            const modelo = (r.modelo || "").toLowerCase();
-            const orden = (r.orden || "").toLowerCase();
-            const matchBusqueda = cliente.includes(bus) || modelo.includes(bus) || orden.includes(bus);
-            const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
-            return matchBusqueda && matchArchivo;
-        }).sort((a, b) => {
-            const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
-            const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
-            return fechaB - fechaA; 
-        });
-
-        filtrados.forEach(r => {
+        registros.filter(r => {
+            const matchBusqueda = (r.cliente+r.modelo+r.orden).toLowerCase().includes(bus);
+            return matchBusqueda && (bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado));
+        }).sort((a,b) => b.id.localeCompare(a.id)).forEach(r => {
             const saldo = r.precio - r.sena;
-            const canEdit = !r.archivado;
             body.innerHTML += `<tr>
-                <td>
-                    <b>${r.orden}</b> <span style="cursor:pointer; margin-left:5px;" onclick="openHistory('${r.id}')">🕒</span>
-                    <br>
-                    <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span>
-                </td>
+                <td><b>${r.orden}</b> <span onclick="openHistory('${r.id}')">🕒</span><br><small>${r.fecha || ''}</small></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" 
-                    onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
-                <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
-                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
-                </td>
+                <td><span class="badge-status st-${r.estado.toLowerCase()}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td onclick="openPriceModal('${r.id}')">${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}</td>
                 <td class="action-btns">
-                    <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✅</button>
+                    <button onclick="togglePago('${r.id}')">✅</button>
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✏️</button>
+                    <button onclick="editar('${r.id}')">✏️</button>
                     <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
@@ -401,87 +313,52 @@
         const v = snap.val(); 
         registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
         renderTable(); 
-        if(idParaFotos && document.getElementById('photoModal').style.display === 'flex') {
-            abrirFotos(idParaFotos);
-        }
-        setTimeout(verificarAutoArchivo, 2000);
     });
 
-    function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
-    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
-    
-    function autoOrden() { 
-        if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-            let proximoNumero = 100;
-            if (registros.length > 0) {
-                const numeros = registros.map(r => {
-                    const coincidencia = r.orden ? r.orden.match(/\d+/) : null;
-                    return coincidencia ? parseInt(coincidencia[0]) : 0;
-                });
-                const maximoActual = Math.max(...numeros);
-                if (maximoActual >= 100) proximoNumero = maximoActual + 1;
-            }
-            document.getElementById('nroOrden').value = "MAT-" + proximoNumero; 
-        } 
+    document.getElementById('repairForm').onsubmit = e => {
+        e.preventDefault();
+        const data = {
+            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
+            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
+            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
+            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
+            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
+            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
+            archivado: false, estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente",
+            fotos: idEditando ? (registros.find(x => x.id === idEditando).fotos || []) : fotosTemporales
+        };
+        if(idEditando) db.ref('reparaciones/'+idEditando).update(data);
+        else { data.fecha = new Date().toLocaleString('es-AR'); dbRef.push(data); }
+        ejecutarLimpieza(false);
+    };
+
+    function ejecutarLimpieza() {
+        idEditando = null; document.getElementById('repairForm').reset();
+        document.getElementById('btnSubmit').innerText = "REGISTRAR";
+        fotosTemporales = []; document.getElementById('formThumbnails').innerHTML = "";
+        localStorage.removeItem('st_matias_draft');
     }
 
-    function revelarCosto() { 
-        let c = document.getElementById('costo-inner'); 
-        c.style.display = c.style.display === "none" ? "block" : "none"; 
-        if(c.style.display === "block") { document.getElementById('costoRepuesto').focus(); }
+    function togglePago(id) {
+        const r = registros.find(x => x.id === id);
+        db.ref('reparaciones/'+id).update({ sena: (r.precio - r.sena) === 0 ? 0 : r.precio });
     }
 
-    document.getElementById('costoRepuesto').addEventListener('blur', function() {
-        setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200);
-    });
-
-    document.getElementById('costoRepuesto').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            document.getElementById('costo-inner').style.display = "none";
-            document.getElementById('falla').focus();
-        }
-    });
-    
-    function toggleArchivo() { 
-        modoArchivo = !modoArchivo; 
-        const textoBtn = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS";
-        document.getElementById('btnArchivo').innerText = textoBtn; 
-        showToast(modoArchivo ? "VIENDO ARCHIVADOS 📁" : "VIENDO ACTIVOS 🛠️", modoArchivo ? "#475569" : "#3498db");
-        renderTable(); 
-    }
-    
     function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
     function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
-    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
-
-    function ejecutarLimpieza(mostrarMensaje) {
-        idEditando = null; 
-        document.getElementById('repairForm').reset(); 
-        document.querySelectorAll('#repairForm input').forEach(input => {
-            if(input.type !== 'checkbox') input.value = "";
-            else input.checked = false;
-        });
-        document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        fotosTemporales = [];
-        document.getElementById('formThumbnails').innerHTML = "";
-        localStorage.removeItem('st_matias_draft');
-        if(mostrarMensaje) showToast("Limpio", "#64748b");
-        setTimeout(() => document.getElementById('cliente').focus(), 50);
-    }
-
-    function clickLimpiar() { ejecutarLimpieza(true); }
+    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); };
 
     function saveDraft() {
         if(idEditando) return;
-        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value };
-        localStorage.setItem('st_matias_draft', JSON.stringify(draft));
+        const d = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value };
+        localStorage.setItem('st_matias_draft', JSON.stringify(d));
     }
 
     function loadDraft() {
-        const saved = localStorage.getItem('st_matias_draft');
-        if(saved && !idEditando) {
-            const d = JSON.parse(saved);
+        const s = localStorage.getItem('st_matias_draft');
+        if(s && !idEditando) {
+            const d = JSON.parse(s);
             document.getElementById('cliente').value = d.cliente || "";
             document.getElementById('tel').value = d.tel || "";
             document.getElementById('modelo').value = d.modelo || "";
@@ -494,267 +371,13 @@
         document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-nav-'+p).classList.add('active');
-        if(p === 'contabilidad') renderContabilidad();
     }
 
-    function renderContabilidad() {
-        const mes = parseInt(document.getElementById('selectMes').value);
-        let caja = 0, gastos = 0, porIngresar = 0;
-        registros.forEach(r => {
-            const m = r.fecha ? parseInt(r.fecha.split('/')[1]) - 1 : -1;
-            if(m === mes) { 
-                caja += (r.sena || 0); 
-                gastos += (r.costoRepuesto || 0); 
-                const saldo = (r.precio || 0) - (r.sena || 0);
-                if (saldo > 0 && !r.archivado) { porIngresar += saldo; }
-            }
-        });
-        document.getElementById('stats-container').innerHTML = `
-            <div class="card-stats" style="border-left: 5px solid var(--success);">
-                <b>Ingresos (Caja)</b><p style="color:var(--success);">${fmt.format(caja)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--warning);">
-                <b>Plata a Ingresar</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--danger);">
-                <b>Gastos Repuestos</b><p style="color:var(--danger);">${fmt.format(gastos)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--primary);">
-                <b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p>
-            </div>`;
-    }
-
-    function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
-        registros.forEach(r => { 
-            let c = r.costoRepuesto || 0; 
-            csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; 
-        });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = `ST_MATIAS_REPORTE.csv`;
-        link.click();
-    }
-
-    document.getElementById('repairForm').onsubmit = e => {
-        e.preventDefault();
-        const precioVal = parseMoney(document.getElementById('precio').value);
-        const senaVal = parseMoney(document.getElementById('sena').value);
-        if(precioVal <= 0) { showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22"); return; }
-        const data = {
-            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
-            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
-            precio: precioVal, sena: senaVal,
-            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
-            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
-            archivado: false, 
-            estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente",
-            fotos: idEditando ? (registros.find(x => x.id === idEditando).fotos || []) : fotosTemporales
-        };
-        if(idEditando) {
-            db.ref('reparaciones/'+idEditando).update(data);
-            showToast("ACTUALIZADO ✅", "#3498db");
-        } else {
-            data.fecha = new Date().toLocaleString('es-AR');
-            dbRef.push(data);
-            showToast("Registrado", "#2ecc71"); 
-        }
-        ejecutarLimpieza(false);
-    };
-
-    function editar(id) {
-        idEditando = id; const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
-        document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
-        document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
-        document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
-        document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
-        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
-        document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
-        document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
-        fotosTemporales = r.fotos || [];
-        actualizarMiniaturasForm();
-        window.scrollTo({top:0, behavior:'smooth'});
-    }
-
-    function enviarWhatsApp(id) {
-        const r = registros.find(x => x.id === id);
-        let numeroLimpio = String(r.tel).replace(/\D/g, ''); 
-        if (!numeroLimpio.startsWith('54')) { numeroLimpio = '549' + numeroLimpio; }
-        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-        window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
-    }
-
-    function imprimir(id) {
-        const r = registros.find(x => x.id === id);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'});
-        doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
-        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
-        doc.setFontSize(18); doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
-        doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
-        doc.setFontSize(10);
-        let y = 58; const col1 = 12; const col2 = 35; const lineH = 7;
-        const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
-        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`); printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
-        y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("Muchas gracias!", 40, 153, {align:'center'});
-        doc.save(`Ticket_${r.orden}.pdf`);
-    }
-
-    function agregarFotoTemporal(input) {
-        if (input.files && input.files[0]) {
-            try {
-                if (fotosTemporales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        try {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            const maxW = 800; const scale = maxW / img.width;
-                            canvas.width = maxW; canvas.height = img.height * scale;
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
-                            actualizarMiniaturasForm();
-                        } catch (err) { showToast("ERROR AL PROCESAR IMAGEN ❌", "#e53e3e"); }
-                    };
-                };
-                reader.readAsDataURL(input.files[0]);
-            } catch (err) { showToast("ERROR AL CARGAR ARCHIVO ❌", "#e53e3e"); }
-        }
-    }
-
-    function actualizarMiniaturasForm() {
-        const container = document.getElementById('formThumbnails');
-        container.innerHTML = "";
-        fotosTemporales.forEach((src, idx) => {
-            container.innerHTML += `<img src="${src}" class="thumb-preview" onclick="quitarFotoForm(${idx})">`;
-        });
-    }
-
-    function quitarFotoForm(index) { fotosTemporales.splice(index, 1); actualizarMiniaturasForm(); }
-
-    function abrirFotos(id) {
-        idParaFotos = id; const r = registros.find(x => x.id === id);
-        const gallery = document.getElementById('photoGallery');
-        gallery.innerHTML = "";
-        const fotos = r.fotos || [];
-        if(fotos.length > 0) {
-            fotos.forEach((src, index) => {
-                gallery.innerHTML += `<div style="position:relative;">
-                        <img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover; cursor:pointer;" onclick="verImagenFull('${src}')">
-                        <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:rgba(229,62,62,0.9); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-weight:bold;">X</button>
-                    </div>`;
-            });
-        } else { gallery.innerHTML = "<p style='grid-column: span 2; color:#64748b;'>Sin fotos</p>"; }
-        document.getElementById('photoModal').style.display = 'flex';
-    }
-
-    function subirFotoDirecta(input) {
-        if (input.files && input.files[0]) {
-            const r = registros.find(x => x.id === idParaFotos);
-            let fotosActuales = [...(r.fotos || [])];
-            if (fotosActuales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    canvas.width = 800; canvas.height = img.height * (800 / img.width);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    fotosActuales.push(canvas.toDataURL('image/jpeg', 0.7));
-                    db.ref('reparaciones/' + idParaFotos).update({ fotos: fotosActuales }).then(() => abrirFotos(idParaFotos));
-                };
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function eliminarFoto(id, index) {
-        const r = registros.find(x => x.id === id);
-        let fotos = [...(r.fotos || [])];
-        fotos.splice(index, 1);
-        db.ref('reparaciones/' + id).update({ fotos: fotos }).then(() => abrirFotos(id));
-    }
-
-    function verificarAutoArchivo() {
-        const ahora = new Date();
-        registros.forEach(r => {
-            if (r.estado === 'Entregado' && !r.archivado) {
-                if (r.historialEstados && r.historialEstados.length > 0) {
-                    const eventosEntregado = r.historialEstados.filter(h => h.estado === 'Entregado');
-                    if (eventosEntregado.length > 0) {
-                        const ultimoEvento = eventosEntregado[eventosEntregado.length - 1];
-                        const partes = ultimoEvento.fecha.split(', ');
-                        const fechaPartes = partes[0].split('/');
-                        const horaPartes = partes[1].split(':');
-                        const fechaEntrega = new Date(fechaPartes[2], fechaPartes[1] - 1, fechaPartes[0], horaPartes[0], horaPartes[1], horaPartes[2]);
-                        const diferenciaMs = ahora - fechaEntrega;
-                        const unDiaMs = 24 * 60 * 60 * 1000;
-                        if (diferenciaMs >= unDiaMs) { db.ref('reparaciones/' + r.id).update({ archivado: true }); }
-                    }
-                }
-            }
-        });
-    }
-
-    let scale = 1, lastScale = 1;
-    let pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
-    const viewer = document.getElementById('viewerModal');
-    const imgFull = document.getElementById('imgFull');
-
-    function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
-    function closeViewer() { viewer.style.display = 'none'; }
-    function updateTransform() { imgFull.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
-
-    viewer.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; }
-        else if (e.touches.length === 2) { isDragging = false; lastScale = scale; const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); viewer.initialDist = dist; }
-    });
-
-    viewer.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (isDragging && e.touches.length === 1 && scale > 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); }
-        else if (e.touches.length === 2) {
-            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            scale = Math.min(Math.max(1, lastScale * (dist / viewer.initialDist)), 4);
-            if(scale === 1) { pointX = 0; pointY = 0; }
-            updateTransform();
-        }
-    }, {passive: false});
-
-    viewer.addEventListener('touchend', () => { isDragging = false; });
+    function toggleArchivo() { modoArchivo = !modoArchivo; renderTable(); }
+    function clickLimpiar() { ejecutarLimpieza(); showToast("Limpio", "#64748b"); }
+    
+    // Conexión
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
-
-    /* --- LÓGICA MODO OSCURO CON FIREBASE --- */
-    function toggleTheme() {
-        const body = document.body;
-        const btn = document.getElementById('btn-theme');
-        const esOscuro = body.classList.toggle('dark-mode');
-        btn.innerText = esOscuro ? "☀️" : "🌙";
-        db.ref('configuracion').update({ modoNoche: esOscuro });
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        db.ref('configuracion/modoNoche').once('value', snap => {
-            if (snap.val() === true) {
-                document.body.classList.add('dark-mode');
-                const btn = document.getElementById('btn-theme');
-                if(btn) btn.innerText = "☀️";
-            }
-        });
-    });
 </script>
 </body>
 </html>
