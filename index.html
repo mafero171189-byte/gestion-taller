@@ -71,7 +71,39 @@
         #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
         #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
+
+        /* --- MODO OSCURO --- */
+        body.dark-mode { background: #0f172a; color: #f1f5f9; }
+        body.dark-mode .container, 
+        body.dark-mode #gesture-zone-top,
+        body.dark-mode .card-stats,
+        body.dark-mode .modal-box,
+        body.dark-mode .form-grid { background: #1e293b; border-color: #334155; color: #f1f5f9; }
+        body.dark-mode input, body.dark-mode select, body.dark-mode #search { background: #0f172a; border-color: #475569; color: #ffffff; }
+        body.dark-mode th { background: #334155; color: #cbd5e1; }
+        body.dark-mode td { border-bottom-color: #334155; color: #e2e8f0; }
+        body.dark-mode label { color: #94a3b8; }
+        body.dark-mode .action-btns button { background: #334155; border-color: #475569; color: white; }
+        body.dark-mode .opt-entregado { background: #334155; color: #cbd5e1; }
+        body.dark-mode .history-item b { color: #888; }
+        body.dark-mode .card-stats p { color: #f1f5f9 !important; }
+        body.dark-mode .modo-archivo-activo { background: #020617 !important; }
     </style>
+
+    <script>
+        const configFirebaseLoad = {
+            apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
+            databaseURL: "https://github-c3e96-default-rtdb.firebaseio.com",
+            projectId: "github-c3e96"
+        };
+        firebase.initializeApp(configFirebaseLoad);
+        const dbPreLoad = firebase.database();
+        dbPreLoad.ref('configuracion/modoNoche').once('value', snap => {
+            if (snap.val() === true) {
+                document.documentElement.classList.add('dark-mode');
+            }
+        });
+    </script>
 </head>
 <body onload="loadDraft()">
 
@@ -138,6 +170,7 @@
 <nav>
     <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
     <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
+    <button onclick="toggleTheme()" id="btn-theme" style="font-size: 18px; filter: grayscale(1);">🌙</button>
 </nav>
 
 <div id="gesture-zone-top">
@@ -217,17 +250,6 @@
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
-        authDomain: "github-c3e96.firebaseapp.com",
-        databaseURL: "https://github-c3e96-default-rtdb.firebaseio.com",
-        projectId: "github-c3e96",
-        storageBucket: "github-c3e96.firebasestorage.app",
-        messagingSenderId: "403618822429",
-        appId: "1:403618822429:web:ace2540068e2edba9809f4"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
 
@@ -714,6 +736,25 @@
 
     viewer.addEventListener('touchend', () => { isDragging = false; });
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
+
+    /* --- LÓGICA MODO OSCURO CON FIREBASE --- */
+    function toggleTheme() {
+        const body = document.body;
+        const btn = document.getElementById('btn-theme');
+        const esOscuro = body.classList.toggle('dark-mode');
+        btn.innerText = esOscuro ? "☀️" : "🌙";
+        db.ref('configuracion').update({ modoNoche: esOscuro });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        db.ref('configuracion/modoNoche').once('value', snap => {
+            if (snap.val() === true) {
+                document.body.classList.add('dark-mode');
+                const btn = document.getElementById('btn-theme');
+                if(btn) btn.innerText = "☀️";
+            }
+        });
+    });
 </script>
 </body>
 </html>
