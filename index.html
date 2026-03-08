@@ -297,17 +297,14 @@
             btnArch.classList.remove('btn-archivo-on');
         }
         
-        // FILTRADO Y ORDENAMIENTO RECIENTE
         const filtrados = registros.filter(r => {
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
             const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
             return matchBusqueda && matchArchivo;
         }).sort((a, b) => {
-            // Se asume que el ID de Firebase o el campo fecha sirven para el orden cronológico
-            // Convertimos la fecha DD/MM/YYYY, HH:MM:SS a objeto Date para comparar
             const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
             const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
-            return fechaB - fechaA; // El más reciente primero
+            return fechaB - fechaA; 
         });
 
         filtrados.forEach(r => {
@@ -344,7 +341,23 @@
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
     function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
-    function autoOrden() { if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { document.getElementById('nroOrden').value = "MAT-" + Math.floor(Math.random()*90000+10000); } }
+    
+    // NUEVA FUNCIÓN DE AUTO-ORDEN DESDE MAT-100
+    function autoOrden() { 
+        if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
+            let proximoNumero = 100;
+            if (registros.length > 0) {
+                const numeros = registros.map(r => {
+                    const coincidencia = r.orden ? r.orden.match(/\d+/) : null;
+                    return coincidencia ? parseInt(coincidencia[0]) : 0;
+                });
+                const maximoActual = Math.max(...numeros);
+                if (maximoActual >= 100) proximoNumero = maximoActual + 1;
+            }
+            document.getElementById('nroOrden').value = "MAT-" + proximoNumero; 
+        } 
+    }
+
     function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
     
     function toggleArchivo() { 
