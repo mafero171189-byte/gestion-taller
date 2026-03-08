@@ -63,11 +63,27 @@
         .card-stats { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
         .card-stats b { font-size: 12px; color: #64748b; text-transform: uppercase; }
         .card-stats p { font-size: 24px; font-weight: bold; margin: 10px 0 0 0; }
+
+        .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+        .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
+
+        /* Estilos específicos para el visualizador con ZOOM */
+        #viewerModal { background: rgba(0,0,0,0.95); z-index: 5000; overflow: hidden; touch-action: none; display: none; flex-direction: column; }
+        #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+        #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
+        #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
     </style>
 </head>
 <body onload="loadDraft()">
 
 <div id="toast-alert"></div>
+
+<div id="viewerModal" class="modal-overlay">
+    <button id="btnCloseViewer" onclick="closeViewer()">X</button>
+    <div id="imgContainer">
+        <img id="imgFull" src="">
+    </div>
+</div>
 
 <div id="statusModal" class="modal-overlay">
     <div class="modal-box">
@@ -105,6 +121,18 @@
             <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">NO</button>
             <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white;">SI, BORRAR</button>
         </div>
+    </div>
+</div>
+
+<div id="photoModal" class="modal-overlay">
+    <div class="modal-box" style="width:90%; max-width:400px;">
+        <p><b>🖼️ Fotos del Equipo</b></p>
+        <div id="photoGallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height:400px; overflow-y:auto;"></div>
+        <div style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
+            <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
+            <button onclick="document.getElementById('inputFotoAccion').click()" id="btnAddMore" style="background:var(--success); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+        </div>
+        <input type="file" id="inputFotoAccion" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)">
     </div>
 </div>
 
@@ -148,9 +176,16 @@
                 </div>
                 <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
                 <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
-                <div class="full" style="display:flex; gap:10px;">
-                    <button type="submit" id="btnSubmit" class="btn btn-main">REGISTRAR</button>
-                    <button type="button" class="btn" style="background:#94a3b8; color:white;" onclick="clickLimpiar()">LIMPIAR</button>
+                
+                <div class="full" style="display:flex; flex-direction: column; gap:5px;">
+                    <button type="button" class="btn" style="background:#6c5ce7; color:white; width: 60px; height: 45px;" onclick="document.getElementById('inputFoto').click()">📷</button>
+                    <div id="formThumbnails" class="thumb-container"></div>
+                </div>
+
+                <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+                    <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
+                    <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
+                    <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)">
                 </div>
             </div>
         </form>
@@ -203,6 +238,9 @@
     let idParaEstado = null;
     let idParaPrecio = null;
     let idParaBorrar = null;
+    let idParaFotos = null;
+    let fotosTemporales = [];
+
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
     const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -281,252 +319,4 @@
         document.getElementById('historyContent').innerHTML = h;
         document.getElementById('historyModal').style.display = 'flex';
     }
-    function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
-
-    function renderTable() {
-        const bus = document.getElementById('search').value.toLowerCase();
-        const body = document.getElementById('tableBody');
-        const table = document.getElementById('mainTable');
-        const btnArch = document.getElementById('btnArchivo');
-        body.innerHTML = "";
-        if(modoArchivo) {
-            table.classList.add('modo-archivo-activo');
-            btnArch.classList.add('btn-archivo-on');
-        } else {
-            table.classList.remove('modo-archivo-activo');
-            btnArch.classList.remove('btn-archivo-on');
-        }
-        
-        const filtrados = registros.filter(r => {
-            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus);
-            const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
-            return matchBusqueda && matchArchivo;
-        }).sort((a, b) => {
-            const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
-            const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
-            return fechaB - fechaA; 
-        });
-
-        filtrados.forEach(r => {
-            const saldo = r.precio - r.sena;
-            const canEdit = !r.archivado;
-            body.innerHTML += `<tr>
-                <td>
-                    <b>${r.orden}</b> <span style="cursor:pointer; margin-left:5px;" onclick="openHistory('${r.id}')">🕒</span>
-                    <br>
-                    <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span>
-                </td>
-                <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
-                <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" 
-                    onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
-                <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
-                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
-                </td>
-                <td class="action-btns">
-                    <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✅</button>
-                    <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✏️</button>
-                    <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
-                    <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
-                </td></tr>`;
-        });
-    }
-
-    dbRef.on('value', snap => {
-        const v = snap.val(); 
-        registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-        renderTable(); 
-    });
-
-    function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
-    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
-    
-    // NUEVA FUNCIÓN DE AUTO-ORDEN DESDE MAT-100
-    function autoOrden() { 
-        if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-            let proximoNumero = 100;
-            if (registros.length > 0) {
-                const numeros = registros.map(r => {
-                    const coincidencia = r.orden ? r.orden.match(/\d+/) : null;
-                    return coincidencia ? parseInt(coincidencia[0]) : 0;
-                });
-                const maximoActual = Math.max(...numeros);
-                if (maximoActual >= 100) proximoNumero = maximoActual + 1;
-            }
-            document.getElementById('nroOrden').value = "MAT-" + proximoNumero; 
-        } 
-    }
-
-    function revelarCosto() { let c = document.getElementById('costo-inner'); c.style.display = c.style.display === "none" ? "block" : "none"; }
-    
-    function toggleArchivo() { 
-        modoArchivo = !modoArchivo; 
-        const textoBtn = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS";
-        const msjToast = modoArchivo ? "VIENDO ARCHIVADOS 📁" : "VIENDO ACTIVOS 🛠️";
-        const colorToast = modoArchivo ? "#475569" : "#3498db";
-        document.getElementById('btnArchivo').innerText = textoBtn; 
-        showToast(msjToast, colorToast);
-        renderTable(); 
-    }
-    
-    function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
-    function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
-    function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
-    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
-
-    function ejecutarLimpieza(mostrarMensaje) {
-        idEditando = null; 
-        document.getElementById('repairForm').reset(); 
-        document.querySelectorAll('#repairForm input').forEach(input => {
-            if(input.type !== 'checkbox') input.value = "";
-            else input.checked = false;
-        });
-        document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        localStorage.removeItem('st_matias_draft');
-        if(mostrarMensaje) showToast("Limpio", "#64748b");
-        setTimeout(() => document.getElementById('cliente').focus(), 50);
-    }
-
-    function clickLimpiar() { ejecutarLimpieza(true); }
-
-    function saveDraft() {
-        if(idEditando) return;
-        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value };
-        localStorage.setItem('st_matias_draft', JSON.stringify(draft));
-    }
-
-    function loadDraft() {
-        const saved = localStorage.getItem('st_matias_draft');
-        if(saved && !idEditando) {
-            const d = JSON.parse(saved);
-            document.getElementById('cliente').value = d.cliente || "";
-            document.getElementById('tel').value = d.tel || "";
-            document.getElementById('modelo').value = d.modelo || "";
-            document.getElementById('falla').value = d.falla || "";
-        }
-    }
-
-    function showPage(p) {
-        document.getElementById('page-gestion').style.display = p === 'gestion' ? 'block' : 'none';
-        document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-nav-'+p).classList.add('active');
-        if(p === 'contabilidad') renderContabilidad();
-    }
-
-    function renderContabilidad() {
-        const mes = parseInt(document.getElementById('selectMes').value);
-        let caja = 0, gastos = 0, porIngresar = 0;
-        registros.forEach(r => {
-            const m = r.fecha ? parseInt(r.fecha.split('/')[1]) - 1 : -1;
-            if(m === mes) { 
-                caja += (r.sena || 0); 
-                gastos += (r.costoRepuesto || 0); 
-                const saldo = (r.precio || 0) - (r.sena || 0);
-                if (saldo > 0 && !r.archivado) { porIngresar += saldo; }
-            }
-        });
-        document.getElementById('stats-container').innerHTML = `
-            <div class="card-stats" style="border-left: 5px solid var(--success);">
-                <b>Ingresos (Caja)</b><p style="color:var(--success);">${fmt.format(caja)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--warning);">
-                <b>Plata a Ingresar</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--danger);">
-                <b>Gastos Repuestos</b><p style="color:var(--danger);">${fmt.format(gastos)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--primary); grid-column: span 1;">
-                <b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p>
-            </div>`;
-    }
-
-    function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
-        registros.forEach(r => { 
-            let c = r.costoRepuesto || 0; 
-            csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; 
-        });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = `ST_MATIAS_REPORTE.csv`;
-        link.click();
-    }
-
-    document.getElementById('repairForm').onsubmit = e => {
-        e.preventDefault();
-        const precioVal = parseMoney(document.getElementById('precio').value);
-        const senaVal = parseMoney(document.getElementById('sena').value);
-        if(precioVal <= 0) { showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22"); return; }
-        if(senaVal > precioVal) { showToast("LA SEÑA NO PUEDE SUPERAR EL PRECIO ⚠️", "#e67e22"); return; }
-        const data = {
-            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
-            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
-            precio: precioVal, sena: senaVal,
-            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
-            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
-            archivado: false, estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente"
-        };
-        if(idEditando) {
-            db.ref('reparaciones/'+idEditando).update(data);
-            showToast("ACTUALIZADO ✅", "#3498db");
-        } else {
-            data.fecha = new Date().toLocaleString('es-AR');
-            dbRef.push(data);
-            showToast("Registrado", "#2ecc71"); 
-        }
-        ejecutarLimpieza(false);
-    };
-
-    function editar(id) {
-        idEditando = id; const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
-        document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
-        document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
-        document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
-        document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
-        document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
-        document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
-        document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
-        document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
-        window.scrollTo({top:0, behavior:'smooth'});
-    }
-
-    function enviarWhatsApp(id) {
-        const r = registros.find(x => x.id === id);
-        const numeroLimpio = String(r.tel).replace(/\D/g, ''); 
-        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-        window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
-    }
-
-    function imprimir(id) {
-        const r = registros.find(x => x.id === id);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'});
-        doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
-        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
-        doc.setFontSize(18); doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
-        doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
-        doc.setFontSize(10);
-        let y = 58; const col1 = 12; const col2 = 35; const lineH = 7;
-        const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
-        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`); printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
-        y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("Muchas gracias!", 40, 153, {align:'center'});
-        doc.save(`Ticket_${r.orden}.pdf`);
-    }
-
-    db.ref(".info/connected").on("value", s => {
-        document.getElementById('status-dot').className = s.val() ? "online" : "offline";
-    });
-</script>
-</body>
-</html>
+    function closeHistory() { document.getElementById('historyModal').s
