@@ -529,13 +529,18 @@
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
     document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
 
-    function clickLimpiar() {
+    function clickLimpiar(skipToast = false) {
         idEditando = null; 
         document.getElementById('repairForm').reset();
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         fotosTemporales = [];
         document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
+        
+        if (!skipToast) {
+            showToast("FORMULARIO LIMPIO 🧹", "#64748b");
+        }
+        document.getElementById('cliente').focus(); 
     }
 
     function saveDraft() {
@@ -571,12 +576,22 @@
         const mes = parseInt(document.getElementById('selectMes').value);
         let caja = 0, gastos = 0, porIngresar = 0;
         registros.forEach(r => {
-            const m = r.fecha ? parseInt(r.fecha.split('/')[1]) - 1 : -1;
-            if(m === mes) { 
-                caja += (r.sena || 0); 
-                gastos += (r.costoRepuesto || 0); 
-                const saldo = (r.precio || 0) - (r.sena || 0);
-                if (saldo > 0 && !r.archivado) { porIngresar += saldo; }
+            if (r.fecha) {
+                // Prevenir errores de formato extrayendo el mes de forma segura
+                const fechaCorta = r.fecha.split(',')[0].split(' ')[0];
+                const partes = fechaCorta.split('/');
+                const m = partes.length > 1 ? parseInt(partes[1]) - 1 : -1;
+                
+                if(m === mes) { 
+                    const vPrecio = parseFloat(r.precio) || 0;
+                    const vSena = parseFloat(r.sena) || 0;
+                    const vCosto = parseFloat(r.costoRepuesto) || 0;
+
+                    caja += vSena; 
+                    gastos += vCosto; 
+                    const saldo = vPrecio - vSena;
+                    if (saldo > 0 && !r.archivado) { porIngresar += saldo; }
+                }
             }
         });
         document.getElementById('stats-container').innerHTML = `
@@ -617,9 +632,9 @@
         } else {
             data.fecha = new Date().toLocaleString('es-AR');
             dbRef.push(data);
-            showToast("REGISTRADO", "#2ecc71");
+            showToast("REGISTRADO ✅", "#2ecc71");
         }
-        clickLimpiar();
+        clickLimpiar(true); 
     };
 
     function editar(id) {
