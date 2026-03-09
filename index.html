@@ -129,7 +129,7 @@
 
     <div id="historyModal" class="modal-overlay">
         <div class="modal-box" style="width:280px;">
-            <p><b>🕒 Historial de la Orden</b></p>
+            <p id="historyTitle"><b>🕒 Historial de la Orden</b></p>
             <div id="historyContent" style="margin:20px 0; max-height: 300px; overflow-y: auto;"></div>
             <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
         </div>
@@ -426,6 +426,7 @@
 
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
+        document.getElementById('historyTitle').innerHTML = "<b>🕒 Historial de la Orden</b>";
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) {
             r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
@@ -577,7 +578,6 @@
         let caja = 0, gastos = 0, porIngresar = 0;
         registros.forEach(r => {
             if (r.fecha) {
-                // Prevenir errores de formato extrayendo el mes de forma segura
                 const fechaCorta = r.fecha.split(',')[0].split(' ')[0];
                 const partes = fechaCorta.split('/');
                 const m = partes.length > 1 ? parseInt(partes[1]) - 1 : -1;
@@ -828,7 +828,7 @@
     viewer.addEventListener('touchend', () => { isDragging = false; });
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
 
-    // --- NUEVAS FUNCIONES DE GESTIÓN DE USUARIOS ---
+    // --- GESTIÓN DE USUARIOS (ACTUALIZADA) ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
@@ -850,15 +850,29 @@
             body.innerHTML = "";
             if(users) {
                 Object.keys(users).forEach(id => {
+                    const u = users[id];
                     body.innerHTML += `
                     <tr>
-                        <td style="padding:15px;"><b>${id}</b></td>
+                        <td style="padding:15px;">
+                            <b>${id}</b> 
+                            <span style="cursor:pointer; margin-left:10px;" onclick="verHistorialUsuario('${id}')">🕒</span>
+                        </td>
                         <td style="padding:15px;">
                             <button onclick="eliminarLicencia('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button>
                         </td>
                     </tr>`;
                 });
             }
+        });
+    }
+
+    function verHistorialUsuario(id) {
+        db.ref('usuarios_registrados/' + id).once('value', snap => {
+            const u = snap.val();
+            document.getElementById('historyTitle').innerHTML = "<b>🕒 Historial de Licencia</b>";
+            let h = `<div class="history-item"><b>Activación</b><span>${u.fechaAlta || 'No disponible'}</span></div>`;
+            document.getElementById('historyContent').innerHTML = h;
+            document.getElementById('historyModal').style.display = 'flex';
         });
     }
 
