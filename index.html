@@ -10,6 +10,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+        /* ESTILOS DEL LOGIN */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a2a3a 0%, #0f172a 100%);
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+        }
+        .login-card {
+            background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 90%; max-width: 350px; text-align: center;
+        }
+        .login-card h2 { color: #1a2a3a; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif; }
+        .login-card input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; box-sizing: border-box;
+        }
+        .btn-login {
+            width: 100%; padding: 14px; background: #3498db; color: white;
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s;
+        }
+        #app-content { display: none; }
+
+        /* ESTILOS ORIGINALES RESTAURADOS */
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         nav { background: var(--primary); padding: 10px 0; display: flex; justify-content: center; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
@@ -73,150 +95,191 @@
         #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
     </style>
 </head>
-<body onload="loadDraft()">
+<body onload="checkStoredSession()">
 
-<div id="toast-alert"></div>
-
-<div id="viewerModal" class="modal-overlay">
-    <button id="btnCloseViewer" onclick="closeViewer()">X</button>
-    <div id="imgContainer">
-        <img id="imgFull" src="">
+<div id="login-overlay">
+    <div class="login-card">
+        <h2>S.T. MATIAS</h2>
+        <input type="text" id="userIn" placeholder="Usuario">
+        <input type="password" id="passIn" placeholder="Contraseña">
+        <button class="btn-login" onclick="checkAccess()">INGRESAR</button>
+        <p id="loginError" style="color:red; font-size:12px; margin-top:10px; display:none;"></p>
     </div>
 </div>
 
-<div id="statusModal" class="modal-overlay">
-    <div class="modal-box">
-        <p><b>Cambiar Estado</b></p>
-        <button class="status-option opt-pendiente" onclick="confirmarEstado('Pendiente')">⏳ Pendiente</button>
-        <button class="status-option opt-reparado" onclick="confirmarEstado('Reparado')">✅ Reparado</button>
-        <button class="status-option opt-entregado" onclick="confirmarEstado('Entregado')">📦 Entregado</button>
-        <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer;">Cerrar</button>
-    </div>
-</div>
+<div id="app-content">
+    <div id="toast-alert"></div>
 
-<div id="historyModal" class="modal-overlay">
-    <div class="modal-box" style="width:280px;">
-        <p><b>🕒 Historial de la Orden</b></p>
-        <div id="historyContent" style="margin:20px 0; max-height: 300px; overflow-y: auto;"></div>
-        <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
-    </div>
-</div>
-
-<div id="priceModal" class="modal-overlay">
-    <div class="modal-box">
-        <p><b>Actualizar Precio Final</b></p>
-        <input type="text" id="newPriceInput" placeholder="0" oninput="formatInput(this)" style="margin-top:15px; text-align:center; font-weight:bold; font-size:20px;">
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closePriceModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
-            <button id="confirmPriceBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--secondary); color:white;">GUARDAR</button>
-        </div>
-    </div>
-</div>
-
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal-box">
-        <p><b>¿Eliminar definitivamente?</b></p>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">NO</button>
-            <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white;">SI, BORRAR</button>
-        </div>
-    </div>
-</div>
-
-<div id="photoModal" class="modal-overlay">
-    <div class="modal-box" style="width:90%; max-width:400px;">
-        <p><b>🖼️ Fotos del Equipo</b></p>
-        <div id="photoGallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height:400px; overflow-y:auto;"></div>
-        <div style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
-            <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
-            <button onclick="document.getElementById('inputFotoAccion').click()" id="btnAddMore" style="background:var(--success); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
-        </div>
-        <input type="file" id="inputFotoAccion" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)">
-    </div>
-</div>
-
-<nav>
-    <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
-    <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
-</nav>
-
-<div id="gesture-zone-top">
-    <div style="display:flex; justify-content: space-between; align-items: center;">
-        <h2 style="margin:0;">📱 Servicio Técnico MATIAS</h2>
-        <div id="status-dot" class="offline"></div>
-    </div>
-</div>
-
-<div class="container">
-    <div id="page-gestion" class="page active" style="display:block;">
-        <form id="repairForm">
-            <div class="form-grid">
-                <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
-                <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()"></div>
-                <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
-                <div><label>Modelo</label><input type="text" id="modelo" required oninput="saveDraft()"></div>
-                <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
-                <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
-                <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
-                <div>
-                    <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
-                    <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#475569;">
-                        <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
-                    </div>
-                </div>
-                <div class="full" style="display: flex; align-items: flex-end; gap: 10px;">
-                    <div style="padding-bottom: 5px;">
-                        <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
-                    </div>
-                    <div id="costo-inner" style="display:none;">
-                        <label>Costo</label>
-                        <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" style="width: 120px;">
-                    </div>
-                </div>
-                <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
-                <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
-                
-                <div class="full" style="display:flex; flex-direction: column; gap:5px;">
-                    <button type="button" class="btn" style="background:#6c5ce7; color:white; width: 60px; height: 45px;" onclick="document.getElementById('inputFoto').click()">📷</button>
-                    <div id="formThumbnails" class="thumb-container"></div>
-                </div>
-
-                <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
-                    <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
-                    <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
-                    <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)">
-                </div>
-            </div>
-        </form>
-
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
-            <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
-        </div>
-
-        <div class="table-wrapper" style="overflow-x:auto;">
-            <table id="mainTable">
-                <thead>
-                    <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
+    <div id="viewerModal" class="modal-overlay">
+        <button id="btnCloseViewer" onclick="closeViewer()">X</button>
+        <div id="imgContainer">
+            <img id="imgFull" src="">
         </div>
     </div>
 
-    <div id="page-contabilidad" class="page" style="display:none;">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin:0;">💰 Contabilidad</h2>
-            <div style="display:flex; gap:10px;">
-                <select id="selectMes" onchange="renderContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
-                <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px;" onclick="exportarExcel()">📊 EXCEL</button>
+    <div id="statusModal" class="modal-overlay">
+        <div class="modal-box">
+            <p><b>Cambiar Estado</b></p>
+            <button class="status-option opt-pendiente" onclick="confirmarEstado('Pendiente')">⏳ Pendiente</button>
+            <button class="status-option opt-reparado" onclick="confirmarEstado('Reparado')">✅ Reparado</button>
+            <button class="status-option opt-entregado" onclick="confirmarEstado('Entregado')">📦 Entregado</button>
+            <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer;">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-box" style="width:280px;">
+            <p><b>🕒 Historial de la Orden</b></p>
+            <div id="historyContent" style="margin:20px 0; max-height: 300px; overflow-y: auto;"></div>
+            <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
+        </div>
+    </div>
+
+    <div id="priceModal" class="modal-overlay">
+        <div class="modal-box">
+            <p><b>Actualizar Precio Final</b></p>
+            <input type="text" id="newPriceInput" placeholder="0" oninput="formatInput(this)" style="margin-top:15px; text-align:center; font-weight:bold; font-size:20px;">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="closePriceModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
+                <button id="confirmPriceBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--secondary); color:white;">GUARDAR</button>
             </div>
         </div>
-        <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;"></div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-box">
+            <p><b>¿Eliminar definitivamente?</b></p>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">NO</button>
+                <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white;">SI, BORRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="photoModal" class="modal-overlay">
+        <div class="modal-box" style="width:90%; max-width:400px;">
+            <p><b>🖼️ Fotos del Equipo</b></p>
+            <div id="photoGallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height:400px; overflow-y:auto;"></div>
+            <div style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
+                <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
+                <button onclick="document.getElementById('inputFotoAccion').click()" id="btnAddMore" style="background:var(--success); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+            </div>
+            <input type="file" id="inputFotoAccion" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)">
+        </div>
+    </div>
+
+    <nav>
+        <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
+        <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
+        <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
+        <button onclick="logout()" style="color: #ff7675; margin-left: auto; font-size: 12px; font-weight: bold;">✖ SALIR</button>
+    </nav>
+
+    <div id="gesture-zone-top">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin:0;">📱 Servicio Técnico MATIAS</h2>
+            <div id="status-dot" class="offline"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="page-gestion" class="page active" style="display:block;">
+            <form id="repairForm">
+                <div class="form-grid">
+                    <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
+                    <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()"></div>
+                    <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
+                    <div><label>Modelo</label><input type="text" id="modelo" required oninput="saveDraft()"></div>
+                    <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
+                    <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
+                    <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
+                    <div>
+                        <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
+                        <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#475569;">
+                            <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
+                        </div>
+                    </div>
+                    <div class="full" style="display: flex; align-items: flex-end; gap: 10px;">
+                        <div style="padding-bottom: 5px;">
+                            <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
+                        </div>
+                        <div id="costo-inner" style="display:none;">
+                            <label>Costo</label>
+                            <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" style="width: 120px;">
+                        </div>
+                    </div>
+                    <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
+                    <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
+                    
+                    <div class="full" style="display:flex; flex-direction: column; gap:5px;">
+                        <button type="button" class="btn" style="background:#6c5ce7; color:white; width: 60px; height: 45px;" onclick="document.getElementById('inputFoto').click()">📷</button>
+                        <div id="formThumbnails" class="thumb-container"></div>
+                    </div>
+
+                    <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+                        <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
+                        <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
+                        <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)">
+                    </div>
+                </div>
+            </form>
+
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
+                <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
+            </div>
+
+            <div class="table-wrapper" style="overflow-x:auto;">
+                <table id="mainTable">
+                    <thead>
+                        <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="page-contabilidad" class="page" style="display:none;">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">💰 Contabilidad</h2>
+                <div style="display:flex; gap:10px;">
+                    <select id="selectMes" onchange="renderContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
+                    <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px;" onclick="exportarExcel()">📊 EXCEL</button>
+                </div>
+            </div>
+            <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;"></div>
+        </div>
+
+        <div id="page-usuarios" class="page" style="display:none;">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">🔑 Control de Licencias</h2>
+            </div>
+            <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                <label>Nuevo Usuario (WhatsApp)</label>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <input type="text" id="new-user-wa" placeholder="Ej: 54911..." style="flex:1;">
+                    <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:0 20px;">ACTIVAR</button>
+                </div>
+                <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* La contraseña por defecto para nuevos usuarios será 123.</p>
+            </div>
+
+            <div class="table-wrapper" style="overflow-x:auto; background:white; border-radius:12px; border: 1px solid #e2e8f0;">
+                <table style="min-width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="padding:15px;">Usuario / WhatsApp</th>
+                            <th style="padding:15px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
         authDomain: "github-c3e96.firebaseapp.com",
@@ -231,6 +294,55 @@
     const db = firebase.database();
     const dbRef = db.ref('reparaciones');
 
+    // --- ACCESO Y SESIÓN ---
+    function checkStoredSession() {
+        const session = sessionStorage.getItem('st_matias_session');
+        if (session) {
+            const data = JSON.parse(session);
+            grantAccess(data.user, data.isAdmin, true);
+        }
+        loadDraft();
+    }
+
+    function checkAccess() {
+        const u = document.getElementById('userIn').value.trim();
+        const p = document.getElementById('passIn').value.trim();
+        const err = document.getElementById('loginError');
+        err.style.display = 'none';
+
+        if(u === 'Admin' && p === 'Mis_Amores3') { 
+            grantAccess(u, true); 
+        } else { 
+            db.ref('usuarios_registrados/' + u).once('value', snap => {
+                if(snap.val() && p === '123') {
+                    grantAccess(u, false);
+                } else {
+                    err.innerText = "Usuario o clave incorrecta"; 
+                    err.style.display = 'block'; 
+                }
+            });
+        }
+    }
+
+    function grantAccess(u, isAdmin, isStored = false) {
+        if (!isStored) {
+            sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
+        }
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+
+        if(isAdmin) {
+            document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
+            listarUsuarios();
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('st_matias_session');
+        location.reload();
+    }
+
+    // --- LÓGICA GENERAL ---
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
@@ -254,7 +366,8 @@
 
     function showToast(text, color) {
         const t = document.getElementById('toast-alert');
-        t.innerText = text; t.style.background = color; t.style.display = "block";
+        t.innerText = text;
+        t.style.background = color; t.style.display = "block";
         setTimeout(() => t.style.display = "none", 2500);
     }
 
@@ -278,6 +391,7 @@
         idParaEstado = id;
         document.getElementById('statusModal').style.display = 'flex';
     }
+
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
     function confirmarEstado(nuevo) {
@@ -287,8 +401,7 @@
         const nuevoEvento = { estado: nuevo, fecha: fechaActual };
         let historialActual = r.historialEstados || [];
         historialActual.push(nuevoEvento);
-        let updates = { estado: nuevo, historialEstados: historialActual };
-        db.ref('reparaciones/' + idParaEstado).update(updates);
+        db.ref('reparaciones/' + idParaEstado).update({ estado: nuevo, historialEstados: historialActual });
         closeStatusModal();
         showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
     }
@@ -301,7 +414,9 @@
         document.getElementById('priceModal').style.display = 'flex';
         setTimeout(() => document.getElementById('newPriceInput').focus(), 100);
     }
+
     function closePriceModal() { document.getElementById('priceModal').style.display = 'none'; }
+    
     document.getElementById('confirmPriceBtn').onclick = () => {
         const nuevo = parseMoney(document.getElementById('newPriceInput').value);
         db.ref('reparaciones/' + idParaPrecio).update({ precio: nuevo });
@@ -312,12 +427,13 @@
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
-        if(r.historialEstados && r.historialEstados.length > 0) {
+        if(r.historialEstados) {
             r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
         }
         document.getElementById('historyContent').innerHTML = h;
         document.getElementById('historyModal').style.display = 'flex';
     }
+
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
     function renderTable() {
@@ -345,30 +461,26 @@
         }).sort((a, b) => {
             const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
             const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
-            return fechaB - fechaA; 
+            return fechaB - fechaA;
         });
 
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
             const canEdit = !r.archivado;
             body.innerHTML += `<tr>
-                <td>
-                    <b>${r.orden}</b> <span style="cursor:pointer; margin-left:5px;" onclick="openHistory('${r.id}')">🕒</span>
-                    <br>
-                    <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span>
-                </td>
+                <td><b>${r.orden}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
+                <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" 
-                    onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
                 <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
                     ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
                 </td>
                 <td class="action-btns">
-                    <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✅</button>
+                    <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled'}>✅</button>
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled style="opacity:0.5;"'}>✏️</button>
+                    <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled'}>✏️</button>
                     <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
@@ -379,9 +491,6 @@
         const v = snap.val(); 
         registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
         renderTable(); 
-        if(idParaFotos && document.getElementById('photoModal').style.display === 'flex') {
-            abrirFotos(idParaFotos);
-        }
         setTimeout(verificarAutoArchivo, 2000);
     });
 
@@ -399,32 +508,19 @@
                 const maximoActual = Math.max(...numeros);
                 if (maximoActual >= 100) proximoNumero = maximoActual + 1;
             }
-            document.getElementById('nroOrden').value = "MAT-" + proximoNumero; 
+            document.getElementById('nroOrden').value = "MAT-" + proximoNumero;
         } 
     }
 
     function revelarCosto() { 
-        let c = document.getElementById('costo-inner'); 
+        let c = document.getElementById('costo-inner');
         c.style.display = c.style.display === "none" ? "block" : "none"; 
         if(c.style.display === "block") { document.getElementById('costoRepuesto').focus(); }
     }
 
-    document.getElementById('costoRepuesto').addEventListener('blur', function() {
-        setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200);
-    });
-
-    document.getElementById('costoRepuesto').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            document.getElementById('costo-inner').style.display = "none";
-            document.getElementById('falla').focus();
-        }
-    });
-    
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
-        const textoBtn = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS";
-        document.getElementById('btnArchivo').innerText = textoBtn; 
-        showToast(modoArchivo ? "VIENDO ARCHIVADOS 📁" : "VIENDO ACTIVOS 🛠️", modoArchivo ? "#475569" : "#3498db");
+        document.getElementById('btnArchivo').innerText = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS"; 
         renderTable(); 
     }
     
@@ -433,22 +529,14 @@
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
     document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
 
-    function ejecutarLimpieza(mostrarMensaje) {
+    function clickLimpiar() {
         idEditando = null; 
-        document.getElementById('repairForm').reset(); 
-        document.querySelectorAll('#repairForm input').forEach(input => {
-            if(input.type !== 'checkbox') input.value = "";
-            else input.checked = false;
-        });
+        document.getElementById('repairForm').reset();
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         fotosTemporales = [];
         document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
-        if(mostrarMensaje) showToast("Limpio", "#64748b");
-        setTimeout(() => document.getElementById('cliente').focus(), 50);
     }
-
-    function clickLimpiar() { ejecutarLimpieza(true); }
 
     function saveDraft() {
         if(idEditando) return;
@@ -470,9 +558,13 @@
     function showPage(p) {
         document.getElementById('page-gestion').style.display = p === 'gestion' ? 'block' : 'none';
         document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
+        document.getElementById('page-usuarios').style.display = p === 'usuarios' ? 'block' : 'none';
+        
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-nav-'+p).classList.add('active');
+        
         if(p === 'contabilidad') renderContabilidad();
+        if(p === 'usuarios') listarUsuarios();
     }
 
     function renderContabilidad() {
@@ -488,24 +580,16 @@
             }
         });
         document.getElementById('stats-container').innerHTML = `
-            <div class="card-stats" style="border-left: 5px solid var(--success);">
-                <b>Ingresos (Caja)</b><p style="color:var(--success);">${fmt.format(caja)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--warning);">
-                <b>Plata a Ingresar</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--danger);">
-                <b>Gastos Repuestos</b><p style="color:var(--danger);">${fmt.format(gastos)}</p>
-            </div>
-            <div class="card-stats" style="border-left: 5px solid var(--primary);">
-                <b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p>
-            </div>`;
+            <div class="card-stats" style="border-left: 5px solid var(--success);"><b>Ingresos (Caja)</b><p style="color:var(--success);">${fmt.format(caja)}</p></div>
+            <div class="card-stats" style="border-left: 5px solid var(--warning);"><b>Plata a Ingresar</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p></div>
+            <div class="card-stats" style="border-left: 5px solid var(--danger);"><b>Gastos Repuestos</b><p style="color:var(--danger);">${fmt.format(gastos)}</p></div>
+            <div class="card-stats" style="border-left: 5px solid var(--primary);"><b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p></div>`;
     }
 
     function exportarExcel() {
         let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
         registros.forEach(r => { 
-            let c = r.costoRepuesto || 0; 
+            let c = r.costoRepuesto || 0;
             csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; 
         });
         const link = document.createElement("a");
@@ -516,14 +600,11 @@
 
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
-        const precioVal = parseMoney(document.getElementById('precio').value);
-        const senaVal = parseMoney(document.getElementById('sena').value);
-        if(precioVal <= 0) { showToast("EL PRECIO DEBE SER MAYOR A 0 ⚠️", "#e67e22"); return; }
         const data = {
             orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
             tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
             color: document.getElementById('color').value, imei: document.getElementById('imei').value,
-            precio: precioVal, sena: senaVal,
+            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
             costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
             falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
             archivado: false, 
@@ -536,14 +617,14 @@
         } else {
             data.fecha = new Date().toLocaleString('es-AR');
             dbRef.push(data);
-            showToast("Registrado", "#2ecc71"); 
+            showToast("REGISTRADO", "#2ecc71");
         }
-        ejecutarLimpieza(false);
+        clickLimpiar();
     };
 
     function editar(id) {
-        idEditando = id; const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
+        idEditando = id;
+        const r = registros.find(x => x.id === id);
         document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
@@ -559,57 +640,94 @@
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
-        let numeroLimpio = String(r.tel).replace(/\D/g, ''); 
-        if (!numeroLimpio.startsWith('54')) { numeroLimpio = '549' + numeroLimpio; }
+        let num = String(r.tel).replace(/\D/g, ''); 
+        if (!num.startsWith('54')) num = '549' + num;
         const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-        window.open(`https://wa.me/${numeroLimpio}?text=${msj}`);
+        window.open(`https://wa.me/${num}?text=${msj}`);
     }
 
     function imprimir(id) {
         const r = registros.find(x => x.id === id);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'});
-        doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
-        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
-        doc.setFontSize(18); doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
-        doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+        
+        doc.setFillColor(26, 42, 58);
+        doc.rect(0, 0, 80, 28, 'F');
+        doc.setTextColor(255, 255, 255); 
+        doc.setFont("helvetica", "bold"); 
+        doc.setFontSize(22); 
+        doc.text("S.T. MATIAS", 40, 12, {align:'center'});
+        
+        doc.setFont("helvetica", "normal"); 
         doc.setFontSize(10);
-        let y = 58; const col1 = 12; const col2 = 35; const lineH = 7;
-        const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
-        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`); printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
+        doc.text("Servicio Técnico", 40, 18, {align:'center'});
+        doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
+        
+        doc.setTextColor(26, 42, 58); 
+        doc.setFont("helvetica", "bold"); 
+        doc.setFontSize(10);
+        doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
+        doc.setFontSize(18); 
+        doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
+        
+        doc.setDrawColor(150, 150, 150);
+        doc.line(10, 48, 70, 48);
+        
+        doc.setFontSize(10);
+        let y = 58; 
+        const col1 = 12; 
+        const col2 = 35;
+        const lineH = 7;
+        
+        const printRow = (l, v) => { 
+            doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
+            doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); 
+            y += lineH; 
+        };
+        
+        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); 
+        printRow("CLIENTE:", r.cliente); 
+        printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
+        printRow("IMEI/SERIE:", r.imei || "-"); 
+        printRow("FALLA:", r.falla); 
+        printRow("OBS:", r.obs || "-");
+        
         y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("Muchas gracias!", 40, 153, {align:'center'});
+        
+        doc.setFont("helvetica", "normal"); 
+        doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; 
+        doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+        
+        doc.setFillColor(242, 242, 242); 
+        doc.rect(10, y, 60, 14, 'F');
+        doc.setFont("helvetica", "bold"); 
+        doc.setFontSize(16);
+        doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+        
+        doc.setFont("helvetica", "italic"); 
+        doc.setFontSize(9); 
+        doc.setTextColor(160, 160, 160);
+        doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
+        
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
     function agregarFotoTemporal(input) {
         if (input.files && input.files[0]) {
-            try {
-                if (fotosTemporales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        try {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            const maxW = 800; const scale = maxW / img.width;
-                            canvas.width = maxW; canvas.height = img.height * scale;
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
-                            actualizarMiniaturasForm();
-                        } catch (err) { showToast("ERROR AL PROCESAR IMAGEN ❌", "#e53e3e"); }
-                    };
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 800; canvas.height = img.height * (800 / img.width);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
+                    actualizarMiniaturasForm();
                 };
-                reader.readAsDataURL(input.files[0]);
-            } catch (err) { showToast("ERROR AL CARGAR ARCHIVO ❌", "#e53e3e"); }
+            };
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
@@ -617,42 +735,38 @@
         const container = document.getElementById('formThumbnails');
         container.innerHTML = "";
         fotosTemporales.forEach((src, idx) => {
-            container.innerHTML += `<img src="${src}" class="thumb-preview" onclick="quitarFotoForm(${idx})">`;
+            container.innerHTML += `<img src="${src}" class="thumb-preview" onclick="fotosTemporales.splice(${idx},1); actualizarMiniaturasForm()">`;
         });
     }
 
-    function quitarFotoForm(index) { fotosTemporales.splice(index, 1); actualizarMiniaturasForm(); }
-
     function abrirFotos(id) {
-        idParaFotos = id; const r = registros.find(x => x.id === id);
+        idParaFotos = id;
+        const r = registros.find(x => x.id === id);
         const gallery = document.getElementById('photoGallery');
         gallery.innerHTML = "";
         const fotos = r.fotos || [];
-        if(fotos.length > 0) {
-            fotos.forEach((src, index) => {
-                gallery.innerHTML += `<div style="position:relative;">
-                        <img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover; cursor:pointer;" onclick="verImagenFull('${src}')">
-                        <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:rgba(229,62,62,0.9); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-weight:bold;">X</button>
-                    </div>`;
-            });
-        } else { gallery.innerHTML = "<p style='grid-column: span 2; color:#64748b;'>Sin fotos</p>"; }
+        fotos.forEach((src, index) => {
+            gallery.innerHTML += `<div style="position:relative;"><img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover;" onclick="verImagenFull('${src}')">
+            <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button></div>`;
+        });
         document.getElementById('photoModal').style.display = 'flex';
     }
 
     function subirFotoDirecta(input) {
         if (input.files && input.files[0]) {
             const r = registros.find(x => x.id === idParaFotos);
-            let fotosActuales = [...(r.fotos || [])];
-            if (fotosActuales.length >= 10) return showToast("MÁXIMO 10 FOTOS ⚠️", "#e67e22");
+            let fotos = [...(r.fotos || [])];
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
+                const img = new Image();
+                img.src = e.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
                     canvas.width = 800; canvas.height = img.height * (800 / img.width);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    fotosActuales.push(canvas.toDataURL('image/jpeg', 0.7));
-                    db.ref('reparaciones/' + idParaFotos).update({ fotos: fotosActuales }).then(() => abrirFotos(idParaFotos));
+                    fotos.push(canvas.toDataURL('image/jpeg', 0.7));
+                    db.ref('reparaciones/' + idParaFotos).update({ fotos: fotos }).then(() => abrirFotos(idParaFotos));
                 };
             };
             reader.readAsDataURL(input.files[0]);
@@ -669,26 +783,20 @@
     function verificarAutoArchivo() {
         const ahora = new Date();
         registros.forEach(r => {
-            if (r.estado === 'Entregado' && !r.archivado) {
-                if (r.historialEstados && r.historialEstados.length > 0) {
-                    const eventosEntregado = r.historialEstados.filter(h => h.estado === 'Entregado');
-                    if (eventosEntregado.length > 0) {
-                        const ultimoEvento = eventosEntregado[eventosEntregado.length - 1];
-                        const partes = ultimoEvento.fecha.split(', ');
-                        const fechaPartes = partes[0].split('/');
-                        const horaPartes = partes[1].split(':');
-                        const fechaEntrega = new Date(fechaPartes[2], fechaPartes[1] - 1, fechaPartes[0], horaPartes[0], horaPartes[1], horaPartes[2]);
-                        const diferenciaMs = ahora - fechaEntrega;
-                        const unDiaMs = 24 * 60 * 60 * 1000;
-                        if (diferenciaMs >= unDiaMs) { db.ref('reparaciones/' + r.id).update({ archivado: true }); }
-                    }
+            if (r.estado === 'Entregado' && !r.archivado && r.historialEstados) {
+                const ent = r.historialEstados.filter(h => h.estado === 'Entregado').pop();
+                if (ent) {
+                    const p = ent.fecha.split(', ')[0].split('/');
+                    const h = ent.fecha.split(', ')[1].split(':');
+                    const d = new Date(p[2], p[1]-1, p[0], h[0], h[1]);
+                    if (ahora - d >= 24 * 60 * 60 * 1000) db.ref('reparaciones/' + r.id).update({ archivado: true });
                 }
             }
         });
     }
 
-    let scale = 1, lastScale = 1;
-    let pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
+    // --- VISUALIZADOR ---
+    let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
     const viewer = document.getElementById('viewerModal');
     const imgFull = document.getElementById('imgFull');
 
@@ -698,22 +806,53 @@
 
     viewer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; }
-        else if (e.touches.length === 2) { isDragging = false; lastScale = scale; const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); viewer.initialDist = dist; }
     });
-
     viewer.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (isDragging && e.touches.length === 1 && scale > 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); }
-        else if (e.touches.length === 2) {
-            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            scale = Math.min(Math.max(1, lastScale * (dist / viewer.initialDist)), 4);
-            if(scale === 1) { pointX = 0; pointY = 0; }
-            updateTransform();
-        }
-    }, {passive: false});
-
+        if (isDragging && e.touches.length === 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); }
+    });
     viewer.addEventListener('touchend', () => { isDragging = false; });
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
+
+    // --- NUEVAS FUNCIONES DE GESTIÓN DE USUARIOS ---
+    function crearLicencia() {
+        const wa = document.getElementById('new-user-wa').value.trim();
+        if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
+        
+        db.ref('usuarios_registrados/' + wa).set({
+            whatsapp: wa,
+            fechaAlta: new Date().toLocaleString('es-AR'),
+            rol: 'operador'
+        }).then(() => {
+            document.getElementById('new-user-wa').value = "";
+            showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
+        });
+    }
+
+    function listarUsuarios() {
+        db.ref('usuarios_registrados').on('value', snap => {
+            const users = snap.val();
+            const body = document.getElementById('userTableBody');
+            body.innerHTML = "";
+            if(users) {
+                Object.keys(users).forEach(id => {
+                    body.innerHTML += `
+                    <tr>
+                        <td style="padding:15px;"><b>${id}</b></td>
+                        <td style="padding:15px;">
+                            <button onclick="eliminarLicencia('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+        });
+    }
+
+    function eliminarLicencia(id) {
+        if(confirm("¿Eliminar acceso para " + id + "?")) {
+            db.ref('usuarios_registrados/' + id).remove();
+            showToast("ACCESO ELIMINADO", "#e53e3e");
+        }
+    }
 </script>
 </body>
 </html>
