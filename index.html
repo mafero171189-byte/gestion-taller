@@ -358,7 +358,6 @@
             const data = JSON.parse(session);
             grantAccess(data.user, data.isAdmin, true);
         } else {
-            // Auto-foco en el input de usuario si no hay sesión iniciada
             setTimeout(() => document.getElementById('userIn').focus(), 100);
         }
         loadDraft();
@@ -521,7 +520,6 @@
 
         body.innerHTML = "";
         
-        // Estilos visuales de los filtros
         if(modoArchivo) { 
             table.classList.add('modo-archivo-activo'); 
             btnArch.classList.add('btn-active-filter');
@@ -618,7 +616,7 @@
     function togglePendientes() {
         modoPendientes = !modoPendientes;
         if(modoPendientes) {
-            modoArchivo = false; // Desactivamos el otro filtro si está prendido
+            modoArchivo = false;
             showToast("FILTRANDO PENDIENTES ⏳", "#f1c40f");
         } else {
             showToast("MOSTRANDO TODOS 👀", "#3498db");
@@ -629,7 +627,7 @@
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
         if(modoArchivo) {
-            modoPendientes = false; // Desactivamos el otro filtro si está prendido
+            modoPendientes = false;
             showToast("FILTRANDO ARCHIVADOS 📁", "#64748b");
         } else {
             showToast("MOSTRANDO ACTIVOS 🔙", "#3498db");
@@ -929,13 +927,9 @@
         });
     }
 
-    // --- NUEVAS FUNCIONES DE LOGIN ---
-
-    // Mostrar/Ocultar contraseña
     function toggleLoginPassword() {
         const passInput = document.getElementById('passIn');
         const toggleIcon = document.getElementById('togglePass');
-        
         if (passInput.type === 'password') {
             passInput.type = 'text';
             toggleIcon.innerText = '🔒';
@@ -945,17 +939,12 @@
         }
     }
 
-    // Navegación con Enter en el login
     document.getElementById('userIn').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            document.getElementById('passIn').focus();
-        }
+        if (e.key === 'Enter') { document.getElementById('passIn').focus(); }
     });
 
     document.getElementById('passIn').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            checkAccess();
-        }
+        if (e.key === 'Enter') { checkAccess(); }
     });
 </script>
 </body>
