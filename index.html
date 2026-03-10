@@ -107,7 +107,7 @@
         .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; }
         
         .modo-archivo-activo { background: #f1f5f9 !important; }
-        .btn-archivo-on { background: #475569 !important; border: 2px solid #3498db !important; }
+        .btn-active-filter { border: 2px solid #3498db !important; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
 
         .card-stats { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
         .card-stats b { font-size: 12px; color: #64748b; text-transform: uppercase; }
@@ -266,8 +266,9 @@
                 </div>
             </form>
 
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0;">
+            <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
+                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
+                <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
             </div>
 
@@ -418,6 +419,7 @@
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
+    let modoPendientes = false;
     let idParaEstado = null;
     let idParaPrecio = null;
     let idParaBorrar = null;
@@ -509,18 +511,49 @@
         const body = document.getElementById('tableBody');
         const table = document.getElementById('mainTable');
         const btnArch = document.getElementById('btnArchivo');
+        const btnPend = document.getElementById('btnPendientes');
+
         body.innerHTML = "";
-        if(modoArchivo) { table.classList.add('modo-archivo-activo'); btnArch.classList.add('btn-archivo-on'); }
-        else { table.classList.remove('modo-archivo-activo'); btnArch.classList.remove('btn-archivo-on'); }
+        
+        // Estilos visuales de los filtros
+        if(modoArchivo) { 
+            table.classList.add('modo-archivo-activo'); 
+            btnArch.classList.add('btn-active-filter');
+            btnArch.innerHTML = "📁 ARCHIVADOS ✅";
+        } else { 
+            table.classList.remove('modo-archivo-activo'); 
+            btnArch.classList.remove('btn-active-filter');
+            btnArch.innerHTML = "📁 ARCHIVADOS";
+        }
+
+        if(modoPendientes) {
+            btnPend.classList.add('btn-active-filter');
+            btnPend.innerHTML = "⏳ PENDIENTES ✅";
+        } else {
+            btnPend.classList.remove('btn-active-filter');
+            btnPend.innerHTML = "⏳ PENDIENTES";
+        }
+
         const filtrados = registros.filter(r => {
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || (r.orden||"").toLowerCase().includes(bus);
-            const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
-            return matchBusqueda && matchArchivo;
+            
+            let matchFiltro = true;
+            if (bus.length === 0) {
+                if (modoPendientes) {
+                    matchFiltro = r.estado === 'Pendiente' && !r.archivado;
+                } else if (modoArchivo) {
+                    matchFiltro = r.archivado;
+                } else {
+                    matchFiltro = !r.archivado;
+                }
+            }
+            return matchBusqueda && matchFiltro;
         }).sort((a, b) => {
             const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
             const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
             return fechaB - fechaA;
         });
+
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
             const canEdit = !r.archivado;
@@ -538,7 +571,7 @@
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
                     <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled'}>✏️</button>
-                    <button onclick="archivar('${r.id}')">${modoArchivo ? '🔙' : '📁'}</button>
+                    <button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
         });
@@ -576,9 +609,25 @@
         }, 200);
     }
 
+    function togglePendientes() {
+        modoPendientes = !modoPendientes;
+        if(modoPendientes) {
+            modoArchivo = false; // Desactivamos el otro filtro si está prendido
+            showToast("FILTRANDO PENDIENTES ⏳", "#f1c40f");
+        } else {
+            showToast("MOSTRANDO TODOS 👀", "#3498db");
+        }
+        renderTable();
+    }
+
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
-        document.getElementById('btnArchivo').innerText = modoArchivo ? "🛠️ ACTIVOS" : "📁 ARCHIVADOS"; 
+        if(modoArchivo) {
+            modoPendientes = false; // Desactivamos el otro filtro si está prendido
+            showToast("FILTRANDO ARCHIVADOS 📁", "#64748b");
+        } else {
+            showToast("MOSTRANDO ACTIVOS 🔙", "#3498db");
+        }
         renderTable(); 
     }
     
@@ -715,7 +764,6 @@
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
-    // --- MOTOR DE COMPRESIÓN EXTREMA S.T. MATIAS ---
     function comprimirFoto(archivo, callback) {
         const reader = new FileReader();
         reader.readAsDataURL(archivo);
@@ -847,7 +895,6 @@
 
     function eliminarLicencia(id) { if(confirm("¿Eliminar acceso para " + id + "?")) { db.ref('usuarios_registrados/' + id).remove(); showToast("ACCESO ELIMINADO", "#e53e3e"); } }
 
-    // --- FUNCIÓN DE LIMPIEZA DE FOTOS (45 DÍAS) ---
     function limpiarFotosAntiguas(manual = false) {
         if (!isUserAdmin) return;
         const DIAS_LIMITE = 45;
