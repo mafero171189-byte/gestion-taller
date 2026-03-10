@@ -708,21 +708,65 @@
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
+    // --- MOTOR DE COMPRESIÓN EXTREMA S.T. MATIAS ---
+    function comprimirFoto(archivo, callback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(archivo);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Maximo 600px de ancho para ahorrar espacio
+                const MAX_WIDTH = 600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Guardamos en WebP con calidad 50% (Súper liviano)
+                // Si el navegador no soporta webp, usa jpeg automático
+                const dataUrl = canvas.toDataURL('image/webp', 0.5);
+                callback(dataUrl);
+            };
+        };
+    }
+
     function agregarFotoTemporal(input) {
         if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    canvas.width = 800; canvas.height = img.height * (800 / img.width);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7)); actualizarMiniaturasForm();
-                };
-            };
-            reader.readAsDataURL(input.files[0]);
+            showToast("COMPRIMIENDO...", "#3498db");
+            comprimirFoto(input.files[0], (fotoComprimida) => {
+                fotosTemporales.push(fotoComprimida);
+                actualizarMiniaturasForm();
+                showToast("FOTO LISTA ✅", "#2ecc71");
+            });
         }
     }
+
+    function subirFotoDirecta(input) {
+        if (input.files && input.files[0]) {
+            showToast("COMPRIMIENDO...", "#3498db");
+            comprimirFoto(input.files[0], (fotoComprimida) => {
+                const r = registros.find(x => x.id === idParaFotos);
+                let fotos = [...(r.fotos || [])];
+                fotos.push(fotoComprimida);
+                dbRef.child(idParaFotos).update({ fotos: fotos }).then(() => {
+                    abrirFotos(idParaFotos);
+                    showToast("FOTO AGREGADA ✅", "#2ecc71");
+                });
+            });
+        }
+    }
+    // --- FIN MOTOR DE COMPRESIÓN ---
 
     function actualizarMiniaturasForm() {
         const container = document.getElementById('formThumbnails'); container.innerHTML = "";
@@ -737,24 +781,6 @@
             <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button></div>`;
         });
         document.getElementById('photoModal').style.display = 'flex';
-    }
-
-    function subirFotoDirecta(input) {
-        if (input.files && input.files[0]) {
-            const r = registros.find(x => x.id === idParaFotos); let fotos = [...(r.fotos || [])];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    canvas.width = 800; canvas.height = img.height * (800 / img.width);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    fotos.push(canvas.toDataURL('image/jpeg', 0.7));
-                    dbRef.child(idParaFotos).update({ fotos: fotos }).then(() => abrirFotos(idParaFotos));
-                };
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
     }
 
     function eliminarFoto(id, index) {
