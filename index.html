@@ -34,8 +34,37 @@
         /* ESTILOS ORIGINALES RESTAURADOS */
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
-        nav { background: var(--primary); padding: 10px 0; display: flex; justify-content: center; gap: 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; }
+        
+        /* --- CAMBIOS EN LA BARRA DE NAVEGACIÓN --- */
+        nav { 
+            background: var(--primary); 
+            padding: 10px 15px; 
+            display: flex; 
+            gap: 15px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            overflow-x: auto; 
+            white-space: nowrap; 
+            -webkit-overflow-scrolling: touch; 
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+        }
+        nav::-webkit-scrollbar { display: none; }
+        nav button { 
+            background: none; 
+            border: none; 
+            color: rgba(255,255,255,0.7); 
+            font-weight: bold; 
+            cursor: pointer; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            transition: 0.3s; 
+            flex-shrink: 0; 
+        }
+        /* ----------------------------------------- */
+
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
@@ -110,6 +139,17 @@
 <div id="app-content">
     <div id="toast-alert"></div>
 
+    <div id="passModal" class="modal-overlay">
+        <div class="modal-box">
+            <p><b>👤 Mi Perfil - Cambiar Clave</b></p>
+            <input type="password" id="newPass" placeholder="Nueva Clave" style="margin-top:10px;">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="closePassModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
+                <button onclick="updatePassword()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--secondary); color:white;">ACTUALIZAR</button>
+            </div>
+        </div>
+    </div>
+
     <div id="viewerModal" class="modal-overlay">
         <button id="btnCloseViewer" onclick="closeViewer()">X</button>
         <div id="imgContainer">
@@ -172,6 +212,7 @@
         <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
         <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
         <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
+        <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: #f1c40f;">👤 MI PERFIL</button>
         <button onclick="logout()" style="color: #ff7675; margin-left: auto; font-size: 12px; font-weight: bold;">✖ SALIR</button>
     </nav>
 
@@ -268,6 +309,7 @@
                     <thead>
                         <tr>
                             <th style="padding:15px;">Usuario / WhatsApp</th>
+                            <th style="padding:15px;">Contraseña</th>
                             <th style="padding:15px;">Fecha de Alta</th>
                             <th style="padding:15px;">Acciones</th>
                         </tr>
@@ -293,7 +335,9 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let dbRef; // Definido dinámicamente según el usuario
+    let dbRef; 
+    let currentUser = null;
+    let isUserAdmin = false;
 
     // --- ACCESO Y SESIÓN ---
     function checkStoredSession() {
@@ -311,11 +355,20 @@
         const err = document.getElementById('loginError');
         err.style.display = 'none';
 
-        if(u === 'Admin' && p === 'Mis_Amores3') { 
-            grantAccess(u, true); 
+        if(u === 'Admin') {
+            db.ref('configuracion/admin/pass').once('value', snap => {
+                const adminPass = snap.val() || 'Mis_Amores3';
+                if(p === adminPass) {
+                    grantAccess(u, true);
+                } else {
+                    err.innerText = "Usuario o clave incorrecta"; 
+                    err.style.display = 'block';
+                }
+            });
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
-                if(snap.val() && p === '123') {
+                const userData = snap.val();
+                if(userData && p === (userData.pass || '123')) {
                     grantAccess(u, false);
                 } else {
                     err.innerText = "Usuario o clave incorrecta"; 
@@ -326,18 +379,21 @@
     }
 
     function grantAccess(u, isAdmin, isStored = false) {
+        currentUser = u;
+        isUserAdmin = isAdmin;
         if (!isStored) {
             sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
         }
 
-        // SEPARACIÓN DE DATOS
         const path = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(path);
 
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
+        
+        // Mostrar botón de perfil para todos
+        document.getElementById('btn-nav-perfil').style.display = 'inline-block';
 
-        // Escuchar datos del nodo correspondiente
         dbRef.on('value', snap => {
             const v = snap.val(); 
             registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
@@ -354,6 +410,27 @@
     function logout() {
         sessionStorage.removeItem('st_matias_session');
         location.reload();
+    }
+
+    // --- FUNCIONES DE CONTRASEÑA ---
+    function openPassModal() { document.getElementById('passModal').style.display = 'flex'; }
+    function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
+    
+    function updatePassword() {
+        const newP = document.getElementById('newPass').value.trim();
+        if(!newP) return showToast("INGRESE CLAVE", "#e53e3e");
+        
+        if (isUserAdmin) {
+            db.ref('configuracion/admin').update({ pass: newP }).then(() => {
+                showToast("CLAVE ACTUALIZADA ✅", "#2ecc71");
+                closePassModal();
+            });
+        } else {
+            db.ref('usuarios_registrados/' + currentUser).update({ pass: newP }).then(() => {
+                showToast("CLAVE ACTUALIZADA ✅", "#2ecc71");
+                closePassModal();
+            });
+        }
     }
 
     // --- LÓGICA GENERAL ---
@@ -834,13 +911,14 @@
     viewer.addEventListener('touchend', () => { isDragging = false; });
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
 
-    // --- GESTIÓN DE USUARIOS CON FECHA DE ALTA ---
+    // --- GESTIÓN DE USUARIOS ACTUALIZADA ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
         
         db.ref('usuarios_registrados/' + wa).set({
             whatsapp: wa,
+            pass: '123',
             fechaAlta: new Date().toLocaleString('es-AR'),
             rol: 'operador'
         }).then(() => {
@@ -860,6 +938,7 @@
                     body.innerHTML += `
                     <tr>
                         <td style="padding:15px;"><b>${id}</b></td>
+                        <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${u.pass || '123'}</span></td>
                         <td style="padding:15px; color:#64748b; font-size:13px;">${u.fechaAlta || 'Preexistente'}</td>
                         <td style="padding:15px;">
                             <button onclick="eliminarLicencia('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button>
