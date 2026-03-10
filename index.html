@@ -129,7 +129,7 @@
 
     <div id="historyModal" class="modal-overlay">
         <div class="modal-box" style="width:280px;">
-            <p id="historyTitle"><b>🕒 Historial de la Orden</b></p>
+            <p><b>🕒 Historial de la Orden</b></p>
             <div id="historyContent" style="margin:20px 0; max-height: 300px; overflow-y: auto;"></div>
             <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
         </div>
@@ -268,6 +268,7 @@
                     <thead>
                         <tr>
                             <th style="padding:15px;">Usuario / WhatsApp</th>
+                            <th style="padding:15px;">Fecha de Alta</th>
                             <th style="padding:15px;">Acciones</th>
                         </tr>
                     </thead>
@@ -292,7 +293,7 @@
     
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const dbRef = db.ref('reparaciones');
+    let dbRef; // Definido dinámicamente según el usuario
 
     // --- ACCESO Y SESIÓN ---
     function checkStoredSession() {
@@ -328,8 +329,21 @@
         if (!isStored) {
             sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
         }
+
+        // SEPARACIÓN DE DATOS
+        const path = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
+        dbRef = db.ref(path);
+
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
+
+        // Escuchar datos del nodo correspondiente
+        dbRef.on('value', snap => {
+            const v = snap.val(); 
+            registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+            renderTable(); 
+            setTimeout(verificarAutoArchivo, 2000);
+        });
 
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
@@ -381,7 +395,7 @@
         const r = registros.find(x => x.id === id);
         if(r.archivado) return;
         const estaPagado = (r.precio - r.sena) === 0;
-        db.ref('reparaciones/'+id).update({ sena: estaPagado ? 0 : r.precio });
+        dbRef.child(id).update({ sena: estaPagado ? 0 : r.precio });
         showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
     }
 
@@ -401,7 +415,7 @@
         const nuevoEvento = { estado: nuevo, fecha: fechaActual };
         let historialActual = r.historialEstados || [];
         historialActual.push(nuevoEvento);
-        db.ref('reparaciones/' + idParaEstado).update({ estado: nuevo, historialEstados: historialActual });
+        dbRef.child(idParaEstado).update({ estado: nuevo, historialEstados: historialActual });
         closeStatusModal();
         showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
     }
@@ -419,14 +433,13 @@
     
     document.getElementById('confirmPriceBtn').onclick = () => {
         const nuevo = parseMoney(document.getElementById('newPriceInput').value);
-        db.ref('reparaciones/' + idParaPrecio).update({ precio: nuevo });
+        dbRef.child(idParaPrecio).update({ precio: nuevo });
         closePriceModal();
         showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
     };
 
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
-        document.getElementById('historyTitle').innerHTML = "<b>🕒 Historial de la Orden</b>";
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) {
             r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
@@ -488,13 +501,6 @@
         });
     }
 
-    dbRef.on('value', snap => {
-        const v = snap.val(); 
-        registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-        renderTable(); 
-        setTimeout(verificarAutoArchivo, 2000);
-    });
-
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
     function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
     
@@ -525,10 +531,10 @@
         renderTable(); 
     }
     
-    function archivar(id) { const r = registros.find(x => x.id === id); db.ref('reparaciones/'+id).update({archivado: !r.archivado}); }
+    function archivar(id) { const r = registros.find(x => x.id === id); dbRef.child(id).update({archivado: !r.archivado}); }
     function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
-    document.getElementById('confirmDeleteBtn').onclick = () => { db.ref('reparaciones/'+idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
+    document.getElementById('confirmDeleteBtn').onclick = () => { dbRef.child(idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
 
     function clickLimpiar(skipToast = false) {
         idEditando = null; 
@@ -627,7 +633,7 @@
             fotos: idEditando ? (registros.find(x => x.id === idEditando).fotos || []) : fotosTemporales
         };
         if(idEditando) {
-            db.ref('reparaciones/'+idEditando).update(data);
+            dbRef.child(idEditando).update(data);
             showToast("ACTUALIZADO ✅", "#3498db");
         } else {
             data.fecha = new Date().toLocaleString('es-AR');
@@ -781,7 +787,7 @@
                     canvas.width = 800; canvas.height = img.height * (800 / img.width);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     fotos.push(canvas.toDataURL('image/jpeg', 0.7));
-                    db.ref('reparaciones/' + idParaFotos).update({ fotos: fotos }).then(() => abrirFotos(idParaFotos));
+                    dbRef.child(idParaFotos).update({ fotos: fotos }).then(() => abrirFotos(idParaFotos));
                 };
             };
             reader.readAsDataURL(input.files[0]);
@@ -792,7 +798,7 @@
         const r = registros.find(x => x.id === id);
         let fotos = [...(r.fotos || [])];
         fotos.splice(index, 1);
-        db.ref('reparaciones/' + id).update({ fotos: fotos }).then(() => abrirFotos(id));
+        dbRef.child(id).update({ fotos: fotos }).then(() => abrirFotos(id));
     }
 
     function verificarAutoArchivo() {
@@ -804,7 +810,7 @@
                     const p = ent.fecha.split(', ')[0].split('/');
                     const h = ent.fecha.split(', ')[1].split(':');
                     const d = new Date(p[2], p[1]-1, p[0], h[0], h[1]);
-                    if (ahora - d >= 24 * 60 * 60 * 1000) db.ref('reparaciones/' + r.id).update({ archivado: true });
+                    if (ahora - d >= 24 * 60 * 60 * 1000) dbRef.child(r.id).update({ archivado: true });
                 }
             }
         });
@@ -828,7 +834,7 @@
     viewer.addEventListener('touchend', () => { isDragging = false; });
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
 
-    // --- GESTIÓN DE USUARIOS (ACTUALIZADA) ---
+    // --- GESTIÓN DE USUARIOS CON FECHA DE ALTA ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
@@ -853,26 +859,14 @@
                     const u = users[id];
                     body.innerHTML += `
                     <tr>
-                        <td style="padding:15px;">
-                            <b>${id}</b> 
-                            <span style="cursor:pointer; margin-left:10px;" onclick="verHistorialUsuario('${id}')">🕒</span>
-                        </td>
+                        <td style="padding:15px;"><b>${id}</b></td>
+                        <td style="padding:15px; color:#64748b; font-size:13px;">${u.fechaAlta || 'Preexistente'}</td>
                         <td style="padding:15px;">
                             <button onclick="eliminarLicencia('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button>
                         </td>
                     </tr>`;
                 });
             }
-        });
-    }
-
-    function verHistorialUsuario(id) {
-        db.ref('usuarios_registrados/' + id).once('value', snap => {
-            const u = snap.val();
-            document.getElementById('historyTitle').innerHTML = "<b>🕒 Historial de Licencia</b>";
-            let h = `<div class="history-item"><b>Activación</b><span>${u.fechaAlta || 'No disponible'}</span></div>`;
-            document.getElementById('historyContent').innerHTML = h;
-            document.getElementById('historyModal').style.display = 'flex';
         });
     }
 
