@@ -128,7 +128,10 @@
     <div class="login-card">
         <h2>S.T. MATIAS</h2>
         <input type="text" id="userIn" placeholder="Usuario">
-        <input type="password" id="passIn" placeholder="Contraseña">
+        <div style="position: relative; width: 100%; margin: 10px 0;">
+            <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 40px;">
+            <span id="togglePass" onclick="toggleLoginPassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;">👁️</span>
+        </div>
         <button class="btn-login" onclick="checkAccess()">INGRESAR</button>
         <p id="loginError" style="color:red; font-size:12px; margin-top:10px; display:none;"></p>
     </div>
@@ -354,6 +357,9 @@
         if (session) {
             const data = JSON.parse(session);
             grantAccess(data.user, data.isAdmin, true);
+        } else {
+            // Auto-foco en el input de usuario si no hay sesión iniciada
+            setTimeout(() => document.getElementById('userIn').focus(), 100);
         }
         loadDraft();
     }
@@ -922,6 +928,35 @@
             else if (manual) { showToast("SISTEMA AL DÍA: No hay fotos de más de 45 días", "#2ecc71"); }
         });
     }
+
+    // --- NUEVAS FUNCIONES DE LOGIN ---
+
+    // Mostrar/Ocultar contraseña
+    function toggleLoginPassword() {
+        const passInput = document.getElementById('passIn');
+        const toggleIcon = document.getElementById('togglePass');
+        
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            toggleIcon.innerText = '🔒';
+        } else {
+            passInput.type = 'password';
+            toggleIcon.innerText = '👁️';
+        }
+    }
+
+    // Navegación con Enter en el login
+    document.getElementById('userIn').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            document.getElementById('passIn').focus();
+        }
+    });
+
+    document.getElementById('passIn').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkAccess();
+        }
+    });
 </script>
 </body>
 </html>
