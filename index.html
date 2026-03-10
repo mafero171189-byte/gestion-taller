@@ -31,11 +31,10 @@
         }
         #app-content { display: none; }
 
-        /* ESTILOS ORIGINALES RESTAURADOS */
+        /* ESTILOS ORIGINALES */
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         
-        /* BARRA DE NAVEGACIÓN DESLIZABLE */
         nav { 
             background: var(--primary); 
             padding: 10px 15px; 
@@ -217,8 +216,11 @@
 
     <div id="gesture-zone-top">
         <div style="display:flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin:0;">📱 Servicio Técnico MATIAS</h2>
-            <div id="status-dot" class="offline"></div>
+            <h2 style="margin:0;">📱 S.T. MATIAS</h2>
+            <div style="display:flex; align-items:center;">
+                <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión para sincronizar...</span>
+                <div id="status-dot" class="offline"></div>
+            </div>
         </div>
     </div>
 
@@ -245,7 +247,7 @@
                         </div>
                         <div id="costo-inner" style="display:none;">
                             <label>Costo</label>
-                            <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" style="width: 120px;">
+                            <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
                         </div>
                     </div>
                     <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required oninput="saveDraft()"></div>
@@ -292,7 +294,7 @@
 
         <div id="page-usuarios" class="page" style="display:none;">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0;">🔑 Control de Licencias</h2>
+                <h2 style="margin:0;">🔑 Licencias</h2>
             </div>
             <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
                 <label>Nuevo Usuario (WhatsApp)</label>
@@ -300,7 +302,6 @@
                     <input type="text" id="new-user-wa" placeholder="Ej: 54911..." style="flex:1;">
                     <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:0 20px;">ACTIVAR</button>
                 </div>
-                <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* La contraseña por defecto para nuevos usuarios será 123.</p>
             </div>
 
             <div style="margin-bottom: 15px;">
@@ -553,8 +554,19 @@
 
     function revelarCosto() { 
         let c = document.getElementById('costo-inner');
-        c.style.display = c.style.display === "none" ? "block" : "none"; 
-        if(c.style.display === "block") document.getElementById('costoRepuesto').focus();
+        let input = document.getElementById('costoRepuesto');
+        if (c.style.display === "none") {
+            c.style.display = "block";
+            input.focus();
+        } else {
+            c.style.display = "none";
+        }
+    }
+
+    function ocultarCosto() {
+        setTimeout(() => {
+            document.getElementById('costo-inner').style.display = "none";
+        }, 200);
     }
 
     function toggleArchivo() { 
@@ -571,6 +583,7 @@
     function clickLimpiar(skipToast = false) {
         idEditando = null; document.getElementById('repairForm').reset();
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
+        document.getElementById('costo-inner').style.display = "none";
         fotosTemporales = []; document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
         if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
@@ -770,7 +783,12 @@
     viewer.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; } });
     viewer.addEventListener('touchmove', (e) => { if (isDragging && e.touches.length === 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); } });
     viewer.addEventListener('touchend', () => { isDragging = false; });
-    db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
+    
+    db.ref(".info/connected").on("value", s => {
+        const isOnline = s.val();
+        document.getElementById('status-dot').className = isOnline ? "online" : "offline";
+        document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
+    });
 
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
