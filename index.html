@@ -35,7 +35,7 @@
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         
-        /* --- CAMBIOS EN LA BARRA DE NAVEGACIÓN --- */
+        /* BARRA DE NAVEGACIÓN DESLIZABLE */
         nav { 
             background: var(--primary); 
             padding: 10px 15px; 
@@ -63,7 +63,6 @@
             transition: 0.3s; 
             flex-shrink: 0; 
         }
-        /* ----------------------------------------- */
 
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
@@ -304,6 +303,10 @@
                 <p style="font-size: 11px; color: #64748b; margin-top: 10px;">* La contraseña por defecto para nuevos usuarios será 123.</p>
             </div>
 
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="search-user" placeholder="🔎 Buscar Usuario por WhatsApp..." onkeyup="listarUsuarios()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box;">
+            </div>
+
             <div class="table-wrapper" style="overflow-x:auto; background:white; border-radius:12px; border: 1px solid #e2e8f0;">
                 <table style="min-width: 100%;">
                     <thead>
@@ -322,7 +325,6 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyDI02DP9KrCRpAdSF6SmPr91TssLEf8290",
         authDomain: "github-c3e96.firebaseapp.com",
@@ -339,7 +341,6 @@
     let currentUser = null;
     let isUserAdmin = false;
 
-    // --- ACCESO Y SESIÓN ---
     function checkStoredSession() {
         const session = sessionStorage.getItem('st_matias_session');
         if (session) {
@@ -358,22 +359,14 @@
         if(u === 'Admin') {
             db.ref('configuracion/admin/pass').once('value', snap => {
                 const adminPass = snap.val() || 'Mis_Amores3';
-                if(p === adminPass) {
-                    grantAccess(u, true);
-                } else {
-                    err.innerText = "Usuario o clave incorrecta"; 
-                    err.style.display = 'block';
-                }
+                if(p === adminPass) grantAccess(u, true);
+                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
             });
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
                 const userData = snap.val();
-                if(userData && p === (userData.pass || '123')) {
-                    grantAccess(u, false);
-                } else {
-                    err.innerText = "Usuario o clave incorrecta"; 
-                    err.style.display = 'block'; 
-                }
+                if(userData && p === (userData.pass || '123')) grantAccess(u, false);
+                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
             });
         }
     }
@@ -381,59 +374,39 @@
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
         isUserAdmin = isAdmin;
-        if (!isStored) {
-            sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
-        }
-
+        if (!isStored) sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
         const path = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(path);
-
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
-        
-        // Mostrar botón de perfil para todos
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
-
         dbRef.on('value', snap => {
             const v = snap.val(); 
             registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
             renderTable(); 
             setTimeout(verificarAutoArchivo, 2000);
         });
-
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
             listarUsuarios();
         }
     }
 
-    function logout() {
-        sessionStorage.removeItem('st_matias_session');
-        location.reload();
-    }
+    function logout() { sessionStorage.removeItem('st_matias_session'); location.reload(); }
 
-    // --- FUNCIONES DE CONTRASEÑA ---
     function openPassModal() { document.getElementById('passModal').style.display = 'flex'; }
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
     
     function updatePassword() {
         const newP = document.getElementById('newPass').value.trim();
         if(!newP) return showToast("INGRESE CLAVE", "#e53e3e");
-        
-        if (isUserAdmin) {
-            db.ref('configuracion/admin').update({ pass: newP }).then(() => {
-                showToast("CLAVE ACTUALIZADA ✅", "#2ecc71");
-                closePassModal();
-            });
-        } else {
-            db.ref('usuarios_registrados/' + currentUser).update({ pass: newP }).then(() => {
-                showToast("CLAVE ACTUALIZADA ✅", "#2ecc71");
-                closePassModal();
-            });
-        }
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        db.ref(path).update({ pass: newP }).then(() => {
+            showToast("CLAVE ACTUALIZADA ✅", "#2ecc71");
+            closePassModal();
+        });
     }
 
-    // --- LÓGICA GENERAL ---
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
@@ -457,8 +430,7 @@
 
     function showToast(text, color) {
         const t = document.getElementById('toast-alert');
-        t.innerText = text;
-        t.style.background = color; t.style.display = "block";
+        t.innerText = text; t.style.background = color; t.style.display = "block";
         setTimeout(() => t.style.display = "none", 2500);
     }
 
@@ -489,9 +461,8 @@
         const r = registros.find(x => x.id === idParaEstado);
         const fechaActual = new Date().toLocaleString('es-AR');
         const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569' };
-        const nuevoEvento = { estado: nuevo, fecha: fechaActual };
         let historialActual = r.historialEstados || [];
-        historialActual.push(nuevoEvento);
+        historialActual.push({ estado: nuevo, fecha: fechaActual });
         dbRef.child(idParaEstado).update({ estado: nuevo, historialEstados: historialActual });
         closeStatusModal();
         showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
@@ -518,9 +489,7 @@
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
-        if(r.historialEstados) {
-            r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
-        }
+        if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
         document.getElementById('historyContent').innerHTML = h;
         document.getElementById('historyModal').style.display = 'flex';
     }
@@ -533,20 +502,10 @@
         const table = document.getElementById('mainTable');
         const btnArch = document.getElementById('btnArchivo');
         body.innerHTML = "";
-        
-        if(modoArchivo) {
-            table.classList.add('modo-archivo-activo');
-            btnArch.classList.add('btn-archivo-on');
-        } else {
-            table.classList.remove('modo-archivo-activo');
-            btnArch.classList.remove('btn-archivo-on');
-        }
-        
+        if(modoArchivo) { table.classList.add('modo-archivo-activo'); btnArch.classList.add('btn-archivo-on'); }
+        else { table.classList.remove('modo-archivo-activo'); btnArch.classList.remove('btn-archivo-on'); }
         const filtrados = registros.filter(r => {
-            const cliente = (r.cliente || "").toLowerCase();
-            const modelo = (r.modelo || "").toLowerCase();
-            const orden = (r.orden || "").toLowerCase();
-            const matchBusqueda = cliente.includes(bus) || modelo.includes(bus) || orden.includes(bus);
+            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || (r.orden||"").toLowerCase().includes(bus);
             const matchArchivo = bus.length > 0 ? true : (modoArchivo ? r.archivado : !r.archivado);
             return matchBusqueda && matchArchivo;
         }).sort((a, b) => {
@@ -554,7 +513,6 @@
             const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
             return fechaB - fechaA;
         });
-
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
             const canEdit = !r.archivado;
@@ -583,23 +541,20 @@
     
     function autoOrden() { 
         if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-            let proximoNumero = 100;
+            let prox = 100;
             if (registros.length > 0) {
-                const numeros = registros.map(r => {
-                    const coincidencia = r.orden ? r.orden.match(/\d+/) : null;
-                    return coincidencia ? parseInt(coincidencia[0]) : 0;
-                });
-                const maximoActual = Math.max(...numeros);
-                if (maximoActual >= 100) proximoNumero = maximoActual + 1;
+                const nums = registros.map(r => { const c = r.orden ? r.orden.match(/\d+/) : null; return c ? parseInt(c[0]) : 0; });
+                const max = Math.max(...nums);
+                if (max >= 100) prox = max + 1;
             }
-            document.getElementById('nroOrden').value = "MAT-" + proximoNumero;
+            document.getElementById('nroOrden').value = "MAT-" + prox;
         } 
     }
 
     function revelarCosto() { 
         let c = document.getElementById('costo-inner');
         c.style.display = c.style.display === "none" ? "block" : "none"; 
-        if(c.style.display === "block") { document.getElementById('costoRepuesto').focus(); }
+        if(c.style.display === "block") document.getElementById('costoRepuesto').focus();
     }
 
     function toggleArchivo() { 
@@ -614,16 +569,11 @@
     document.getElementById('confirmDeleteBtn').onclick = () => { dbRef.child(idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
 
     function clickLimpiar(skipToast = false) {
-        idEditando = null; 
-        document.getElementById('repairForm').reset();
+        idEditando = null; document.getElementById('repairForm').reset();
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        fotosTemporales = [];
-        document.getElementById('formThumbnails').innerHTML = "";
+        fotosTemporales = []; document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
-        
-        if (!skipToast) {
-            showToast("FORMULARIO LIMPIO 🧹", "#64748b");
-        }
+        if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
         document.getElementById('cliente').focus(); 
     }
 
@@ -648,10 +598,8 @@
         document.getElementById('page-gestion').style.display = p === 'gestion' ? 'block' : 'none';
         document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
         document.getElementById('page-usuarios').style.display = p === 'usuarios' ? 'block' : 'none';
-        
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-nav-'+p).classList.add('active');
-        
         if(p === 'contabilidad') renderContabilidad();
         if(p === 'usuarios') listarUsuarios();
     }
@@ -661,19 +609,12 @@
         let caja = 0, gastos = 0, porIngresar = 0;
         registros.forEach(r => {
             if (r.fecha) {
-                const fechaCorta = r.fecha.split(',')[0].split(' ')[0];
-                const partes = fechaCorta.split('/');
-                const m = partes.length > 1 ? parseInt(partes[1]) - 1 : -1;
-                
+                const m = parseInt(r.fecha.split(',')[0].split('/')[1]) - 1;
                 if(m === mes) { 
-                    const vPrecio = parseFloat(r.precio) || 0;
-                    const vSena = parseFloat(r.sena) || 0;
-                    const vCosto = parseFloat(r.costoRepuesto) || 0;
-
-                    caja += vSena; 
-                    gastos += vCosto; 
-                    const saldo = vPrecio - vSena;
-                    if (saldo > 0 && !r.archivado) { porIngresar += saldo; }
+                    caja += parseFloat(r.sena) || 0; 
+                    gastos += parseFloat(r.costoRepuesto) || 0; 
+                    const saldo = (parseFloat(r.precio) || 0) - (parseFloat(r.sena) || 0);
+                    if (saldo > 0 && !r.archivado) porIngresar += saldo;
                 }
             }
         });
@@ -686,14 +627,10 @@
 
     function exportarExcel() {
         let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
-        registros.forEach(r => { 
-            let c = r.costoRepuesto || 0;
-            csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${c};${(r.sena||0)-c};${r.estado}\n`; 
-        });
+        registros.forEach(r => { csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = `ST_MATIAS_REPORTE.csv`;
-        link.click();
+        link.download = `ST_MATIAS_REPORTE.csv`; link.click();
     }
 
     document.getElementById('repairForm').onsubmit = e => {
@@ -709,20 +646,13 @@
             estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente",
             fotos: idEditando ? (registros.find(x => x.id === idEditando).fotos || []) : fotosTemporales
         };
-        if(idEditando) {
-            dbRef.child(idEditando).update(data);
-            showToast("ACTUALIZADO ✅", "#3498db");
-        } else {
-            data.fecha = new Date().toLocaleString('es-AR');
-            dbRef.push(data);
-            showToast("REGISTRADO ✅", "#2ecc71");
-        }
+        if(idEditando) { dbRef.child(idEditando).update(data); showToast("ACTUALIZADO ✅", "#3498db"); }
+        else { data.fecha = new Date().toLocaleString('es-AR'); dbRef.push(data); showToast("REGISTRADO ✅", "#2ecc71"); }
         clickLimpiar(true); 
     };
 
     function editar(id) {
-        idEditando = id;
-        const r = registros.find(x => x.id === id);
+        idEditando = id; const r = registros.find(x => x.id === id);
         document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
@@ -731,15 +661,13 @@
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
-        fotosTemporales = r.fotos || [];
-        actualizarMiniaturasForm();
+        fotosTemporales = r.fotos || []; actualizarMiniaturasForm();
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
-        let num = String(r.tel).replace(/\D/g, ''); 
-        if (!num.startsWith('54')) num = '549' + num;
+        let num = String(r.tel).replace(/\D/g, ''); if (!num.startsWith('54')) num = '549' + num;
         const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
         window.open(`https://wa.me/${num}?text=${msj}`);
     }
@@ -748,65 +676,22 @@
         const r = registros.find(x => x.id === id);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        
-        doc.setFillColor(26, 42, 58);
-        doc.rect(0, 0, 80, 28, 'F');
-        doc.setTextColor(255, 255, 255); 
-        doc.setFont("helvetica", "bold"); 
-        doc.setFontSize(22); 
-        doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        
-        doc.setFont("helvetica", "normal"); 
-        doc.setFontSize(10);
-        doc.text("Servicio Técnico", 40, 18, {align:'center'});
-        doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
-        
-        doc.setTextColor(26, 42, 58); 
-        doc.setFont("helvetica", "bold"); 
-        doc.setFontSize(10);
-        doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
-        doc.setFontSize(18); 
-        doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
-        
-        doc.setDrawColor(150, 150, 150);
-        doc.line(10, 48, 70, 48);
-        
-        doc.setFontSize(10);
-        let y = 58; 
-        const col1 = 12; 
-        const col2 = 35;
-        const lineH = 7;
-        
-        const printRow = (l, v) => { 
-            doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
-            doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); 
-            y += lineH; 
-        };
-        
-        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); 
-        printRow("CLIENTE:", r.cliente); 
-        printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
-        printRow("IMEI/SERIE:", r.imei || "-"); 
-        printRow("FALLA:", r.falla); 
-        printRow("OBS:", r.obs || "-");
-        
+        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'}); doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
+        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
+        doc.setFontSize(18); doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
+        doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+        doc.setFontSize(10); let y = 58; 
+        const col1 = 12, col2 = 35, lineH = 7;
+        const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
+        printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
         y += 3; doc.line(10, y, 70, y); y += 10;
-        
-        doc.setFont("helvetica", "normal"); 
-        doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; 
-        doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-        
-        doc.setFillColor(242, 242, 242); 
-        doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); 
-        doc.setFontSize(16);
-        doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-        
-        doc.setFont("helvetica", "italic"); 
-        doc.setFontSize(9); 
-        doc.setTextColor(160, 160, 160);
-        doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
-        
+        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
@@ -814,15 +699,12 @@
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
+                const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     canvas.width = 800; canvas.height = img.height * (800 / img.width);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
-                    actualizarMiniaturasForm();
+                    fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7)); actualizarMiniaturasForm();
                 };
             };
             reader.readAsDataURL(input.files[0]);
@@ -830,20 +712,14 @@
     }
 
     function actualizarMiniaturasForm() {
-        const container = document.getElementById('formThumbnails');
-        container.innerHTML = "";
-        fotosTemporales.forEach((src, idx) => {
-            container.innerHTML += `<img src="${src}" class="thumb-preview" onclick="fotosTemporales.splice(${idx},1); actualizarMiniaturasForm()">`;
-        });
+        const container = document.getElementById('formThumbnails'); container.innerHTML = "";
+        fotosTemporales.forEach((src, idx) => { container.innerHTML += `<img src="${src}" class="thumb-preview" onclick="fotosTemporales.splice(${idx},1); actualizarMiniaturasForm()">`; });
     }
 
     function abrirFotos(id) {
-        idParaFotos = id;
-        const r = registros.find(x => x.id === id);
-        const gallery = document.getElementById('photoGallery');
-        gallery.innerHTML = "";
-        const fotos = r.fotos || [];
-        fotos.forEach((src, index) => {
+        idParaFotos = id; const r = registros.find(x => x.id === id);
+        const gallery = document.getElementById('photoGallery'); gallery.innerHTML = "";
+        (r.fotos || []).forEach((src, index) => {
             gallery.innerHTML += `<div style="position:relative;"><img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover;" onclick="verImagenFull('${src}')">
             <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button></div>`;
         });
@@ -852,15 +728,12 @@
 
     function subirFotoDirecta(input) {
         if (input.files && input.files[0]) {
-            const r = registros.find(x => x.id === idParaFotos);
-            let fotos = [...(r.fotos || [])];
+            const r = registros.find(x => x.id === idParaFotos); let fotos = [...(r.fotos || [])];
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
+                const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     canvas.width = 800; canvas.height = img.height * (800 / img.width);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     fotos.push(canvas.toDataURL('image/jpeg', 0.7));
@@ -872,10 +745,8 @@
     }
 
     function eliminarFoto(id, index) {
-        const r = registros.find(x => x.id === id);
-        let fotos = [...(r.fotos || [])];
-        fotos.splice(index, 1);
-        dbRef.child(id).update({ fotos: fotos }).then(() => abrirFotos(id));
+        const r = registros.find(x => x.id === id); let fotos = [...(r.fotos || [])];
+        fotos.splice(index, 1); dbRef.child(id).update({ fotos: fotos }).then(() => abrirFotos(id));
     }
 
     function verificarAutoArchivo() {
@@ -884,77 +755,49 @@
             if (r.estado === 'Entregado' && !r.archivado && r.historialEstados) {
                 const ent = r.historialEstados.filter(h => h.estado === 'Entregado').pop();
                 if (ent) {
-                    const p = ent.fecha.split(', ')[0].split('/');
-                    const h = ent.fecha.split(', ')[1].split(':');
-                    const d = new Date(p[2], p[1]-1, p[0], h[0], h[1]);
+                    const p = ent.fecha.split(', ')[0].split('/'), h = ent.fecha.split(', ')[1].split(':'), d = new Date(p[2], p[1]-1, p[0], h[0], h[1]);
                     if (ahora - d >= 24 * 60 * 60 * 1000) dbRef.child(r.id).update({ archivado: true });
                 }
             }
         });
     }
 
-    // --- VISUALIZADOR ---
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
-    const viewer = document.getElementById('viewerModal');
-    const imgFull = document.getElementById('imgFull');
-
+    const viewer = document.getElementById('viewerModal'), imgFull = document.getElementById('imgFull');
     function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
     function closeViewer() { viewer.style.display = 'none'; }
     function updateTransform() { imgFull.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
-
-    viewer.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; }
-    });
-    viewer.addEventListener('touchmove', (e) => {
-        if (isDragging && e.touches.length === 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); }
-    });
+    viewer.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - pointX; startY = e.touches[0].clientY - pointY; } });
+    viewer.addEventListener('touchmove', (e) => { if (isDragging && e.touches.length === 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); } });
     viewer.addEventListener('touchend', () => { isDragging = false; });
     db.ref(".info/connected").on("value", s => { document.getElementById('status-dot').className = s.val() ? "online" : "offline"; });
 
-    // --- GESTIÓN DE USUARIOS ACTUALIZADA ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
-        
-        db.ref('usuarios_registrados/' + wa).set({
-            whatsapp: wa,
-            pass: '123',
-            fechaAlta: new Date().toLocaleString('es-AR'),
-            rol: 'operador'
-        }).then(() => {
-            document.getElementById('new-user-wa').value = "";
-            showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
+        db.ref('usuarios_registrados/' + wa).set({ whatsapp: wa, pass: '123', fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador' }).then(() => {
+            document.getElementById('new-user-wa').value = ""; showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
         });
     }
 
     function listarUsuarios() {
+        const bus = document.getElementById('search-user').value.toLowerCase();
         db.ref('usuarios_registrados').on('value', snap => {
             const users = snap.val();
             const body = document.getElementById('userTableBody');
             body.innerHTML = "";
             if(users) {
                 Object.keys(users).forEach(id => {
-                    const u = users[id];
-                    body.innerHTML += `
-                    <tr>
-                        <td style="padding:15px;"><b>${id}</b></td>
-                        <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${u.pass || '123'}</span></td>
-                        <td style="padding:15px; color:#64748b; font-size:13px;">${u.fechaAlta || 'Preexistente'}</td>
-                        <td style="padding:15px;">
-                            <button onclick="eliminarLicencia('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button>
-                        </td>
-                    </tr>`;
+                    if(id.toLowerCase().includes(bus)) {
+                        const u = users[id];
+                        body.innerHTML += `<tr><td style="padding:15px;"><b>${id}</b></td><td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${u.pass || '123'}</span></td><td style="padding:15px; color:#64748b; font-size:13px;">${u.fechaAlta || 'Preexistente'}</td><td style="padding:15px;"><button onclick="eliminarLicencia('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button></td></tr>`;
+                    }
                 });
             }
         });
     }
 
-    function eliminarLicencia(id) {
-        if(confirm("¿Eliminar acceso para " + id + "?")) {
-            db.ref('usuarios_registrados/' + id).remove();
-            showToast("ACCESO ELIMINADO", "#e53e3e");
-        }
-    }
+    function eliminarLicencia(id) { if(confirm("¿Eliminar acceso para " + id + "?")) { db.ref('usuarios_registrados/' + id).remove(); showToast("ACCESO ELIMINADO", "#e53e3e"); } }
 </script>
 </body>
 </html>
