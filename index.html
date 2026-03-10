@@ -222,7 +222,7 @@
             <h2 style="margin:0;">📱 S.T. MATIAS</h2>
             <div style="display:flex; align-items:center;">
                 <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión para sincronizar...</span>
-                <div id="status-dot" class="offline"></div>
+                <div id="status-dot" class="online"></div>
             </div>
         </div>
     </div>
@@ -506,6 +506,7 @@
 
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
+        const nroLimpio = String(r.orden).replace('MAT-', '');
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
         document.getElementById('historyContent').innerHTML = h;
@@ -542,7 +543,8 @@
         }
 
         const filtrados = registros.filter(r => {
-            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || (r.orden||"").toLowerCase().includes(bus);
+            const ordenLimpia = String(r.orden).replace('MAT-', '');
+            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || ordenLimpia.toLowerCase().includes(bus);
             
             let matchFiltro = true;
             if (bus.length === 0) {
@@ -564,8 +566,9 @@
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
             const canEdit = !r.archivado;
+            const nroLimpio = String(r.orden).replace('MAT-', '');
             body.innerHTML += `<tr>
-                <td><b>${r.orden}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
+                <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
                 <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
@@ -591,11 +594,15 @@
         if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
             let prox = 100;
             if (registros.length > 0) {
-                const nums = registros.map(r => { const c = r.orden ? r.orden.match(/\d+/) : null; return c ? parseInt(c[0]) : 0; });
+                const nums = registros.map(r => { 
+                    const val = String(r.orden).replace('MAT-', '');
+                    const c = val.match(/\d+/); 
+                    return c ? parseInt(c[0]) : 0; 
+                });
                 const max = Math.max(...nums);
                 if (max >= 100) prox = max + 1;
             }
-            document.getElementById('nroOrden').value = "MAT-" + prox;
+            document.getElementById('nroOrden').value = prox;
         } 
     }
 
@@ -704,7 +711,10 @@
 
     function exportarExcel() {
         let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
-        registros.forEach(r => { csv += `${r.fecha};${r.orden};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; });
+        registros.forEach(r => { 
+            const nroLimpio = String(r.orden).replace('MAT-', '');
+            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; 
+        });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
         link.download = `ST_MATIAS_REPORTE.csv`; link.click();
@@ -731,7 +741,8 @@
 
     function editar(id) {
         idEditando = id; const r = registros.find(x => x.id === id);
-        document.getElementById('nroOrden').value = r.orden; document.getElementById('cliente').value = r.cliente;
+        const nroLimpio = String(r.orden).replace('MAT-', '');
+        document.getElementById('nroOrden').value = nroLimpio; document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
         document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
@@ -746,19 +757,21 @@
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
         let num = String(r.tel).replace(/\D/g, ''); if (!num.startsWith('54')) num = '549' + num;
-        const msj = `*S.T. MATIAS* 🛠️%0A----------------------------%0A📌 *ORDEN:* ${r.orden}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+        const nroLimpio = String(r.orden).replace('MAT-', '');
+        const msj = `📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
         window.open(`https://wa.me/${num}?text=${msj}`);
     }
 
     function imprimir(id) {
         const r = registros.find(x => x.id === id);
+        const nroLimpio = String(r.orden).replace('MAT-', '');
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
         doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
         doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
         doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'}); doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
         doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
-        doc.setFontSize(18); doc.text("ORDEN: " + r.orden, 40, 44, {align:'center'});
+        doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
         doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
         doc.setFontSize(10); let y = 58; 
         const col1 = 12, col2 = 35, lineH = 7;
@@ -770,7 +783,7 @@
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
         doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
-        doc.save(`Ticket_${r.orden}.pdf`);
+        doc.save(`Ticket_${nroLimpio}.pdf`);
     }
 
     // FOTOS
@@ -869,7 +882,7 @@
         document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
     });
 
-    // --- LÓGICA DE LICENCIAS (CORREGIDA) ---
+    // --- LÓGICA DE LICENCIAS ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
@@ -906,14 +919,10 @@
         });
     }
 
-    // ELIMINACIÓN TOTAL (RASTRO CERO)
     function eliminarLicencia(id) { 
         if(confirm("¿ELIMINAR DEFINITIVAMENTE?\n\nSe borrará el acceso y TODAS las órdenes guardadas de " + id + ". Esta acción no se puede deshacer.")) { 
-            // 1. Borra el acceso del usuario
             db.ref('usuarios_registrados/' + id).remove(); 
-            // 2. Borra todas sus órdenes y fotos de la base de datos
             db.ref('reparaciones_usuarios/' + id).remove(); 
-            
             showToast("LICENCIA Y DATOS ELIMINADOS 🗑️", "#e53e3e"); 
         } 
     }
