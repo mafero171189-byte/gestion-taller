@@ -352,6 +352,7 @@
     let currentUser = null;
     let isUserAdmin = false;
 
+    // LÓGICA DE SESIÓN Y ACCESO (original)
     function checkStoredSession() {
         const session = sessionStorage.getItem('st_matias_session');
         if (session) {
@@ -421,6 +422,7 @@
         });
     }
 
+    // VARIABLES GLOBALES (original)
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
@@ -443,6 +445,7 @@
         selectMes.appendChild(opt);
     });
 
+    // LÓGICA DE TABLA Y ACCIONES (original)
     function showToast(text, color) {
         const t = document.getElementById('toast-alert');
         t.innerText = text; t.style.background = color; t.style.display = "block";
@@ -581,6 +584,7 @@
         });
     }
 
+    // FORMATEO Y AUXILIARES (original)
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
     function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
     
@@ -706,6 +710,7 @@
         link.download = `ST_MATIAS_REPORTE.csv`; link.click();
     }
 
+    // ENVÍO DE FORMULARIO (original)
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
         const data = {
@@ -768,6 +773,7 @@
         doc.save(`Ticket_${r.orden}.pdf`);
     }
 
+    // LÓGICA DE FOTOS (original)
     function comprimirFoto(archivo, callback) {
         const reader = new FileReader();
         reader.readAsDataURL(archivo);
@@ -847,6 +853,7 @@
         });
     }
 
+    // VISOR DE IMÁGENES (original)
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
     const viewer = document.getElementById('viewerModal'), imgFull = document.getElementById('imgFull');
     function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
@@ -862,6 +869,7 @@
         document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
     });
 
+    // LÓGICA DE LICENCIAS CON CORRECCIÓN
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
@@ -872,6 +880,10 @@
 
     function listarUsuarios() {
         const bus = document.getElementById('search-user').value.toLowerCase();
+        
+        // MODIFICACIÓN: Se apaga el escuchador anterior para evitar duplicados
+        db.ref('usuarios_registrados').off('value'); 
+        
         db.ref('usuarios_registrados').on('value', snapUsers => {
             const users = snapUsers.val();
             const body = document.getElementById('userTableBody');
@@ -927,6 +939,7 @@
         });
     }
 
+    // ACCESIBILIDAD Y TECLADO (original)
     function toggleLoginPassword() {
         const passInput = document.getElementById('passIn');
         const toggleIcon = document.getElementById('togglePass');
