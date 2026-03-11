@@ -381,30 +381,62 @@
             document.getElementById('repairForm').style.display = 'none'; // Ocultar formulario
             document.getElementById('search-section').style.display = 'none'; // Ocultar filtros de búsqueda
             
-            document.getElementById('search').value = clienteId.replace('MAT-', '');
-            
             dbRef.on('value', snap => {
                 const v = snap.val(); 
                 registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                 
-                // VALIDACIÓN: Si el equipo buscado está entregado, denegamos el acceso al cliente
                 const ordenLimpia = clienteId.replace('MAT-', '');
                 const regEncontrado = registros.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
                 
-                if (regEncontrado && regEncontrado.estado === 'Entregado') {
-                    document.querySelector('.container').innerHTML = `
-                        <div style="text-align:center; padding:50px 20px;">
-                            <h1 style="font-size:50px;">📦</h1>
-                            <h2>EQUIPO YA ENTREGADO</h2>
-                            <p style="color:#64748b;">El seguimiento de esta orden ya no está disponible por seguridad.</p>
-                            <p>¡Muchas gracias!</p>
-                        </div>`;
-                    return;
-                }
+                // Forzamos un tema oscuro y limpio para el cliente ocultando el fondo contenedor
+                document.body.style.backgroundColor = '#121212';
+                const gestureZone = document.getElementById('gesture-zone-top');
+                if(gestureZone) gestureZone.style.display = 'none';
                 
-                renderTable(); 
+                const container = document.querySelector('.container');
+                container.style.boxShadow = 'none';
+                container.style.background = 'transparent';
+
+                if (regEncontrado) {
+                    // VALIDACIÓN: Si el equipo está entregado, el link desaparece (muestra mensaje de inactivo)
+                    if (regEncontrado.estado === 'Entregado') {
+                        container.innerHTML = `
+                            <div style="display: flex; min-height: 80vh; align-items: center; justify-content: center;">
+                                <div style="background-color: #1e1e1e; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); max-width: 400px; width: 90%; color: #fff;">
+                                    <h3 style="color: #f44336; margin-top: 0; font-size: 24px;">Enlace Inactivo</h3>
+                                    <p style="font-size: 1.1rem; color: #ccc;">Esta orden ya fue marcada como ENTREGADA. El enlace ha sido deshabilitado por seguridad.</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // ORDEN ACTIVA (Pendiente o Reparado) - Solo un recuadro limpio
+                        let colorEstado = '#f1c40f'; // Pendiente (Amarillo)
+                        if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71'; // Reparado (Verde)
+
+                        container.innerHTML = `
+                            <div style="display: flex; min-height: 80vh; align-items: center; justify-content: center;">
+                                <div style="background-color: #1e1e1e; padding: 40px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); max-width: 400px; width: 90%; color: #ffffff;">
+                                    <h2 style="margin-top: 0; color: #3498db;">S.T. MATIAS</h2>
+                                    <p style="font-size: 1.2rem; margin: 20px 0; color: #ccc;">Su orden <strong style="color: #fff; font-size: 1.4rem;">${regEncontrado.orden}</strong> está en estado:</p>
+                                    <div style="font-size: 1.5rem; font-weight: bold; padding: 15px; border-radius: 8px; background: #333; text-transform: uppercase; color: ${colorEstado}; border: 2px solid ${colorEstado};">
+                                        ${regEncontrado.estado}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // No encontrada en la base
+                    container.innerHTML = `
+                        <div style="display: flex; min-height: 80vh; align-items: center; justify-content: center;">
+                            <div style="background-color: #1e1e1e; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; color: #ffffff;">
+                                <h3 style="color:#f44336; margin:0;">Orden no encontrada</h3>
+                                <p style="color:#ccc; margin-top:10px;">El enlace puede ser incorrecto o estar caducado.</p>
+                            </div>
+                        </div>`;
+                }
             });
-            return; 
+            return; // Terminamos aquí para no ejecutar la carga de interfaz completa
         }
 
         const session = sessionStorage.getItem('st_matias_session');
