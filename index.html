@@ -67,7 +67,7 @@
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
         
-        #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
+        #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 30000; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(2px); }
@@ -116,12 +116,12 @@
         .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
 
-        #viewerModal { background: rgba(0,0,0,0.95); z-index: 5000; overflow: hidden; touch-action: none; display: none; flex-direction: column; }
+        #viewerModal { background: rgba(0,0,0,0.95); z-index: 35000; overflow: hidden; touch-action: none; display: none; flex-direction: column; }
         #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
-        #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
+        #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 35001; }
 
-        /* ESTILOS SEGUIMIENTO CLIENTE */
+        /* ESTILOS CONSULTA CLIENTE */
         .cliente-history-box { text-align: left; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
         .cliente-history-item { display: flex; gap: 10px; margin-bottom: 12px; position: relative; padding-left: 15px; }
         .cliente-history-item::before { content: ''; position: absolute; left: 0; top: 5px; width: 8px; height: 8px; background: #3498db; border-radius: 50%; }
@@ -132,10 +132,10 @@
 </head>
 <body onload="checkStoredSession()">
 
-<div id="cliente-view" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:20000; padding:20px; box-sizing:border-box; font-family:sans-serif; overflow-y:auto;">
+<div id="cliente-view" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:25000; padding:20px; box-sizing:border-box; font-family:sans-serif; overflow-y:auto;">
     <div style="background:white; padding:30px; border-radius:20px; box-shadow:0 10px 25px rgba(0,0,0,0.1); max-width:400px; margin:auto; text-align:center;">
-        <h2 id="cliente-taller" style="color:#1a2a3a; margin-bottom:5px;"></h2>
-        <p id="cliente-sub" style="color:#64748b; margin-top:0;"></p>
+        <h2 id="cliente-taller" style="color:#1a2a3a; margin-bottom:5px;">S.T. MATIAS</h2>
+        <p id="cliente-sub" style="color:#64748b; margin-top:0;">Consulta de Estado</p>
         <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
         <p style="font-size:12px; color:#64748b; margin-bottom:5px;">ESTADO ACTUAL:</p>
         <div id="cliente-estado" style="display:inline-block; padding:10px 25px; border-radius:50px; font-weight:bold; font-size:18px; margin-bottom:20px;"></div>
@@ -390,13 +390,25 @@
     let dbRef; 
     let currentUser = null;
     let isUserAdmin = false;
+    let registros = [];
+    let idEditando = null;
+    let modoArchivo = false;
+    let modoPendientes = false;
+    let idParaEstado = null;
+    let idParaPrecio = null;
+    let idParaBorrar = null;
+    let idParaFotos = null;
+    let fotosTemporales = [];
 
-    // --- ACCESO CORREGIDO CON DETECCIÓN DE CONSULTA ---
+    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+
+    // --- ACCESO Y CONSULTA CLIENTE ---
     function checkStoredSession() {
         const urlParams = new URLSearchParams(window.location.search);
         const verOrden = urlParams.get('ver');
         const usuarioDuenio = urlParams.get('u');
 
+        // SI VIENE DE WHATSAPP: OCULTAR LOGIN Y MOSTRAR ESTADO
         if (verOrden && usuarioDuenio) {
             mostrarEstadoCliente(verOrden, usuarioDuenio);
             return; 
@@ -410,6 +422,46 @@
             setTimeout(() => document.getElementById('userIn').focus(), 100);
         }
         loadDraft();
+    }
+
+    function mostrarEstadoCliente(nro, user) {
+        // CORRECCIÓN CLAVE: Ocultamos el login inmediatamente
+        document.getElementById('login-overlay').style.display = 'none';
+
+        const path = user === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + user;
+        db.ref(path).once('value', snap => {
+            const data = snap.val();
+            const orden = Object.values(data || {}).find(r => String(r.orden).replace('MAT-', '') === nro);
+            
+            if (orden) {
+                document.getElementById('cliente-view').style.display = 'block';
+                document.getElementById('cliente-nro').innerText = nro;
+                document.getElementById('cliente-modelo').innerText = orden.modelo;
+                
+                const elEstado = document.getElementById('cliente-estado');
+                elEstado.innerText = orden.estado.toUpperCase();
+                const colores = { 'Pendiente': '#fff9c4', 'Reparado': '#c8e6c9', 'Entregado': '#e2e8f0' };
+                elEstado.style.background = colores[orden.estado] || '#3498db';
+
+                let htmlHistorial = `<div class="cliente-history-item"><div><b>Ingreso</b><span>${orden.fecha || '-'}</span></div></div>`;
+                if(orden.historialEstados) {
+                    orden.historialEstados.forEach(h => {
+                        htmlHistorial += `<div class="cliente-history-item"><div><b>${h.estado}</b><span>${h.fecha}</span></div></div>`;
+                    });
+                }
+                document.getElementById('cliente-lista-historial').innerHTML = htmlHistorial;
+
+                const pathConf = user === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + user;
+                db.ref(pathConf).once('value', s => {
+                    const c = s.val() || {};
+                    document.getElementById('cliente-taller').innerText = c.nombreTaller || "S.T. MATIAS";
+                    document.getElementById('cliente-sub').innerText = c.subtitulo || "Consulta de Estado";
+                });
+            } else {
+                alert("Orden no encontrada");
+                location.href = location.pathname;
+            }
+        });
     }
 
     function checkAccess() {
@@ -466,6 +518,7 @@
 
     function logout() { sessionStorage.removeItem('st_matias_session'); location.reload(); }
 
+    // --- MI PERFIL ---
     function openPassModal() { 
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
@@ -493,18 +546,7 @@
         });
     }
 
-    let registros = [];
-    let idEditando = null;
-    let modoArchivo = false;
-    let modoPendientes = false;
-    let idParaEstado = null;
-    let idParaPrecio = null;
-    let idParaBorrar = null;
-    let idParaFotos = null;
-    let fotosTemporales = [];
-
-    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
-
+    // --- MESES Y CONTABILIDAD ---
     const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     const selectMes = document.getElementById('selectMes');
     const mesActual = new Date().getMonth();
@@ -535,6 +577,7 @@
         showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
     }
 
+    // --- ESTADOS Y PRECIOS ---
     function openStatusModal(id) {
         const r = registros.find(x => x.id === id);
         if(r.archivado) return;
@@ -584,6 +627,7 @@
 
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
+    // --- TABLA Y FILTROS ---
     function renderTable() {
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
@@ -826,27 +870,22 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    // --- FUNCIÓN WHATSAPP ACTUALIZADA CON LINK ---
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "";
-            const subHeader = conf.subtitulo || "";
+            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
             
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
-            // Generar link de consulta online automático
+            // LINK DINÁMICO PARA EL CLIENTE
             const urlConsulta = window.location.href.split('?')[0] + `?ver=${nroLimpio}&u=${currentUser}`;
 
-            let msj = "";
-            if(nombreHeader) msj += ` *${nombreHeader}*`;
-            if(subHeader) msj += ` - ${subHeader}`;
-            msj += `%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A%0A🔗 *Sigue tu reparación aquí:*%0A${urlConsulta}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+            let msj = `*${nombreHeader}*%0A%0A📌 *ORDEN:* ${nroLimpio}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A%0A🔗 *Sigue tu reparación aquí:*%0A${urlConsulta}`;
             
             window.open(`https://wa.me/${num}?text=${msj}`);
         });
@@ -857,7 +896,7 @@
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "";
+            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
             const subHeader = conf.subtitulo || "";
             const wappHeader = conf.wappTicket || "";
             const nroLimpio = String(r.orden).replace('MAT-', '');
@@ -887,6 +926,7 @@
         });
     }
 
+    // --- FOTOS Y COMPRESIÓN ---
     function comprimirFoto(archivo, callback) {
         const reader = new FileReader();
         reader.readAsDataURL(archivo);
@@ -953,6 +993,7 @@
         fotos.splice(index, 1); dbRef.child(id).update({ fotos: fotos }).then(() => abrirFotos(id));
     }
 
+    // --- LIMPIEZA Y AUTOARCHIVADO ---
     function verificarAutoArchivo() {
         const ahora = new Date();
         registros.forEach(r => {
@@ -966,6 +1007,7 @@
         });
     }
 
+    // --- VISOR DE IMÁGENES ---
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
     const viewer = document.getElementById('viewerModal'), imgFull = document.getElementById('imgFull');
     function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
@@ -975,23 +1017,19 @@
     viewer.addEventListener('touchmove', (e) => { if (isDragging && e.touches.length === 1) { pointX = e.touches[0].clientX - startX; pointY = e.touches[0].clientY - startY; updateTransform(); } });
     viewer.addEventListener('touchend', () => { isDragging = false; });
     
+    // --- ESTADO DE CONEXIÓN ---
     db.ref(".info/connected").on("value", s => {
         const isOnline = s.val();
         document.getElementById('status-dot').className = isOnline ? "online" : "offline";
         document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
     });
 
+    // --- LICENCIAS Y USUARIOS ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
         db.ref('usuarios_registrados/' + wa).set({ 
-            whatsapp: wa, 
-            pass: '123', 
-            fechaAlta: new Date().toLocaleString('es-AR'), 
-            rol: 'operador',
-            nombreTaller: "",
-            subtitulo: "",
-            wappTicket: ""
+            whatsapp: wa, pass: '123', fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador'
         }).then(() => {
             document.getElementById('new-user-wa').value = ""; showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
         });
@@ -999,7 +1037,6 @@
 
     function listarUsuarios() {
         const bus = document.getElementById('search-user').value.toLowerCase();
-        db.ref('usuarios_registrados').off('value'); 
         db.ref('usuarios_registrados').on('value', snapUsers => {
             const users = snapUsers.val();
             const body = document.getElementById('userTableBody');
@@ -1009,15 +1046,12 @@
                     if(wa.toLowerCase().includes(bus)) {
                         db.ref('reparaciones_usuarios/' + wa).once('value', snapData => {
                             const data = snapData.val() || {};
-                            const JSON_STR = JSON.stringify(data);
                             const cantOrdenes = Object.keys(data).length;
-                            let pesoAprox = JSON_STR ? JSON_STR.length / 1024 : 0;
-                            let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
                             body.innerHTML += `<tr>
-                                <td style="padding:15px;"><b>${wa}</b><br><small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small></td>
-                                <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${users[wa].pass || '123'}</span></td>
-                                <td style="padding:15px; color:#64748b; font-size:13px;">${users[wa].fechaAlta || 'Preexistente'}</td>
-                                <td style="padding:15px;"><button onclick="eliminarLicencia('${wa}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button></td>
+                                <td style="padding:15px;"><b>${wa}</b><br><small>📦 ${cantOrdenes} órdenes</small></td>
+                                <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px;">${users[wa].pass || '123'}</span></td>
+                                <td style="padding:15px;">${users[wa].fechaAlta || '-'}</td>
+                                <td style="padding:15px;"><button onclick="eliminarLicencia('${wa}')" style="color:red; border:none; background:none; cursor:pointer;">❌</button></td>
                             </tr>`;
                         });
                     }
@@ -1027,10 +1061,9 @@
     }
 
     function eliminarLicencia(id) { 
-        if(confirm("¿ELIMINAR DEFINITIVAMENTE?\n\nSe borrará el acceso y TODAS las órdenes guardadas de " + id + ". Esta acción no se puede deshacer.")) { 
+        if(confirm("¿ELIMINAR ACCESO Y DATOS DE " + id + "?")) { 
             db.ref('usuarios_registrados/' + id).remove(); 
             db.ref('reparaciones_usuarios/' + id).remove(); 
-            showToast("LICENCIA Y DATOS ELIMINADOS 🗑️", "#e53e3e"); 
         } 
     }
 
@@ -1038,10 +1071,9 @@
         if (!isUserAdmin) return;
         const DIAS_LIMITE = 45;
         const ahora = new Date();
-        let fotosBorradas = 0;
         db.ref('reparaciones_usuarios').once('value', snapshot => {
             const usuarios = snapshot.val();
-            if (!usuarios) { if(manual) showToast("NO HAY FOTOS PARA LIMPIAR", "#64748b"); return; }
+            if (!usuarios) return;
             Object.keys(usuarios).forEach(wa => {
                 const reparaciones = usuarios[wa];
                 Object.keys(reparaciones).forEach(id => {
@@ -1049,78 +1081,24 @@
                     if (r.fecha && r.fotos) {
                         const partes = r.fecha.split(', ')[0].split('/');
                         const fechaOrden = new Date(partes[2], partes[1] - 1, partes[0]);
-                        const diferenciaDias = Math.floor((ahora - fechaOrden) / (1000 * 60 * 60 * 24));
-                        if (diferenciaDias >= DIAS_LIMITE) {
+                        if (Math.floor((ahora - fechaOrden) / (1000 * 60 * 60 * 24)) >= DIAS_LIMITE) {
                             db.ref(`reparaciones_usuarios/${wa}/${id}/fotos`).remove();
-                            fotosBorradas++;
                         }
                     }
                 });
             });
-            if (fotosBorradas > 0) { showToast(`LIMPIEZA: Se borraron fotos de ${fotosBorradas} órdenes antiguas 🧹`, "#3498db"); }
-            else if (manual) { showToast("SISTEMA AL DÍA: No hay fotos de más de 45 días", "#2ecc71"); }
+            if(manual) showToast("LIMPIEZA FINALIZADA 🧹", "#3498db");
         });
     }
 
     function toggleLoginPassword() {
-        const passInput = document.getElementById('passIn');
-        const toggleIcon = document.getElementById('togglePass');
-        if (passInput.type === 'password') {
-            passInput.type = 'text';
-            toggleIcon.innerText = '🔒';
-        } else {
-            passInput.type = 'password';
-            toggleIcon.innerText = '👁️';
-        }
+        const p = document.getElementById('passIn');
+        p.type = p.type === 'password' ? 'text' : 'password';
+        document.getElementById('togglePass').innerText = p.type === 'password' ? '👁️' : '🔒';
     }
 
-    // --- NUEVA FUNCIÓN PARA MOSTRAR LA VISTA AL CLIENTE ---
-    function mostrarEstadoCliente(nro, user) {
-        const path = user === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + user;
-        db.ref(path).once('value', snap => {
-            const data = snap.val();
-            const orden = Object.values(data || {}).find(r => String(r.orden).replace('MAT-', '') === nro);
-            
-            if (orden) {
-                document.getElementById('cliente-view').style.display = 'block';
-                document.getElementById('cliente-nro').innerText = nro;
-                document.getElementById('cliente-modelo').innerText = orden.modelo;
-                
-                const elEstado = document.getElementById('cliente-estado');
-                elEstado.innerText = orden.estado.toUpperCase();
-                const colores = { 'Pendiente': '#fff9c4', 'Reparado': '#c8e6c9', 'Entregado': '#e2e8f0' };
-                const textos = { 'Pendiente': '#856404', 'Reparado': '#1b5e20', 'Entregado': '#475569' };
-                elEstado.style.background = colores[orden.estado] || '#3498db';
-                elEstado.style.color = textos[orden.estado] || '#fff';
-
-                let htmlHistorial = `<div class="cliente-history-item"><div><b>Ingreso al Taller</b><span>${orden.fecha || '-'}</span></div></div>`;
-                if(orden.historialEstados) {
-                    orden.historialEstados.forEach(h => {
-                        htmlHistorial += `<div class="cliente-history-item"><div><b>${h.estado}</b><span>${h.fecha}</span></div></div>`;
-                    });
-                }
-                document.getElementById('cliente-lista-historial').innerHTML = htmlHistorial;
-
-                const pathConf = user === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + user;
-                db.ref(pathConf).once('value', s => {
-                    const c = s.val() || {};
-                    document.getElementById('cliente-taller').innerText = c.nombreTaller || "S.T. MATIAS";
-                    document.getElementById('cliente-sub').innerText = c.subtitulo || "Servicio Técnico";
-                });
-            } else {
-                alert("Orden no encontrada");
-                location.href = location.pathname;
-            }
-        });
-    }
-
-    document.getElementById('userIn').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') { document.getElementById('passIn').focus(); }
-    });
-
-    document.getElementById('passIn').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') { checkAccess(); }
-    });
+    document.getElementById('userIn').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('passIn').focus(); });
+    document.getElementById('passIn').addEventListener('keypress', e => { if (e.key === 'Enter') checkAccess(); });
 </script>
 </body>
 </html>
