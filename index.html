@@ -483,7 +483,7 @@
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
                 const userData = snap.val();
-                if(userData && p === (userData.pass || '123')) grantAccess(u, false);
+                if(userData && p === userData.pass) grantAccess(u, false);
                 else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
             });
         }
@@ -1052,7 +1052,7 @@
                             let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
                             body.innerHTML += `<tr>
                                 <td style="padding:15px;"><b>${wa}</b><br><small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small></td>
-                                <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${users[wa].pass || '123'}</span></td>
+                                <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${users[wa].pass}</span></td>
                                 <td style="padding:15px; color:#64748b; font-size:13px;">${users[wa].fechaAlta || 'Preexistente'}</td>
                                 <td style="padding:15px;"><button onclick="eliminarLicencia('${wa}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button></td>
                             </tr>`;
