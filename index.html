@@ -120,9 +120,39 @@
         #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
         #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
+
+        /* ESTILOS SEGUIMIENTO CLIENTE */
+        .cliente-history-box { text-align: left; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .cliente-history-item { display: flex; gap: 10px; margin-bottom: 12px; position: relative; padding-left: 15px; }
+        .cliente-history-item::before { content: ''; position: absolute; left: 0; top: 5px; width: 8px; height: 8px; background: #3498db; border-radius: 50%; }
+        .cliente-history-item div { font-size: 13px; line-height: 1.2; }
+        .cliente-history-item b { display: block; color: #1a2a3a; font-size: 12px; text-transform: uppercase; }
+        .cliente-history-item span { color: #64748b; font-size: 11px; }
     </style>
 </head>
 <body onload="checkStoredSession()">
+
+<div id="cliente-view" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:20000; padding:20px; box-sizing:border-box; font-family:sans-serif; overflow-y:auto;">
+    <div style="background:white; padding:30px; border-radius:20px; box-shadow:0 10px 25px rgba(0,0,0,0.1); max-width:400px; margin:auto; text-align:center;">
+        <h2 id="cliente-taller" style="color:#1a2a3a; margin-bottom:5px;"></h2>
+        <p id="cliente-sub" style="color:#64748b; margin-top:0;"></p>
+        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+        <p style="font-size:12px; color:#64748b; margin-bottom:5px;">ESTADO ACTUAL:</p>
+        <div id="cliente-estado" style="display:inline-block; padding:10px 25px; border-radius:50px; font-weight:bold; font-size:18px; margin-bottom:20px;"></div>
+        
+        <div style="text-align:left; background:#f8fafc; padding:15px; border-radius:12px; font-size:14px;">
+            <p><b>📱 Equipo:</b> <span id="cliente-modelo"></span></p>
+            <p><b>📌 Orden:</b> <span id="cliente-nro"></span></p>
+        </div>
+
+        <div class="cliente-history-box">
+            <p style="font-size:12px; font-weight:bold; color:#64748b; margin-bottom:15px;">🕒 SEGUIMIENTO PASO A PASO:</p>
+            <div id="cliente-lista-historial"></div>
+        </div>
+
+        <button onclick="location.href=location.pathname" style="margin-top:25px; background:#3498db; color:white; border:none; padding:12px 20px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">CERRAR CONSULTA</button>
+    </div>
+</div>
 
 <div id="login-overlay">
     <div class="login-card">
@@ -361,8 +391,17 @@
     let currentUser = null;
     let isUserAdmin = false;
 
-    // --- ACCESO CORREGIDO ---
+    // --- ACCESO CORREGIDO CON DETECCIÓN DE CONSULTA ---
     function checkStoredSession() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const verOrden = urlParams.get('ver');
+        const usuarioDuenio = urlParams.get('u');
+
+        if (verOrden && usuarioDuenio) {
+            mostrarEstadoCliente(verOrden, usuarioDuenio);
+            return; 
+        }
+
         const session = sessionStorage.getItem('st_matias_session');
         if (session) {
             const data = JSON.parse(session);
@@ -787,6 +826,7 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
+    // --- FUNCIÓN WHATSAPP ACTUALIZADA CON LINK ---
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
@@ -800,10 +840,13 @@
             if (!num.startsWith('54')) num = '549' + num;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
+            // Generar link de consulta online automático
+            const urlConsulta = window.location.href.split('?')[0] + `?ver=${nroLimpio}&u=${currentUser}`;
+
             let msj = "";
             if(nombreHeader) msj += ` *${nombreHeader}*`;
             if(subHeader) msj += ` - ${subHeader}`;
-            msj += `%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+            msj += `%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A%0A🔗 *Sigue tu reparación aquí:*%0A${urlConsulta}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
             
             window.open(`https://wa.me/${num}?text=${msj}`);
         });
@@ -1029,6 +1072,46 @@
             passInput.type = 'password';
             toggleIcon.innerText = '👁️';
         }
+    }
+
+    // --- NUEVA FUNCIÓN PARA MOSTRAR LA VISTA AL CLIENTE ---
+    function mostrarEstadoCliente(nro, user) {
+        const path = user === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + user;
+        db.ref(path).once('value', snap => {
+            const data = snap.val();
+            const orden = Object.values(data || {}).find(r => String(r.orden).replace('MAT-', '') === nro);
+            
+            if (orden) {
+                document.getElementById('cliente-view').style.display = 'block';
+                document.getElementById('cliente-nro').innerText = nro;
+                document.getElementById('cliente-modelo').innerText = orden.modelo;
+                
+                const elEstado = document.getElementById('cliente-estado');
+                elEstado.innerText = orden.estado.toUpperCase();
+                const colores = { 'Pendiente': '#fff9c4', 'Reparado': '#c8e6c9', 'Entregado': '#e2e8f0' };
+                const textos = { 'Pendiente': '#856404', 'Reparado': '#1b5e20', 'Entregado': '#475569' };
+                elEstado.style.background = colores[orden.estado] || '#3498db';
+                elEstado.style.color = textos[orden.estado] || '#fff';
+
+                let htmlHistorial = `<div class="cliente-history-item"><div><b>Ingreso al Taller</b><span>${orden.fecha || '-'}</span></div></div>`;
+                if(orden.historialEstados) {
+                    orden.historialEstados.forEach(h => {
+                        htmlHistorial += `<div class="cliente-history-item"><div><b>${h.estado}</b><span>${h.fecha}</span></div></div>`;
+                    });
+                }
+                document.getElementById('cliente-lista-historial').innerHTML = htmlHistorial;
+
+                const pathConf = user === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + user;
+                db.ref(pathConf).once('value', s => {
+                    const c = s.val() || {};
+                    document.getElementById('cliente-taller').innerText = c.nombreTaller || "S.T. MATIAS";
+                    document.getElementById('cliente-sub').innerText = c.subtitulo || "Servicio Técnico";
+                });
+            } else {
+                alert("Orden no encontrada");
+                location.href = location.pathname;
+            }
+        });
     }
 
     document.getElementById('userIn').addEventListener('keypress', function (e) {
