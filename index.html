@@ -777,12 +777,25 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
+    // FUNCIÓN ÚNICA DE WHATSAPP (CORREGIDA)
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
-        let num = String(r.tel).replace(/\D/g, ''); if (!num.startsWith('54')) num = '549' + num;
-        const nroLimpio = String(r.orden).replace('MAT-', '');
-        const msj = `📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-        window.open(`https://wa.me/${num}?text=${msj}`);
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        
+        db.ref(path).once('value', snap => {
+            const conf = snap.val() || {};
+            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
+            const subHeader = conf.subtitulo || "Servicio Técnico";
+            
+            let num = String(r.tel).replace(/\D/g, ''); 
+            if (!num.startsWith('54')) num = '549' + num;
+            
+            const nroLimpio = String(r.orden).replace('MAT-', '');
+            
+            const msj = ` *${nombreHeader}* - ${subHeader}%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+            
+            window.open(`https://wa.me/${num}?text=${msj}`);
+        });
     }
 
     function imprimir(id) {
@@ -933,8 +946,9 @@
                     if(wa.toLowerCase().includes(bus)) {
                         db.ref('reparaciones_usuarios/' + wa).once('value', snapData => {
                             const data = snapData.val() || {};
+                            const JSON_STR = JSON.stringify(data);
                             const cantOrdenes = Object.keys(data).length;
-                            let pesoAprox = JSON.stringify(data).length / 1024;
+                            let pesoAprox = JSON_STR ? JSON_STR.length / 1024 : 0;
                             let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
                             body.innerHTML += `<tr>
                                 <td style="padding:15px;"><b>${wa}</b><br><small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small></td>
