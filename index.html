@@ -145,11 +145,11 @@
             <p><b>👤 Mi Perfil - Configuración</b></p>
             <div style="text-align:left; margin-top:10px;">
                 <label>Nombre del Taller</label>
-                <input type="text" id="confNombreTaller" placeholder="S.T. MATIAS">
+                <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller">
                 <label>Descripción/Subtítulo</label>
-                <input type="text" id="confSubtitulo" placeholder="Servicio Técnico">
+                <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular">
                 <label>WhatsApp en Ticket</label>
-                <input type="text" id="confWappTicket" placeholder="1135654094">
+                <input type="text" id="confWappTicket" placeholder="Ej: 54911...">
                 <label>Nueva Clave</label>
                 <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
             </div>
@@ -382,10 +382,7 @@
         if(u === 'Admin') {
             db.ref('configuracion/admin/pass').once('value', snap => {
                 let adminPass = snap.val();
-                
-                // Si nunca diste de alta el usuario en Firebase, esta clave te permite entrar
                 if (!adminPass) adminPass = "123456"; 
-                
                 if(p === adminPass) {
                     grantAccess(u, true);
                 } else { 
@@ -434,9 +431,9 @@
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const d = snap.val() || {};
-            document.getElementById('confNombreTaller').value = d.nombreTaller || "S.T. MATIAS";
-            document.getElementById('confSubtitulo').value = d.subtitulo || "Servicio Técnico";
-            document.getElementById('confWappTicket').value = d.wappTicket || "1135654094";
+            document.getElementById('confNombreTaller').value = d.nombreTaller || "";
+            document.getElementById('confSubtitulo').value = d.subtitulo || "";
+            document.getElementById('confWappTicket').value = d.wappTicket || "";
         });
         document.getElementById('passModal').style.display = 'flex'; 
     }
@@ -457,7 +454,6 @@
         });
     }
 
-    // --- VARIABLES Y FUNCIONES DE GESTIÓN ---
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
@@ -623,7 +619,6 @@
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
     
-    // --- CORRECCIÓN DINERO ---
     function parseMoney(s) { 
         if (!s) return 0;
         const cleanValue = String(s).replace(/\D/g, "");
@@ -798,13 +793,18 @@
         
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
-            const subHeader = conf.subtitulo || "Servicio Técnico";
+            const nombreHeader = conf.nombreTaller || "";
+            const subHeader = conf.subtitulo || "";
             
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            const msj = ` *${nombreHeader}* - ${subHeader}%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+            
+            let msj = "";
+            if(nombreHeader) msj += ` *${nombreHeader}*`;
+            if(subHeader) msj += ` - ${subHeader}`;
+            msj += `%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
+            
             window.open(`https://wa.me/${num}?text=${msj}`);
         });
     }
@@ -814,15 +814,19 @@
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
-            const subHeader = conf.subtitulo || "Servicio Técnico";
-            const wappHeader = conf.wappTicket || "1135654094";
+            const nombreHeader = conf.nombreTaller || "";
+            const subHeader = conf.subtitulo || "";
+            const wappHeader = conf.wappTicket || "";
             const nroLimpio = String(r.orden).replace('MAT-', '');
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+            
             doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
-            doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text(nombreHeader, 40, 12, {align:'center'});
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(subHeader, 40, 18, {align:'center'}); doc.text("WhatsApp: " + wappHeader, 40, 23, {align:'center'});
+            doc.setTextColor(255, 255, 255); 
+            doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text(nombreHeader, 40, 12, {align:'center'});
+            doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(subHeader, 40, 18, {align:'center'}); 
+            if(wappHeader) doc.text("WhatsApp: " + wappHeader, 40, 23, {align:'center'});
+            
             doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
             doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
             doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
@@ -840,7 +844,6 @@
         });
     }
 
-    // --- FOTOS ---
     function comprimirFoto(archivo, callback) {
         const reader = new FileReader();
         reader.readAsDataURL(archivo);
@@ -920,7 +923,6 @@
         });
     }
 
-    // --- VISOR DE IMÁGENES ---
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
     const viewer = document.getElementById('viewerModal'), imgFull = document.getElementById('imgFull');
     function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
@@ -936,11 +938,18 @@
         document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
     });
 
-    // --- LICENCIAS Y LIMPIEZA ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
-        db.ref('usuarios_registrados/' + wa).set({ whatsapp: wa, pass: '123', fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador' }).then(() => {
+        db.ref('usuarios_registrados/' + wa).set({ 
+            whatsapp: wa, 
+            pass: '123', 
+            fechaAlta: new Date().toLocaleString('es-AR'), 
+            rol: 'operador',
+            nombreTaller: "",
+            subtitulo: "",
+            wappTicket: ""
+        }).then(() => {
             document.getElementById('new-user-wa').value = ""; showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
         });
     }
