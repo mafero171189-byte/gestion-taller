@@ -142,8 +142,17 @@
 
     <div id="passModal" class="modal-overlay">
         <div class="modal-box">
-            <p><b>👤 Mi Perfil - Cambiar Clave</b></p>
-            <input type="password" id="newPass" placeholder="Nueva Clave" style="margin-top:10px;">
+            <p><b>👤 Mi Perfil - Configuración</b></p>
+            <div style="text-align:left; margin-top:10px;">
+                <label>Nombre del Taller</label>
+                <input type="text" id="confNombreTaller" placeholder="S.T. MATIAS">
+                <label>Descripción/Subtítulo</label>
+                <input type="text" id="confSubtitulo" placeholder="Servicio Técnico">
+                <label>WhatsApp en Ticket</label>
+                <input type="text" id="confWappTicket" placeholder="1135654094">
+                <label>Nueva Clave</label>
+                <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
+            </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button onclick="closePassModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
                 <button onclick="updatePassword()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--secondary); color:white;">ACTUALIZAR</button>
@@ -409,15 +418,29 @@
 
     function logout() { sessionStorage.removeItem('st_matias_session'); location.reload(); }
 
-    function openPassModal() { document.getElementById('passModal').style.display = 'flex'; }
+    function openPassModal() { 
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        db.ref(path).once('value', snap => {
+            const d = snap.val() || {};
+            document.getElementById('confNombreTaller').value = d.nombreTaller || "S.T. MATIAS";
+            document.getElementById('confSubtitulo').value = d.subtitulo || "Servicio Técnico";
+            document.getElementById('confWappTicket').value = d.wappTicket || "1135654094";
+        });
+        document.getElementById('passModal').style.display = 'flex'; 
+    }
+    
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
     
     function updatePassword() {
         const newP = document.getElementById('newPass').value.trim();
-        if(!newP) return showToast("INGRESE CLAVE", "#e53e3e");
+        const nTaller = document.getElementById('confNombreTaller').value.trim();
+        const nSub = document.getElementById('confSubtitulo').value.trim();
+        const nWapp = document.getElementById('confWappTicket').value.trim();
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        db.ref(path).update({ pass: newP }).then(() => {
-            showToast("CLAVE ACTUALIZADA ✅", "#2ecc71");
+        let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp };
+        if(newP) updates.pass = newP;
+        db.ref(path).update(updates).then(() => {
+            showToast("PERFIL ACTUALIZADO ✅", "#2ecc71");
             closePassModal();
         });
     }
@@ -764,26 +787,33 @@
 
     function imprimir(id) {
         const r = registros.find(x => x.id === id);
-        const nroLimpio = String(r.orden).replace('MAT-', '');
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("S.T. MATIAS", 40, 12, {align:'center'});
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Servicio Técnico", 40, 18, {align:'center'}); doc.text("WhatsApp: 1135654094", 40, 23, {align:'center'});
-        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
-        doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
-        doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
-        doc.setFontSize(10); let y = 58; 
-        const col1 = 12, col2 = 35, lineH = 7;
-        const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
-        printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
-        printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
-        y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
-        doc.save(`Ticket_${nroLimpio}.pdf`);
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        db.ref(path).once('value', snap => {
+            const conf = snap.val() || {};
+            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
+            const subHeader = conf.subtitulo || "Servicio Técnico";
+            const wappHeader = conf.wappTicket || "1135654094";
+            const nroLimpio = String(r.orden).replace('MAT-', '');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+            doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text(nombreHeader, 40, 12, {align:'center'});
+            doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(subHeader, 40, 18, {align:'center'}); doc.text("WhatsApp: " + wappHeader, 40, 23, {align:'center'});
+            doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
+            doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
+            doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+            doc.setFontSize(10); let y = 58; 
+            const col1 = 12, col2 = 35, lineH = 7;
+            const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+            printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
+            printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
+            y += 3; doc.line(10, y, 70, y); y += 10;
+            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+            doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
+            doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+            doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
+            doc.save(`Ticket_${nroLimpio}.pdf`);
+        });
     }
 
     // FOTOS
