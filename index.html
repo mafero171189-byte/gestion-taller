@@ -79,7 +79,7 @@
         .opt-entregado { background: #e2e8f0; color: #475569; }
 
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
-        .history-item::before { content: ''; position: absolute; left: -8px; top: 0; width: 12px; height: 12px; background: var(--secondary); border-radius: 50%; }
+        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
         .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
         .history-item span { font-size: 14px; display: block; margin-top: 2px; }
 
@@ -89,7 +89,7 @@
         input { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
         .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
-        .badge-disabled { cursor: not-allowed; opacity: 0.7; }
+        .badge-disabled { cursor: not-allowed !important; opacity: 0.9; }
         .st-pendiente { background: #fff9c4; color: #856404; }
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
         .st-entregado { background: #e2e8f0; color: #475569; }
@@ -210,7 +210,7 @@
         <div class="modal-box" style="width:90%; max-width:400px;">
             <p><b>🖼️ Fotos del Equipo</b></p>
             <div id="photoGallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height:400px; overflow-y:auto;"></div>
-            <div style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
+            <div id="photoFooterAction" style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
                 <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
                 <button onclick="document.getElementById('inputFotoAccion').click()" id="btnAddMore" style="background:var(--success); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
             </div>
@@ -278,7 +278,7 @@
                 </div>
             </form>
 
-            <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
+            <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
                 <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
@@ -360,6 +360,7 @@
     let dbRef; 
     let currentUser = null;
     let isUserAdmin = false;
+    let isClientMode = false; // Variable para identificar si el que mira es un cliente
 
     // --- LÓGICA DE INICIO Y BYPASS DE CLIENTE ---
     function checkStoredSession() {
@@ -367,8 +368,9 @@
         const clienteId = urlParams.get('id');
         const tecnicoUser = urlParams.get('u');
 
-        // SI VIENE DE WHATSAPP (BYPASS)
+        // SI VIENE DE WHATSAPP (BYPASS CLIENTE)
         if (clienteId && tecnicoUser) {
+            isClientMode = true;
             currentUser = tecnicoUser;
             const path = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
             dbRef = db.ref(path);
@@ -377,12 +379,29 @@
             document.getElementById('app-content').style.display = 'block';
             document.querySelector('nav').style.display = 'none'; // Ocultar navegación al cliente
             document.getElementById('repairForm').style.display = 'none'; // Ocultar formulario
+            document.getElementById('search-section').style.display = 'none'; // Ocultar filtros de búsqueda
             
             document.getElementById('search').value = clienteId.replace('MAT-', '');
             
             dbRef.on('value', snap => {
                 const v = snap.val(); 
                 registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                
+                // VALIDACIÓN: Si el equipo buscado está entregado, denegamos el acceso al cliente
+                const ordenLimpia = clienteId.replace('MAT-', '');
+                const regEncontrado = registros.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
+                
+                if (regEncontrado && regEncontrado.estado === 'Entregado') {
+                    document.querySelector('.container').innerHTML = `
+                        <div style="text-align:center; padding:50px 20px;">
+                            <h1 style="font-size:50px;">📦</h1>
+                            <h2>EQUIPO YA ENTREGADO</h2>
+                            <p style="color:#64748b;">El seguimiento de esta orden ya no está disponible por seguridad.</p>
+                            <p>¡Muchas gracias!</p>
+                        </div>`;
+                    return;
+                }
+                
                 renderTable(); 
             });
             return; 
@@ -422,6 +441,7 @@
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
         isUserAdmin = isAdmin;
+        isClientMode = false;
         if (!isStored) sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
         const path = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(path);
@@ -443,7 +463,7 @@
 
     function logout() { 
         sessionStorage.removeItem('st_matias_session'); 
-        window.location.href = window.location.pathname; 
+        window.location.href = window.location.origin + window.location.pathname; 
     }
 
     function openPassModal() { 
@@ -488,14 +508,17 @@
     const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     const selectMes = document.getElementById('selectMes');
     const mesActual = new Date().getMonth();
-    mesesNombres.forEach((m, i) => {
-        let opt = document.createElement('option');
-        opt.value = i; opt.text = m;
-        if(i === mesActual) opt.selected = true;
-        selectMes.appendChild(opt);
-    });
+    if(selectMes) {
+        mesesNombres.forEach((m, i) => {
+            let opt = document.createElement('option');
+            opt.value = i; opt.text = m;
+            if(i === mesActual) opt.selected = true;
+            selectMes.appendChild(opt);
+        });
+    }
 
     function showToast(text, color) {
+        if(isClientMode) return; // Clientes no necesitan ver notificaciones de sistema
         const t = document.getElementById('toast-alert');
         t.innerText = text; t.style.background = color; t.style.display = "block";
         setTimeout(() => t.style.display = "none", 2500);
@@ -508,6 +531,7 @@
     }
 
     function togglePago(id) {
+        if(isClientMode) return;
         const r = registros.find(x => x.id === id);
         if(r.archivado) return;
         const estaPagado = (r.precio - r.sena) === 0;
@@ -516,6 +540,7 @@
     }
 
     function openStatusModal(id) {
+        if(isClientMode) return; // MODO LECTURA PARA CLIENTE
         const r = registros.find(x => x.id === id);
         if(r.archivado) return;
         idParaEstado = id;
@@ -536,6 +561,7 @@
     }
 
     function openPriceModal(id) {
+        if(isClientMode) return; // MODO LECTURA PARA CLIENTE
         const r = registros.find(x => x.id === id);
         if(r.archivado) return;
         idParaPrecio = id;
@@ -555,7 +581,6 @@
 
     function openHistory(id) {
         const r = registros.find(x => x.id === id);
-        const nroLimpio = String(r.orden).replace('MAT-', '');
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
         document.getElementById('historyContent').innerHTML = h;
@@ -573,22 +598,24 @@
 
         body.innerHTML = "";
         
-        if(modoArchivo) { 
-            table.classList.add('modo-archivo-activo'); 
-            btnArch.classList.add('btn-active-filter');
-            btnArch.innerHTML = "📁 ARCHIVADOS ✅";
-        } else { 
-            table.classList.remove('modo-archivo-activo'); 
-            btnArch.classList.remove('btn-active-filter');
-            btnArch.innerHTML = "📁 ARCHIVADOS";
-        }
+        if(!isClientMode) {
+            if(modoArchivo) { 
+                table.classList.add('modo-archivo-activo'); 
+                btnArch.classList.add('btn-active-filter');
+                btnArch.innerHTML = "📁 ARCHIVADOS ✅";
+            } else { 
+                table.classList.remove('modo-archivo-activo'); 
+                btnArch.classList.remove('btn-active-filter');
+                btnArch.innerHTML = "📁 ARCHIVADOS";
+            }
 
-        if(modoPendientes) {
-            btnPend.classList.add('btn-active-filter');
-            btnPend.innerHTML = "⏳ PENDIENTES ✅";
-        } else {
-            btnPend.classList.remove('btn-active-filter');
-            btnPend.innerHTML = "⏳ PENDIENTES";
+            if(modoPendientes) {
+                btnPend.classList.add('btn-active-filter');
+                btnPend.innerHTML = "⏳ PENDIENTES ✅";
+            } else {
+                btnPend.classList.remove('btn-active-filter');
+                btnPend.innerHTML = "⏳ PENDIENTES";
+            }
         }
 
         const filtrados = registros.filter(r => {
@@ -597,42 +624,43 @@
             
             let matchFiltro = true;
             if (bus.length === 0) {
-                if (modoPendientes) {
-                    matchFiltro = r.estado === 'Pendiente' && !r.archivado;
-                } else if (modoArchivo) {
-                    matchFiltro = r.archivado;
-                } else {
-                    matchFiltro = !r.archivado;
-                }
+                if (modoPendientes) matchFiltro = r.estado === 'Pendiente' && !r.archivado;
+                else if (modoArchivo) matchFiltro = r.archivado;
+                else matchFiltro = !r.archivado;
             }
             return matchBusqueda && matchFiltro;
-        }).sort((a, b) => {
-            const fechaA = a.fecha ? new Date(a.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + a.fecha.split(',')[1]) : 0;
-            const fechaB = b.fecha ? new Date(b.fecha.split(',')[0].split('/').reverse().join('-') + ' ' + b.fecha.split(',')[1]) : 0;
-            return fechaB - fechaA;
         });
 
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
-            const canEdit = !r.archivado;
+            const canEdit = !r.archivado && !isClientMode;
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            body.innerHTML += `<tr>
-                <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
-                <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
-                <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
-                <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
-                <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
-                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
-                </td>
-                <td class="action-btns">
+            
+            // Botones de acciones según el modo
+            let btnAcciones = "";
+            if (isClientMode) {
+                // El cliente solo puede ver fotos e historial
+                btnAcciones = `<button onclick="abrirFotos('${r.id}')">🖼️ VER FOTOS</button>`;
+            } else {
+                btnAcciones = `
                     <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled'}>✅</button>
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
                     <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled'}>✏️</button>
                     <button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>
-                    <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
-                </td></tr>`;
+                    <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>`;
+            }
+
+            body.innerHTML += `<tr>
+                <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
+                <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
+                <td><b>${r.cliente}</b><br>${!isClientMode ? `<button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button>` : ''}</td>
+                <td>${r.modelo}</td>
+                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
+                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
+                </td>
+                <td class="action-btns">${btnAcciones}</td></tr>`;
         });
     }
 
@@ -707,12 +735,13 @@
     }
 
     function saveDraft() {
-        if(idEditando) return;
+        if(idEditando || isClientMode) return;
         const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value };
         localStorage.setItem('st_matias_draft', JSON.stringify(draft));
     }
 
     function loadDraft() {
+        if(isClientMode) return;
         const saved = localStorage.getItem('st_matias_draft');
         if(saved && !idEditando) {
             const d = JSON.parse(saved);
@@ -784,6 +813,7 @@
     };
 
     function editar(id) {
+        if(isClientMode) return;
         idEditando = id; const r = registros.find(x => x.id === id);
         const nroLimpio = String(r.orden).replace('MAT-', '');
         document.getElementById('nroOrden').value = nroLimpio; document.getElementById('cliente').value = r.cliente;
@@ -798,7 +828,6 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    // --- FUNCIÓN ACTUALIZADA CON LINK DE SEGUIMIENTO ---
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
@@ -812,7 +841,6 @@
             if (!num.startsWith('54')) num = '549' + num;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
-            // Generamos el link de seguimiento automático
             const baseUrl = window.location.origin + window.location.pathname;
             const seguimientoLink = `${baseUrl}?id=${nroLimpio}%26u=${currentUser}`;
             
@@ -914,19 +942,27 @@
     function abrirFotos(id) {
         idParaFotos = id; const r = registros.find(x => x.id === id);
         const gallery = document.getElementById('photoGallery'); gallery.innerHTML = "";
+        
+        // El pie de fotos (agregar más) se oculta para el cliente
+        document.getElementById('photoFooterAction').style.display = isClientMode ? 'none' : 'flex';
+
         (r.fotos || []).forEach((src, index) => {
+            let deleteBtn = isClientMode ? '' : `<button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button>`;
+            
             gallery.innerHTML += `<div style="position:relative;"><img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover;" onclick="verImagenFull('${src}')">
-            <button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button></div>`;
+            ${deleteBtn}</div>`;
         });
         document.getElementById('photoModal').style.display = 'flex';
     }
 
     function eliminarFoto(id, index) {
+        if(isClientMode) return;
         const r = registros.find(x => x.id === id); let fotos = [...(r.fotos || [])];
         fotos.splice(index, 1); dbRef.child(id).update({ fotos: fotos }).then(() => abrirFotos(id));
     }
 
     function verificarAutoArchivo() {
+        if(isClientMode) return;
         const ahora = new Date();
         registros.forEach(r => {
             if (r.estado === 'Entregado' && !r.archivado && r.historialEstados) {
@@ -950,8 +986,10 @@
     
     db.ref(".info/connected").on("value", s => {
         const isOnline = s.val();
-        document.getElementById('status-dot').className = isOnline ? "online" : "offline";
-        document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
+        const dot = document.getElementById('status-dot');
+        const msg = document.getElementById('sync-msg');
+        if(dot) dot.className = isOnline ? "online" : "offline";
+        if(msg) msg.style.display = isOnline ? "none" : "inline";
     });
 
     function crearLicencia() {
@@ -966,6 +1004,7 @@
     }
 
     function listarUsuarios() {
+        if(!isUserAdmin) return;
         const bus = document.getElementById('search-user').value.toLowerCase();
         db.ref('usuarios_registrados').off('value'); 
         db.ref('usuarios_registrados').on('value', snapUsers => {
