@@ -66,7 +66,6 @@
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         
-        /* MODIFICACIÓN: display: none por defecto para evitar parpadeos */
         .container { 
             max-width: 1150px; 
             margin: 0 auto; 
@@ -310,7 +309,7 @@
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin:0;">💰 Contabilidad</h2>
                 <div style="display:flex; gap:10px;">
-                    <select id="selectMes" onchange="renderContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
+                    <select id="selectMes" onchange="cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
                     <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px;" onclick="exportarExcel()">📊 EXCEL</button>
                 </div>
             </div>
@@ -374,27 +373,30 @@
     let isUserAdmin = false;
     let isClientMode = false;
 
-    // --- LÓGICA DE INICIO Y BYPASS DE CLIENTE ---
+    // --- ARREGLOS SEPARADOS Y CACHÉ INTELIGENTE ---
+    let registros = [];
+    let registrosArchivados = [];
+    let historialDescargado = false; // El interruptor mágico
+
+    function getRegistro(id) {
+        return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id);
+    }
+
     function checkStoredSession() {
         const urlParams = new URLSearchParams(window.location.search);
         const clienteId = urlParams.get('id');
         const tecnicoUser = urlParams.get('u');
 
-        // 1. CASO CLIENTE: Detección prioritaria para evitar pantallas administrativas
         if (clienteId && tecnicoUser) {
             isClientMode = true;
             currentUser = tecnicoUser;
             
-            // Ocultar capas administrativas inmediatamente
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
             document.querySelector('nav').style.display = 'none';
             document.getElementById('gesture-zone-top').style.display = 'none';
             
-            // Mostrar container con diseño centralizado para el cliente
             const container = document.querySelector('.container');
-            
-            // *** SOLUCIÓN AL PARPADEO: Vaciamos el formulario de gestión inmediatamente para que no lo vea mientras carga Firebase ***
             container.innerHTML = '<div style="color: #94a3b8; text-align: center; margin-top: 50px;">Cargando estado de su equipo...</div>';
 
             container.style.display = 'block';
@@ -404,7 +406,6 @@
             container.style.width = '100%';
             container.style.marginTop = '0';
 
-            // Estilos de body para vista cliente
             document.body.style.backgroundColor = '#0f172a';
             document.body.style.display = 'flex';
             document.body.style.alignItems = 'center';
@@ -412,51 +413,34 @@
             document.body.style.minHeight = '100vh';
             document.body.style.margin = '0';
 
-            const path = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
-            dbRef = db.ref(path);
-            
-            dbRef.on('value', snap => {
-                const v = snap.val(); 
-                const registrosLocal = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                
-                const ordenLimpia = clienteId.replace('MAT-', '');
-                const regEncontrado = registrosLocal.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
+            const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
+            const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
+            const ordenLimpia = clienteId.replace('MAT-', '');
+
+            db.ref(pathActivo).once('value', snapActivo => {
+                let v = snapActivo.val(); 
+                let registrosLocal = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                let regEncontrado = registrosLocal.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
                 
                 if (regEncontrado) {
-                    if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
-                        container.innerHTML = `
-                            <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
-                                <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
-                                <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
-                            </div>`;
-                    } else {
-                        let colorEstado = '#f1c40f'; 
-                        if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
-                        if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
-
-                        container.innerHTML = `
-                            <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
-                                <h1 style="font-size: 22px; margin-bottom: 5px; color: #3498db;">S.T. MATIAS</h1>
-                                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">Estado de su equipo</p>
-                                
-                                <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
-                                <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
-                                
-                                <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
-                                    <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
-                                    <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
-                                </div>
-                                <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias</div>
-                            </div>`;
-                    }
+                    renderVistaCliente(regEncontrado, container);
                 } else {
-                    container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada</div>`;
+                    db.ref(pathArchivado).once('value', snapArchivo => {
+                        v = snapArchivo.val();
+                        registrosLocal = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                        regEncontrado = registrosLocal.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
+                        
+                        if (regEncontrado) {
+                            renderVistaCliente(regEncontrado, container);
+                        } else {
+                            container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada</div>`;
+                        }
+                    });
                 }
             });
             return; 
         }
 
-        // 2. CASO ADMINISTRADOR / OPERADOR
         const session = sessionStorage.getItem('st_matias_session');
         if (session) {
             const data = JSON.parse(session);
@@ -466,6 +450,37 @@
             setTimeout(() => document.getElementById('userIn').focus(), 100);
         }
         loadDraft();
+    }
+
+    function renderVistaCliente(regEncontrado, container) {
+        if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
+            container.innerHTML = `
+                <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                    <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
+                    <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
+                </div>`;
+        } else {
+            let colorEstado = '#f1c40f'; 
+            if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
+            if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
+
+            registros = [regEncontrado]; 
+
+            container.innerHTML = `
+                <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                    <h1 style="font-size: 22px; margin-bottom: 5px; color: #3498db;">S.T. MATIAS</h1>
+                    <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">Estado de su equipo</p>
+                    
+                    <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
+                    <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
+                    
+                    <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
+                        <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
+                    </div>
+                    <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">🖼️ Ver Fotos del Equipo</div>
+                </div>`;
+        }
     }
 
     function checkAccess() {
@@ -494,12 +509,12 @@
         isUserAdmin = isAdmin;
         isClientMode = false;
         if (!isStored) sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
-        const path = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
-        dbRef = db.ref(path);
+        const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
+        dbRef = db.ref(pathActivo);
         
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
-        document.querySelector('.container').style.display = 'block'; // Mostrar container para gestión
+        document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         
         dbRef.on('value', snap => {
@@ -547,7 +562,6 @@
         });
     }
 
-    let registros = [];
     let idEditando = null;
     let modoArchivo = false;
     let modoPendientes = false;
@@ -584,40 +598,60 @@
         document.getElementById('sena').value = chk.checked ? precio : "";
     }
 
+    // --- CACHÉ INTELIGENTE: Pagar Seña ---
     function togglePago(id) {
         if(isClientMode) return;
-        const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
+        const r = getRegistro(id);
+        if(!r) return;
+        
         const estaPagado = (r.precio - r.sena) === 0;
-        dbRef.child(id).update({ sena: estaPagado ? 0 : r.precio });
-        showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        
+        db.ref(nodoActualizar).child(id).update({ sena: estaPagado ? 0 : r.precio }).then(() => {
+            r.sena = estaPagado ? 0 : r.precio; // INYECCIÓN EN RAM
+            renderTable();
+            showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
+        });
     }
 
     function openStatusModal(id) {
         if(isClientMode) return;
-        const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
+        const r = getRegistro(id);
+        if(!r) return;
         idParaEstado = id;
         document.getElementById('statusModal').style.display = 'flex';
     }
 
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
+    // --- CACHÉ INTELIGENTE: Cambiar Estado ---
     function confirmarEstado(nuevo) {
-        const r = registros.find(x => x.id === idParaEstado);
+        const r = getRegistro(idParaEstado);
+        if(!r) return;
         const fechaActual = new Date().toLocaleString('es-AR');
         const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569' };
         let historialActual = r.historialEstados || [];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
-        dbRef.child(idParaEstado).update({ estado: nuevo, historialEstados: historialActual });
-        closeStatusModal();
-        showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
+        
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+
+        db.ref(nodoActualizar).child(idParaEstado).update({ estado: nuevo, historialEstados: historialActual }).then(() => {
+            r.estado = nuevo; // INYECCIÓN EN RAM
+            r.historialEstados = historialActual;
+            renderTable();
+            closeStatusModal();
+            showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
+        });
     }
 
     function openPriceModal(id) {
         if(isClientMode) return;
-        const r = registros.find(x => x.id === id);
-        if(r.archivado) return;
+        const r = getRegistro(id);
+        if(!r) return;
         idParaPrecio = id;
         document.getElementById('newPriceInput').value = r.precio.toLocaleString('es-AR');
         document.getElementById('priceModal').style.display = 'flex';
@@ -626,15 +660,27 @@
 
     function closePriceModal() { document.getElementById('priceModal').style.display = 'none'; }
     
+    // --- CACHÉ INTELIGENTE: Cambiar Precio ---
     document.getElementById('confirmPriceBtn').onclick = () => {
         const nuevo = parseMoney(document.getElementById('newPriceInput').value);
-        dbRef.child(idParaPrecio).update({ precio: nuevo });
-        closePriceModal();
-        showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
+        const r = getRegistro(idParaPrecio);
+        if(!r) return;
+
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+
+        db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo }).then(() => {
+            r.precio = nuevo; // INYECCIÓN EN RAM
+            renderTable();
+            closePriceModal();
+            showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
+        });
     };
 
     function openHistory(id) {
-        const r = registros.find(x => x.id === id);
+        const r = getRegistro(id);
+        if(!r) return;
         let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
         document.getElementById('historyContent').innerHTML = h;
@@ -643,7 +689,7 @@
 
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
-    function renderTable() {
+        function renderTable() {
         if(isClientMode) return; 
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
@@ -653,6 +699,15 @@
 
         body.innerHTML = "";
         
+        // CORRECCIÓN: Unimos los archivados nuevos (memoria RAM) con los archivados viejos (que siguen en la caja principal)
+        let listaBase = [];
+        if (modoArchivo) {
+            const archivadosViejos = registros.filter(r => r.archivado === true);
+            listaBase = [...archivadosViejos, ...registrosArchivados];
+        } else {
+            listaBase = registros;
+        }
+
         if(modoArchivo) { 
             table.classList.add('modo-archivo-activo'); 
             btnArch.classList.add('btn-active-filter');
@@ -671,21 +726,20 @@
             btnPend.innerHTML = "⏳ PENDIENTES";
         }
 
-        const filtrados = registros.filter(r => {
+        const filtrados = listaBase.filter(r => {
             const ordenLimpia = String(r.orden).replace('MAT-', '');
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || ordenLimpia.toLowerCase().includes(bus);
+            
             let matchFiltro = true;
-            if (bus.length === 0) {
-                if (modoPendientes) matchFiltro = r.estado === 'Pendiente' && !r.archivado;
-                else if (modoArchivo) matchFiltro = r.archivado;
-                else matchFiltro = !r.archivado;
-            }
+            // Oculta los archivados viejos de la vista de pendientes/activos
+            if (!modoArchivo && r.archivado) matchFiltro = false; 
+            if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
+
             return matchBusqueda && matchFiltro;
         });
 
         filtrados.forEach(r => {
             const saldo = r.precio - r.sena;
-            const canEdit = !r.archivado;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
             body.innerHTML += `<tr>
@@ -693,21 +747,20 @@
                 <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase()} ${canEdit ? '' : 'badge-disabled'}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
-                <td onclick="openPriceModal('${r.id}')" style="cursor: ${canEdit ? 'pointer' : 'default'};">
+                <td><span class="badge-status st-${r.estado.toLowerCase()}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
                     ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
                 </td>
                 <td class="action-btns">
-                    <button onclick="togglePago('${r.id}')" ${canEdit ? '' : 'disabled'}>✅</button>
+                    <button onclick="togglePago('${r.id}')">✅</button>
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')" ${canEdit ? '' : 'disabled'}>✏️</button>
+                    <button onclick="editar('${r.id}')">✏️</button>
                     <button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
         });
     }
-
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
     
     function parseMoney(s) { 
@@ -719,8 +772,9 @@
     function autoOrden() { 
         if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
             let prox = 100;
-            if (registros.length > 0) {
-                const nums = registros.map(r => { 
+            let todos = [...registros, ...registrosArchivados];
+            if (todos.length > 0) {
+                const nums = todos.map(r => { 
                     const val = String(r.orden).replace('MAT-', '');
                     const c = val.match(/\d+/); 
                     return c ? parseInt(c[0]) : 0; 
@@ -744,9 +798,7 @@
     }
 
     function ocultarCosto() {
-        setTimeout(() => {
-            document.getElementById('costo-inner').style.display = "none";
-        }, 200);
+        setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200);
     }
 
     function togglePendientes() {
@@ -756,17 +808,87 @@
         renderTable();
     }
 
+    // --- CACHÉ INTELIGENTE: Botón Archivos ---
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
-        if(modoArchivo) { modoPendientes = false; showToast("FILTRANDO ARCHIVADOS 📁", "#64748b"); }
-        else { showToast("MOSTRANDO ACTIVOS 🔙", "#3498db"); }
-        renderTable(); 
+        if(modoArchivo) { 
+            modoPendientes = false; 
+            
+            if (historialDescargado) {
+                showToast("MOSTRANDO ARCHIVADOS 📁", "#64748b");
+                renderTable();
+                return; 
+            }
+
+            showToast("Descargando Historial... ⏳", "#f1c40f"); 
+            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            db.ref(pathArchivado).once('value').then(snap => {
+                const v = snap.val();
+                registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                historialDescargado = true; // Guardamos en memoria
+                showToast("HISTORIAL CARGADO 📁", "#64748b");
+                renderTable(); 
+            });
+        }
+        else { 
+            showToast("MOSTRANDO ACTIVOS 🔙", "#3498db"); 
+            renderTable(); 
+        }
     }
     
-    function archivar(id) { const r = registros.find(x => x.id === id); dbRef.child(id).update({archivado: !r.archivado}); }
+    // --- CACHÉ INTELIGENTE: Archivar / Restaurar ---
+    function archivar(id) { 
+        const r = getRegistro(id);
+        if(!r) return;
+
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+
+        if (r.archivado) {
+            if(confirm("¿Restaurar esta orden a la lista de pendientes?")) {
+                r.archivado = false;
+                let copia = {...r}; delete copia.id;
+                db.ref(pathActivo).child(id).set(copia).then(() => {
+                    db.ref(pathArchivado).child(id).remove();
+                    registrosArchivados = registrosArchivados.filter(x => x.id !== id); // Se saca de RAM
+                    renderTable();
+                    showToast("RESTAURADO ✅", "#3498db");
+                });
+            }
+        } else {
+            if(confirm("¿Mover al Archivo Histórico? (Mejora la velocidad del sistema)")) {
+                r.archivado = true;
+                let copia = {...r}; delete copia.id;
+                db.ref(pathArchivado).child(id).set(copia).then(() => {
+                    db.ref(pathActivo).child(id).remove();
+                    
+                    if (historialDescargado) {
+                        registrosArchivados.push({id: id, ...copia}); // Se inyecta en RAM
+                    }
+                    
+                    renderTable();
+                    showToast("MOVIDO AL ARCHIVO 🗄️", "#64748b");
+                });
+            }
+        }
+    }
+
     function openDeleteModal(id) { idParaBorrar = id; document.getElementById('deleteModal').style.display='flex'; }
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
-    document.getElementById('confirmDeleteBtn').onclick = () => { dbRef.child(idParaBorrar).remove(); closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); };
+    
+    document.getElementById('confirmDeleteBtn').onclick = () => { 
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        
+        if (registrosArchivados.some(x => x.id === idParaBorrar)) {
+            db.ref(pathArchivado).child(idParaBorrar).remove();
+            registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); // Borra de RAM
+            renderTable();
+        } else {
+            db.ref(pathActivo).child(idParaBorrar).remove();
+        }
+        closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); 
+    };
 
     function clickLimpiar(skipToast = false) {
         idEditando = null; document.getElementById('repairForm').reset();
@@ -802,14 +924,33 @@
         document.getElementById('page-usuarios').style.display = p === 'usuarios' ? 'block' : 'none';
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('btn-nav-'+p).classList.add('active');
-        if(p === 'contabilidad') renderContabilidad();
+        if(p === 'contabilidad') cargarDatosContabilidad();
         if(p === 'usuarios') listarUsuarios();
     }
 
-    function renderContabilidad() {
+    // --- CACHÉ INTELIGENTE: Contabilidad ---
+    function cargarDatosContabilidad() {
+        if (historialDescargado) {
+            renderContabilidadUI();
+            return;
+        }
+
+        showToast("Calculando finanzas... ⏳", "#3498db");
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        db.ref(pathArchivado).once('value').then(snap => {
+            const v = snap.val();
+            registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+            historialDescargado = true; // Guardamos en memoria
+            renderContabilidadUI();
+        });
+    }
+
+    function renderContabilidadUI() {
         const mes = parseInt(document.getElementById('selectMes').value);
         let caja = 0, gastos = 0, porIngresar = 0;
-        registros.forEach(r => {
+        let todasLasOrdenes = [...registros, ...registrosArchivados]; 
+
+        todasLasOrdenes.forEach(r => {
             if (r.fecha) {
                 const m = parseInt(r.fecha.split(',')[0].split('/')[1]) - 1;
                 if(m === mes) { 
@@ -829,7 +970,8 @@
 
     function exportarExcel() {
         let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
-        registros.forEach(r => { 
+        let todasLasOrdenes = [...registros, ...registrosArchivados]; 
+        todasLasOrdenes.forEach(r => { 
             const nroLimpio = String(r.orden).replace('MAT-', '');
             csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; 
         });
@@ -838,26 +980,54 @@
         link.download = `ST_MATIAS_REPORTE.csv`; link.click();
     }
 
+    // --- CACHÉ INTELIGENTE: Botón Formulario (Guardar / Editar) ---
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
+        const rOriginal = idEditando ? getRegistro(idEditando) : null;
+        
         const data = {
-            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value,
-            tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value, imei: document.getElementById('imei').value,
-            precio: parseMoney(document.getElementById('precio').value), sena: parseMoney(document.getElementById('sena').value),
+            orden: document.getElementById('nroOrden').value, 
+            cliente: document.getElementById('cliente').value,
+            tel: document.getElementById('tel').value, 
+            modelo: document.getElementById('modelo').value,
+            color: document.getElementById('color').value, 
+            imei: document.getElementById('imei').value,
+            precio: parseMoney(document.getElementById('precio').value), 
+            sena: parseMoney(document.getElementById('sena').value),
             costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
-            falla: document.getElementById('falla').value, obs: document.getElementById('obs').value,
-            archivado: false, 
-            estado: idEditando ? registros.find(x => x.id === idEditando).estado : "Pendiente",
-            fotos: idEditando ? (registros.find(x => x.id === idEditando).fotos || []) : fotosTemporales
+            falla: document.getElementById('falla').value, 
+            obs: document.getElementById('obs').value,
+            archivado: rOriginal ? rOriginal.archivado : false, 
+            estado: rOriginal ? rOriginal.estado : "Pendiente",
+            fotos: rOriginal ? (rOriginal.fotos || []) : fotosTemporales
         };
-        if(idEditando) { dbRef.child(idEditando).update(data); showToast("ACTUALIZADO ✅", "#3498db"); }
-        else { data.fecha = new Date().toLocaleString('es-AR'); dbRef.push(data); showToast("REGISTRADO ✅", "#2ecc71"); }
+
+        if(idEditando) { 
+            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const nodoActualizar = rOriginal.archivado ? pathArchivado : pathActivo;
+            
+            // Mantener fechas e historiales
+            if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
+            if(rOriginal.fecha) data.fecha = rOriginal.fecha;
+
+            db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
+                Object.assign(rOriginal, data); // INYECCIÓN EN RAM: Actualiza la copia local con la info nueva
+                renderTable();
+                showToast("ACTUALIZADO ✅", "#3498db");
+            });
+        } 
+        else { 
+            data.fecha = new Date().toLocaleString('es-AR'); 
+            dbRef.push(data); // Para órdenes nuevas siempre va a activos y se actualiza sola
+            showToast("REGISTRADO ✅", "#2ecc71"); 
+        }
         clickLimpiar(true); 
     };
 
     function editar(id) {
-        idEditando = id; const r = registros.find(x => x.id === id);
+        idEditando = id; const r = getRegistro(id);
+        if(!r) return;
         const nroLimpio = String(r.orden).replace('MAT-', '');
         document.getElementById('nroOrden').value = nroLimpio; document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
@@ -872,7 +1042,8 @@
     }
 
     function enviarWhatsApp(id) {
-        const r = registros.find(x => x.id === id);
+        const r = getRegistro(id);
+        if(!r) return;
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
@@ -892,7 +1063,8 @@
     }
 
     function imprimir(id) {
-        const r = registros.find(x => x.id === id);
+        const r = getRegistro(id);
+        if(!r) return;
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
@@ -959,10 +1131,16 @@
         if (input.files && input.files[0]) {
             showToast("COMPRIMIENDO...", "#3498db");
             comprimirFoto(input.files[0], (fotoComprimida) => {
-                const r = registros.find(x => x.id === idParaFotos);
+                const r = getRegistro(idParaFotos);
                 let fotos = [...(r.fotos || [])];
                 fotos.push(fotoComprimida);
-                dbRef.child(idParaFotos).update({ fotos: fotos }).then(() => {
+                
+                const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+                const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+                const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+                
+                db.ref(nodoActualizar).child(idParaFotos).update({ fotos: fotos }).then(() => {
+                    r.fotos = fotos; 
                     abrirFotos(idParaFotos);
                     showToast("FOTO AGREGADA ✅", "#2ecc71");
                 });
@@ -976,7 +1154,8 @@
     }
 
     function abrirFotos(id) {
-        idParaFotos = id; const r = registros.find(x => x.id === id);
+        idParaFotos = id; const r = getRegistro(id);
+        if(!r) return;
         const gallery = document.getElementById('photoGallery'); gallery.innerHTML = "";
         document.getElementById('photoFooterAction').style.display = isClientMode ? 'none' : 'flex';
         (r.fotos || []).forEach((src, index) => {
@@ -987,19 +1166,39 @@
     }
 
     function eliminarFoto(id, index) {
-        const r = registros.find(x => x.id === id); let fotos = [...(r.fotos || [])];
-        fotos.splice(index, 1); dbRef.child(id).update({ fotos: fotos }).then(() => abrirFotos(id));
+        const r = getRegistro(id); let fotos = [...(r.fotos || [])];
+        fotos.splice(index, 1); 
+        
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        
+        db.ref(nodoActualizar).child(id).update({ fotos: fotos }).then(() => {
+            r.fotos = fotos;
+            abrirFotos(id);
+        });
     }
 
     function verificarAutoArchivo() {
         if(isClientMode) return;
         const ahora = new Date();
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+
         registros.forEach(r => {
             if (r.estado === 'Entregado' && !r.archivado && r.historialEstados) {
                 const ent = r.historialEstados.filter(h => h.estado === 'Entregado').pop();
                 if (ent) {
                     const p = ent.fecha.split(', ')[0].split('/'), h = ent.fecha.split(', ')[1].split(':'), d = new Date(p[2], p[1]-1, p[0], h[0], h[1]);
-                    if (ahora - d >= 24 * 60 * 60 * 1000) dbRef.child(r.id).update({ archivado: true });
+                    if (ahora - d >= 24 * 60 * 60 * 1000) {
+                        r.archivado = true;
+                        let copia = {...r}; delete copia.id;
+                        db.ref(pathArchivado).child(r.id).set(copia).then(() => {
+                            db.ref(pathActivo).child(r.id).remove();
+                            // No hace falta inyectar porque el on('value') de activos lo saca de la pantalla solo.
+                            // Si justo estamos en historial, la proxima vez que abra la pestaña se actualizará
+                        });
+                    }
                 }
             }
         });
@@ -1051,7 +1250,7 @@
                             let pesoAprox = JSON_STR ? JSON_STR.length / 1024 : 0;
                             let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
                             body.innerHTML += `<tr>
-                                <td style="padding:15px;"><b>${wa}</b><br><small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small></td>
+                                <td style="padding:15px;"><b>${wa}</b><br><small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes activas)</small></td>
                                 <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${users[wa].pass}</span></td>
                                 <td style="padding:15px; color:#64748b; font-size:13px;">${users[wa].fechaAlta || 'Preexistente'}</td>
                                 <td style="padding:15px;"><button onclick="eliminarLicencia('${wa}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button></td>
@@ -1064,8 +1263,10 @@
     }
 
     function eliminarLicencia(id) { 
-        if(confirm("¿ELIMINAR DEFINITIVAMENTE?\n\nSe borrará el acceso y TODAS las órdenes de " + id)) { 
-            db.ref('usuarios_registrados/' + id).remove(); db.ref('reparaciones_usuarios/' + id).remove(); 
+        if(confirm("¿ELIMINAR DEFINITIVAMENTE?\n\nSe borrará el acceso y TODAS las órdenes (activas e históricas) de " + id)) { 
+            db.ref('usuarios_registrados/' + id).remove(); 
+            db.ref('reparaciones_usuarios/' + id).remove(); 
+            db.ref('reparaciones_archivadas_usuarios/' + id).remove(); 
             showToast("LICENCIA Y DATOS ELIMINADOS 🗑️", "#e53e3e"); 
         } 
     }
@@ -1075,24 +1276,33 @@
         const DIAS_LIMITE = 45;
         const ahora = new Date();
         let fotosBorradas = 0;
-        db.ref('reparaciones_usuarios').once('value', snapshot => {
-            const usuarios = snapshot.val();
-            if (!usuarios) { if(manual) showToast("NO HAY FOTOS PARA LIMPIAR", "#64748b"); return; }
-            Object.keys(usuarios).forEach(wa => {
-                const reparaciones = usuarios[wa];
-                Object.keys(reparaciones).forEach(id => {
-                    const r = reparaciones[id];
-                    if (r.fecha && r.fotos) {
-                        const partes = r.fecha.split(', ')[0].split('/');
-                        const fechaOrden = new Date(partes[2], partes[1] - 1, partes[0]);
-                        const diferenciaDias = Math.floor((ahora - fechaOrden) / (1000 * 60 * 60 * 24));
-                        if (diferenciaDias >= DIAS_LIMITE) {
-                            db.ref(`reparaciones_usuarios/${wa}/${id}/fotos`).remove();
-                            fotosBorradas++;
+
+        const procesarNodo = (nodoBase) => {
+            return db.ref(nodoBase).once('value').then(snapshot => {
+                const usuarios = snapshot.val();
+                if (!usuarios) return;
+                Object.keys(usuarios).forEach(wa => {
+                    const reparaciones = usuarios[wa];
+                    Object.keys(reparaciones).forEach(id => {
+                        const r = reparaciones[id];
+                        if (r.fecha && r.fotos) {
+                            const partes = r.fecha.split(', ')[0].split('/');
+                            const fechaOrden = new Date(partes[2], partes[1] - 1, partes[0]);
+                            const diferenciaDias = Math.floor((ahora - fechaOrden) / (1000 * 60 * 60 * 24));
+                            if (diferenciaDias >= DIAS_LIMITE) {
+                                db.ref(`${nodoBase}/${wa}/${id}/fotos`).remove();
+                                fotosBorradas++;
+                            }
                         }
-                    }
+                    });
                 });
             });
+        };
+
+        Promise.all([
+            procesarNodo('reparaciones_usuarios'),
+            procesarNodo('reparaciones_archivadas_usuarios')
+        ]).then(() => {
             if (fotosBorradas > 0) showToast(`LIMPIEZA: Se borraron fotos de ${fotosBorradas} órdenes 🧹`, "#3498db");
             else if (manual) showToast("SISTEMA AL DÍA", "#2ecc71");
         });
