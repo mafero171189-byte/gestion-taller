@@ -65,7 +65,19 @@
 
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
-        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; }
+        
+        /* MODIFICACIÓN: display: none por defecto para evitar parpadeos */
+        .container { 
+            max-width: 1150px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 25px; 
+            border-radius: 0 0 12px 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            min-height: 85vh; 
+            position: relative; 
+            display: none; 
+        }
         
         #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
@@ -362,32 +374,43 @@
     let isUserAdmin = false;
     let isClientMode = false;
 
-    // --- LÓGICA DE INICIO Y BYPASS DE CLIENTE (MODIFICADA PARA RECUADRO CENTRAL) ---
+    // --- LÓGICA DE INICIO Y BYPASS DE CLIENTE ---
     function checkStoredSession() {
         const urlParams = new URLSearchParams(window.location.search);
         const clienteId = urlParams.get('id');
         const tecnicoUser = urlParams.get('u');
 
+        // 1. CASO CLIENTE: Detección prioritaria para evitar pantallas administrativas
         if (clienteId && tecnicoUser) {
             isClientMode = true;
             currentUser = tecnicoUser;
-            const path = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
-            dbRef = db.ref(path);
             
-            // Ocultamos elementos administrativos
+            // Ocultar capas administrativas inmediatamente
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
             document.querySelector('nav').style.display = 'none';
             document.getElementById('gesture-zone-top').style.display = 'none';
+            
+            // Mostrar container con diseño centralizado para el cliente
+            const container = document.querySelector('.container');
+            container.style.display = 'block';
+            container.style.background = 'transparent';
+            container.style.boxShadow = 'none';
+            container.style.padding = '0';
+            container.style.width = '100%';
+            container.style.marginTop = '0';
 
-            // Estilos para centrado vertical y fondo oscuro
+            // Estilos de body para vista cliente
             document.body.style.backgroundColor = '#0f172a';
             document.body.style.display = 'flex';
             document.body.style.alignItems = 'center';
             document.body.style.justifyContent = 'center';
-            document.body.style.height = '100vh';
+            document.body.style.minHeight = '100vh';
             document.body.style.margin = '0';
 
+            const path = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
+            dbRef = db.ref(path);
+            
             dbRef.on('value', snap => {
                 const v = snap.val(); 
                 const registrosLocal = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
@@ -395,22 +418,14 @@
                 const ordenLimpia = clienteId.replace('MAT-', '');
                 const regEncontrado = registrosLocal.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
                 
-                const container = document.querySelector('.container');
-                container.style.background = 'transparent';
-                container.style.boxShadow = 'none';
-                container.style.padding = '0';
-                container.style.width = '100%';
-
                 if (regEncontrado) {
-                    // Si ya se entregó, mostramos recuadro de aviso
                     if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
                         container.innerHTML = `
                             <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
                                 <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
-                                <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible por seguridad.</p>
+                                <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
                             </div>`;
                     } else {
-                        // Recuadro de información centralizado
                         let colorEstado = '#f1c40f'; 
                         if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
                         if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
@@ -437,11 +452,13 @@
             return; 
         }
 
+        // 2. CASO ADMINISTRADOR / OPERADOR
         const session = sessionStorage.getItem('st_matias_session');
         if (session) {
             const data = JSON.parse(session);
             grantAccess(data.user, data.isAdmin, true);
         } else {
+            document.getElementById('login-overlay').style.display = 'flex';
             setTimeout(() => document.getElementById('userIn').focus(), 100);
         }
         loadDraft();
@@ -475,9 +492,12 @@
         if (!isStored) sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
         const path = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(path);
+        
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
+        document.querySelector('.container').style.display = 'block'; // Mostrar container para gestión
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
+        
         dbRef.on('value', snap => {
             const v = snap.val(); 
             registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
