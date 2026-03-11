@@ -361,7 +361,7 @@
     let currentUser = null;
     let isUserAdmin = false;
 
-    // SEGURIDAD Y ACCESO
+    // --- ACCESO CORREGIDO ---
     function checkStoredSession() {
         const session = sessionStorage.getItem('st_matias_session');
         if (session) {
@@ -381,15 +381,27 @@
 
         if(u === 'Admin') {
             db.ref('configuracion/admin/pass').once('value', snap => {
-                const adminPass = snap.val() || 'Mis_Amores3';
-                if(p === adminPass) grantAccess(u, true);
-                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
+                let adminPass = snap.val();
+                
+                // Si nunca diste de alta el usuario en Firebase, esta clave te permite entrar
+                if (!adminPass) adminPass = "123456"; 
+                
+                if(p === adminPass) {
+                    grantAccess(u, true);
+                } else { 
+                    err.innerText = "Usuario o clave incorrecta"; 
+                    err.style.display = 'block'; 
+                }
             });
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
                 const userData = snap.val();
-                if(userData && p === (userData.pass || '123')) grantAccess(u, false);
-                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
+                if(userData && p === (userData.pass || '123')) {
+                    grantAccess(u, false);
+                } else { 
+                    err.innerText = "Usuario o clave incorrecta"; 
+                    err.style.display = 'block'; 
+                }
             });
         }
     }
@@ -445,7 +457,7 @@
         });
     }
 
-    // VARIABLES
+    // --- VARIABLES Y FUNCIONES DE GESTIÓN ---
     let registros = [];
     let idEditando = null;
     let modoArchivo = false;
@@ -468,7 +480,6 @@
         selectMes.appendChild(opt);
     });
 
-    // FUNCIONES AUXILIARES
     function showToast(text, color) {
         const t = document.getElementById('toast-alert');
         t.innerText = text; t.style.background = color; t.style.display = "block";
@@ -611,7 +622,13 @@
     }
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
-    function parseMoney(s) { return parseFloat(String(s).replace(/\./g, "").replace(/\$/g, "")) || 0; }
+    
+    // --- CORRECCIÓN DINERO ---
+    function parseMoney(s) { 
+        if (!s) return 0;
+        const cleanValue = String(s).replace(/\D/g, "");
+        return parseFloat(cleanValue) || 0; 
+    }
     
     function autoOrden() { 
         if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
@@ -710,7 +727,6 @@
         if(p === 'usuarios') listarUsuarios();
     }
 
-    // CONTABILIDAD
     function renderContabilidad() {
         const mes = parseInt(document.getElementById('selectMes').value);
         let caja = 0, gastos = 0, porIngresar = 0;
@@ -743,7 +759,6 @@
         link.download = `ST_MATIAS_REPORTE.csv`; link.click();
     }
 
-    // FORMULARIO Y PDF
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
         const data = {
@@ -777,7 +792,6 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    // FUNCIÓN ÚNICA DE WHATSAPP (CORREGIDA)
     function enviarWhatsApp(id) {
         const r = registros.find(x => x.id === id);
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
@@ -789,11 +803,8 @@
             
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
-            
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            
             const msj = ` *${nombreHeader}* - ${subHeader}%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🎨 *COLOR:* ${r.color || '-'}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-            
             window.open(`https://wa.me/${num}?text=${msj}`);
         });
     }
@@ -829,7 +840,7 @@
         });
     }
 
-    // FOTOS
+    // --- FOTOS ---
     function comprimirFoto(archivo, callback) {
         const reader = new FileReader();
         reader.readAsDataURL(archivo);
@@ -909,7 +920,7 @@
         });
     }
 
-    // VISOR
+    // --- VISOR DE IMÁGENES ---
     let scale = 1, pointX = 0, pointY = 0, startX = 0, startY = 0, isDragging = false;
     const viewer = document.getElementById('viewerModal'), imgFull = document.getElementById('imgFull');
     function verImagenFull(src) { imgFull.src = src; scale = 1; pointX = 0; pointY = 0; updateTransform(); viewer.style.display = 'flex'; }
@@ -925,7 +936,7 @@
         document.getElementById('sync-msg').style.display = isOnline ? "none" : "inline";
     });
 
-    // --- LÓGICA DE LICENCIAS ---
+    // --- LICENCIAS Y LIMPIEZA ---
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
