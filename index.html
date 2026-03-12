@@ -31,6 +31,11 @@
         }
         #app-content { display: none; }
 
+        /* PANTALLA DE CARGA (SPINNER) */
+        #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; backdrop-filter: blur(3px); }
+        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.2); border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* ESTILOS ORIGINALES */
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
@@ -97,7 +102,7 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
         .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
         .badge-disabled { cursor: not-allowed !important; opacity: 0.9; }
@@ -135,6 +140,11 @@
 </head>
 <body onload="checkStoredSession()">
 
+<div id="global-loader">
+    <div class="spinner"></div>
+    <p id="loader-text" style="margin-top:20px; font-weight:bold; font-size:16px;">Cargando...</p>
+</div>
+
 <div id="login-overlay">
     <div class="login-card">
         <h2>S.T. MATIAS</h2>
@@ -152,15 +162,17 @@
     <div id="toast-alert"></div>
 
     <div id="passModal" class="modal-overlay">
-        <div class="modal-box">
+        <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
             <p><b>👤 Mi Perfil - Configuración</b></p>
             <div style="text-align:left; margin-top:10px;">
                 <label>Nombre del Taller</label>
-                <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller">
+                <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller" style="margin-bottom:10px;">
                 <label>Descripción/Subtítulo</label>
-                <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular">
+                <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular" style="margin-bottom:10px;">
                 <label>WhatsApp en Ticket</label>
-                <input type="text" id="confWappTicket" placeholder="Ej: 54911...">
+                <input type="text" id="confWappTicket" placeholder="Ej: 54911..." style="margin-bottom:10px;">
+                <label>Términos y Condiciones (Para el PDF)</label>
+                <textarea id="confGarantia" rows="3" placeholder="Ej: Pasados los 90 días no nos hacemos cargo. La garantía es de 30 días." style="margin-bottom:10px; resize:none;"></textarea>
                 <label>Nueva Clave</label>
                 <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
             </div>
@@ -290,7 +302,7 @@
             </form>
 
             <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="renderTable()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
+                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="resetPaginacion()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
             </div>
@@ -302,6 +314,10 @@
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
+            </div>
+            
+            <div style="text-align:center; padding: 20px 0;">
+                <button id="btnCargarMas" onclick="cargarMasOrdenes()" style="display:none; background:#3498db; color:white; border:none; padding:10px 25px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);">⬇️ Cargar más órdenes...</button>
             </div>
         </div>
 
@@ -377,7 +393,19 @@
     let registrosArchivados = [];
     let historialDescargado = false; 
 
+    // Variable para paginación
+    let limiteTabla = 50;
+
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+
+    // Funciones del Loader
+    function mostrarLoader(msg = "Cargando...") {
+        document.getElementById('loader-text').innerText = msg;
+        document.getElementById('global-loader').style.display = 'flex';
+    }
+    function ocultarLoader() {
+        document.getElementById('global-loader').style.display = 'none';
+    }
 
     function getRegistro(id) {
         return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id);
@@ -461,12 +489,10 @@
                     <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
                 </div>`;
         } else {
-            // Buscamos la configuración del perfil del usuario en la base de datos
             const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
             
             db.ref(pathPerfil).once('value', snap => {
                 const conf = snap.val() || {};
-                // Si el usuario no configuró nada, dejamos un texto por defecto
                 const nombreTaller = conf.nombreTaller || "S.T. MATIAS";
                 const subtitulo = conf.subtitulo || "Estado de su equipo";
 
@@ -499,22 +525,34 @@
         }
     }
 
-    // --- FUNCIÓN PARA QUE EL CLIENTE GENERE EL PDF EN SU CELULAR ---
     function descargarPDFCliente() {
         const r = registros[0]; 
         if(!r) return;
         
         const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         
+        mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
             const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
             const subHeader = conf.subtitulo || "Servicio Técnico";
             const wappHeader = conf.wappTicket || "";
+            const textGarantia = conf.garantia || "¡Muchas gracias por su preferencia!";
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+            
+            // 1. Dummie para calcular cuántas líneas ocupará la garantía
+            const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
+            docDummy.setFont("helvetica", "italic"); 
+            docDummy.setFontSize(8);
+            const lineasGarantia = docDummy.splitTextToSize(textGarantia, 70);
+            
+            // 2. Calculamos el alto dinámico total que necesita la hoja
+            const altoDinamico = 155 + (lineasGarantia.length * 4); 
+            
+            // 3. Creamos el documento real con ese alto adaptado
+            const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
             
             doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
             doc.setTextColor(255, 255, 255); 
@@ -524,18 +562,25 @@
             doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
             doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
             doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+            
             doc.setFontSize(10); let y = 58; 
             const col1 = 12, col2 = 35, lineH = 7;
             const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+            
             printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
             printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
             y += 3; doc.line(10, y, 70, y); y += 10;
+            
             doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
             doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
             doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-            doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
+            
+            // 4. Imprimimos el texto legal basado en la 'Y' dinámica (y + 20 mm hacia abajo del saldo)
+            doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+            doc.text(lineasGarantia, 40, y + 20, {align:'center'});
             
             doc.save(`Ticket_${nroLimpio}.pdf`);
+            ocultarLoader();
         });
     }
 
@@ -545,17 +590,19 @@
         const err = document.getElementById('loginError');
         err.style.display = 'none';
 
+        mostrarLoader("Verificando datos...");
+
         if(u === 'Admin') {
             db.ref('configuracion/admin/pass').once('value', snap => {
                 let adminPass = snap.val() || "123456"; 
                 if(p === adminPass) grantAccess(u, true);
-                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
+                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; ocultarLoader(); }
             });
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
                 const userData = snap.val();
                 if(userData && p === userData.pass) grantAccess(u, false);
-                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; }
+                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; ocultarLoader(); }
             });
         }
     }
@@ -573,10 +620,13 @@
         document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         
+        if (isStored) mostrarLoader("Cargando sistema...");
+
         dbRef.on('value', snap => {
             const v = snap.val(); 
             registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
             renderTable(); 
+            ocultarLoader();
             setTimeout(verificarAutoArchivo, 2000);
         });
         if(isAdmin) {
@@ -598,6 +648,7 @@
             document.getElementById('confNombreTaller').value = d.nombreTaller || "";
             document.getElementById('confSubtitulo').value = d.subtitulo || "";
             document.getElementById('confWappTicket').value = d.wappTicket || "";
+            document.getElementById('confGarantia').value = d.garantia || "";
         });
         document.getElementById('passModal').style.display = 'flex'; 
     }
@@ -609,10 +660,15 @@
         const nTaller = document.getElementById('confNombreTaller').value.trim();
         const nSub = document.getElementById('confSubtitulo').value.trim();
         const nWapp = document.getElementById('confWappTicket').value.trim();
+        const nGarantia = document.getElementById('confGarantia').value.trim();
+
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp };
+        let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
         if(newP) updates.pass = newP;
+        
+        mostrarLoader("Guardando Perfil...");
         db.ref(path).update(updates).then(() => {
+            ocultarLoader();
             showToast("PERFIL ACTUALIZADO ✅", "#2ecc71");
             closePassModal();
         });
@@ -740,6 +796,16 @@
 
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
+    function resetPaginacion() {
+        limiteTabla = 50;
+        renderTable();
+    }
+
+    function cargarMasOrdenes() {
+        limiteTabla += 50;
+        renderTable();
+    }
+
     function renderTable() {
         if(isClientMode) return; 
         const bus = document.getElementById('search').value.toLowerCase();
@@ -787,7 +853,10 @@
             return matchBusqueda && matchFiltro;
         });
 
-        filtrados.forEach(r => {
+        const filtradosReversos = [...filtrados].reverse();
+        const aMostrar = filtradosReversos.slice(0, limiteTabla);
+
+        aMostrar.forEach(r => {
             const saldo = r.precio - r.sena;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
@@ -809,6 +878,12 @@
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
         });
+
+        if (filtradosReversos.length > limiteTabla) {
+            document.getElementById('btnCargarMas').style.display = 'inline-block';
+        } else {
+            document.getElementById('btnCargarMas').style.display = 'none';
+        }
     }
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
@@ -853,6 +928,7 @@
 
     function togglePendientes() {
         modoPendientes = !modoPendientes;
+        limiteTabla = 50; 
         if(modoPendientes) { modoArchivo = false; showToast("FILTRANDO PENDIENTES ⏳", "#f1c40f"); }
         else { showToast("MOSTRANDO TODOS 👀", "#3498db"); }
         renderTable();
@@ -860,6 +936,7 @@
 
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
+        limiteTabla = 50; 
         if(modoArchivo) { 
             modoPendientes = false; 
             
@@ -869,12 +946,13 @@
                 return; 
             }
 
-            showToast("Descargando Historial... ⏳", "#f1c40f"); 
+            mostrarLoader("Descargando Historial..."); 
             const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
             db.ref(pathArchivado).once('value').then(snap => {
                 const v = snap.val();
                 registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                 historialDescargado = true; 
+                ocultarLoader();
                 showToast("HISTORIAL CARGADO 📁", "#64748b");
                 renderTable(); 
             });
@@ -885,8 +963,7 @@
         }
     }
     
-    // --- FUNCIÓN ARCHIVAR NORMAL SIN STORAGE ---
-        function archivar(id) { 
+    function archivar(id) { 
         const r = getRegistro(id);
         if(!r) return;
 
@@ -894,7 +971,6 @@
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
 
         if (r.archivado) {
-            // Restaura directamente sin preguntar
             r.archivado = false;
             let copia = {...r}; delete copia.id;
             db.ref(pathActivo).child(id).set(copia).then(() => {
@@ -904,7 +980,6 @@
                 showToast("RESTAURADO ✅", "#3498db");
             });
         } else {
-            // Archiva directamente sin preguntar
             r.archivado = true;
             let copia = {...r}; delete copia.id;
 
@@ -978,12 +1053,13 @@
             return;
         }
 
-        showToast("Calculando finanzas... ⏳", "#3498db");
+        mostrarLoader("Calculando Finanzas...");
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         db.ref(pathArchivado).once('value').then(snap => {
             const v = snap.val();
             registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
             historialDescargado = true; 
+            ocultarLoader();
             renderContabilidadUI();
         });
     }
@@ -1023,11 +1099,12 @@
         link.download = `ST_MATIAS_REPORTE.csv`; link.click();
     }
 
-    // --- GUARDADO NORMAL SIN PDF DE FONDO ---
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
         const rOriginal = idEditando ? getRegistro(idEditando) : null;
         
+        mostrarLoader("Guardando Registro...");
+
         const data = {
             orden: document.getElementById('nroOrden').value, 
             cliente: document.getElementById('cliente').value,
@@ -1056,6 +1133,7 @@
             db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
                 Object.assign(rOriginal, data); 
                 renderTable();
+                ocultarLoader();
                 showToast("ACTUALIZADO ✅", "#3498db");
             });
         } 
@@ -1066,6 +1144,7 @@
                 data.id = nuevaOrden.key;
                 if (!getRegistro(nuevaOrden.key)) registros.push(data);
                 renderTable();
+                ocultarLoader();
                 showToast("REGISTRADO ✅", "#2ecc71"); 
             });
         }
@@ -1088,7 +1167,6 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
-    // --- WHATSAPP CON TEXTO NUEVO INDICANDO DÓNDE BAJAR EL PDF ---
     function enviarWhatsApp(id) {
         const r = getRegistro(id);
         if(!r) return;
@@ -1108,9 +1186,7 @@
             if(nombreHeader) msjPlano += `*${nombreHeader}*`;
             if(subHeader) msjPlano += ` - ${subHeader}`;
             
-            // Acá unificamos el link de seguimiento con el aviso del ticket
             msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* ${r.estado.toUpperCase()}\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
-            
             msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
             
             window.open(`https://wa.me/${num}?text=${encodeURIComponent(msjPlano)}`);
@@ -1120,15 +1196,32 @@
     function imprimir(id) {
         const r = getRegistro(id);
         if(!r) return;
+        
+        mostrarLoader("Generando PDF...");
+
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "";
-            const subHeader = conf.subtitulo || "";
+            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
+            const subHeader = conf.subtitulo || "Servicio Técnico";
             const wappHeader = conf.wappTicket || "";
+            const textGarantia = conf.garantia || "¡Muchas gracias!";
             const nroLimpio = String(r.orden).replace('MAT-', '');
+            
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+            
+            // 1. Dummie para calcular el alto
+            const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
+            docDummy.setFont("helvetica", "italic"); 
+            docDummy.setFontSize(8);
+            const lineasGarantia = docDummy.splitTextToSize(textGarantia, 70);
+            
+            // 2. Alto dinámico total
+            const altoDinamico = 155 + (lineasGarantia.length * 4);
+            
+            // 3. Documento real
+            const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
+            
             doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
             doc.setTextColor(255, 255, 255); 
             doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text(nombreHeader, 40, 12, {align:'center'});
@@ -1137,17 +1230,25 @@
             doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
             doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
             doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+            
             doc.setFontSize(10); let y = 58; 
             const col1 = 12, col2 = 35, lineH = 7;
             const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+            
             printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
             printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
             y += 3; doc.line(10, y, 70, y); y += 10;
+            
             doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
             doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
             doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-            doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
+            
+            // 4. Imprimimos el texto en su posición dinámica (debajo del cuadro de saldo)
+            doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+            doc.text(lineasGarantia, 40, y + 20, {align:'center'});
+            
             doc.save(`Ticket_${nroLimpio}.pdf`);
+            ocultarLoader();
         });
     }
 
@@ -1173,10 +1274,11 @@
 
     function agregarFotoTemporal(input) {
         if (input.files && input.files[0]) {
-            showToast("COMPRIMIENDO...", "#3498db");
+            mostrarLoader("Comprimiendo foto...");
             comprimirFoto(input.files[0], (fotoComprimida) => {
                 fotosTemporales.push(fotoComprimida);
                 actualizarMiniaturasForm();
+                ocultarLoader();
                 showToast("FOTO LISTA ✅", "#2ecc71");
             });
         }
@@ -1184,7 +1286,7 @@
 
     function subirFotoDirecta(input) {
         if (input.files && input.files[0]) {
-            showToast("COMPRIMIENDO...", "#3498db");
+            mostrarLoader("Comprimiendo foto...");
             comprimirFoto(input.files[0], (fotoComprimida) => {
                 const r = getRegistro(idParaFotos);
                 let fotos = [...(r.fotos || [])];
@@ -1197,6 +1299,7 @@
                 db.ref(nodoActualizar).child(idParaFotos).update({ fotos: fotos }).then(() => {
                     r.fotos = fotos; 
                     abrirFotos(idParaFotos);
+                    ocultarLoader();
                     showToast("FOTO AGREGADA ✅", "#2ecc71");
                 });
             });
@@ -1280,7 +1383,7 @@
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
         db.ref('usuarios_registrados/' + wa).set({ 
             whatsapp: wa, pass: '123', fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
-            nombreTaller: "", subtitulo: "", wappTicket: ""
+            nombreTaller: "", subtitulo: "", wappTicket: "", garantia: ""
         }).then(() => {
             document.getElementById('new-user-wa').value = ""; showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
         });
