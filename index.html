@@ -233,11 +233,17 @@
         <div class="modal-box" style="width:90%; max-width:400px;">
             <p><b>🖼️ Fotos del Equipo</b></p>
             <div id="photoGallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height:400px; overflow-y:auto;"></div>
+            
             <div id="photoFooterAction" style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
                 <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
-                <button onclick="document.getElementById('inputFotoAccion').click()" id="btnAddMore" style="background:var(--success); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="document.getElementById('inputFotoAccionCam').click()" style="background:var(--success); color:white; border:none; width:45px; height:45px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">📷</button>
+                    <button onclick="document.getElementById('inputFotoAccionGal').click()" style="background:#3498db; color:white; border:none; width:45px; height:45px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">🖼️</button>
+                </div>
             </div>
-            <input type="file" id="inputFotoAccion" accept="image/*" style="display:none" onchange="subirFotoDirecta(this)">
+            
+            <input type="file" id="inputFotoAccionCam" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)">
+            <input type="file" id="inputFotoAccionGal" accept="image/*" style="display:none" onchange="subirFotoDirecta(this)">
         </div>
     </div>
 
@@ -289,14 +295,20 @@
                     <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                     
                     <div class="full" style="display:flex; flex-direction: column; gap:5px;">
-                        <button type="button" class="btn" style="background:#6c5ce7; color:white; width: 60px; height: 45px;" onclick="document.getElementById('inputFoto').click()">📷</button>
+                        <label>Agregar Fotos</label>
+                        <div style="display:flex; gap:10px;">
+                            <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
+                            <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
+                        </div>
                         <div id="formThumbnails" class="thumb-container"></div>
                     </div>
 
                     <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
                         <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
                         <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
-                        <input type="file" id="inputFoto" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
+                        
+                        <input type="file" id="inputFotoCam" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)">
+                        <input type="file" id="inputFotoGal" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
                     </div>
                 </div>
             </form>
