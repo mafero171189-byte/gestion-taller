@@ -237,7 +237,7 @@
                 <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
                 <button onclick="document.getElementById('inputFotoAccion').click()" id="btnAddMore" style="background:var(--success); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
             </div>
-            <input type="file" id="inputFotoAccion" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)">
+            <input type="file" id="inputFotoAccion" accept="image/*" style="display:none" onchange="subirFotoDirecta(this)">
         </div>
     </div>
 
@@ -296,7 +296,7 @@
                     <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
                         <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
                         <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
-                        <input type="file" id="inputFoto" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)">
+                        <input type="file" id="inputFoto" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
                     </div>
                 </div>
             </form>
