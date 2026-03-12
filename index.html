@@ -461,31 +461,41 @@
                     <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
                 </div>`;
         } else {
-            let colorEstado = '#f1c40f'; 
-            if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
-            if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
+            // Buscamos la configuración del perfil del usuario en la base de datos
+            const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+            
+            db.ref(pathPerfil).once('value', snap => {
+                const conf = snap.val() || {};
+                // Si el usuario no configuró nada, dejamos un texto por defecto
+                const nombreTaller = conf.nombreTaller || "S.T. MATIAS";
+                const subtitulo = conf.subtitulo || "Estado de su equipo";
 
-            registros = [regEncontrado]; 
+                let colorEstado = '#f1c40f'; 
+                if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
+                if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
 
-            container.innerHTML = `
-                <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
-                    <h1 style="font-size: 22px; margin-bottom: 5px; color: #3498db;">S.T. MATIAS</h1>
-                    <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">Estado de su equipo</p>
-                    
-                    <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
-                    <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
-                    
-                    <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
-                        <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
-                        <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
-                    </div>
+                registros = [regEncontrado]; 
 
-                    <div style="margin-top:20px;">
-                        <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
-                    </div>
+                container.innerHTML = `
+                    <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                        <h1 style="font-size: 22px; margin-bottom: 5px; color: #3498db;">${nombreTaller}</h1>
+                        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
+                        
+                        <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
+                        <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
+                        
+                        <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
+                            <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
+                            <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
+                        </div>
 
-                    <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
-                </div>`;
+                        <div style="margin-top:20px;">
+                            <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
+                        </div>
+
+                        <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
+                    </div>`;
+            });
         }
     }
 
