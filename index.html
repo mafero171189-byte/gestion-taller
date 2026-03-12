@@ -1221,7 +1221,7 @@
             msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* ${r.estado.toUpperCase()}\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
             msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
             
-            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msjPlano)}`);
+            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
         });
     }
 
