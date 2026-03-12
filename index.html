@@ -373,10 +373,11 @@
     let isUserAdmin = false;
     let isClientMode = false;
 
-    // --- ARREGLOS SEPARADOS Y CACHÉ INTELIGENTE ---
     let registros = [];
     let registrosArchivados = [];
-    let historialDescargado = false; // El interruptor mágico
+    let historialDescargado = false; 
+
+    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
     function getRegistro(id) {
         return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id);
@@ -433,7 +434,7 @@
                         if (regEncontrado) {
                             renderVistaCliente(regEncontrado, container);
                         } else {
-                            container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada</div>`;
+                            container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada o expirada</div>`;
                         }
                     });
                 }
@@ -478,9 +479,54 @@
                         <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
                         <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
                     </div>
-                    <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">🖼️ Ver Fotos del Equipo</div>
+
+                    <div style="margin-top:20px;">
+                        <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
+                    </div>
+
+                    <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
                 </div>`;
         }
+    }
+
+    // --- FUNCIÓN PARA QUE EL CLIENTE GENERE EL PDF EN SU CELULAR ---
+    function descargarPDFCliente() {
+        const r = registros[0]; 
+        if(!r) return;
+        
+        const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        
+        db.ref(path).once('value', snap => {
+            const conf = snap.val() || {};
+            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
+            const subHeader = conf.subtitulo || "Servicio Técnico";
+            const wappHeader = conf.wappTicket || "";
+            const nroLimpio = String(r.orden).replace('MAT-', '');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
+            
+            doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
+            doc.setTextColor(255, 255, 255); 
+            doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text(nombreHeader, 40, 12, {align:'center'});
+            doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(subHeader, 40, 18, {align:'center'}); 
+            if(wappHeader) doc.text("WhatsApp: " + wappHeader, 40, 23, {align:'center'});
+            doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, 36, {align:'center'});
+            doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, 44, {align:'center'});
+            doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
+            doc.setFontSize(10); let y = 58; 
+            const col1 = 12, col2 = 35, lineH = 7;
+            const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+            printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
+            printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
+            y += 3; doc.line(10, y, 70, y); y += 10;
+            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+            doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
+            doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+            doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(160, 160, 160); doc.text("¡Muchas gracias!", 40, 153, {align:'center'});
+            
+            doc.save(`Ticket_${nroLimpio}.pdf`);
+        });
     }
 
     function checkAccess() {
@@ -571,8 +617,6 @@
     let idParaFotos = null;
     let fotosTemporales = [];
 
-    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
-
     const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     const selectMes = document.getElementById('selectMes');
     const mesActual = new Date().getMonth();
@@ -589,7 +633,7 @@
         if(isClientMode) return;
         const t = document.getElementById('toast-alert');
         t.innerText = text; t.style.background = color; t.style.display = "block";
-        setTimeout(() => t.style.display = "none", 2500);
+        setTimeout(() => t.style.display = "none", 3000);
     }
 
     function togglePagoForm() {
@@ -598,7 +642,6 @@
         document.getElementById('sena').value = chk.checked ? precio : "";
     }
 
-    // --- CACHÉ INTELIGENTE: Pagar Seña ---
     function togglePago(id) {
         if(isClientMode) return;
         const r = getRegistro(id);
@@ -610,7 +653,7 @@
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
         
         db.ref(nodoActualizar).child(id).update({ sena: estaPagado ? 0 : r.precio }).then(() => {
-            r.sena = estaPagado ? 0 : r.precio; // INYECCIÓN EN RAM
+            r.sena = estaPagado ? 0 : r.precio; 
             renderTable();
             showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
         });
@@ -626,7 +669,6 @@
 
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
-    // --- CACHÉ INTELIGENTE: Cambiar Estado ---
     function confirmarEstado(nuevo) {
         const r = getRegistro(idParaEstado);
         if(!r) return;
@@ -640,7 +682,7 @@
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
 
         db.ref(nodoActualizar).child(idParaEstado).update({ estado: nuevo, historialEstados: historialActual }).then(() => {
-            r.estado = nuevo; // INYECCIÓN EN RAM
+            r.estado = nuevo; 
             r.historialEstados = historialActual;
             renderTable();
             closeStatusModal();
@@ -660,7 +702,6 @@
 
     function closePriceModal() { document.getElementById('priceModal').style.display = 'none'; }
     
-    // --- CACHÉ INTELIGENTE: Cambiar Precio ---
     document.getElementById('confirmPriceBtn').onclick = () => {
         const nuevo = parseMoney(document.getElementById('newPriceInput').value);
         const r = getRegistro(idParaPrecio);
@@ -671,7 +712,7 @@
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
 
         db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo }).then(() => {
-            r.precio = nuevo; // INYECCIÓN EN RAM
+            r.precio = nuevo; 
             renderTable();
             closePriceModal();
             showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
@@ -689,7 +730,7 @@
 
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
-        function renderTable() {
+    function renderTable() {
         if(isClientMode) return; 
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
@@ -699,7 +740,6 @@
 
         body.innerHTML = "";
         
-        // CORRECCIÓN: Unimos los archivados nuevos (memoria RAM) con los archivados viejos (que siguen en la caja principal)
         let listaBase = [];
         if (modoArchivo) {
             const archivadosViejos = registros.filter(r => r.archivado === true);
@@ -731,7 +771,6 @@
             const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || ordenLimpia.toLowerCase().includes(bus);
             
             let matchFiltro = true;
-            // Oculta los archivados viejos de la vista de pendientes/activos
             if (!modoArchivo && r.archivado) matchFiltro = false; 
             if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
 
@@ -761,6 +800,7 @@
                 </td></tr>`;
         });
     }
+
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
     
     function parseMoney(s) { 
@@ -808,7 +848,6 @@
         renderTable();
     }
 
-    // --- CACHÉ INTELIGENTE: Botón Archivos ---
     function toggleArchivo() { 
         modoArchivo = !modoArchivo; 
         if(modoArchivo) { 
@@ -825,7 +864,7 @@
             db.ref(pathArchivado).once('value').then(snap => {
                 const v = snap.val();
                 registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                historialDescargado = true; // Guardamos en memoria
+                historialDescargado = true; 
                 showToast("HISTORIAL CARGADO 📁", "#64748b");
                 renderTable(); 
             });
@@ -836,7 +875,7 @@
         }
     }
     
-    // --- CACHÉ INTELIGENTE: Archivar / Restaurar ---
+    // --- FUNCIÓN ARCHIVAR NORMAL SIN STORAGE ---
     function archivar(id) { 
         const r = getRegistro(id);
         if(!r) return;
@@ -850,7 +889,7 @@
                 let copia = {...r}; delete copia.id;
                 db.ref(pathActivo).child(id).set(copia).then(() => {
                     db.ref(pathArchivado).child(id).remove();
-                    registrosArchivados = registrosArchivados.filter(x => x.id !== id); // Se saca de RAM
+                    registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
                     renderTable();
                     showToast("RESTAURADO ✅", "#3498db");
                 });
@@ -859,13 +898,10 @@
             if(confirm("¿Mover al Archivo Histórico? (Mejora la velocidad del sistema)")) {
                 r.archivado = true;
                 let copia = {...r}; delete copia.id;
+
                 db.ref(pathArchivado).child(id).set(copia).then(() => {
                     db.ref(pathActivo).child(id).remove();
-                    
-                    if (historialDescargado) {
-                        registrosArchivados.push({id: id, ...copia}); // Se inyecta en RAM
-                    }
-                    
+                    if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
                     renderTable();
                     showToast("MOVIDO AL ARCHIVO 🗄️", "#64748b");
                 });
@@ -882,7 +918,7 @@
         
         if (registrosArchivados.some(x => x.id === idParaBorrar)) {
             db.ref(pathArchivado).child(idParaBorrar).remove();
-            registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); // Borra de RAM
+            registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
             renderTable();
         } else {
             db.ref(pathActivo).child(idParaBorrar).remove();
@@ -928,7 +964,6 @@
         if(p === 'usuarios') listarUsuarios();
     }
 
-    // --- CACHÉ INTELIGENTE: Contabilidad ---
     function cargarDatosContabilidad() {
         if (historialDescargado) {
             renderContabilidadUI();
@@ -940,7 +975,7 @@
         db.ref(pathArchivado).once('value').then(snap => {
             const v = snap.val();
             registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-            historialDescargado = true; // Guardamos en memoria
+            historialDescargado = true; 
             renderContabilidadUI();
         });
     }
@@ -980,7 +1015,7 @@
         link.download = `ST_MATIAS_REPORTE.csv`; link.click();
     }
 
-    // --- CACHÉ INTELIGENTE: Botón Formulario (Guardar / Editar) ---
+    // --- GUARDADO NORMAL SIN PDF DE FONDO ---
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
         const rOriginal = idEditando ? getRegistro(idEditando) : null;
@@ -1007,20 +1042,24 @@
             const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
             const nodoActualizar = rOriginal.archivado ? pathArchivado : pathActivo;
             
-            // Mantener fechas e historiales
             if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
             if(rOriginal.fecha) data.fecha = rOriginal.fecha;
 
             db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
-                Object.assign(rOriginal, data); // INYECCIÓN EN RAM: Actualiza la copia local con la info nueva
+                Object.assign(rOriginal, data); 
                 renderTable();
                 showToast("ACTUALIZADO ✅", "#3498db");
             });
         } 
         else { 
             data.fecha = new Date().toLocaleString('es-AR'); 
-            dbRef.push(data); // Para órdenes nuevas siempre va a activos y se actualiza sola
-            showToast("REGISTRADO ✅", "#2ecc71"); 
+            const nuevaOrden = dbRef.push(); 
+            nuevaOrden.set(data).then(() => {
+                data.id = nuevaOrden.key;
+                if (!getRegistro(nuevaOrden.key)) registros.push(data);
+                renderTable();
+                showToast("REGISTRADO ✅", "#2ecc71"); 
+            });
         }
         clickLimpiar(true); 
     };
@@ -1041,6 +1080,7 @@
         window.scrollTo({top:0, behavior:'smooth'});
     }
 
+    // --- WHATSAPP CON TEXTO NUEVO INDICANDO DÓNDE BAJAR EL PDF ---
     function enviarWhatsApp(id) {
         const r = getRegistro(id);
         if(!r) return;
@@ -1053,12 +1093,19 @@
             if (!num.startsWith('54')) num = '549' + num;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             const baseUrl = window.location.origin + window.location.pathname;
-            const seguimientoLink = `${baseUrl}?id=${nroLimpio}%26u=${currentUser}`;
-            let msj = "";
-            if(nombreHeader) msj += `*${nombreHeader}*`;
-            if(subHeader) msj += ` - ${subHeader}`;
-            msj += `%0A%0A📌 *ORDEN:* ${nroLimpio}%0A👤 *CLIENTE:* ${r.cliente}%0A📱 *EQUIPO:* ${r.modelo}%0A🛠️ *ESTADO:* ${r.estado.toUpperCase()}%0A%0A🔎 *SEGUÍ TU REPARACIÓN AQUÍ:*%0A${seguimientoLink}%0A%0A----------------------------%0A⚠️ _Este es un mensaje automático, por favor no responder_%0A_¡Muchas gracias!_`;
-            window.open(`https://wa.me/${num}?text=${msj}`);
+            const seguimientoLink = `${baseUrl}?id=${nroLimpio}&u=${currentUser}`;
+            
+            let msjPlano = "";
+            
+            if(nombreHeader) msjPlano += `*${nombreHeader}*`;
+            if(subHeader) msjPlano += ` - ${subHeader}`;
+            
+            // Acá unificamos el link de seguimiento con el aviso del ticket
+            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* ${r.estado.toUpperCase()}\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
+            
+            msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
+            
+            window.open(`https://wa.me/${num}?text=${encodeURIComponent(msjPlano)}`);
         });
     }
 
@@ -1193,10 +1240,9 @@
                     if (ahora - d >= 24 * 60 * 60 * 1000) {
                         r.archivado = true;
                         let copia = {...r}; delete copia.id;
+
                         db.ref(pathArchivado).child(r.id).set(copia).then(() => {
                             db.ref(pathActivo).child(r.id).remove();
-                            // No hace falta inyectar porque el on('value') de activos lo saca de la pantalla solo.
-                            // Si justo estamos en historial, la proxima vez que abra la pestaña se actualizará
                         });
                     }
                 }
