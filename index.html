@@ -21,7 +21,7 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 90%; max-width: 350px; text-align: center;
         }
         .login-card h2 { color: #1a2a3a; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif; }
-        .login-card input {
+        .login-card input[type="text"], .login-card input[type="password"] {
             width: 100%; padding: 12px; margin: 10px 0;
             border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; box-sizing: border-box;
         }
@@ -152,6 +152,10 @@
         <div style="position: relative; width: 100%; margin: 10px 0;">
             <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 40px;">
             <span id="togglePass" onclick="toggleLoginPassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;">👁️</span>
+        </div>
+        <div style="text-align: left; margin: 10px 0px 15px 5px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="rememberMe" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
+            <label for="rememberMe" style="font-size: 14px; color: #64748b; text-transform: none; margin: 0; cursor: pointer;">Recordar mis datos</label>
         </div>
         <button class="btn-login" onclick="checkAccess()">INGRESAR</button>
         <p id="loginError" style="color:red; font-size:12px; margin-top:10px; display:none;"></p>
@@ -482,10 +486,14 @@
             return; 
         }
 
-        const session = sessionStorage.getItem('st_matias_session');
-        if (session) {
-            const data = JSON.parse(session);
-            grantAccess(data.user, data.isAdmin, true);
+        const credsStr = localStorage.getItem('st_matias_creds');
+        if (credsStr) {
+            const creds = JSON.parse(credsStr);
+            document.getElementById('userIn').value = creds.u;
+            document.getElementById('passIn').value = creds.p;
+            if (document.getElementById('rememberMe')) document.getElementById('rememberMe').checked = true;
+            document.getElementById('login-overlay').style.display = 'flex';
+            checkAccess(); 
         } else {
             document.getElementById('login-overlay').style.display = 'flex';
             setTimeout(() => document.getElementById('userIn').focus(), 100);
@@ -505,8 +513,8 @@
             
             db.ref(pathPerfil).once('value', snap => {
                 const conf = snap.val() || {};
-                const nombreTaller = conf.nombreTaller || "S.T. MATIAS";
-                const subtitulo = conf.subtitulo || "Estado de su equipo";
+                const nombreTaller = conf.nombreTaller || "";
+                const subtitulo = conf.subtitulo || "";
 
                 let colorEstado = '#f1c40f'; 
                 if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
@@ -546,18 +554,16 @@
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
-            const subHeader = conf.subtitulo || "Servicio Técnico";
+            const nombreHeader = conf.nombreTaller || "";
+            const subHeader = conf.subtitulo || "";
             const wappHeader = conf.wappTicket || "";
-            const textGarantia = conf.garantia || "¡Muchas gracias por su preferencia!";
+            const textGarantia = conf.garantia || "";
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
             const { jsPDF } = window.jspdf;
             
-            // 1. Dummie para calcular el alto
             const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
             
-            // Calculamos líneas de textos dinámicos para que no se corten (ancho max 40mm)
             docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
             const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
             const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
@@ -568,11 +574,9 @@
             docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             const lineasGarantia = docDummy.splitTextToSize(textGarantia, 70);
             
-            // 2. Alto dinámico total sumando el extra de las líneas múltiples
             let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
             const altoDinamico = 155 + (lineasGarantia.length * 4) + (extraLines * 5); 
             
-            // 3. Creamos el documento real con ese alto adaptado
             const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
             
             doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
@@ -587,7 +591,6 @@
             doc.setFontSize(10); let y = 58; 
             const col1 = 12, col2 = 35;
             
-            // Función mejorada para imprimir filas multilínea
             const printRow = (l, linesArray) => { 
                 doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
                 doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); 
@@ -607,7 +610,6 @@
             doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
             doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
             
-            // 4. Imprimimos el texto legal basado en la 'Y' dinámica
             doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
             doc.text(lineasGarantia, 40, y + 20, {align:'center'});
             
@@ -620,6 +622,7 @@
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value.trim();
         const err = document.getElementById('loginError');
+        const remember = document.getElementById('rememberMe') ? document.getElementById('rememberMe').checked : false;
         err.style.display = 'none';
 
         mostrarLoader("Verificando datos...");
@@ -627,14 +630,27 @@
         if(u === 'Admin') {
             db.ref('configuracion/admin/pass').once('value', snap => {
                 let adminPass = snap.val() || "123456"; 
-                if(p === adminPass) grantAccess(u, true);
+                if(p === adminPass) {
+                    if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
+                    else localStorage.removeItem('st_matias_creds');
+                    grantAccess(u, true);
+                }
                 else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; ocultarLoader(); }
             });
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
                 const userData = snap.val();
-                if(userData && p === userData.pass) grantAccess(u, false);
-                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; ocultarLoader(); }
+                if(userData && p === userData.pass) {
+                    if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
+                    else localStorage.removeItem('st_matias_creds');
+                    grantAccess(u, false);
+                }
+                else { 
+                    err.innerText = "Usuario/clave incorrecta o licencia revocada"; 
+                    err.style.display = 'block'; 
+                    ocultarLoader(); 
+                    localStorage.removeItem('st_matias_creds'); 
+                }
             });
         }
     }
@@ -643,7 +659,6 @@
         currentUser = u;
         isUserAdmin = isAdmin;
         isClientMode = false;
-        if (!isStored) sessionStorage.setItem('st_matias_session', JSON.stringify({ user: u, isAdmin: isAdmin }));
         const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(pathActivo);
         
@@ -652,6 +667,19 @@
         document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         
+        // --- INICIO NUEVO: Verificación de perfil incompleto ---
+        const pathPerfil = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
+        db.ref(pathPerfil).once('value', snap => {
+            const conf = snap.val() || {};
+            if (!conf.nombreTaller) {
+                setTimeout(() => {
+                    showToast("⚠️ Completá los datos de tu taller para los PDF", "#f1c40f");
+                    openPassModal();
+                }, 1500);
+            }
+        });
+        // --- FIN NUEVO ---
+
         if (isStored) mostrarLoader("Cargando sistema...");
 
         dbRef.on('value', snap => {
@@ -669,6 +697,7 @@
     }
 
     function logout() { 
+        localStorage.removeItem('st_matias_creds'); 
         sessionStorage.removeItem('st_matias_session'); 
         window.location.href = window.location.origin + window.location.pathname; 
     }
@@ -1234,18 +1263,16 @@
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "S.T. MATIAS";
-            const subHeader = conf.subtitulo || "Servicio Técnico";
+            const nombreHeader = conf.nombreTaller || "";
+            const subHeader = conf.subtitulo || "";
             const wappHeader = conf.wappTicket || "";
-            const textGarantia = conf.garantia || "¡Muchas gracias!";
+            const textGarantia = conf.garantia || "";
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
             const { jsPDF } = window.jspdf;
             
-            // 1. Dummie para calcular el alto
             const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
             
-            // Calculamos líneas de textos dinámicos
             docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
             const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
             const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
@@ -1256,11 +1283,9 @@
             docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             const lineasGarantia = docDummy.splitTextToSize(textGarantia, 70);
             
-            // 2. Alto dinámico total
             let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
             const altoDinamico = 155 + (lineasGarantia.length * 4) + (extraLines * 5);
             
-            // 3. Documento real
             const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
             
             doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, 28, 'F');
@@ -1294,7 +1319,6 @@
             doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
             doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
             
-            // 4. Imprimimos el texto en su posición dinámica
             doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
             doc.text(lineasGarantia, 40, y + 20, {align:'center'});
             
