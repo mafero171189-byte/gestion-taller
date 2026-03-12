@@ -876,7 +876,7 @@
     }
     
     // --- FUNCIÓN ARCHIVAR NORMAL SIN STORAGE ---
-    function archivar(id) { 
+        function archivar(id) { 
         const r = getRegistro(id);
         if(!r) return;
 
@@ -884,28 +884,26 @@
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
 
         if (r.archivado) {
-            if(confirm("¿Restaurar esta orden a la lista de pendientes?")) {
-                r.archivado = false;
-                let copia = {...r}; delete copia.id;
-                db.ref(pathActivo).child(id).set(copia).then(() => {
-                    db.ref(pathArchivado).child(id).remove();
-                    registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
-                    renderTable();
-                    showToast("RESTAURADO ✅", "#3498db");
-                });
-            }
+            // Restaura directamente sin preguntar
+            r.archivado = false;
+            let copia = {...r}; delete copia.id;
+            db.ref(pathActivo).child(id).set(copia).then(() => {
+                db.ref(pathArchivado).child(id).remove();
+                registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
+                renderTable();
+                showToast("RESTAURADO ✅", "#3498db");
+            });
         } else {
-            if(confirm("¿Mover al Archivo Histórico? (Mejora la velocidad del sistema)")) {
-                r.archivado = true;
-                let copia = {...r}; delete copia.id;
+            // Archiva directamente sin preguntar
+            r.archivado = true;
+            let copia = {...r}; delete copia.id;
 
-                db.ref(pathArchivado).child(id).set(copia).then(() => {
-                    db.ref(pathActivo).child(id).remove();
-                    if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
-                    renderTable();
-                    showToast("MOVIDO AL ARCHIVO 🗄️", "#64748b");
-                });
-            }
+            db.ref(pathArchivado).child(id).set(copia).then(() => {
+                db.ref(pathActivo).child(id).remove();
+                if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
+                renderTable();
+                showToast("ARCHIVADO 🗄️", "#64748b");
+            });
         }
     }
 
