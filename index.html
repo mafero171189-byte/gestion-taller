@@ -554,14 +554,23 @@
             
             const { jsPDF } = window.jspdf;
             
-            // 1. Dummie para calcular cuántas líneas ocupará la garantía
+            // 1. Dummie para calcular el alto
             const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
-            docDummy.setFont("helvetica", "italic"); 
-            docDummy.setFontSize(8);
+            
+            // Calculamos líneas de textos dinámicos para que no se corten (ancho max 40mm)
+            docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
+            const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
+            const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
+            const linesFalla = docDummy.splitTextToSize(String(r.falla), 40);
+            const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
+            const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
+
+            docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             const lineasGarantia = docDummy.splitTextToSize(textGarantia, 70);
             
-            // 2. Calculamos el alto dinámico total que necesita la hoja
-            const altoDinamico = 155 + (lineasGarantia.length * 4); 
+            // 2. Alto dinámico total sumando el extra de las líneas múltiples
+            let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
+            const altoDinamico = 155 + (lineasGarantia.length * 4) + (extraLines * 5); 
             
             // 3. Creamos el documento real con ese alto adaptado
             const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
@@ -576,18 +585,29 @@
             doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
             
             doc.setFontSize(10); let y = 58; 
-            const col1 = 12, col2 = 35, lineH = 7;
-            const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+            const col1 = 12, col2 = 35;
             
-            printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
-            printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
+            // Función mejorada para imprimir filas multilínea
+            const printRow = (l, linesArray) => { 
+                doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
+                doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); 
+                y += (linesArray.length * 5) + 2; 
+            };
+            
+            printRow("FECHA:", [r.fecha ? r.fecha.split(',')[0] : ""]); 
+            printRow("CLIENTE:", linesCliente); 
+            printRow("EQUIPO:", linesEquipo);
+            printRow("IMEI/SERIE:", linesImei); 
+            printRow("FALLA:", linesFalla); 
+            printRow("OBS:", linesObs);
+            
             y += 3; doc.line(10, y, 70, y); y += 10;
             
-            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
             doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
             doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
             
-            // 4. Imprimimos el texto legal basado en la 'Y' dinámica (y + 20 mm hacia abajo del saldo)
+            // 4. Imprimimos el texto legal basado en la 'Y' dinámica
             doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
             doc.text(lineasGarantia, 40, y + 20, {align:'center'});
             
@@ -1224,12 +1244,21 @@
             
             // 1. Dummie para calcular el alto
             const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
-            docDummy.setFont("helvetica", "italic"); 
-            docDummy.setFontSize(8);
+            
+            // Calculamos líneas de textos dinámicos
+            docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
+            const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
+            const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
+            const linesFalla = docDummy.splitTextToSize(String(r.falla), 40);
+            const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
+            const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
+
+            docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             const lineasGarantia = docDummy.splitTextToSize(textGarantia, 70);
             
             // 2. Alto dinámico total
-            const altoDinamico = 155 + (lineasGarantia.length * 4);
+            let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
+            const altoDinamico = 155 + (lineasGarantia.length * 4) + (extraLines * 5);
             
             // 3. Documento real
             const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
@@ -1244,18 +1273,28 @@
             doc.setDrawColor(150, 150, 150); doc.line(10, 48, 70, 48);
             
             doc.setFontSize(10); let y = 58; 
-            const col1 = 12, col2 = 35, lineH = 7;
-            const printRow = (l, v) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(String(v), col2, y); y += lineH; };
+            const col1 = 12, col2 = 35;
             
-            printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : ""); printRow("CLIENTE:", r.cliente); printRow("EQUIPO:", `${r.modelo} (${r.color || '-'})`);
-            printRow("IMEI/SERIE:", r.imei || "-"); printRow("FALLA:", r.falla); printRow("OBS:", r.obs || "-");
+            const printRow = (l, linesArray) => { 
+                doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
+                doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); 
+                y += (linesArray.length * 5) + 2; 
+            };
+            
+            printRow("FECHA:", [r.fecha ? r.fecha.split(',')[0] : ""]); 
+            printRow("CLIENTE:", linesCliente); 
+            printRow("EQUIPO:", linesEquipo);
+            printRow("IMEI/SERIE:", linesImei); 
+            printRow("FALLA:", linesFalla); 
+            printRow("OBS:", linesObs);
+            
             y += 3; doc.line(10, y, 70, y); y += 10;
             
-            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += lineH; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
             doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
             doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
             
-            // 4. Imprimimos el texto en su posición dinámica (debajo del cuadro de saldo)
+            // 4. Imprimimos el texto en su posición dinámica
             doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
             doc.text(lineasGarantia, 40, y + 20, {align:'center'});
             
