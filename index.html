@@ -778,6 +778,18 @@
         document.getElementById('app-content').style.display = 'block';
         document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
+
+        // ---> NUEVO: ESCUCHA EN TIEMPO REAL PARA EXPULSAR AL USUARIO <---
+        if (!isAdmin) {
+            db.ref('usuarios_registrados/' + u).on('value', snap => {
+                // Si la licencia desaparece de la base de datos...
+                if (!snap.exists()) {
+                    alert("Tu licencia ha sido eliminada o revocada. Cerrando sesión...");
+                    logout(); // Ejecuta tu función de salir
+                }
+            });
+        }
+        // -----------------------------------------------------------------
         
         const pathPerfil = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
         db.ref(pathPerfil).once('value', snap => {
@@ -800,6 +812,7 @@
             ocultarLoader();
             setTimeout(verificarAutoArchivo, 2000);
         });
+        
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
             listarUsuarios();
