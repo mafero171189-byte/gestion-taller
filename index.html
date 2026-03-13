@@ -109,6 +109,20 @@
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
+        /* ESTILOS NUEVOS PARA EL AUTOCOMPLETADO */
+        .autocomplete-list {
+            display: none; position: absolute; z-index: 9999;
+            background: white; border: 1px solid #cbd5e0; border-radius: 8px;
+            max-height: 180px; overflow-y: auto; width: 100%;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px;
+        }
+        .autocomplete-list div {
+            padding: 12px; border-bottom: 1px solid #f1f5f9;
+            cursor: pointer; font-size: 15px; color: #1e293b;
+        }
+        .autocomplete-list div:last-child { border-bottom: none; }
+        .autocomplete-list div:active, .autocomplete-list div:hover { background: #f8fafc; color: var(--secondary); font-weight: bold; }
+
         .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
         .badge-disabled { cursor: not-allowed !important; opacity: 0.9; }
         .st-pendiente { background: #fff9c4; color: #856404; }
@@ -287,8 +301,6 @@
 
     <div class="container">
         <div id="page-gestion" class="page active" style="display:block;">
-            <datalist id="lista-modelos"></datalist>
-            <datalist id="lista-fallas"></datalist>
 
             <form id="repairForm">
                 <div class="form-grid">
@@ -296,7 +308,11 @@
                     <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()"></div>
                     <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
                     
-                    <div><label>Modelo</label><input type="text" id="modelo" required list="lista-modelos" oninput="saveDraft()"></div>
+                    <div style="position: relative;">
+                        <label>Modelo</label>
+                        <input type="text" id="modelo" required oninput="saveDraft(); showAutocomplete('modelo')" onfocus="showAutocomplete('modelo')" onblur="hideAutocomplete('modelo')" autocomplete="off" placeholder="Escribe o selecciona...">
+                        <div id="autocomplete-modelo" class="autocomplete-list"></div>
+                    </div>
                     
                     <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
                     <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
@@ -317,7 +333,11 @@
                         </div>
                     </div>
                     
-                    <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required list="lista-fallas" oninput="saveDraft()"></div>
+                    <div class="full" style="position: relative;">
+                        <label>Falla Reportada</label>
+                        <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Escribe o selecciona...">
+                        <div id="autocomplete-falla" class="autocomplete-list"></div>
+                    </div>
                     
                     <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                     
@@ -599,10 +619,8 @@
 
             docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             
-            // --- INICIO CORRECCIÓN GARANTÍA ---
             const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
             const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
-            // --- FIN CORRECCIÓN GARANTÍA ---
             
             let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
             
@@ -860,26 +878,70 @@
         });
     }
 
-    // --- AQUÍ ESTÁ LA NUEVA FUNCIÓN MEJORADA ---
+    // --- NUEVO SISTEMA CUSTOM PARA AUTOCOMPLETADO (100% COMPATIBLE CON CELULARES) ---
+    let modelosGlobal = [];
+    let fallasGlobal = [];
+
     function actualizarListasAutocompletado() {
         if(isClientMode) return;
-        let modelos = new Set();
-        let fallas = new Set();
+        
+        // Arrays con datos por defecto para que la lista siempre abra algo útil
+        let modelos = new Set(["Samsung Galaxy ", "Motorola Moto ", "iPhone ", "Xiaomi Redmi "]);
+        let fallas = new Set(["Cambio de módulo", "Pin de carga", "Cambio de batería", "Falla de software", "No enciende", "Mojado"]);
+        
         let todasLasOrdenes = [...registros, ...registrosArchivados];
         
         todasLasOrdenes.forEach(r => {
-            if(r.modelo) modelos.add(r.modelo.trim());
-            if(r.falla) fallas.add(r.falla.trim());
+            if(r.modelo && r.modelo.trim() !== "") modelos.add(r.modelo.trim());
+            if(r.falla && r.falla.trim() !== "") fallas.add(r.falla.trim());
         });
         
-        let htmlModelos = "";
-        modelos.forEach(m => htmlModelos += `<option value="${m}">`);
-        document.getElementById('lista-modelos').innerHTML = htmlModelos;
-        
-        let htmlFallas = "";
-        fallas.forEach(f => htmlFallas += `<option value="${f}">`);
-        document.getElementById('lista-fallas').innerHTML = htmlFallas;
+        modelosGlobal = Array.from(modelos).sort();
+        fallasGlobal = Array.from(fallas).sort();
     }
+
+    function showAutocomplete(campo) {
+        const input = document.getElementById(campo);
+        const val = input.value.toLowerCase();
+        const listDiv = document.getElementById('autocomplete-' + campo);
+        listDiv.innerHTML = '';
+        
+        const arr = campo === 'modelo' ? modelosGlobal : fallasGlobal;
+        const filtrados = arr.filter(item => item.toLowerCase().includes(val));
+        
+        if (filtrados.length === 0) {
+            listDiv.style.display = 'none';
+            return;
+        }
+        
+        filtrados.forEach(item => {
+            const div = document.createElement('div');
+            
+            const index = item.toLowerCase().indexOf(val);
+            if(index >= 0 && val !== '') {
+                div.innerHTML = item.substring(0, index) + "<b style='color:#3498db;'>" + item.substring(index, index+val.length) + "</b>" + item.substring(index + val.length);
+            } else {
+                div.innerText = item;
+            }
+            
+            div.onclick = function(e) {
+                input.value = item;
+                listDiv.style.display = 'none';
+                saveDraft();
+            };
+            listDiv.appendChild(div);
+        });
+        
+        listDiv.style.display = 'block';
+    }
+
+    function hideAutocomplete(campo) {
+        setTimeout(() => {
+            const listDiv = document.getElementById('autocomplete-' + campo);
+            if(listDiv) listDiv.style.display = 'none';
+        }, 200);
+    }
+    // --------------------------------------------------------------------------------
 
     let idEditando = null;
     let modoArchivo = false;
@@ -1222,6 +1284,11 @@
         idEditando = null; document.getElementById('repairForm').reset();
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
+        
+        // Limpiamos los menús desplegables
+        document.getElementById('autocomplete-modelo').style.display = 'none';
+        document.getElementById('autocomplete-falla').style.display = 'none';
+
         fotosTemporales = []; document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
         if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
@@ -1432,10 +1499,8 @@
 
             docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             
-            // --- INICIO CORRECCIÓN GARANTÍA ---
             const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
             const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
-            // --- FIN CORRECCIÓN GARANTÍA ---
             
             let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
             
