@@ -303,7 +303,6 @@
 
     <div class="container">
         <div id="page-gestion" class="page active" style="display:block;">
-
             <form id="repairForm">
                 <div class="form-grid">
                     <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
@@ -468,14 +467,19 @@
         document.getElementById('global-loader').style.display = 'none';
     }
 
-    // --- NUEVA FUNCIÓN DE SEGURIDAD (PASE VIP) ---
-    function iniciarSeguridad() {
+    // --- NUEVA FUNCIÓN DE SEGURIDAD (PASE VIP) OPTIMIZADA ---
+    async function iniciarSeguridad() {
         mostrarLoader("Conectando de forma segura...");
         
-        firebase.auth().signInAnonymously().catch(error => {
+        try {
+            // Forzamos a que recuerde la sesión aunque cierres el navegador
+            await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            // Iniciamos sesión anónima (si ya existe una, la reutiliza al instante)
+            await firebase.auth().signInAnonymously();
+        } catch (error) {
             console.error("Error de seguridad:", error);
             ocultarLoader();
-        });
+        }
 
         firebase.auth().onAuthStateChanged(user => {
             if (user && !appIniciada) {
