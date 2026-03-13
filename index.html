@@ -167,6 +167,15 @@
     <p id="loader-text" style="margin-top:20px; font-weight:bold; font-size:16px;">Cargando...</p>
 </div>
 
+<div id="expulsadoModal" class="modal-overlay" style="z-index: 15000; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);">
+    <div class="modal-box" style="border: 2px solid var(--danger);">
+        <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
+        <h3 style="color: var(--danger); margin-top: 0; font-size: 20px;">Acceso Denegado</h3>
+        <p id="expulsionMensaje" style="color: #475569; font-size: 15px; line-height: 1.5; margin-bottom: 20px;"></p>
+        <button onclick="forzarSalida()" class="btn btn-main" style="background: var(--danger);">ENTENDIDO</button>
+    </div>
+</div>
+
 <div id="login-overlay">
     <div class="login-card">
         <h2>S.T. MATIAS</h2>
@@ -455,7 +464,7 @@
 
     let limiteTabla = 50;
     let logoTemporalBase64 = null; 
-    let appIniciada = false; // Variable nueva para control de seguridad
+    let appIniciada = false;
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
@@ -467,14 +476,33 @@
         document.getElementById('global-loader').style.display = 'none';
     }
 
-    // --- NUEVA FUNCIÓN DE SEGURIDAD (PASE VIP) OPTIMIZADA ---
+    // --- NUEVAS FUNCIONES VISUALES DE EXPULSIÓN ---
+    function mostrarExpulsion(msg) {
+        // Detener escuchas para evitar errores de fondo
+        if (dbRef) dbRef.off();
+        
+        // Ocultar cualquier otra ventana que moleste
+        ocultarLoader();
+        document.getElementById('passModal').style.display = 'none';
+        document.getElementById('statusModal').style.display = 'none';
+        document.getElementById('photoModal').style.display = 'none';
+        document.getElementById('priceModal').style.display = 'none';
+        
+        // Mostrar modal personalizado de bloqueo
+        document.getElementById('expulsionMensaje').innerText = msg;
+        document.getElementById('expulsadoModal').style.display = 'flex';
+    }
+
+    function forzarSalida() {
+        logout();
+    }
+    // ----------------------------------------------
+
     async function iniciarSeguridad() {
         mostrarLoader("Conectando de forma segura...");
         
         try {
-            // Forzamos a que recuerde la sesión aunque cierres el navegador
             await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            // Iniciamos sesión anónima (si ya existe una, la reutiliza al instante)
             await firebase.auth().signInAnonymously();
         } catch (error) {
             console.error("Error de seguridad:", error);
@@ -489,7 +517,6 @@
             }
         });
     }
-    // ---------------------------------------------
 
     function getRegistro(id) {
         return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id);
@@ -756,7 +783,6 @@
                     if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
                     else localStorage.removeItem('st_matias_creds');
                     
-                    // --- NUEVO: GENERADOR DE TICKET DE SESIÓN ÚNICA ---
                     let miTokenSesion = localStorage.getItem('st_matias_token');
                     if (!miTokenSesion) {
                         miTokenSesion = Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -766,7 +792,6 @@
                     db.ref('usuarios_registrados/' + u).update({ tokenSesion: miTokenSesion }).then(() => {
                         grantAccess(u, false);
                     });
-                    // --------------------------------------------------
                 }
                 else { 
                     err.innerText = "Usuario/clave incorrecta o licencia revocada"; 
@@ -790,22 +815,18 @@
         document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
 
-        // ---> NUEVO: ESCUCHA EN TIEMPO REAL (LICENCIA Y DISPOSITIVO) <---
         if (!isAdmin) {
             db.ref('usuarios_registrados/' + u).on('value', snap => {
                 const dataUser = snap.val();
                 
                 if (!dataUser) {
-                    alert("Tu licencia ha sido eliminada o revocada. Cerrando sesión...");
-                    logout(); 
+                    mostrarExpulsion("Tu licencia ha sido revocada o eliminada permanentemente por el administrador.");
                 }
                 else if (dataUser.tokenSesion && dataUser.tokenSesion !== localStorage.getItem('st_matias_token')) {
-                    alert("Se ha iniciado sesión desde otro dispositivo. Cerrando esta sesión por seguridad...");
-                    logout();
+                    mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
                 }
             });
         }
-        // -----------------------------------------------------------------
         
         const pathPerfil = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
         db.ref(pathPerfil).once('value', snap => {
