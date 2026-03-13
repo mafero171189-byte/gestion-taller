@@ -295,7 +295,9 @@
                     <div><label>N° Orden</label><input type="text" id="nroOrden" readonly></div>
                     <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()"></div>
                     <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
-                    <div><label>Modelo</label><input type="text" id="modelo" required list="lista-modelos" oninput="saveDraft()" autocomplete="off"></div>
+                    
+                    <div><label>Modelo</label><input type="text" id="modelo" required list="lista-modelos" oninput="saveDraft()"></div>
+                    
                     <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
                     <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
                     <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
@@ -314,7 +316,9 @@
                             <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
                         </div>
                     </div>
-                    <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required list="lista-fallas" oninput="saveDraft()" autocomplete="off"></div>
+                    
+                    <div class="full"><label>Falla Reportada</label><input type="text" id="falla" required list="lista-fallas" oninput="saveDraft()"></div>
+                    
                     <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                     
                     <div class="full" style="display:flex; flex-direction: column; gap:5px;">
@@ -856,22 +860,25 @@
         });
     }
 
+    // --- AQUÍ ESTÁ LA NUEVA FUNCIÓN MEJORADA ---
     function actualizarListasAutocompletado() {
         if(isClientMode) return;
         let modelos = new Set();
         let fallas = new Set();
         let todasLasOrdenes = [...registros, ...registrosArchivados];
+        
         todasLasOrdenes.forEach(r => {
             if(r.modelo) modelos.add(r.modelo.trim());
             if(r.falla) fallas.add(r.falla.trim());
         });
         
-        const dlModelos = document.getElementById('lista-modelos');
-        const dlFallas = document.getElementById('lista-fallas');
-        dlModelos.innerHTML = ""; dlFallas.innerHTML = "";
+        let htmlModelos = "";
+        modelos.forEach(m => htmlModelos += `<option value="${m}">`);
+        document.getElementById('lista-modelos').innerHTML = htmlModelos;
         
-        modelos.forEach(m => dlModelos.innerHTML += `<option value="${m}">`);
-        fallas.forEach(f => dlFallas.innerHTML += `<option value="${f}">`);
+        let htmlFallas = "";
+        fallas.forEach(f => htmlFallas += `<option value="${f}">`);
+        document.getElementById('lista-fallas').innerHTML = htmlFallas;
     }
 
     let idEditando = null;
