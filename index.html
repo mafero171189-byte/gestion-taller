@@ -755,7 +755,18 @@
                 if(userData && p === userData.pass) {
                     if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
                     else localStorage.removeItem('st_matias_creds');
-                    grantAccess(u, false);
+                    
+                    // --- NUEVO: GENERADOR DE TICKET DE SESIÓN ÚNICA ---
+                    let miTokenSesion = localStorage.getItem('st_matias_token');
+                    if (!miTokenSesion) {
+                        miTokenSesion = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                        localStorage.setItem('st_matias_token', miTokenSesion);
+                    }
+                    
+                    db.ref('usuarios_registrados/' + u).update({ tokenSesion: miTokenSesion }).then(() => {
+                        grantAccess(u, false);
+                    });
+                    // --------------------------------------------------
                 }
                 else { 
                     err.innerText = "Usuario/clave incorrecta o licencia revocada"; 
@@ -779,13 +790,18 @@
         document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
 
-        // ---> NUEVO: ESCUCHA EN TIEMPO REAL PARA EXPULSAR AL USUARIO <---
+        // ---> NUEVO: ESCUCHA EN TIEMPO REAL (LICENCIA Y DISPOSITIVO) <---
         if (!isAdmin) {
             db.ref('usuarios_registrados/' + u).on('value', snap => {
-                // Si la licencia desaparece de la base de datos...
-                if (!snap.exists()) {
+                const dataUser = snap.val();
+                
+                if (!dataUser) {
                     alert("Tu licencia ha sido eliminada o revocada. Cerrando sesión...");
-                    logout(); // Ejecuta tu función de salir
+                    logout(); 
+                }
+                else if (dataUser.tokenSesion && dataUser.tokenSesion !== localStorage.getItem('st_matias_token')) {
+                    alert("Se ha iniciado sesión desde otro dispositivo. Cerrando esta sesión por seguridad...");
+                    logout();
                 }
             });
         }
@@ -822,6 +838,7 @@
 
     function logout() { 
         localStorage.removeItem('st_matias_creds'); 
+        localStorage.removeItem('st_matias_token'); // Limpia el ticket de sesión
         sessionStorage.removeItem('st_matias_session'); 
         window.location.href = window.location.origin + window.location.pathname; 
     }
