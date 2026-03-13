@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -158,7 +159,8 @@
         #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
     </style>
 </head>
-<body onload="checkStoredSession()">
+
+<body onload="iniciarSeguridad()">
 
 <div id="global-loader">
     <div class="spinner"></div>
@@ -452,13 +454,12 @@
     let registrosArchivados = [];
     let historialDescargado = false; 
 
-    // Variable para paginación y perfil
     let limiteTabla = 50;
     let logoTemporalBase64 = null; 
+    let appIniciada = false; // Variable nueva para control de seguridad
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
-    // Funciones del Loader
     function mostrarLoader(msg = "Cargando...") {
         document.getElementById('loader-text').innerText = msg;
         document.getElementById('global-loader').style.display = 'flex';
@@ -466,6 +467,25 @@
     function ocultarLoader() {
         document.getElementById('global-loader').style.display = 'none';
     }
+
+    // --- NUEVA FUNCIÓN DE SEGURIDAD (PASE VIP) ---
+    function iniciarSeguridad() {
+        mostrarLoader("Conectando de forma segura...");
+        
+        firebase.auth().signInAnonymously().catch(error => {
+            console.error("Error de seguridad:", error);
+            ocultarLoader();
+        });
+
+        firebase.auth().onAuthStateChanged(user => {
+            if (user && !appIniciada) {
+                appIniciada = true;
+                ocultarLoader();
+                checkStoredSession();
+            }
+        });
+    }
+    // ---------------------------------------------
 
     function getRegistro(id) {
         return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id);
@@ -878,15 +898,14 @@
         });
     }
 
-    // --- NUEVO SISTEMA CUSTOM PARA AUTOCOMPLETADO (100% COMPATIBLE CON CELULARES) ---
+    // --- AUTOCOMPLETADO CUSTOM ---
     let modelosGlobal = [];
     let fallasGlobal = [];
 
     function actualizarListasAutocompletado() {
         if(isClientMode) return;
         
-        // Arrays con datos por defecto para que la lista siempre abra algo útil
-        let modelos = new Set(["Samsung ", "Motorola ", "iPhone ", "Xiaomi Redmi ", "Tcl ", "Zte "]);
+        let modelos = new Set(["Samsung Galaxy ", "Motorola Moto ", "iPhone ", "Xiaomi Redmi "]);
         let fallas = new Set(["Cambio de módulo", "Pin de carga", "Cambio de batería", "Falla de software", "No enciende", "Mojado"]);
         
         let todasLasOrdenes = [...registros, ...registrosArchivados];
@@ -941,7 +960,7 @@
             if(listDiv) listDiv.style.display = 'none';
         }, 200);
     }
-    // --------------------------------------------------------------------------------
+    // -----------------------------
 
     let idEditando = null;
     let modoArchivo = false;
@@ -1285,7 +1304,6 @@
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
         
-        // Limpiamos los menús desplegables
         document.getElementById('autocomplete-modelo').style.display = 'none';
         document.getElementById('autocomplete-falla').style.display = 'none';
 
