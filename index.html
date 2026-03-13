@@ -266,10 +266,41 @@
 
     <div id="deleteModal" class="modal-overlay">
         <div class="modal-box">
-            <p><b>¿Eliminar definitivamente?</b></p>
+            <div style="font-size: 40px; margin-bottom: 10px;">🗑️</div>
+            <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">¿Eliminar Orden?</p>
+            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">Esta acción borrará la reparación y sus fotos de forma permanente.</p>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">NO</button>
-                <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white;">SI, BORRAR</button>
+                <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer;">SÍ, BORRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="suspendModal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="font-size: 40px; margin-bottom: 10px;">⏸️</div>
+            <p style="color: #e53e3e; font-weight: bold; font-size: 18px; margin-top: 0;">¿Suspender Licencia?</p>
+            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">
+                El usuario será <b>expulsado inmediatamente</b>.<br><br>
+                Sus datos quedarán en la papelera por <b>7 días</b> y luego se borrarán de forma automática.
+            </p>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="closeSuspendModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button id="confirmSuspendBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:#e53e3e; color:white; font-weight:bold; cursor:pointer;">SÍ, SUSPENDER</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteLicenseModal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+            <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">¿Eliminar Todo AHORA?</p>
+            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">
+                Se borrará el acceso y <b>absolutamente todas las órdenes</b> de este número al instante.<br><br>Esta acción NO se puede deshacer.
+            </p>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="closeDeleteLicenseModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button id="confirmDeleteLicenseBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer;">SÍ, BORRAR TODO</button>
             </div>
         </div>
     </div>
@@ -466,6 +497,10 @@
     let logoTemporalBase64 = null; 
     let appIniciada = false;
 
+    // Variables para los modales de Licencia
+    let idParaSuspender = null;
+    let idParaEliminarLicencia = null;
+
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
     function mostrarLoader(msg = "Cargando...") {
@@ -476,19 +511,14 @@
         document.getElementById('global-loader').style.display = 'none';
     }
 
-    // --- NUEVAS FUNCIONES VISUALES DE EXPULSIÓN ---
     function mostrarExpulsion(msg) {
-        // Detener escuchas para evitar errores de fondo
         if (dbRef) dbRef.off();
-        
-        // Ocultar cualquier otra ventana que moleste
         ocultarLoader();
         document.getElementById('passModal').style.display = 'none';
         document.getElementById('statusModal').style.display = 'none';
         document.getElementById('photoModal').style.display = 'none';
         document.getElementById('priceModal').style.display = 'none';
         
-        // Mostrar modal personalizado de bloqueo
         document.getElementById('expulsionMensaje').innerText = msg;
         document.getElementById('expulsadoModal').style.display = 'flex';
     }
@@ -496,7 +526,6 @@
     function forzarSalida() {
         logout();
     }
-    // ----------------------------------------------
 
     async function iniciarSeguridad() {
         mostrarLoader("Conectando de forma segura...");
@@ -779,7 +808,17 @@
         } else { 
             db.ref('usuarios_registrados/' + u).once('value', snap => {
                 const userData = snap.val();
+                
                 if(userData && p === userData.pass) {
+                    
+                    if(userData.estado === 'suspendido') {
+                        err.innerText = "Licencia suspendida temporalmente. Contacte al administrador."; 
+                        err.style.display = 'block'; 
+                        ocultarLoader(); 
+                        localStorage.removeItem('st_matias_creds'); 
+                        return;
+                    }
+
                     if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
                     else localStorage.removeItem('st_matias_creds');
                     
@@ -794,7 +833,7 @@
                     });
                 }
                 else { 
-                    err.innerText = "Usuario/clave incorrecta o licencia revocada"; 
+                    err.innerText = "Usuario/clave incorrecta o licencia inexistente"; 
                     err.style.display = 'block'; 
                     ocultarLoader(); 
                     localStorage.removeItem('st_matias_creds'); 
@@ -820,7 +859,10 @@
                 const dataUser = snap.val();
                 
                 if (!dataUser) {
-                    mostrarExpulsion("Tu licencia ha sido revocada o eliminada permanentemente por el administrador.");
+                    mostrarExpulsion("Tu licencia ha sido eliminada permanentemente por el administrador.");
+                }
+                else if (dataUser.estado === 'suspendido') {
+                    mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
                 else if (dataUser.tokenSesion && dataUser.tokenSesion !== localStorage.getItem('st_matias_token')) {
                     mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
@@ -854,12 +896,13 @@
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
             listarUsuarios();
             limpiarFotosAntiguas(false); 
+            limpiarLicenciasExpiradas(); 
         }
     }
 
     function logout() { 
         localStorage.removeItem('st_matias_creds'); 
-        localStorage.removeItem('st_matias_token'); // Limpia el ticket de sesión
+        localStorage.removeItem('st_matias_token'); 
         sessionStorage.removeItem('st_matias_session'); 
         window.location.href = window.location.origin + window.location.pathname; 
     }
@@ -1785,12 +1828,15 @@
         if(msg) msg.style.display = isOnline ? "none" : "inline";
     });
 
+    // --- SISTEMA DE LICENCIAS CON "PAPELERA" Y MODALES ---
+
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
+        
         db.ref('usuarios_registrados/' + wa).set({ 
             whatsapp: wa, pass: '123', fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
-            nombreTaller: "", subtitulo: "", wappTicket: "", garantia: ""
+            nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null
         }).then(() => {
             document.getElementById('new-user-wa').value = ""; showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
         });
@@ -1805,6 +1851,8 @@
             const body = document.getElementById('userTableBody');
             body.innerHTML = "";
             if(users) {
+                const ahora = Date.now();
+                
                 Object.keys(users).forEach(wa => {
                     if(wa.toLowerCase().includes(bus)) {
                         db.ref('reparaciones_usuarios/' + wa).once('value', snapData => {
@@ -1813,11 +1861,34 @@
                             const cantOrdenes = Object.keys(data).length;
                             let pesoAprox = JSON_STR ? JSON_STR.length / 1024 : 0;
                             let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
-                            body.innerHTML += `<tr>
-                                <td style="padding:15px;"><b>${wa}</b><br><small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes activas)</small></td>
+                            
+                            let esSuspendido = users[wa].estado === 'suspendido';
+                            let diasRestantes = "";
+                            let btnAccion = "";
+
+                            if (esSuspendido) {
+                                let fechaSusp = users[wa].fechaSuspension || ahora;
+                                let diasPasados = Math.floor((ahora - fechaSusp) / (1000 * 60 * 60 * 24));
+                                let quedan = 7 - diasPasados;
+                                if (quedan < 0) quedan = 0;
+                                
+                                diasRestantes = `<br><span style="color:red; font-weight:bold; font-size:11px;">⚠️ Se borrará todo en ${quedan} días</span>`;
+                                btnAccion = `
+                                    <button onclick="restaurarLicencia('${wa}')" style="background:var(--success); color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; margin-bottom:5px; width:100%;">♻️ RESTAURAR</button>
+                                    <button onclick="openDeleteLicenseModal('${wa}')" style="background:none; border:none; color:#e53e3e; text-decoration:underline; cursor:pointer; font-size:11px; width:100%;">Borrar ahora</button>`;
+                            } else {
+                                btnAccion = `<button onclick="openSuspendModal('${wa}')" style="background:#e53e3e; color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%;">⏸️ SUSPENDER</button>`;
+                            }
+
+                            body.innerHTML += `<tr style="${esSuspendido ? 'background:#fff5f5;' : ''}">
+                                <td style="padding:15px;">
+                                    <b>${wa}</b> ${esSuspendido ? '⏸️' : '✅'}<br>
+                                    <small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small>
+                                    ${diasRestantes}
+                                </td>
                                 <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">${users[wa].pass}</span></td>
                                 <td style="padding:15px; color:#64748b; font-size:13px;">${users[wa].fechaAlta || 'Preexistente'}</td>
-                                <td style="padding:15px;"><button onclick="eliminarLicencia('${wa}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">ELIMINAR ❌</button></td>
+                                <td style="padding:15px;">${btnAccion}</td>
                             </tr>`;
                         });
                     }
@@ -1826,13 +1897,76 @@
         });
     }
 
-    function eliminarLicencia(id) { 
-        if(confirm("¿ELIMINAR DEFINITIVAMENTE?\n\nSe borrará el acceso y TODAS las órdenes (activas e históricas) de " + id)) { 
-            db.ref('usuarios_registrados/' + id).remove(); 
-            db.ref('reparaciones_usuarios/' + id).remove(); 
-            db.ref('reparaciones_archivadas_usuarios/' + id).remove(); 
-            showToast("LICENCIA Y DATOS ELIMINADOS 🗑️", "#e53e3e"); 
-        } 
+    // Funciones visuales para SUSPENDER
+    function openSuspendModal(id) {
+        idParaSuspender = id;
+        document.getElementById('suspendModal').style.display = 'flex';
+    }
+    
+    function closeSuspendModal() {
+        document.getElementById('suspendModal').style.display = 'none';
+        idParaSuspender = null;
+    }
+
+    document.getElementById('confirmSuspendBtn').onclick = () => {
+        if(!idParaSuspender) return;
+        db.ref('usuarios_registrados/' + idParaSuspender).update({
+            estado: 'suspendido',
+            fechaSuspension: Date.now()
+        }).then(() => {
+            showToast("LICENCIA SUSPENDIDA ⏸️", "#f1c40f");
+            closeSuspendModal();
+        });
+    };
+
+    function restaurarLicencia(id) {
+        db.ref('usuarios_registrados/' + id).update({
+            estado: 'activo',
+            fechaSuspension: null
+        }).then(() => {
+            showToast("LICENCIA RESTAURADA ♻️", "#2ecc71");
+        });
+    }
+
+    // Funciones visuales para ELIMINAR DEFINITIVAMENTE LICENCIA
+    function openDeleteLicenseModal(id) {
+        idParaEliminarLicencia = id;
+        document.getElementById('deleteLicenseModal').style.display = 'flex';
+    }
+
+    function closeDeleteLicenseModal() {
+        document.getElementById('deleteLicenseModal').style.display = 'none';
+        idParaEliminarLicencia = null;
+    }
+
+    document.getElementById('confirmDeleteLicenseBtn').onclick = () => {
+        if(!idParaEliminarLicencia) return;
+        db.ref('usuarios_registrados/' + idParaEliminarLicencia).remove(); 
+        db.ref('reparaciones_usuarios/' + idParaEliminarLicencia).remove(); 
+        db.ref('reparaciones_archivadas_usuarios/' + idParaEliminarLicencia).remove(); 
+        showToast("DATOS ELIMINADOS 🗑️", "#e53e3e"); 
+        closeDeleteLicenseModal();
+    };
+
+    function limpiarLicenciasExpiradas() {
+        if (!isUserAdmin) return;
+        db.ref('usuarios_registrados').once('value').then(snap => {
+            const users = snap.val();
+            if (!users) return;
+            const ahora = Date.now();
+            const SIETE_DIAS = 7 * 24 * 60 * 60 * 1000; 
+            
+            Object.keys(users).forEach(wa => {
+                const u = users[wa];
+                if (u.estado === 'suspendido' && u.fechaSuspension) {
+                    if (ahora - u.fechaSuspension >= SIETE_DIAS) {
+                        db.ref('usuarios_registrados/' + wa).remove();
+                        db.ref('reparaciones_usuarios/' + wa).remove();
+                        db.ref('reparaciones_archivadas_usuarios/' + wa).remove();
+                    }
+                }
+            });
+        });
     }
 
     function limpiarFotosAntiguas(manual = false) {
