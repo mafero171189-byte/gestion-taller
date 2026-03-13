@@ -96,6 +96,7 @@
         .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
         .opt-pendiente { background: #fff9c4; color: #856404; }
         .opt-reparado { background: #c8e6c9; color: #1b5e20; }
+        .opt-no-reparado { background: #fed7d7; color: #9b2c2c; }
         .opt-entregado { background: #e2e8f0; color: #475569; }
 
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
@@ -112,6 +113,7 @@
         .badge-disabled { cursor: not-allowed !important; opacity: 0.9; }
         .st-pendiente { background: #fff9c4; color: #856404; }
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
+        .st-no-reparado { background: #fed7d7; color: #9b2c2c; }
         .st-entregado { background: #e2e8f0; color: #475569; }
 
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -212,6 +214,7 @@
             <p><b>Cambiar Estado</b></p>
             <button class="status-option opt-pendiente" onclick="confirmarEstado('Pendiente')">⏳ Pendiente</button>
             <button class="status-option opt-reparado" onclick="confirmarEstado('Reparado')">✅ Reparado</button>
+            <button class="status-option opt-no-reparado" onclick="confirmarEstado('No reparado')">❌ No reparado</button>
             <button class="status-option opt-entregado" onclick="confirmarEstado('Entregado')">📦 Entregado</button>
             <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer;">Cerrar</button>
         </div>
@@ -536,6 +539,7 @@
 
                 let colorEstado = '#f1c40f'; 
                 if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
+                if (regEncontrado.estado === 'No reparado') colorEstado = '#e53e3e';
                 if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
 
                 registros = [regEncontrado]; 
@@ -592,10 +596,8 @@
             docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             
             // --- INICIO CORRECCIÓN GARANTÍA ---
-            // Limpia saltos de línea manuales y recorta espacios fantasmas
-            const garantiaLimpia = textGarantia.replace(/\r?\n|\r/g, " ").replace(/\s+/g, " ").trim();
-            // Corta a exactamente 70mm y recorta los espacios laterales que empujan el texto
-            const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 70).map(linea => linea.trim());
+            const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+            const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
             // --- FIN CORRECCIÓN GARANTÍA ---
             
             let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
@@ -937,7 +939,7 @@
         const r = getRegistro(idParaEstado);
         if(!r) return;
         const fechaActual = new Date().toLocaleString('es-AR');
-        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569' };
+        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569', 'No reparado': '#e53e3e' };
         let historialActual = r.historialEstados || [];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
         
@@ -1063,7 +1065,7 @@
                 <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase()}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td><span class="badge-status st-${r.estado.toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
                 <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
                     ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
                 </td>
@@ -1424,10 +1426,8 @@
             docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
             
             // --- INICIO CORRECCIÓN GARANTÍA ---
-            // Limpia saltos de línea manuales y recorta espacios fantasmas
-            const garantiaLimpia = textGarantia.replace(/\r?\n|\r/g, " ").replace(/\s+/g, " ").trim();
-            // Corta a exactamente 70mm y recorta los espacios laterales que empujan el texto
-            const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 70).map(linea => linea.trim());
+            const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+            const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
             // --- FIN CORRECCIÓN GARANTÍA ---
             
             let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
