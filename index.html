@@ -182,6 +182,16 @@
         #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
         #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
+
+        /* ESTILOS ALERTA AMARILLA */
+        .btn-alerta-amarilla { background: #FFD700; color: #856404; font-weight: bold; animation: pulseAlerta 2s infinite; border: 1px solid #d4b106; }
+        @keyframes pulseAlerta { 0% { transform: scale(1); } 50% { transform: scale(1.03); box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); } 100% { transform: scale(1); } }
+        .tabla-olvidados { width: 100%; border-collapse: collapse; text-align: left; }
+        .tabla-olvidados th, .tabla-olvidados td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .btn-whatsapp-alerta { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-whatsapp-alerta.activo { background-color: #25D366; color: white; }
+        .btn-whatsapp-alerta.notificado { background-color: #94a3b8; color: white; }
+
     </style>
 </head>
 
@@ -226,6 +236,28 @@
 
 <div id="app-content">
     <div id="toast-alert"></div>
+
+    <div id="olvidadosModal" class="modal-overlay">
+        <div class="modal-box" style="width: 90%; max-width: 600px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #856404; font-size:16px;">⚠️ Equipos reparados (+15 días)</h3>
+                <button onclick="cerrarModalOlvidados()" style="background: none; border: none; font-size: 18px; cursor: pointer;">❌</button>
+            </div>
+            <div style="overflow-x: auto; max-height: 350px;">
+                <table class="tabla-olvidados">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Equipo</th>
+                            <th>Días Listo</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="olvidadosBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div id="passModal" class="modal-overlay">
         <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
@@ -436,6 +468,7 @@
                 <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="resetPaginacion()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
+                <button class="btn btn-alerta-amarilla" id="btnAlertaAmarilla" onclick="abrirModalOlvidados()" style="display: none;">⚠️ 0 Equipos Olvidados</button>
             </div>
 
             <div class="table-wrapper" style="overflow-x:auto;">
@@ -534,12 +567,123 @@
     let idParaSuspender = null;
     let idParaEliminarLicencia = null;
 
+    let listaOlvidados = []; // Variable global para la alerta amarilla
+
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
     function escaparHTML(texto) {
         if (!texto) return "";
         return texto.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
+
+    // --- LOGICA DE ALERTA AMARILLA (+15 DIAS REPARADOS) ---
+    function parseFechaAR(fechaStr) {
+        if (!fechaStr) return new Date();
+        let partes = fechaStr.split(',');
+        let fechaPartes = partes[0].trim().split('/');
+        if (fechaPartes.length !== 3) return new Date();
+        return new Date(fechaPartes[2], parseInt(fechaPartes[1]) - 1, fechaPartes[0]);
+    }
+
+    function calcularOlvidados() {
+        if (isClientMode) return;
+        const HOY = new Date();
+        const LIMITE_DIAS = 15; // NOTA: Cambiá este 15 por 0 si querés probarlo ahora mismo
+        listaOlvidados = [];
+
+        registros.forEach(r => {
+            if (r.estado === 'Reparado' && !r.archivado) {
+                let fechaReparadoStr = r.fecha; 
+                if (r.historialEstados) {
+                    let repEstados = r.historialEstados.filter(h => h.estado === 'Reparado');
+                    if (repEstados.length > 0) {
+                        fechaReparadoStr = repEstados[repEstados.length - 1].fecha;
+                    }
+                }
+
+                let fechaReparacion = parseFechaAR(fechaReparadoStr);
+                let diffTime = HOY.getTime() - fechaReparacion.getTime();
+                let diffDias = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDias >= LIMITE_DIAS) {
+                    listaOlvidados.push({ ...r, diasListo: diffDias });
+                }
+            }
+        });
+
+        // Ordena: Primero los No Notificados (los más recientes primero). Al fondo los Notificados.
+        listaOlvidados.sort((a, b) => {
+            if (a.recordatorioEnviado === b.recordatorioEnviado) {
+                return a.diasListo - b.diasListo;
+            }
+            return a.recordatorioEnviado ? 1 : -1; 
+        });
+
+        const btn = document.getElementById('btnAlertaAmarilla');
+        if (listaOlvidados.length > 0) {
+            btn.innerHTML = `⚠️ ${listaOlvidados.length} Equipos Olvidados`;
+            btn.style.display = 'inline-block';
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    function abrirModalOlvidados() {
+        const tbody = document.getElementById('olvidadosBody');
+        tbody.innerHTML = '';
+        listaOlvidados.forEach(r => {
+            
+            let botonAccion = r.recordatorioEnviado 
+                ? `<button class="btn-whatsapp-alerta notificado" onclick="enviarWhatsAppOlvidado('${r.id}')">✅ Notificado</button>`
+                : `<button class="btn-whatsapp-alerta activo" onclick="enviarWhatsAppOlvidado('${r.id}')">💬 Avisar</button>`;
+
+            let opacidad = r.recordatorioEnviado ? 'opacity: 0.6;' : '';
+            let colorDias = r.recordatorioEnviado ? '#64748b' : 'red';
+
+            tbody.innerHTML += `
+                <tr style="${opacidad}">
+                    <td><b>${escaparHTML(r.cliente)}</b></td>
+                    <td>${escaparHTML(r.modelo)}</td>
+                    <td style="color: ${colorDias}; font-weight: bold;">${r.diasListo} días</td>
+                    <td>${botonAccion}</td>
+                </tr>
+            `;
+        });
+        document.getElementById('olvidadosModal').style.display = 'flex';
+    }
+
+    function cerrarModalOlvidados() {
+        document.getElementById('olvidadosModal').style.display = 'none';
+    }
+
+    function enviarWhatsAppOlvidado(id) {
+        const r = listaOlvidados.find(x => x.id === id);
+        if (!r) return;
+
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        db.ref(path).once('value', snap => {
+            const conf = snap.val() || {};
+            const nombreTaller = conf.nombreTaller || "nuestro taller";
+            
+            let num = String(r.tel).replace(/\D/g, ''); 
+            if (!num.startsWith('54')) num = '549' + num;
+
+            const msj = `¡Hola ${r.cliente}! ¿Cómo estás? Te hablo de ${nombreTaller}, tu equipo ${r.modelo} ya lleva más de 15 días reparado.`;
+            
+            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msj)}`, '_blank');
+
+            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            db.ref(pathActivo).child(id).update({ recordatorioEnviado: true }).then(() => {
+                const regOriginal = getRegistro(id);
+                if(regOriginal) regOriginal.recordatorioEnviado = true;
+                
+                calcularOlvidados();
+                abrirModalOlvidados(); 
+            });
+        });
+    }
+    // --- FIN LOGICA ALERTA AMARILLA ---
+
 
     function mostrarLoader(msg = "Cargando...") {
         document.getElementById('loader-text').innerText = msg;
@@ -556,6 +700,7 @@
         document.getElementById('statusModal').style.display = 'none';
         document.getElementById('photoModal').style.display = 'none';
         document.getElementById('priceModal').style.display = 'none';
+        document.getElementById('olvidadosModal').style.display = 'none';
         
         document.getElementById('expulsionMensaje').innerText = msg;
         document.getElementById('expulsadoModal').style.display = 'flex';
@@ -1318,6 +1463,9 @@
         } else {
             document.getElementById('btnCargarMas').style.display = 'none';
         }
+
+        // --- Calcula y actualiza la Alerta Amarilla al recargar la tabla ---
+        calcularOlvidados();
     }
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
@@ -1569,6 +1717,7 @@
             
             if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
             if(rOriginal.fecha) data.fecha = rOriginal.fecha;
+            if(rOriginal.recordatorioEnviado) data.recordatorioEnviado = true; // Conservar el estado de notificado al editar
 
             db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
                 Object.assign(rOriginal, data); 
