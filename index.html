@@ -6,7 +6,7 @@
     <title>Mi Taller Web - Sistema Integral</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a2a3a">
+    <meta name="theme-color" content="#1e293b">
     <link rel="apple-touch-icon" href="icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -15,25 +15,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        /* ESTILOS DEL LOGIN */
+        /* ESTILOS DEL LOGIN MODERNIZADO */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #1a2a3a 0%, #0f172a 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             z-index: 10000; display: none; align-items: center; justify-content: center;
         }
         .login-card {
-            background: white; padding: 40px; border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 90%; max-width: 350px; text-align: center;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 40px 30px; 
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+            width: 85%; max-width: 360px; text-align: center;
         }
-        .login-card h2 { color: #1a2a3a; margin-bottom: 25px; font-family: 'Segoe UI', sans-serif; }
-        .login-card input {
-            width: 100%; padding: 12px; margin: 10px 0;
-            border: 1px solid #cbd5e0; border-radius: 8px; font-size: 16px; box-sizing: border-box;
+        .login-card h2 { color: #1e293b; margin: 15px 0 5px; font-size: 24px; font-weight: 800; }
+        .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; margin-top: 0; }
+        
+        .login-card input[type="text"], .login-card input[type="password"] {
+            width: 100%; padding: 15px; margin: 8px 0;
+            border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; 
+            box-sizing: border-box; background: #f8fafc; transition: all 0.3s ease;
+            outline: none; color: #1e293b; font-weight: 500;
+        }
+        .login-card input:focus {
+            border-color: #3498db; background: #ffffff; box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
         }
         .btn-login {
-            width: 100%; padding: 14px; background: #3498db; color: white;
-            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s;
+            width: 100%; padding: 16px; 
+            background: linear-gradient(135deg, #3498db, #2980b9); 
+            color: white; border: none; border-radius: 12px; 
+            font-size: 16px; font-weight: bold; cursor: pointer; 
+            margin-top: 20px; transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
+        .btn-login:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3); }
+        
+        .toggle-pass-icon { 
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
+            cursor: pointer; font-size: 18px; user-select: none; opacity: 0.5; transition: 0.2s; 
+        }
+        .toggle-pass-icon:hover { opacity: 1; }
+        
+        .remember-group { text-align: left; margin: 10px 0 5px 5px; display: flex; align-items: center; gap: 8px; }
+        .remember-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #3498db; }
+        .remember-group label { font-size: 14px; color: #475569; margin: 0; cursor: pointer; text-transform: none; font-weight: 500;}
+
         #app-content { display: none; }
 
         /* PANTALLA DE CARGA (SPINNER) */
@@ -110,7 +136,6 @@
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
-        /* ESTILOS NUEVOS PARA EL AUTOCOMPLETADO */
         .autocomplete-list {
             display: none; position: absolute; z-index: 9999;
             background: white; border: 1px solid #cbd5e0; border-radius: 8px;
@@ -178,18 +203,24 @@
 
 <div id="login-overlay">
     <div class="login-card">
+        <div style="font-size: 45px; margin-bottom: -10px;">📱</div>
         <h2>Mi Taller Web</h2>
-        <input type="text" id="userIn" placeholder="Usuario">
-        <div style="position: relative; width: 100%; margin: 10px 0;">
-            <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 40px;">
-            <span id="togglePass" onclick="toggleLoginPassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none;">👁️</span>
+        <p>Inicia sesión para continuar</p>
+        
+        <input type="text" id="userIn" placeholder="Usuario" autocomplete="off">
+        
+        <div style="position: relative; width: 100%; margin: 8px 0;">
+            <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 45px;">
+            <span id="togglePass" class="toggle-pass-icon" onclick="toggleLoginPassword()">👁️</span>
         </div>
-        <div style="text-align: left; margin: 10px 0px 15px 5px; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="rememberMe" style="width: 16px; height: 16px; margin: 0; cursor: pointer;">
-            <label for="rememberMe" style="font-size: 14px; color: #64748b; text-transform: none; margin: 0; cursor: pointer;">Recordar mis datos</label>
+        
+        <div class="remember-group">
+            <input type="checkbox" id="rememberMe">
+            <label for="rememberMe">Recordar mis datos</label>
         </div>
-        <button class="btn-login" onclick="checkAccess()">INGRESAR</button>
-        <p id="loginError" style="color:red; font-size:12px; margin-top:10px; display:none;"></p>
+        
+        <button class="btn-login" onclick="checkAccess()">INGRESAR AL SISTEMA</button>
+        <p id="loginError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:15px; display:none;"></p>
     </div>
 </div>
 
@@ -527,56 +558,45 @@
 
     function forzarSalida() { logout(); }
 
-    async function iniciarSeguridad() {
-        // 1. Mostrar carga inicial
-        mostrarLoader("Conectando de forma segura...");
-
+    function iniciarSeguridad() {
+        mostrarLoader("Verificando seguridad...");
+        
         const urlParams = new URLSearchParams(window.location.search);
         const esVistaCliente = urlParams.get('id') && urlParams.get('u');
 
-        // 2. Escuchar cambios de autenticación de Firebase
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                // Si es un cliente con link anónimo o un técnico logueado
                 if (user.isAnonymous || esVistaCliente) {
-                    checkStoredSession();
+                    checkStoredSession(); 
                 } else if (!appIniciada) {
                     appIniciada = true;
                     let emailPrefix = user.email.split('@')[0];
                     let isAdmin = (emailPrefix.toLowerCase() === 'admin');
-                    let u = isAdmin ? 'Admin' : emailPrefix;
-                    grantAccess(u, isAdmin, true);
+                    grantAccess(isAdmin ? 'Admin' : emailPrefix, isAdmin, true);
                 }
-                ocultarLoader();
             } else {
-                // Si no hay usuario, pero es un cliente, intentar login anónimo
                 if (esVistaCliente) {
-                    try {
-                        await firebase.auth().signInAnonymously();
-                    } catch(e) {
-                        console.error("Error anon:", e);
-                        ocultarLoader();
-                        checkStoredSession();
+                    try { 
+                        await firebase.auth().signInAnonymously(); 
+                    } catch(e) { 
+                        console.error(e);
+                        checkStoredSession(); 
                     }
                 } else {
-                    // Si no es cliente y no hay usuario, mostrar login
                     ocultarLoader();
-                    checkStoredSession();
+                    checkStoredSession(); 
                 }
             }
         });
 
-        // 3. Timeout de seguridad: Si en 8 segundos no conectó, forzar revisión
         setTimeout(() => {
-            if (document.getElementById('global-loader').style.display !== 'none') {
-                console.warn("La conexión segura está tardando demasiado...");
+            if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
                 ocultarLoader();
-                // Si no cargó nada, mostramos el login por las dudas
-                if (!appIniciada && !esVistaCliente) {
+                if (!esVistaCliente) {
                     document.getElementById('login-overlay').style.display = 'flex';
                 }
             }
-        }, 8000);
+        }, 5000);
     }
 
     function getRegistro(id) {
@@ -617,7 +637,6 @@
             const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
             const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
 
-            // Intento de lectura con manejo de errores (.catch)
             db.ref(pathActivo).child(clienteId).once('value')
             .then(snapActivo => {
                 if (snapActivo.exists()) { 
@@ -661,18 +680,15 @@
 
         const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         
-        // Manejo de errores al intentar cargar el logo del perfil
         db.ref(pathPerfil).once('value')
         .then(snap => {
             generarHTMLCliente(regEncontrado, container, snap.val() || {});
         })
         .catch(err => {
-            // Si bloquea la lectura del logo, igual mostramos el ticket
             generarHTMLCliente(regEncontrado, container, { nombreTaller: "Servicio Técnico" });
         });
     }
 
-    // Nueva función separada para crear la interfaz visual sin enredar el código
     function generarHTMLCliente(regEncontrado, container, conf) {
         const nombreTaller = conf.nombreTaller || "Servicio Técnico";
         const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
@@ -1922,7 +1938,6 @@
         });
     }
 
-    // Funciones visuales para SUSPENDER
     function openSuspendModal(id) {
         idParaSuspender = id;
         document.getElementById('suspendModal').style.display = 'flex';
@@ -1953,7 +1968,6 @@
         });
     }
 
-    // Funciones visuales para ELIMINAR DEFINITIVAMENTE LICENCIA
     function openDeleteLicenseModal(id) {
         idParaEliminarLicencia = id;
         document.getElementById('deleteLicenseModal').style.display = 'flex';
