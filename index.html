@@ -6,7 +6,7 @@
     <title>Mi Taller Web - Sistema Integral</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#1a2a3a">
     <link rel="apple-touch-icon" href="icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -59,7 +59,6 @@
         .remember-group { text-align: left; margin: 10px 0 5px 5px; display: flex; align-items: center; gap: 8px; }
         .remember-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #3498db; }
         .remember-group label { font-size: 14px; color: #475569; margin: 0; cursor: pointer; text-transform: none; font-weight: 500;}
-
         #app-content { display: none; }
 
         /* PANTALLA DE CARGA (SPINNER) */
@@ -136,6 +135,7 @@
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
+        /* ESTILOS NUEVOS PARA EL AUTOCOMPLETADO */
         .autocomplete-list {
             display: none; position: absolute; z-index: 9999;
             background: white; border: 1px solid #cbd5e0; border-radius: 8px;
@@ -207,7 +207,7 @@
         <h2>Mi Taller Web</h2>
         <p>Inicia sesión para continuar</p>
         
-        <input type="text" id="userIn" placeholder="Usuario" autocomplete="off">
+        <input type="text" id="userIn" placeholder="Usuario">
         
         <div style="position: relative; width: 100%; margin: 8px 0;">
             <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 45px;">
@@ -558,13 +558,28 @@
 
     function forzarSalida() { logout(); }
 
-    function iniciarSeguridad() {
+    async     function iniciarSeguridad() {
         mostrarLoader("Verificando seguridad...");
         
         const urlParams = new URLSearchParams(window.location.search);
         const esVistaCliente = urlParams.get('id') && urlParams.get('u');
 
+        // 1. Ponemos un cronómetro de seguridad de 4 segundos
+        // Si Firebase no responde en este tiempo, quitamos el loader para no trabar la pantalla
+        const timerSeguridad = setTimeout(() => {
+            if (!appIniciada) {
+                console.warn("Firebase tardó demasiado. Desbloqueando pantalla...");
+                ocultarLoader();
+                if (!esVistaCliente && document.getElementById('app-content').style.display !== 'block') {
+                    document.getElementById('login-overlay').style.display = 'flex';
+                }
+            }
+        }, 4000); 
+
         firebase.auth().onAuthStateChanged(async (user) => {
+            // Si Firebase responde, cancelamos el cronómetro de arriba
+            clearTimeout(timerSeguridad);
+
             if (user) {
                 if (user.isAnonymous || esVistaCliente) {
                     checkStoredSession(); 
@@ -574,7 +589,9 @@
                     let isAdmin = (emailPrefix.toLowerCase() === 'admin');
                     grantAccess(isAdmin ? 'Admin' : emailPrefix, isAdmin, true);
                 }
+                ocultarLoader();
             } else {
+                ocultarLoader();
                 if (esVistaCliente) {
                     try { 
                         await firebase.auth().signInAnonymously(); 
@@ -583,20 +600,10 @@
                         checkStoredSession(); 
                     }
                 } else {
-                    ocultarLoader();
                     checkStoredSession(); 
                 }
             }
         });
-
-        setTimeout(() => {
-            if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
-                ocultarLoader();
-                if (!esVistaCliente) {
-                    document.getElementById('login-overlay').style.display = 'flex';
-                }
-            }
-        }, 5000);
     }
 
     function getRegistro(id) {
@@ -637,12 +644,11 @@
             const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
             const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
 
-            db.ref(pathActivo).child(clienteId).once('value')
-            .then(snapActivo => {
+            db.ref(pathActivo).child(clienteId).once('value', snapActivo => {
                 if (snapActivo.exists()) { 
                     renderVistaCliente({id: clienteId, ...snapActivo.val()}, container); 
                 } else {
-                    return db.ref(pathArchivado).child(clienteId).once('value').then(snapArchivo => {
+                    db.ref(pathArchivado).child(clienteId).once('value', snapArchivo => {
                         if (snapArchivo.exists()) { 
                             renderVistaCliente({id: clienteId, ...snapArchivo.val()}, container); 
                         } else {
@@ -650,15 +656,6 @@
                         }
                     });
                 }
-            })
-            .catch(error => {
-                console.error("Permiso denegado por Firebase:", error);
-                container.innerHTML = `
-                    <div style="background: #1e293b; padding: 30px; border-radius: 15px; text-align: center; color: white; width: 85%; max-width: 350px; margin: auto; border: 1px solid #e53e3e;">
-                        <h2 style="color: #e53e3e; margin-top:0;">Acceso Restringido</h2>
-                        <p style="color: #94a3b8; font-size: 14px;">El sistema de seguridad bloqueó la lectura del ticket.</p>
-                        <p style="font-size: 11px; color: #475569;">(${error.message})</p>
-                    </div>`;
             });
             return; 
         }
@@ -675,52 +672,44 @@
                     <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
                     <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
                 </div>`;
-            return;
+        } else {
+            const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+            
+            db.ref(pathPerfil).once('value', snap => {
+                const conf = snap.val() || {};
+                const nombreTaller = conf.nombreTaller || "";
+                const subtitulo = conf.subtitulo || "";
+                const logoHtml = conf.logo ? `<img src="${conf.logo}" style="max-height: 60px; max-width: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px;">` : '';
+
+                let colorEstado = '#f1c40f'; 
+                if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
+                if (regEncontrado.estado === 'No reparado') colorEstado = '#e53e3e';
+                if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
+
+                registros = [regEncontrado]; 
+
+                container.innerHTML = `
+                    <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                        ${logoHtml}
+                        <h1 style="font-size: 22px; margin-bottom: 5px; margin-top:0; color: #3498db;">${nombreTaller}</h1>
+                        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
+                        
+                        <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
+                        <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
+                        
+                        <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
+                            <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
+                            <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
+                        </div>
+
+                        <div style="margin-top:20px;">
+                            <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
+                        </div>
+
+                        <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
+                    </div>`;
+            });
         }
-
-        const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        
-        db.ref(pathPerfil).once('value')
-        .then(snap => {
-            generarHTMLCliente(regEncontrado, container, snap.val() || {});
-        })
-        .catch(err => {
-            generarHTMLCliente(regEncontrado, container, { nombreTaller: "Servicio Técnico" });
-        });
-    }
-
-    function generarHTMLCliente(regEncontrado, container, conf) {
-        const nombreTaller = conf.nombreTaller || "Servicio Técnico";
-        const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
-        const logoHtml = conf.logo ? `<img src="${conf.logo}" style="max-height: 60px; max-width: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px;">` : '';
-
-        let colorEstado = '#f1c40f'; 
-        if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
-        if (regEncontrado.estado === 'No reparado') colorEstado = '#e53e3e';
-        if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
-
-        registros = [regEncontrado]; 
-
-        container.innerHTML = `
-            <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
-                ${logoHtml}
-                <h1 style="font-size: 22px; margin-bottom: 5px; margin-top:0; color: #3498db;">${nombreTaller}</h1>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
-                
-                <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
-                <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
-                
-                <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
-                    <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
-                    <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
-                </div>
-
-                <div style="margin-top:20px;">
-                    <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
-                </div>
-
-                <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
-            </div>`;
     }
 
     function descargarPDFCliente() {
@@ -1938,6 +1927,7 @@
         });
     }
 
+    // Funciones visuales para SUSPENDER
     function openSuspendModal(id) {
         idParaSuspender = id;
         document.getElementById('suspendModal').style.display = 'flex';
@@ -1968,6 +1958,7 @@
         });
     }
 
+    // Funciones visuales para ELIMINAR DEFINITIVAMENTE LICENCIA
     function openDeleteLicenseModal(id) {
         idParaEliminarLicencia = id;
         document.getElementById('deleteLicenseModal').style.display = 'flex';
