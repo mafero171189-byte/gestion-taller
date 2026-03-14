@@ -595,9 +595,9 @@
         });
 
         setTimeout(() => {
-            if (document.getElementById('global-loader').style.display !== 'none') {
+            if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
                 ocultarLoader();
-                if (!esVistaCliente && !currentUser) {
+                if (!esVistaCliente) {
                     document.getElementById('login-overlay').style.display = 'flex';
                 }
             }
@@ -657,12 +657,13 @@
                 }
             })
             .catch(error => {
-                console.error("Permiso denegado por Firebase:", error);
+                console.error("Permiso denegado por Firebase o ticket inexistente:", error);
                 container.innerHTML = `
-                    <div style="background: #1e293b; padding: 30px; border-radius: 15px; text-align: center; color: white; width: 85%; max-width: 350px; margin: auto; border: 1px solid #e53e3e;">
-                        <h2 style="color: #e53e3e; margin-top:0;">Acceso Restringido</h2>
-                        <p style="color: #94a3b8; font-size: 14px;">El sistema de seguridad bloqueó la lectura del ticket.</p>
-                        <p style="font-size: 11px; color: #475569;">(${error.message})</p>
+                    <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                        <div style="font-size: 45px; margin-bottom: 10px;">🔍</div>
+                        <h2 style="color: #f1c40f; margin-top:0; margin-bottom: 15px;">Orden no disponible</h2>
+                        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">El ticket que intentas buscar no existe, el enlace ha expirado o el equipo ya fue entregado.</p>
+                        <p style="font-size: 12px; color: #475569; margin-top: 25px;">Por favor, comunícate con el taller para más información.</p>
                     </div>`;
             });
             return; 
