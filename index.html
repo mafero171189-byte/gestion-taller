@@ -589,10 +589,11 @@
             }
         });
 
+        // PARCHE 3 APLICADO: Ahora no se queda colgado si appIniciada es true pero la info no cargó
         setTimeout(() => {
-            if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
+            if (document.getElementById('global-loader').style.display !== 'none') {
                 ocultarLoader();
-                if (!esVistaCliente) {
+                if (!esVistaCliente && !currentUser) {
                     document.getElementById('login-overlay').style.display = 'flex';
                 }
             }
@@ -900,13 +901,26 @@
 
         if (isStored) mostrarLoader("Cargando sistema...");
 
+        // PARCHE 2 APLICADO: Try/Catch y atajador de errores de Firebase
         dbRef.on('value', snap => {
-            const v = snap.val(); 
-            registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-            renderTable(); 
-            actualizarListasAutocompletado();
-            ocultarLoader();
+            try {
+                const v = snap.val(); 
+                registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                renderTable(); 
+                actualizarListasAutocompletado();
+            } catch (error) {
+                console.error("Error al procesar la información:", error);
+                showToast("Error interno al cargar la tabla", "#e53e3e");
+            } finally {
+                // El finally asegura que el loader se apague SÍ o SÍ, aunque haya errores arriba
+                ocultarLoader();
+            }
             setTimeout(verificarAutoArchivo, 2000);
+        }, errorDeFirebase => {
+            // Esto ataja si Firebase te patea la conexión
+            console.error("Fallo de Firebase:", errorDeFirebase);
+            ocultarLoader();
+            showToast("Problema de conexión con la base de datos", "#e53e3e");
         });
         
         if(isAdmin) {
@@ -1270,12 +1284,13 @@
             const saldo = r.precio - r.sena;
             const nroLimpio = String(r.orden).replace('MAT-', '');
             
+            // PARCHE 1 APLICADO: Valor por defecto de "Pendiente" si no existe el estado
             body.innerHTML += `<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
                 <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
                 <td><b>${r.cliente}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>${r.modelo}</td>
-                <td><span class="badge-status st-${r.estado.toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado}</span></td>
+                <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado || 'Pendiente'}</span></td>
                 <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
                     ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
                 </td>
