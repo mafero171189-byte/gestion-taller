@@ -335,7 +335,7 @@
         <div style="display:flex; justify-content: space-between; align-items: center;">
             <h2 style="margin:0;">📱 Mi Taller Web</h2>
             <div style="display:flex; align-items:center;">
-                <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión para sincronizar...</span>
+                <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión...</span>
                 <div id="status-dot" class="online"></div>
             </div>
         </div>
@@ -482,7 +482,10 @@
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
     
+    // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
+    const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
+    
     const db = firebase.database();
     let dbRef; 
     let currentUser = null;
@@ -497,7 +500,6 @@
     let logoTemporalBase64 = null; 
     let appIniciada = false;
 
-    // Variables para los modales de Licencia
     let idParaSuspender = null;
     let idParaEliminarLicencia = null;
 
@@ -523,24 +525,29 @@
         document.getElementById('expulsadoModal').style.display = 'flex';
     }
 
-    function forzarSalida() {
-        logout();
-    }
+    function forzarSalida() { logout(); }
 
     async function iniciarSeguridad() {
         mostrarLoader("Conectando de forma segura...");
+        const urlParams = new URLSearchParams(window.location.search);
         
-        try {
-            await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            await firebase.auth().signInAnonymously();
-        } catch (error) {
-            console.error("Error de seguridad:", error);
-            ocultarLoader();
+        if (urlParams.get('id') && urlParams.get('u')) {
+            try { await firebase.auth().signInAnonymously(); } catch(e){ console.error(e); }
         }
 
         firebase.auth().onAuthStateChanged(user => {
-            if (user && !appIniciada) {
-                appIniciada = true;
+            if (user) {
+                if (user.isAnonymous) {
+                    checkStoredSession();
+                } else if (!appIniciada) {
+                    appIniciada = true;
+                    ocultarLoader();
+                    let emailPrefix = user.email.split('@')[0];
+                    let isAdmin = (emailPrefix.toLowerCase() === 'admin');
+                    let u = isAdmin ? 'Admin' : emailPrefix;
+                    grantAccess(u, isAdmin, true);
+                }
+            } else {
                 ocultarLoader();
                 checkStoredSession();
             }
@@ -584,23 +591,14 @@
 
             const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
             const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
-            const ordenLimpia = clienteId.replace('MAT-', '');
 
-            db.ref(pathActivo).once('value', snapActivo => {
-                let v = snapActivo.val(); 
-                let registrosLocal = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                let regEncontrado = registrosLocal.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
-                
-                if (regEncontrado) {
-                    renderVistaCliente(regEncontrado, container);
+            db.ref(pathActivo).child(clienteId).once('value', snapActivo => {
+                if (snapActivo.exists()) { 
+                    renderVistaCliente({id: clienteId, ...snapActivo.val()}, container); 
                 } else {
-                    db.ref(pathArchivado).once('value', snapArchivo => {
-                        v = snapArchivo.val();
-                        registrosLocal = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                        regEncontrado = registrosLocal.find(r => String(r.orden).replace('MAT-', '') === ordenLimpia);
-                        
-                        if (regEncontrado) {
-                            renderVistaCliente(regEncontrado, container);
+                    db.ref(pathArchivado).child(clienteId).once('value', snapArchivo => {
+                        if (snapArchivo.exists()) { 
+                            renderVistaCliente({id: clienteId, ...snapArchivo.val()}, container); 
                         } else {
                             container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada o expirada</div>`;
                         }
@@ -610,18 +608,8 @@
             return; 
         }
 
-        const credsStr = localStorage.getItem('st_matias_creds');
-        if (credsStr) {
-            const creds = JSON.parse(credsStr);
-            document.getElementById('userIn').value = creds.u;
-            document.getElementById('passIn').value = creds.p;
-            if (document.getElementById('rememberMe')) document.getElementById('rememberMe').checked = true;
-            document.getElementById('login-overlay').style.display = 'flex';
-            checkAccess(); 
-        } else {
-            document.getElementById('login-overlay').style.display = 'flex';
-            setTimeout(() => document.getElementById('userIn').focus(), 100);
-        }
+        document.getElementById('login-overlay').style.display = 'flex';
+        setTimeout(() => document.getElementById('userIn').focus(), 100);
         loadDraft();
     }
 
@@ -787,59 +775,25 @@
     }
 
     function checkAccess() {
-        const u = document.getElementById('userIn').value.trim();
+        const u = document.getElementById('userIn').value.trim().toLowerCase();
         const p = document.getElementById('passIn').value.trim();
         const err = document.getElementById('loginError');
         const remember = document.getElementById('rememberMe') ? document.getElementById('rememberMe').checked : false;
         err.style.display = 'none';
 
-        mostrarLoader("Verificando datos...");
+        if(!u || !p) return;
+        mostrarLoader("Iniciando sesión segura...");
 
-        if(u === 'Admin') {
-            db.ref('configuracion/admin/pass').once('value', snap => {
-                let adminPass = snap.val() || "123456"; 
-                if(p === adminPass) {
-                    if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
-                    else localStorage.removeItem('st_matias_creds');
-                    grantAccess(u, true);
-                }
-                else { err.innerText = "Usuario o clave incorrecta"; err.style.display = 'block'; ocultarLoader(); }
-            });
-        } else { 
-            db.ref('usuarios_registrados/' + u).once('value', snap => {
-                const userData = snap.val();
-                
-                if(userData && p === userData.pass) {
-                    
-                    if(userData.estado === 'suspendido') {
-                        err.innerText = "Licencia suspendida temporalmente. Contacte al administrador."; 
-                        err.style.display = 'block'; 
-                        ocultarLoader(); 
-                        localStorage.removeItem('st_matias_creds'); 
-                        return;
-                    }
+        const emailFalso = (u === 'admin' ? 'admin' : u) + '@mitallerweb.com';
+        const persistencia = remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
 
-                    if(remember) localStorage.setItem('st_matias_creds', JSON.stringify({u, p}));
-                    else localStorage.removeItem('st_matias_creds');
-                    
-                    let miTokenSesion = localStorage.getItem('st_matias_token');
-                    if (!miTokenSesion) {
-                        miTokenSesion = Math.random().toString(36).substring(2) + Date.now().toString(36);
-                        localStorage.setItem('st_matias_token', miTokenSesion);
-                    }
-                    
-                    db.ref('usuarios_registrados/' + u).update({ tokenSesion: miTokenSesion }).then(() => {
-                        grantAccess(u, false);
-                    });
-                }
-                else { 
-                    err.innerText = "Usuario/clave incorrecta o licencia inexistente"; 
-                    err.style.display = 'block'; 
-                    ocultarLoader(); 
-                    localStorage.removeItem('st_matias_creds'); 
-                }
+        firebase.auth().setPersistence(persistencia)
+            .then(() => firebase.auth().signInWithEmailAndPassword(emailFalso, p))
+            .catch((error) => {
+                ocultarLoader();
+                err.innerText = "Usuario o clave incorrecta"; 
+                err.style.display = 'block'; 
             });
-        }
     }
 
     function grantAccess(u, isAdmin, isStored = false) {
@@ -901,10 +855,11 @@
     }
 
     function logout() { 
-        localStorage.removeItem('st_matias_creds'); 
-        localStorage.removeItem('st_matias_token'); 
-        sessionStorage.removeItem('st_matias_session'); 
-        window.location.href = window.location.origin + window.location.pathname; 
+        firebase.auth().signOut().then(() => {
+            localStorage.removeItem('st_matias_token'); 
+            sessionStorage.removeItem('st_matias_session');
+            window.location.href = window.location.origin + window.location.pathname; 
+        });
     }
 
     function procesarLogoUpload(input) {
@@ -985,7 +940,15 @@
 
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
-        if(newP) updates.pass = newP;
+        
+        if(newP) {
+            updates.pass = newP;
+            firebase.auth().currentUser.updatePassword(newP).then(() => {
+                showToast("CLAVE SEGURA ACTUALIZADA ✅", "#2ecc71");
+            }).catch(e => {
+                showToast("Vuelve a iniciar sesión para cambiar la clave", "#e53e3e");
+            });
+        }
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64; 
         
         mostrarLoader("Guardando Perfil...");
@@ -996,7 +959,6 @@
         });
     }
 
-    // --- AUTOCOMPLETADO CUSTOM ---
     let modelosGlobal = [];
     let fallasGlobal = [];
 
@@ -1058,7 +1020,6 @@
             if(listDiv) listDiv.style.display = 'none';
         }, 200);
     }
-    // -----------------------------
 
     let idEditando = null;
     let modoArchivo = false;
@@ -1571,9 +1532,10 @@
             const subHeader = conf.subtitulo || "";
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
+            
             const nroLimpio = String(r.orden).replace('MAT-', '');
             const baseUrl = window.location.origin + window.location.pathname;
-            const seguimientoLink = `${baseUrl}?id=${nroLimpio}&u=${currentUser}`;
+            const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
             
             let msjPlano = "";
             
@@ -1834,12 +1796,28 @@
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
         
-        db.ref('usuarios_registrados/' + wa).set({ 
-            whatsapp: wa, pass: '123', fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
-            nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null
-        }).then(() => {
-            document.getElementById('new-user-wa').value = ""; showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
-        });
+        mostrarLoader("Activando licencia...");
+        const emailFalso = wa + '@mitallerweb.com';
+        const passPorDefecto = '123456'; 
+        
+        secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, passPorDefecto)
+            .then(() => {
+                secondaryApp.auth().signOut();
+                return db.ref('usuarios_registrados/' + wa).set({ 
+                    whatsapp: wa, pass: passPorDefecto, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
+                    nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null
+                });
+            })
+            .then(() => {
+                ocultarLoader();
+                document.getElementById('new-user-wa').value = ""; 
+                showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
+            })
+            .catch((error) => {
+                ocultarLoader();
+                showToast("Error: El usuario ya existe o hubo un fallo", "#e53e3e");
+                console.error(error);
+            });
     }
 
     function listarUsuarios() {
