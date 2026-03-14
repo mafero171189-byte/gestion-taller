@@ -528,30 +528,55 @@
     function forzarSalida() { logout(); }
 
     async function iniciarSeguridad() {
+        // 1. Mostrar carga inicial
         mostrarLoader("Conectando de forma segura...");
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        if (urlParams.get('id') && urlParams.get('u')) {
-            try { await firebase.auth().signInAnonymously(); } catch(e){ console.error(e); }
-        }
 
-        firebase.auth().onAuthStateChanged(user => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const esVistaCliente = urlParams.get('id') && urlParams.get('u');
+
+        // 2. Escuchar cambios de autenticación de Firebase
+        firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                if (user.isAnonymous) {
+                // Si es un cliente con link anónimo o un técnico logueado
+                if (user.isAnonymous || esVistaCliente) {
                     checkStoredSession();
                 } else if (!appIniciada) {
                     appIniciada = true;
-                    ocultarLoader();
                     let emailPrefix = user.email.split('@')[0];
                     let isAdmin = (emailPrefix.toLowerCase() === 'admin');
                     let u = isAdmin ? 'Admin' : emailPrefix;
                     grantAccess(u, isAdmin, true);
                 }
-            } else {
                 ocultarLoader();
-                checkStoredSession();
+            } else {
+                // Si no hay usuario, pero es un cliente, intentar login anónimo
+                if (esVistaCliente) {
+                    try {
+                        await firebase.auth().signInAnonymously();
+                    } catch(e) {
+                        console.error("Error anon:", e);
+                        ocultarLoader();
+                        checkStoredSession();
+                    }
+                } else {
+                    // Si no es cliente y no hay usuario, mostrar login
+                    ocultarLoader();
+                    checkStoredSession();
+                }
             }
         });
+
+        // 3. Timeout de seguridad: Si en 8 segundos no conectó, forzar revisión
+        setTimeout(() => {
+            if (document.getElementById('global-loader').style.display !== 'none') {
+                console.warn("La conexión segura está tardando demasiado...");
+                ocultarLoader();
+                // Si no cargó nada, mostramos el login por las dudas
+                if (!appIniciada && !esVistaCliente) {
+                    document.getElementById('login-overlay').style.display = 'flex';
+                }
+            }
+        }, 8000);
     }
 
     function getRegistro(id) {
