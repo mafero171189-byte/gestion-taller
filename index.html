@@ -134,7 +134,7 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
         .full { grid-column: 1 / -1; }
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
         .autocomplete-list {
             display: none; position: absolute; z-index: 9999;
@@ -150,7 +150,6 @@
         .autocomplete-list div:active, .autocomplete-list div:hover { background: #f8fafc; color: var(--secondary); font-weight: bold; }
 
         .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
-        .badge-disabled { cursor: not-allowed !important; opacity: 0.9; }
         .st-pendiente { background: #fff9c4; color: #856404; }
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
         .st-no-reparado { background: #fed7d7; color: #9b2c2c; }
@@ -171,10 +170,6 @@
         .modo-archivo-activo { background: #f1f5f9 !important; }
         .btn-active-filter { border: 2px solid #3498db !important; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
 
-        .card-stats { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
-        .card-stats b { font-size: 12px; color: #64748b; text-transform: uppercase; }
-        .card-stats p { font-size: 24px; font-weight: bold; margin: 10px 0 0 0; }
-
         .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
 
@@ -192,6 +187,29 @@
         .btn-whatsapp-alerta.activo { background-color: #25D366; color: white; }
         .btn-whatsapp-alerta.notificado { background-color: #94a3b8; color: white; }
 
+        /* --- ESTILOS PARA LA CONTABILIDAD MEJORADA --- */
+        .card-stats { 
+            background: white; padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; 
+            position: relative; overflow: hidden; border: 1px solid #f1f5f9;
+            transition: transform 0.2s;
+        }
+        .card-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px;}
+        .card-stats p { font-size: 30px; font-weight: 800; margin: 0; }
+        .stat-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.1; }
+        
+        .caja-success { border-bottom: 5px solid var(--success); }
+        .caja-warning { border-bottom: 5px solid var(--warning); }
+        .caja-danger { border-bottom: 5px solid var(--danger); }
+        .caja-primary { border-bottom: 5px solid var(--primary); }
+
+        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .bm-efectivo { background: #dcfce7; color: #166534; }
+        .bm-transferencia { background: #dbeafe; color: #1e40af; }
+        .bm-tarjeta { background: #fef08a; color: #854d0e; }
+        .tabla-contabilidad-row { background: white; transition: 0.2s; }
+        .tabla-contabilidad-row:hover { background: #f8fafc; }
     </style>
 </head>
 
@@ -237,6 +255,61 @@
 <div id="app-content">
     <div id="toast-alert"></div>
 
+    <div id="modalUsoStock" class="modal-overlay" style="z-index: 4500;">
+        <div class="modal-box" style="overflow: visible; width: 340px;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
+            <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;">¡Equipo Reparado!</p>
+            <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">¿Usaste repuestos del stock? Buscalos y agregalos a la lista:</p>
+            
+            <div style="position: relative; text-align: left;">
+                <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" oninput="filtrarStockModal()" onfocus="filtrarStockModal()" onblur="hideAutocomplete('repuestoModalUsado')" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; box-sizing: border-box; font-size:14px;">
+                <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
+            </div>
+            
+            <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+                </div>
+            
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="procesarReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ / AVISAR</button>
+                <button onclick="procesarReparado(true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR Y AVISAR</button>
+            </div>
+            <button onclick="cerrarModalStock()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
+        </div>
+    </div>
+    <div id="modalNoReparado" class="modal-overlay" style="z-index: 4600;">
+        <div class="modal-box">
+            <div style="font-size: 40px; margin-bottom: 10px;">❌</div>
+            <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">Equipo No Reparado</p>
+            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">¿Querés avisarle al cliente por WhatsApp que no se pudo reparar?</p>
+            
+            <div style="display:flex; gap:10px;">
+                <button onclick="procesarNoReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 11px;">SOLO CAMBIAR</button>
+                <button onclick="procesarNoReparado(true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">AVISAR POR WHATSAPP</button>
+            </div>
+            <button onclick="cerrarModalNoReparado()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
+        </div>
+    </div>
+    <div id="modalCobroEntregado" class="modal-overlay" style="z-index: 4700;">
+        <div class="modal-box">
+            <div style="font-size: 40px; margin-bottom: 10px;">💳</div>
+            <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;">Cobrar Saldo Pendiente</p>
+            <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
+            
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="font-size: 12px; font-weight: bold; color: #64748b;">¿Cómo pagó este saldo?</label>
+                <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;">
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Transferencia">📲 Transferencia</option>
+                    <option value="Tarjeta">💳 Tarjeta</option>
+                </select>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('modalCobroEntregado').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="procesarCobroEntregado()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">COBRAR Y ENTREGAR</button>
+            </div>
+        </div>
+    </div>
     <div id="olvidadosModal" class="modal-overlay">
         <div class="modal-box" style="width: 90%; max-width: 600px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 15px;">
@@ -263,7 +336,6 @@
         <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
             <p><b>👤 Mi Perfil - Configuración</b></p>
             <div style="text-align:left; margin-top:10px;">
-                
                 <label>Logo del Local</label>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e0;">
                     <img id="logoPreview" src="" style="width:50px; height:50px; object-fit:contain; border:1px solid #e2e8f0; display:none; border-radius:5px; background:white;">
@@ -271,7 +343,6 @@
                     <button id="btnCargarLogo" onclick="document.getElementById('logoUpload').click()" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:12px; cursor:pointer; flex:1; font-weight:bold;">📷 CARGAR LOGO</button>
                     <button onclick="borrarLogoUpload()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold;">X</button>
                 </div>
-
                 <label>Nombre del Taller</label>
                 <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller" style="margin-bottom:10px;">
                 <label>Descripción/Subtítulo</label>
@@ -309,10 +380,10 @@
     </div>
 
     <div id="historyModal" class="modal-overlay">
-        <div class="modal-box" style="width:280px;">
-            <p><b>🕒 Historial de la Orden</b></p>
-            <div id="historyContent" style="margin:20px 0; max-height: 300px; overflow-y: auto;"></div>
-            <button onclick="closeHistory()" class="btn-main" style="padding:8px; font-size:12px;">CERRAR</button>
+        <div class="modal-box" style="width:300px;">
+            <p style="font-size:18px;"><b>🕒 Historial de la Orden</b></p>
+            <div id="historyContent" style="margin:15px 0; max-height: 350px; overflow-y: auto;"></div>
+            <button onclick="closeHistory()" class="btn-main" style="padding:10px; font-size:13px; font-weight:bold;">CERRAR</button>
         </div>
     </div>
 
@@ -389,6 +460,7 @@
     <nav>
         <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
         <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
+        <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
         <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
         <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: #f1c40f;">👤 MI PERFIL</button>
         <button onclick="logout()" style="color: #ff7675; margin-left: auto; font-size: 12px; font-weight: bold;">✖ SALIR</button>
@@ -427,19 +499,30 @@
                             <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
                         </div>
                     </div>
+
                     <div class="full" style="display: flex; align-items: flex-end; gap: 10px;">
                         <div style="padding-bottom: 5px;">
                             <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
                         </div>
                         <div id="costo-inner" style="display:none;">
-                            <label>Costo</label>
+                            <label>Costo Reparación $</label>
                             <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
                         </div>
                     </div>
+
+                    <div>
+                        <label>Método de Pago (Seña)</label>
+                        <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()">
+                            <option value="No pagó">❌ No pagó aún</option>
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Transferencia">📲 Transferencia</option>
+                            <option value="Tarjeta">💳 Tarjeta</option>
+                        </select>
+                    </div>
                     
                     <div class="full" style="position: relative;">
-                        <label>Falla Reportada</label>
-                        <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Escribe o selecciona...">
+                        <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#3498db;">(Agregá " + " para sumar varias fallas)</span></label>
+                        <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
                         <div id="autocomplete-falla" class="autocomplete-list"></div>
                     </div>
                     
@@ -474,7 +557,7 @@
             <div class="table-wrapper" style="overflow-x:auto;">
                 <table id="mainTable">
                     <thead>
-                        <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
+                        <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo / Falla</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
@@ -486,14 +569,47 @@
         </div>
 
         <div id="page-contabilidad" class="page" style="display:none;">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0;">💰 Contabilidad</h2>
-                <div style="display:flex; gap:10px;">
-                    <select id="selectMes" onchange="cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0;"></select>
-                    <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px;" onclick="exportarExcel()">📊 EXCEL</button>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+                <h2 style="margin:0; color:#1e293b; font-size:24px;">💰 Resumen Financiero</h2>
+                <div style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <label style="margin:0; font-size:13px; font-weight:bold; color:#64748b;">Mes:</label>
+                    <select id="selectMes" onchange="limpiarFiltroDia(); cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0; outline:none; font-weight:bold; color:#1e293b;"></select>
+                    
+                    <label style="margin:0; font-size:13px; margin-left:10px; font-weight:bold; color:#64748b;">Día Específico:</label>
+                    <input type="date" id="inputDia" onchange="cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0; outline:none; font-weight:bold; color:#1e293b;">
+                    
+                    <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px; margin-left: 5px; box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);" onclick="exportarExcel()">📊 DESCARGAR EXCEL</button>
                 </div>
             </div>
-            <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px;"></div>
+            
+            <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;"></div>
+            <div id="contabilidad-diaria"></div>
+        </div>
+
+        <div id="page-stock" class="page" style="display:none;">
+            <h2 style="margin-top:0;">📦 Control de Stock</h2>
+            
+            <div style="margin-bottom: 15px; margin-top: 10px;">
+                <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box; font-size:15px;">
+            </div>
+
+            <div class="form-grid">
+                <input type="hidden" id="stockId">
+                <div><label>Artículo/Repuesto</label><input type="text" id="stockNombre" placeholder="Ej: Módulo Samsung A10" required></div>
+                <div><label>Cantidad (Und)</label><input type="number" id="stockCantidad" placeholder="0" min="0" required></div>
+                <div><label>Costo Unitario $</label><input type="text" id="stockCosto" placeholder="0" oninput="formatInput(this)"></div>
+                <div><label>Precio Venta $</label><input type="text" id="stockPrecio" placeholder="0" oninput="formatInput(this)"></div>
+                <div class="full" style="display: flex; gap:10px;">
+                    <button type="button" class="btn btn-main" onclick="guardarStock()">GUARDAR ARTÍCULO</button>
+                    <button type="button" class="btn" onclick="limpiarStock()" style="background:#94a3b8; color:white;">LIMPIAR</button>
+                </div>
+            </div>
+            <div class="table-wrapper" style="overflow-x:auto;">
+                <table style="width: 100%; min-width:600px;">
+                    <thead><tr><th>Artículo</th><th>Stock Actual</th><th>Costo</th><th>Precio Venta</th><th>Acciones</th></tr></thead>
+                    <tbody id="bodyStock"></tbody>
+                </table>
+            </div>
         </div>
 
         <div id="page-usuarios" class="page" style="display:none;">
@@ -558,6 +674,7 @@
 
     let registros = [];
     let registrosArchivados = [];
+    let stockData = []; 
     let historialDescargado = false; 
 
     let limiteTabla = 50;
@@ -567,7 +684,8 @@
     let idParaSuspender = null;
     let idParaEliminarLicencia = null;
 
-    let listaOlvidados = []; // Variable global para la alerta amarilla
+    let listaOlvidados = []; 
+    let repuestosSeleccionadosModal = []; 
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
@@ -576,7 +694,6 @@
         return texto.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // --- LOGICA DE ALERTA AMARILLA (+15 DIAS REPARADOS) ---
     function parseFechaAR(fechaStr) {
         if (!fechaStr) return new Date();
         let partes = fechaStr.split(',');
@@ -588,7 +705,7 @@
     function calcularOlvidados() {
         if (isClientMode) return;
         const HOY = new Date();
-        const LIMITE_DIAS = 15; // NOTA: Cambiá este 15 por 0 si querés probarlo ahora mismo
+        const LIMITE_DIAS = 15; 
         listaOlvidados = [];
 
         registros.forEach(r => {
@@ -611,7 +728,6 @@
             }
         });
 
-        // Ordena: Primero los No Notificados (los más recientes primero). Al fondo los Notificados.
         listaOlvidados.sort((a, b) => {
             if (a.recordatorioEnviado === b.recordatorioEnviado) {
                 return a.diasListo - b.diasListo;
@@ -632,7 +748,6 @@
         const tbody = document.getElementById('olvidadosBody');
         tbody.innerHTML = '';
         listaOlvidados.forEach(r => {
-            
             let botonAccion = r.recordatorioEnviado 
                 ? `<button class="btn-whatsapp-alerta notificado" onclick="enviarWhatsAppOlvidado('${r.id}')">✅ Notificado</button>`
                 : `<button class="btn-whatsapp-alerta activo" onclick="enviarWhatsAppOlvidado('${r.id}')">💬 Avisar</button>`;
@@ -682,8 +797,6 @@
             });
         });
     }
-    // --- FIN LOGICA ALERTA AMARILLA ---
-
 
     function mostrarLoader(msg = "Cargando...") {
         document.getElementById('loader-text').innerText = msg;
@@ -701,6 +814,8 @@
         document.getElementById('photoModal').style.display = 'none';
         document.getElementById('priceModal').style.display = 'none';
         document.getElementById('olvidadosModal').style.display = 'none';
+        document.getElementById('modalCobroEntregado').style.display = 'none';
+        document.getElementById('modalNoReparado').style.display = 'none';
         
         document.getElementById('expulsionMensaje').innerText = msg;
         document.getElementById('expulsadoModal').style.display = 'flex';
@@ -802,7 +917,6 @@
                 }
             })
             .catch(error => {
-                console.error("Permiso denegado por Firebase o ticket inexistente:", error);
                 container.innerHTML = `
                     <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
                         <div style="font-size: 45px; margin-bottom: 10px;">🔍</div>
@@ -877,115 +991,98 @@
     function descargarPDFCliente() {
         const r = registros[0]; 
         if(!r) return;
-        
         const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
-            const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "";
-            const subHeader = conf.subtitulo || "";
-            const wappHeader = conf.wappTicket || "";
-            const textGarantia = conf.garantia || "";
-            const nroLimpio = String(r.orden).replace('MAT-', '');
-            
-            const { jsPDF } = window.jspdf;
-            const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
-            
-            docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
-            const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
-            const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
-            const linesFalla = docDummy.splitTextToSize(String(r.falla), 40);
-            const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
-            const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
-
-            docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
-            
-            const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-            const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
-            
-            let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
-            
-            let txtX = 40;
-            let alignStr = 'center';
-            let nameSize = 18; 
-            let maxTextWidth = 70;
-
-            if (conf.logo) {
-                txtX = 28;
-                alignStr = 'left';
-                nameSize = 16;
-                maxTextWidth = 47; 
-            }
-
-            docDummy.setFont("helvetica", "bold"); docDummy.setFontSize(nameSize);
-            const lineasNombreTaller = docDummy.splitTextToSize(nombreHeader, maxTextWidth);
-            
-            docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
-            const lineasSubtitulo = docDummy.splitTextToSize(subHeader, maxTextWidth);
-
-            let altoHeader = 10 + (lineasNombreTaller.length * 6) + (lineasSubtitulo.length * 4);
-            if (wappHeader) altoHeader += 6;
-            if (conf.logo && altoHeader < 30) altoHeader = 30;
-            
-            const altoDinamico = altoHeader + 125 + (lineasGarantia.length * 4) + (extraLines * 5); 
-            
-            const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
-            
-            doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoHeader, 'F');
-            
-            if (conf.logo) {
-                try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } 
-                catch(e) { console.log("Error al imprimir logo", e); }
-            }
-
-            doc.setTextColor(255, 255, 255); 
-            let headY = 12;
-            
-            doc.setFont("helvetica", "bold"); doc.setFontSize(nameSize); 
-            doc.text(lineasNombreTaller, txtX, headY, {align: alignStr});
-            headY += (lineasNombreTaller.length * 6);
-            
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10); 
-            doc.text(lineasSubtitulo, txtX, headY, {align: alignStr});
-            headY += (lineasSubtitulo.length * 4.5);
-            
-            if(wappHeader) doc.text("WhatsApp: " + wappHeader, txtX, headY, {align: alignStr});
-            
-            let subY = altoHeader + 8;
-            
-            doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, subY, {align:'center'});
-            doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, subY + 8, {align:'center'});
-            doc.setDrawColor(150, 150, 150); doc.line(10, subY + 12, 70, subY + 12);
-            
-            doc.setFontSize(10); let y = subY + 22; 
-            const col1 = 12, col2 = 35;
-            
-            const printRow = (l, linesArray) => { 
-                doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
-                doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); 
-                y += (linesArray.length * 5) + 2; 
-            };
-            
-            printRow("FECHA:", [r.fecha ? r.fecha.split(',')[0] : ""]); 
-            printRow("CLIENTE:", linesCliente); 
-            printRow("EQUIPO:", linesEquipo);
-            printRow("IMEI/SERIE:", linesImei); 
-            printRow("FALLA:", linesFalla); 
-            printRow("OBS:", linesObs);
-            
-            y += 3; doc.line(10, y, 70, y); y += 10;
-            
-            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-            doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-            doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-            
-            doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-            doc.text(lineasGarantia, 40, y + 20, {align:'center'});
-            
-            doc.save(`Ticket_${nroLimpio}.pdf`);
-            ocultarLoader();
+            generarEImprimirPDF(r, snap.val() || {});
         });
+    }
+
+    function imprimir(id) {
+        const r = getRegistro(id); 
+        if(!r) return;
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        
+        mostrarLoader("Generando PDF...");
+        db.ref(path).once('value', snap => {
+            generarEImprimirPDF(r, snap.val() || {});
+        });
+    }
+
+    function generarEImprimirPDF(r, conf) {
+        const nombreHeader = conf.nombreTaller || "";
+        const subHeader = conf.subtitulo || "";
+        const wappHeader = conf.wappTicket || "";
+        const textGarantia = conf.garantia || "";
+        const nroLimpio = String(r.orden).replace('MAT-', '');
+        
+        const { jsPDF } = window.jspdf;
+        const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
+        
+        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
+        const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
+        const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
+        const linesFalla = docDummy.splitTextToSize(String(r.falla), 40);
+        const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
+        const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
+
+        docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
+        const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+        const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
+        
+        let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
+        
+        let txtX = 40, alignStr = 'center', nameSize = 18, maxTextWidth = 70;
+        if (conf.logo) { txtX = 28; alignStr = 'left'; nameSize = 16; maxTextWidth = 47; }
+
+        docDummy.setFont("helvetica", "bold"); docDummy.setFontSize(nameSize);
+        const lineasNombreTaller = docDummy.splitTextToSize(nombreHeader, maxTextWidth);
+        
+        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
+        const lineasSubtitulo = docDummy.splitTextToSize(subHeader, maxTextWidth);
+
+        let altoHeader = 10 + (lineasNombreTaller.length * 6) + (lineasSubtitulo.length * 4);
+        if (wappHeader) altoHeader += 6;
+        if (conf.logo && altoHeader < 30) altoHeader = 30;
+        
+        const altoDinamico = altoHeader + 125 + (lineasGarantia.length * 4) + (extraLines * 5); 
+        
+        const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
+        
+        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoHeader, 'F');
+        if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } catch(e) {} }
+
+        doc.setTextColor(255, 255, 255); let headY = 12;
+        doc.setFont("helvetica", "bold"); doc.setFontSize(nameSize); doc.text(lineasNombreTaller, txtX, headY, {align: alignStr}); headY += (lineasNombreTaller.length * 6);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(lineasSubtitulo, txtX, headY, {align: alignStr}); headY += (lineasSubtitulo.length * 4.5);
+        if(wappHeader) doc.text("WhatsApp: " + wappHeader, txtX, headY, {align: alignStr});
+        
+        let subY = altoHeader + 8;
+        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, subY, {align:'center'});
+        doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, subY + 8, {align:'center'});
+        doc.setDrawColor(150, 150, 150); doc.line(10, subY + 12, 70, subY + 12);
+        
+        doc.setFontSize(10); let y = subY + 22; const col1 = 12, col2 = 35;
+        const printRow = (l, linesArray) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); y += (linesArray.length * 5) + 2; };
+        
+        printRow("FECHA:", [r.fecha ? r.fecha.split(',')[0] : ""]); 
+        printRow("CLIENTE:", linesCliente); 
+        printRow("EQUIPO:", linesEquipo);
+        printRow("IMEI/SERIE:", linesImei); 
+        printRow("FALLA:", linesFalla); 
+        printRow("OBS:", linesObs);
+        
+        y += 3; doc.line(10, y, 70, y); y += 10;
+        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+        
+        doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+        doc.text(lineasGarantia, 40, y + 20, {align:'center'});
+        
+        doc.save(`Ticket_${nroLimpio}.pdf`);
+        ocultarLoader();
     }
 
     function checkAccess() {
@@ -1067,16 +1164,21 @@
                 renderTable(); 
                 actualizarListasAutocompletado();
             } catch (error) {
-                console.error("Error al procesar la información:", error);
                 showToast("Error interno al cargar la tabla", "#e53e3e");
             } finally {
                 ocultarLoader();
             }
             setTimeout(verificarAutoArchivo, 2000);
         }, errorDeFirebase => {
-            console.error("Fallo de Firebase:", errorDeFirebase);
             ocultarLoader();
             showToast("Problema de conexión con la base de datos", "#e53e3e");
+        });
+
+        const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
+        db.ref(pathStock).on('value', snap => {
+            const v = snap.val();
+            stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+            if(document.getElementById('page-stock').style.display === 'block') renderStock();
         });
         
         if(isAdmin) {
@@ -1098,7 +1200,6 @@
     function procesarLogoUpload(input) {
         if (input.files && input.files[0]) {
             const btn = document.getElementById('btnCargarLogo');
-            const originalText = btn.innerText;
             btn.innerText = "⏳ SUBIENDO...";
             btn.disabled = true;
 
@@ -1123,11 +1224,6 @@
 
                     btn.innerText = "📷 CARGAR LOGO";
                     btn.disabled = false;
-                };
-                img.onerror = () => {
-                    btn.innerText = "📷 CARGAR LOGO";
-                    btn.disabled = false;
-                    showToast("Error al procesar imagen", "#e53e3e");
                 };
             };
         }
@@ -1204,7 +1300,10 @@
         
         todasLasOrdenes.forEach(r => {
             if(r.modelo && r.modelo.trim() !== "") modelos.add(r.modelo.trim());
-            if(r.falla && r.falla.trim() !== "") fallas.add(r.falla.trim());
+            if(r.falla && r.falla.trim() !== "") {
+                let partesFalla = r.falla.split('+');
+                partesFalla.forEach(p => fallas.add(p.trim()));
+            }
         });
         
         modelosGlobal = Array.from(modelos).sort();
@@ -1213,17 +1312,20 @@
 
     function showAutocomplete(campo) {
         const input = document.getElementById(campo);
-        const val = input.value.toLowerCase();
+        let val = input.value.toLowerCase();
+        
+        if (campo === 'falla') {
+            let partes = val.split('+');
+            val = partes[partes.length - 1].trim(); 
+        }
+
         const listDiv = document.getElementById('autocomplete-' + campo);
         listDiv.innerHTML = '';
         
         const arr = campo === 'modelo' ? modelosGlobal : fallasGlobal;
         const filtrados = arr.filter(item => item.toLowerCase().includes(val));
         
-        if (filtrados.length === 0) {
-            listDiv.style.display = 'none';
-            return;
-        }
+        if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
@@ -1235,8 +1337,18 @@
                 div.innerText = item;
             }
             
-            div.onclick = function(e) {
-                input.value = item;
+            div.onmousedown = function(e) {
+                if (campo === 'falla') {
+                    let partes = input.value.split('+');
+                    partes.pop(); 
+                    if(partes.length > 0) {
+                        input.value = partes.join('+') + ' + ' + item + ' + ';
+                    } else {
+                        input.value = item + ' + ';
+                    }
+                } else {
+                    input.value = item;
+                }
                 listDiv.style.display = 'none';
                 saveDraft();
             };
@@ -1251,6 +1363,165 @@
             const listDiv = document.getElementById('autocomplete-' + campo);
             if(listDiv) listDiv.style.display = 'none';
         }, 200);
+    }
+
+    function cerrarModalStock() {
+        document.getElementById('modalUsoStock').style.display = 'none';
+    }
+
+    function filtrarStockModal() {
+        if(isClientMode) return;
+        const input = document.getElementById('repuestoModalUsado');
+        const val = input.value.toLowerCase();
+        const listDiv = document.getElementById('autocomplete-repuestoModalUsado');
+        listDiv.innerHTML = '';
+        
+        const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(val) && item.cantidad > 0);
+        
+        if (filtrados.length === 0) {
+            listDiv.style.display = 'none';
+            return;
+        }
+        
+        filtrados.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `<b>${item.nombre}</b> <span style="color:#2ecc71; float:right; font-weight:bold;">Disp: ${item.cantidad}</span>`;
+            
+            div.onmousedown = function(e) { 
+                let existe = repuestosSeleccionadosModal.find(r => r.id === item.id);
+                if(existe) {
+                    if(existe.cant < item.cantidad) existe.cant++;
+                    else showToast("No hay más stock disponible", "#f1c40f");
+                } else {
+                    repuestosSeleccionadosModal.push({ id: item.id, nombre: item.nombre, cant: 1, max: item.cantidad });
+                }
+                
+                input.value = ""; 
+                listDiv.style.display = 'none';
+                renderRepuestosModal();
+            };
+            listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+    }
+
+    function renderRepuestosModal() {
+        const container = document.getElementById('listaRepuestosModal');
+        container.innerHTML = "";
+        repuestosSeleccionadosModal.forEach((r, idx) => {
+            container.innerHTML += `
+                <div style="display:flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px;">
+                    <span style="font-weight:bold; color:#1e293b;">📦 ${r.nombre} (x${r.cant})</span>
+                    <div style="display:flex; gap: 5px;">
+                        <button onclick="modificarRepuestoModal(${idx}, 1)" style="border:none; background:#3498db; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">+</button>
+                        <button onclick="modificarRepuestoModal(${idx}, -1)" style="border:none; background:#e53e3e; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">-</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function modificarRepuestoModal(idx, sum) {
+        let r = repuestosSeleccionadosModal[idx];
+        if(sum > 0) {
+            if(r.cant < r.max) r.cant++;
+            else showToast("Stock máximo alcanzado", "#f1c40f");
+        } else {
+            r.cant--;
+            if(r.cant <= 0) repuestosSeleccionadosModal.splice(idx, 1);
+        }
+        renderRepuestosModal();
+    }
+
+    function procesarReparado(descontar) {
+        let repuestosParaGuardar = null;
+
+        if(descontar && repuestosSeleccionadosModal.length > 0) {
+            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            repuestosSeleccionadosModal.forEach(rep => {
+                const refStock = db.ref(pathStock).child(rep.id);
+                refStock.once('value').then(snap => {
+                    if(snap.exists()) {
+                        let cantActual = snap.val().cantidad || 0;
+                        if(cantActual >= rep.cant) { refStock.update({cantidad: cantActual - rep.cant}); }
+                    }
+                });
+            });
+            repuestosParaGuardar = repuestosSeleccionadosModal;
+        } else if (descontar && repuestosSeleccionadosModal.length === 0) {
+            showToast("⚠️ Agregá un repuesto o tocá 'NO USÉ'", "#f1c40f");
+            return;
+        }
+
+        cerrarModalStock();
+        ejecutarCambioEstado('Reparado', repuestosParaGuardar);
+        enviarWhatsAppReparado(idParaEstado);
+    }
+
+    function enviarWhatsAppReparado(id) {
+        const r = getRegistro(id); if(!r) return;
+        r.estado = 'Reparado'; 
+        enviarWhatsApp(id); 
+    }
+
+    function cerrarModalNoReparado() {
+        document.getElementById('modalNoReparado').style.display = 'none';
+    }
+
+    function procesarNoReparado(avisar) {
+        cerrarModalNoReparado();
+        ejecutarCambioEstado('No reparado');
+        if (avisar) {
+            enviarWhatsAppNoReparado(idParaEstado);
+        }
+    }
+
+    function enviarWhatsAppNoReparado(id) {
+        const r = getRegistro(id); if(!r) return;
+        
+        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        db.ref(path).once('value', snap => {
+            const conf = snap.val() || {}; 
+            const nombreHeader = conf.nombreTaller || "";
+            const subHeader = conf.subtitulo || "";
+            let num = String(r.tel).replace(/\D/g, ''); 
+            if (!num.startsWith('54')) num = '549' + num;
+            
+            const nroLimpio = String(r.orden).replace('MAT-', '');
+            const baseUrl = window.location.origin + window.location.pathname; 
+            const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
+            
+            let msjPlano = "";
+            
+            if(nombreHeader) msjPlano += `*${nombreHeader}*`;
+            if(subHeader) msjPlano += ` - ${subHeader}`;
+            
+            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
+            msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
+            
+            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
+        });
+    }
+
+    function procesarCobroEntregado() {
+        const metodo = document.getElementById('metodoCobroFinal').value;
+        const r = getRegistro(idParaEstado);
+        
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        
+        mostrarLoader("Registrando cobro...");
+        db.ref(nodoActualizar).child(idParaEstado).update({
+            sena: r.precio,
+            metodoPago: metodo
+        }).then(() => {
+            r.sena = r.precio;
+            r.metodoPago = metodo;
+            document.getElementById('modalCobroEntregado').style.display = 'none';
+            ocultarLoader();
+            ejecutarCambioEstado('Entregado');
+        });
     }
 
     let idEditando = null;
@@ -1315,22 +1586,80 @@
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
     function confirmarEstado(nuevo) {
+        if(nuevo === 'Reparado') {
+            document.getElementById('statusModal').style.display = 'none';
+            document.getElementById('repuestoModalUsado').value = "";
+            repuestosSeleccionadosModal = [];
+            renderRepuestosModal();
+            document.getElementById('modalUsoStock').style.display = 'flex';
+            return; 
+        }
+
+        if(nuevo === 'No reparado') {
+            document.getElementById('statusModal').style.display = 'none';
+            document.getElementById('modalNoReparado').style.display = 'flex';
+            return;
+        }
+
+        if(nuevo === 'Entregado') {
+            const r = getRegistro(idParaEstado);
+            const saldo = r.precio - (r.sena || 0);
+            if(saldo > 0) {
+                document.getElementById('statusModal').style.display = 'none';
+                document.getElementById('cobroSaldoMonto').innerText = fmt.format(saldo);
+                document.getElementById('metodoCobroFinal').selectedIndex = 0;
+                document.getElementById('modalCobroEntregado').style.display = 'flex';
+                return;
+            }
+        }
+
+        ejecutarCambioEstado(nuevo);
+    }
+
+    function ejecutarCambioEstado(nuevo, repuestosUsados = null) {
         const r = getRegistro(idParaEstado);
         if(!r) return;
+
+        let updates = {};
+
+        if ((nuevo === 'Pendiente' || nuevo === 'No reparado') && r.repuestosDescontados) {
+            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            r.repuestosDescontados.forEach(rep => {
+                const refStock = db.ref(pathStock).child(rep.id);
+                refStock.once('value').then(snap => {
+                    if(snap.exists()) {
+                        let cantActual = snap.val().cantidad || 0;
+                        refStock.update({cantidad: cantActual + rep.cant});
+                    }
+                });
+            });
+            updates.repuestosDescontados = null; 
+            delete r.repuestosDescontados; 
+            setTimeout(() => showToast("📦 Stock devuelto al inventario", "#3498db"), 1000);
+        }
+
         const fechaActual = new Date().toLocaleString('es-AR');
         const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569', 'No reparado': '#e53e3e' };
         let historialActual = r.historialEstados || [];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
         
+        updates.estado = nuevo;
+        updates.historialEstados = historialActual;
+
+        if (repuestosUsados) {
+            updates.repuestosDescontados = repuestosUsados;
+            r.repuestosDescontados = repuestosUsados;
+        }
+        
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
 
-        db.ref(nodoActualizar).child(idParaEstado).update({ estado: nuevo, historialEstados: historialActual }).then(() => {
+        db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
             r.estado = nuevo; 
             r.historialEstados = historialActual;
             renderTable();
-            closeStatusModal();
+            document.getElementById('statusModal').style.display = 'none';
             showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
         });
     }
@@ -1367,8 +1696,18 @@
     function openHistory(id) {
         const r = getRegistro(id);
         if(!r) return;
-        let h = `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
+        
+        let fallaHtml = r.falla ? `<div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; text-align:left;">
+            <div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
+            <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla)}</div>
+            ${r.obs ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
+            <div style="font-size:13px; color:#475569; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
+        </div>` : '';
+
+        let h = fallaHtml;
+        h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
+        
         document.getElementById('historyContent').innerHTML = h;
         document.getElementById('historyModal').style.display = 'flex';
     }
@@ -1443,7 +1782,10 @@
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
                 <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
                 <td><b>${escaparHTML(r.cliente)}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
-                <td>${escaparHTML(r.modelo)}</td>
+                <td>
+                    ${escaparHTML(r.modelo)}<br>
+                    <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(r.falla || 'Sin falla registrada')}</span>
+                </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado || 'Pendiente'}</span></td>
                 <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
                     ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
@@ -1464,7 +1806,6 @@
             document.getElementById('btnCargarMas').style.display = 'none';
         }
 
-        // --- Calcula y actualiza la Alerta Amarilla al recargar la tabla ---
         calcularOlvidados();
     }
 
@@ -1601,6 +1942,8 @@
         document.getElementById('autocomplete-modelo').style.display = 'none';
         document.getElementById('autocomplete-falla').style.display = 'none';
 
+        document.getElementById('metodoPago').value = "No pagó";
+
         fotosTemporales = []; document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
         if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
@@ -1609,7 +1952,7 @@
 
     function saveDraft() {
         if(idEditando || isClientMode) return;
-        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value };
+        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value, metodoPago: document.getElementById('metodoPago').value };
         localStorage.setItem('st_matias_draft', JSON.stringify(draft));
     }
 
@@ -1622,17 +1965,27 @@
             document.getElementById('tel').value = d.tel || "";
             document.getElementById('modelo').value = d.modelo || "";
             document.getElementById('falla').value = d.falla || "";
+            document.getElementById('metodoPago').value = d.metodoPago || "No pagó";
         }
     }
 
     function showPage(p) {
         document.getElementById('page-gestion').style.display = p === 'gestion' ? 'block' : 'none';
         document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
+        document.getElementById('page-stock').style.display = p === 'stock' ? 'block' : 'none';
         document.getElementById('page-usuarios').style.display = p === 'usuarios' ? 'block' : 'none';
+        
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-nav-'+p).classList.add('active');
+        const btn = document.getElementById('btn-nav-'+p);
+        if(btn) btn.classList.add('active');
+        
         if(p === 'contabilidad') cargarDatosContabilidad();
+        if(p === 'stock') renderStock();
         if(p === 'usuarios') listarUsuarios();
+    }
+
+    function limpiarFiltroDia() {
+        document.getElementById('inputDia').value = "";
     }
 
     function cargarDatosContabilidad() {
@@ -1653,38 +2006,133 @@
     }
 
     function renderContabilidadUI() {
-        const mes = parseInt(document.getElementById('selectMes').value);
+        const mesSeleccionado = parseInt(document.getElementById('selectMes').value);
+        const diaSeleccionado = document.getElementById('inputDia').value; 
+        
         let caja = 0, gastos = 0, porIngresar = 0;
         let todasLasOrdenes = [...registros, ...registrosArchivados]; 
 
-        todasLasOrdenes.forEach(r => {
+        let tituloTabla = `📅 Registro Mensual (${mesesNombres[mesSeleccionado]})`;
+        let fechaFiltroStr = "";
+
+        if (diaSeleccionado) {
+            const partesF = diaSeleccionado.split('-');
+            const diaF = parseInt(partesF[2]).toString();
+            const mesF = parseInt(partesF[1]).toString();
+            const anioF = partesF[0];
+            fechaFiltroStr = `${diaF}/${mesF}/${anioF}`;
+            tituloTabla = `📅 Movimientos del Día (${fechaFiltroStr})`;
+        }
+
+        let ordenesFiltradas = todasLasOrdenes.filter(r => {
             if (r.fecha) {
-                const m = parseInt(r.fecha.split(',')[0].split('/')[1]) - 1;
-                if(m === mes) { 
-                    caja += parseFloat(r.sena) || 0; 
-                    gastos += parseFloat(r.costoRepuesto) || 0; 
-                    const saldo = (parseFloat(r.precio) || 0) - (parseFloat(r.sena) || 0);
-                    if (saldo > 0 && !r.archivado) porIngresar += saldo;
+                const fechaOrdenLimpia = r.fecha.split(',')[0].trim(); 
+                if (diaSeleccionado) {
+                    return fechaOrdenLimpia === fechaFiltroStr;
+                } else {
+                    const m = parseInt(fechaOrdenLimpia.split('/')[1]) - 1;
+                    return m === mesSeleccionado;
                 }
             }
+            return false;
         });
+
+        ordenesFiltradas.sort((a, b) => {
+            try {
+                const parseD = (str) => {
+                    if (!str) return 0;
+                    let p = str.split(',');
+                    if (!p[0]) return 0;
+                    let f = p[0].trim().split('/'); 
+                    if (f.length !== 3) return 0;
+                    let t = p[1] ? p[1].trim().split(':') : [0,0,0]; 
+                    return new Date(f[2], f[1]-1, f[0], t[0]||0, t[1]||0, t[2]||0).getTime();
+                };
+                return parseD(b.fecha) - parseD(a.fecha);
+            } catch(e) { return 0; }
+        });
+
+        let filasHTML = '';
+
+        ordenesFiltradas.forEach(r => {
+            caja += parseFloat(r.sena) || 0; 
+            gastos += parseFloat(r.costoRepuesto) || 0; 
+            const saldo = (parseFloat(r.precio) || 0) - (parseFloat(r.sena) || 0);
+            if (saldo > 0 && !r.archivado) porIngresar += saldo;
+
+            let nroLimpio = String(r.orden).replace('MAT-', '');
+            let metodo = r.metodoPago || 'No pagó';
+            
+            let metodoBadge = `<span class="badge-metodo" style="background:#e2e8f0; color:#475569;">${metodo}</span>`;
+            if(metodo === 'Efectivo') metodoBadge = `<span class="badge-metodo bm-efectivo">💵 Efectivo</span>`;
+            if(metodo === 'Transferencia') metodoBadge = `<span class="badge-metodo bm-transferencia">📲 Transf.</span>`;
+            if(metodo === 'Tarjeta') metodoBadge = `<span class="badge-metodo bm-tarjeta">💳 Tarjeta</span>`;
+            if(metodo === 'No pagó') metodoBadge = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
+
+            filasHTML += `
+            <tr class="tabla-contabilidad-row">
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:#64748b; font-weight:bold;">${r.fecha.split(',')[0]}</td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;"><b>${escaparHTML(r.cliente)}</b><br><span style="color:#94a3b8; font-size:11px;">Orden #${nroLimpio}</span></td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;">${metodoBadge}</td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--success); font-weight:bold; font-size:15px;">+ ${fmt.format(r.sena || 0)}</td>
+                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--danger); font-weight:bold; font-size:15px;">- ${fmt.format(r.costoRepuesto || 0)}</td>
+            </tr>`;
+        });
+
+        if(ordenesFiltradas.length === 0) {
+            filasHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color:#94a3b8; font-weight:bold; font-size:15px;">🔍 No hay movimientos registrados en la fecha seleccionada.</td></tr>`;
+        }
+
         document.getElementById('stats-container').innerHTML = `
-            <div class="card-stats" style="border-left: 5px solid var(--success);"><b>Ingresos (Caja)</b><p style="color:var(--success);">${fmt.format(caja)}</p></div>
-            <div class="card-stats" style="border-left: 5px solid var(--warning);"><b>Plata a Ingresar</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p></div>
-            <div class="card-stats" style="border-left: 5px solid var(--danger);"><b>Gastos Repuestos</b><p style="color:var(--danger);">${fmt.format(gastos)}</p></div>
-            <div class="card-stats" style="border-left: 5px solid var(--primary);"><b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p></div>`;
+            <div class="card-stats caja-success">
+                <div class="stat-icon">💵</div>
+                <b>Ingresos (Caja)</b>
+                <p style="color:var(--success);">${fmt.format(caja)}</p>
+            </div>
+            <div class="card-stats caja-warning">
+                <div class="stat-icon">⏳</div>
+                <b>Por Cobrar (Saldos)</b>
+                <p style="color:var(--warning);">${fmt.format(porIngresar)}</p>
+            </div>
+            <div class="card-stats caja-danger">
+                <div class="stat-icon">📉</div>
+                <b>Gastos (Repuestos)</b>
+                <p style="color:var(--danger);">${fmt.format(gastos)}</p>
+            </div>
+            <div class="card-stats caja-primary">
+                <div class="stat-icon">💰</div>
+                <b>Ganancia Neta</b>
+                <p style="color:var(--primary);">${fmt.format(caja - gastos)}</p>
+            </div>`;
+
+        document.getElementById('contabilidad-diaria').innerHTML = `
+            <div class="table-wrapper" style="margin-top:30px; background:white; padding:25px; border-radius:16px; border: 1px solid #f1f5f9; overflow-x:auto; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h3 style="margin-top:0; color:#1e293b; font-size:18px; border-bottom: 2px solid #f1f5f9; padding-bottom:15px; margin-bottom:15px;">${tituloTabla}</h3>
+                <table style="width:100%; text-align:left; font-size:14px; min-width:650px; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Fecha</th>
+                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Cliente / Orden</th>
+                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Método de Pago</th>
+                            <th style="background:#f8fafc; padding:12px 15px; color:#166534; font-size:12px; text-transform:uppercase;">Ingreso</th>
+                            <th style="background:#f8fafc; padding:12px 15px; color:#991b1b; font-size:12px; text-transform:uppercase;">Egreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>${filasHTML}</tbody>
+                </table>
+            </div>`;
     }
 
     function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
+        let csv = "\ufeffFecha;Orden;Cliente;Equipo;MétodoPago;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
         let todasLasOrdenes = [...registros, ...registrosArchivados]; 
         todasLasOrdenes.forEach(r => { 
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; 
+            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.metodoPago||'Efectivo'};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; 
         });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = `ST_MATIAS_REPORTE.csv`; link.click();
+        link.download = `ST_REPORTE.csv`; link.click();
     }
 
     document.getElementById('repairForm').onsubmit = e => {
@@ -1702,6 +2150,7 @@
             imei: document.getElementById('imei').value,
             precio: parseMoney(document.getElementById('precio').value), 
             sena: parseMoney(document.getElementById('sena').value),
+            metodoPago: document.getElementById('metodoPago').value, 
             costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
             falla: document.getElementById('falla').value, 
             obs: document.getElementById('obs').value,
@@ -1717,7 +2166,7 @@
             
             if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
             if(rOriginal.fecha) data.fecha = rOriginal.fecha;
-            if(rOriginal.recordatorioEnviado) data.recordatorioEnviado = true; // Conservar el estado de notificado al editar
+            if(rOriginal.recordatorioEnviado) data.recordatorioEnviado = true;
 
             db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
                 Object.assign(rOriginal, data); 
@@ -1751,6 +2200,7 @@
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
         document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
         document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
+        document.getElementById('metodoPago').value = r.metodoPago || 'No pagó'; 
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
@@ -1785,119 +2235,104 @@
         });
     }
 
-    function imprimir(id) {
-        const r = getRegistro(id);
-        if(!r) return;
+    function renderStock() {
+        const busInput = document.getElementById('search-stock');
+        const bus = busInput ? busInput.value.toLowerCase() : '';
+        const body = document.getElementById('bodyStock');
+        body.innerHTML = '';
         
-        mostrarLoader("Generando PDF...");
-
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        db.ref(path).once('value', snap => {
-            const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "";
-            const subHeader = conf.subtitulo || "";
-            const wappHeader = conf.wappTicket || "";
-            const textGarantia = conf.garantia || "";
-            const nroLimpio = String(r.orden).replace('MAT-', '');
+        const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(bus));
+        
+        filtrados.forEach(item => {
+            let styleColor = item.cantidad <= 2 ? 'color: var(--danger); font-weight:bold;' : 'color: var(--success); font-weight:bold;';
             
-            const { jsPDF } = window.jspdf;
-            
-            const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
-            
-            docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
-            const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
-            const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
-            const linesFalla = docDummy.splitTextToSize(String(r.falla), 40);
-            const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
-            const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
-
-            docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
-            
-            const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-            const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
-            
-            let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
-            
-            let txtX = 40;
-            let alignStr = 'center';
-            let nameSize = 18; 
-            let maxTextWidth = 70;
-
-            if (conf.logo) {
-                txtX = 28;
-                alignStr = 'left';
-                nameSize = 16;
-                maxTextWidth = 47; 
-            }
-
-            docDummy.setFont("helvetica", "bold"); docDummy.setFontSize(nameSize);
-            const lineasNombreTaller = docDummy.splitTextToSize(nombreHeader, maxTextWidth);
-            
-            docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
-            const lineasSubtitulo = docDummy.splitTextToSize(subHeader, maxTextWidth);
-
-            let altoHeader = 10 + (lineasNombreTaller.length * 6) + (lineasSubtitulo.length * 4);
-            if (wappHeader) altoHeader += 6;
-            if (conf.logo && altoHeader < 30) altoHeader = 30; 
-            
-            const altoDinamico = altoHeader + 125 + (lineasGarantia.length * 4) + (extraLines * 5); 
-            
-            const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
-            
-            doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoHeader, 'F');
-            
-            if (conf.logo) {
-                try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } 
-                catch(e) { console.log("Error al imprimir logo", e); }
-            }
-
-            doc.setTextColor(255, 255, 255); 
-            let headY = 12;
-            
-            doc.setFont("helvetica", "bold"); doc.setFontSize(nameSize); 
-            doc.text(lineasNombreTaller, txtX, headY, {align: alignStr});
-            headY += (lineasNombreTaller.length * 6);
-            
-            doc.setFont("helvetica", "normal"); doc.setFontSize(10); 
-            doc.text(lineasSubtitulo, txtX, headY, {align: alignStr});
-            headY += (lineasSubtitulo.length * 4.5);
-            
-            if(wappHeader) doc.text("WhatsApp: " + wappHeader, txtX, headY, {align: alignStr});
-            
-            let subY = altoHeader + 8; 
-            
-            doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, subY, {align:'center'});
-            doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, subY + 8, {align:'center'});
-            doc.setDrawColor(150, 150, 150); doc.line(10, subY + 12, 70, subY + 12);
-            
-            doc.setFontSize(10); let y = subY + 22; 
-            const col1 = 12, col2 = 35;
-            
-            const printRow = (l, linesArray) => { 
-                doc.setFont("helvetica", "bold"); doc.text(l, col1, y); 
-                doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); 
-                y += (linesArray.length * 5) + 2; 
-            };
-            
-            printRow("FECHA:", [r.fecha ? r.fecha.split(',')[0] : ""]); 
-            printRow("CLIENTE:", linesCliente); 
-            printRow("EQUIPO:", linesEquipo);
-            printRow("IMEI/SERIE:", linesImei); 
-            printRow("FALLA:", linesFalla); 
-            printRow("OBS:", linesObs);
-            
-            y += 3; doc.line(10, y, 70, y); y += 10;
-            
-            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
-            doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-            doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
-            
-            doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-            doc.text(lineasGarantia, 40, y + 20, {align:'center'});
-            
-            doc.save(`Ticket_${nroLimpio}.pdf`);
-            ocultarLoader();
+            body.innerHTML += `<tr>
+                <td><b>${escaparHTML(item.nombre)}</b></td>
+                <td style="${styleColor}">${item.cantidad} und.</td>
+                <td>${fmt.format(item.costo)}</td>
+                <td>${fmt.format(item.precioVenta)}</td>
+                <td class="action-btns">
+                    <button onclick="editarStock('${item.id}')">✏️</button>
+                    <button onclick="eliminarStock('${item.id}')" style="color:red;">❌</button>
+                </td>
+            </tr>`;
         });
+        
+        if(filtrados.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#64748b;">No se encontraron artículos en el inventario</td></tr>';
+        }
+    }
+    
+    function guardarStock() {
+        const id = document.getElementById('stockId').value;
+        const nombre = document.getElementById('stockNombre').value.trim();
+        const cantidad = parseInt(document.getElementById('stockCantidad').value) || 0;
+        const costo = parseMoney(document.getElementById('stockCosto').value);
+        const precioVenta = parseMoney(document.getElementById('stockPrecio').value);
+        
+        if(!nombre) { showToast("⚠️ Falta el nombre del artículo", "#e53e3e"); return; }
+        
+        mostrarLoader("Guardando artículo...");
+
+        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+        const payload = { nombre, cantidad, costo, precioVenta };
+        
+        if(id) {
+            db.ref(pathStock).child(id).update(payload).then(() => {
+                showToast("ARTÍCULO ACTUALIZADO ✅", "#3498db");
+                limpiarStock();
+                ocultarLoader();
+            }).catch(e => {
+                ocultarLoader();
+                alert("Error de Firebase al actualizar: " + e.message); 
+                showToast("❌ Error al guardar en la base de datos", "#e53e3e");
+            });
+        } else {
+            db.ref(pathStock).push(payload).then(() => {
+                showToast("ARTÍCULO GUARDADO ✅", "#2ecc71");
+                limpiarStock();
+                ocultarLoader();
+            }).catch(e => {
+                ocultarLoader();
+                alert("Error de Firebase al guardar: " + e.message); 
+                showToast("❌ Error al guardar en la base de datos", "#e53e3e");
+            });
+        }
+    }
+    
+    function editarStock(id) {
+        const item = stockData.find(x => x.id === id);
+        if(!item) return;
+        
+        document.getElementById('stockId').value = item.id;
+        document.getElementById('stockNombre').value = item.nombre;
+        document.getElementById('stockCantidad').value = item.cantidad;
+        document.getElementById('stockCosto').value = (item.costo || 0).toLocaleString('es-AR');
+        document.getElementById('stockPrecio').value = (item.precioVenta || 0).toLocaleString('es-AR');
+        
+        window.scrollTo({top:0, behavior:'smooth'});
+    }
+    
+    function eliminarStock(id) {
+        if(confirm("¿Seguro que deseas eliminar este artículo del stock?")) {
+            mostrarLoader("Borrando...");
+            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            db.ref(pathStock).child(id).remove().then(() => {
+                ocultarLoader();
+                showToast("ARTÍCULO ELIMINADO ❌", "#e53e3e");
+            });
+        }
+    }
+    
+    function limpiarStock() {
+        document.getElementById('stockId').value = "";
+        document.getElementById('stockNombre').value = "";
+        document.getElementById('stockCantidad').value = "";
+        document.getElementById('stockCosto').value = "";
+        document.getElementById('stockPrecio').value = "";
+        document.getElementById('search-stock').value = "";
+        renderStock();
+        document.getElementById('stockNombre').focus();
     }
 
     function comprimirFoto(archivo, callback) {
@@ -2026,8 +2461,6 @@
         if(msg) msg.style.display = isOnline ? "none" : "inline";
     });
 
-    // --- SISTEMA DE LICENCIAS CON "PAPELERA" Y MODALES ---
-
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.trim();
         if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
@@ -2050,9 +2483,21 @@
                 showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
             })
             .catch((error) => {
-                ocultarLoader();
-                showToast("Error: El usuario ya existe o hubo un fallo", "#e53e3e");
-                console.error(error);
+                // Si el usuario ya existe en el Login, lo REACTIVAMOS creando su base de datos.
+                if (error.code === 'auth/email-already-in-use') {
+                    db.ref('usuarios_registrados/' + wa).set({ 
+                        whatsapp: wa, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
+                        nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null
+                    }).then(() => {
+                        ocultarLoader();
+                        document.getElementById('new-user-wa').value = ""; 
+                        showToast("LICENCIA REACTIVADA ✅", "#3498db");
+                    });
+                } else {
+                    ocultarLoader();
+                    showToast("Error: Hubo un fallo en el sistema", "#e53e3e");
+                    console.error(error);
+                }
             });
     }
 
@@ -2153,9 +2598,15 @@
 
     document.getElementById('confirmDeleteLicenseBtn').onclick = () => {
         if(!idParaEliminarLicencia) return;
+        
+        // 1. Borramos toda la base de datos del usuario
         db.ref('usuarios_registrados/' + idParaEliminarLicencia).remove(); 
         db.ref('reparaciones_usuarios/' + idParaEliminarLicencia).remove(); 
         db.ref('reparaciones_archivadas_usuarios/' + idParaEliminarLicencia).remove(); 
+        
+        // 2. Te avisa que tenés que ir a Firebase
+        alert("✅ Datos eliminados correctamente de la Base de Datos.\n\n⚠️ IMPORTANTE: Para crearlo de cero en el futuro, recordá ir a tu consola de Firebase > Authentication y borrar su cuenta de login.");
+        
         showToast("DATOS ELIMINADOS 🗑️", "#e53e3e"); 
         closeDeleteLicenseModal();
     };
