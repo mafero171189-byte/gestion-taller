@@ -62,7 +62,7 @@
 
         #app-content { display: none; }
 
-        /* PANTALLA DE CARGA (SPINNER) */
+        /* PANTALLA DE CARGA */
         #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; backdrop-filter: blur(3px); }
         .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.2); border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -71,48 +71,13 @@
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
         html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         
-        nav { 
-            background: var(--primary); 
-            padding: 10px 15px; 
-            display: flex; 
-            gap: 15px; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            overflow-x: auto; 
-            white-space: nowrap; 
-            -webkit-overflow-scrolling: touch; 
-            -ms-overflow-style: none; 
-            scrollbar-width: none; 
-        }
+        nav { background: var(--primary); padding: 10px 15px; display: flex; gap: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
         nav::-webkit-scrollbar { display: none; }
-        nav button { 
-            background: none; 
-            border: none; 
-            color: rgba(255,255,255,0.7); 
-            font-weight: bold; 
-            cursor: pointer; 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            transition: 0.3s; 
-            flex-shrink: 0; 
-        }
-
+        nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; flex-shrink: 0; }
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; }
         
-        .container { 
-            max-width: 1150px; 
-            margin: 0 auto; 
-            background: white; 
-            padding: 25px; 
-            border-radius: 0 0 12px 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
-            min-height: 85vh; 
-            position: relative; 
-            display: none; 
-        }
+        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; display: none; }
         
         #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
@@ -125,6 +90,7 @@
         .opt-reparado { background: #c8e6c9; color: #1b5e20; }
         .opt-no-reparado { background: #fed7d7; color: #9b2c2c; }
         .opt-entregado { background: #e2e8f0; color: #475569; }
+        .opt-garantia { background: #e0e7ff; color: #1e40af; border-color:#bfdbfe; }
 
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
         .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
@@ -136,16 +102,8 @@
         label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         
-        .autocomplete-list {
-            display: none; position: absolute; z-index: 9999;
-            background: white; border: 1px solid #cbd5e0; border-radius: 8px;
-            max-height: 180px; overflow-y: auto; width: 100%;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px;
-        }
-        .autocomplete-list div {
-            padding: 12px; border-bottom: 1px solid #f1f5f9;
-            cursor: pointer; font-size: 15px; color: #1e293b;
-        }
+        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #cbd5e0; border-radius: 8px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px; }
+        .autocomplete-list div { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 15px; color: #1e293b; }
         .autocomplete-list div:last-child { border-bottom: none; }
         .autocomplete-list div:active, .autocomplete-list div:hover { background: #f8fafc; color: var(--secondary); font-weight: bold; }
 
@@ -154,6 +112,7 @@
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
         .st-no-reparado { background: #fed7d7; color: #9b2c2c; }
         .st-entregado { background: #e2e8f0; color: #475569; }
+        .st-garantia { background: #e0e7ff; color: #1e40af; }
 
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
@@ -188,12 +147,7 @@
         .btn-whatsapp-alerta.notificado { background-color: #94a3b8; color: white; }
 
         /* --- ESTILOS PARA LA CONTABILIDAD MEJORADA --- */
-        .card-stats { 
-            background: white; padding: 20px; border-radius: 16px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; 
-            position: relative; overflow: hidden; border: 1px solid #f1f5f9;
-            transition: transform 0.2s;
-        }
+        .card-stats { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; border: 1px solid #f1f5f9; transition: transform 0.2s; }
         .card-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px;}
         .card-stats p { font-size: 30px; font-weight: 800; margin: 0; }
@@ -218,6 +172,52 @@
 <div id="global-loader">
     <div class="spinner"></div>
     <p id="loader-text" style="margin-top:20px; font-weight:bold; font-size:16px;">Cargando...</p>
+</div>
+
+<div id="modalVentaRapida" class="modal-overlay" style="z-index: 4800;">
+    <div class="modal-box" style="width: 90%; max-width: 400px; overflow: visible;">
+        <div style="font-size: 40px; margin-bottom: 10px;">🛒</div>
+        <p style="color: #8e44ad; font-weight: bold; font-size: 18px; margin-top: 0;">Venta Rápida de Mostrador</p>
+        <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">Ideal para vender cables, fundas o repuestos sin crear orden.</p>
+        
+        <div style="position: relative; text-align: left;">
+            <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
+            <div id="vrAutocomplete" class="autocomplete-list" style="width: 100%;"></div>
+        </div>
+        
+        <div id="vrDetalle" style="display:none; text-align:left; margin-top:15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <b id="vrNombre" style="color:#1e293b; font-size: 15px;"></b>
+            <input type="hidden" id="vrStockId">
+            <input type="hidden" id="vrPrecioUni">
+            <input type="hidden" id="vrCostoUni">
+            <input type="hidden" id="vrMaxCant">
+            
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <div style="flex:1;">
+                    <label>Cantidad</label>
+                    <input type="number" id="vrCant" value="1" min="1" oninput="calcVrTotal()" style="padding:8px;">
+                </div>
+                <div style="flex:1;">
+                    <label>Total $</label>
+                    <input type="text" id="vrTotal" readonly style="background:#e2e8f0; font-weight:bold; padding:8px;">
+                </div>
+            </div>
+            
+            <div style="margin-top:15px;">
+                <label>Método de Pago</label>
+                <select id="vrMetodo" style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e0; cursor:pointer;">
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Transferencia">📲 Transferencia</option>
+                    <option value="Tarjeta">💳 Tarjeta</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="document.getElementById('modalVentaRapida').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 12px;">CANCELAR</button>
+            <button onclick="procesarVentaRapida()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#8e44ad; color:white; font-weight:bold; cursor:pointer; font-size: 12px;">REGISTRAR VENTA</button>
+        </div>
+    </div>
 </div>
 
 <div id="expulsadoModal" class="modal-overlay" style="z-index: 15000; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);">
@@ -266,8 +266,7 @@
                 <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
             </div>
             
-            <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
-                </div>
+            <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
             
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button onclick="procesarReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ / AVISAR</button>
@@ -276,6 +275,7 @@
             <button onclick="cerrarModalStock()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
         </div>
     </div>
+
     <div id="modalNoReparado" class="modal-overlay" style="z-index: 4600;">
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">❌</div>
@@ -289,6 +289,7 @@
             <button onclick="cerrarModalNoReparado()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
         </div>
     </div>
+
     <div id="modalCobroEntregado" class="modal-overlay" style="z-index: 4700;">
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">💳</div>
@@ -296,12 +297,13 @@
             <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
             
             <div style="text-align: left; margin-bottom: 20px;">
-                <label style="font-size: 12px; font-weight: bold; color: #64748b;">¿Cómo pagó este saldo?</label>
+                <label style="font-size: 12px; font-weight: bold; color: #64748b;">¿Cómo paga este saldo restante?</label>
                 <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;">
                     <option value="Efectivo">💵 Efectivo</option>
                     <option value="Transferencia">📲 Transferencia</option>
                     <option value="Tarjeta">💳 Tarjeta</option>
                 </select>
+                <p style="font-size: 11px; color:#94a3b8; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
             </div>
             
             <div style="display:flex; gap:10px;">
@@ -310,6 +312,7 @@
             </div>
         </div>
     </div>
+
     <div id="olvidadosModal" class="modal-overlay">
         <div class="modal-box" style="width: 90%; max-width: 600px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; margin-bottom: 15px;">
@@ -375,6 +378,7 @@
             <button class="status-option opt-reparado" onclick="confirmarEstado('Reparado')">✅ Reparado</button>
             <button class="status-option opt-no-reparado" onclick="confirmarEstado('No reparado')">❌ No reparado</button>
             <button class="status-option opt-entregado" onclick="confirmarEstado('Entregado')">📦 Entregado</button>
+            <button class="status-option opt-garantia" onclick="confirmarEstado('Garantía')">🔄 Reingreso (Garantía)</button>
             <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer;">Cerrar</button>
         </div>
     </div>
@@ -492,6 +496,9 @@
                     
                     <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
                     <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
+                    
+                    <div><label>Clave/PIN 🔒</label><input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()"></div>
+                    
                     <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
                     <div>
                         <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
@@ -505,7 +512,7 @@
                             <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
                         </div>
                         <div id="costo-inner" style="display:none;">
-                            <label>Costo Reparación $</label>
+                            <label>Costo de Repuesto $</label>
                             <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
                         </div>
                     </div>
@@ -549,6 +556,7 @@
 
             <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
                 <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="resetPaginacion()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
+                <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
                 <button class="btn btn-alerta-amarilla" id="btnAlertaAmarilla" onclick="abrirModalOlvidados()" style="display: none;">⚠️ 0 Equipos Olvidados</button>
@@ -662,7 +670,6 @@
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
     
-    // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
     
@@ -709,7 +716,7 @@
         listaOlvidados = [];
 
         registros.forEach(r => {
-            if (r.estado === 'Reparado' && !r.archivado) {
+            if (r.estado === 'Reparado' && !r.archivado && !r.esVentaRapida) {
                 let fechaReparadoStr = r.fecha; 
                 if (r.historialEstados) {
                     let repEstados = r.historialEstados.filter(h => h.estado === 'Reparado');
@@ -816,6 +823,7 @@
         document.getElementById('olvidadosModal').style.display = 'none';
         document.getElementById('modalCobroEntregado').style.display = 'none';
         document.getElementById('modalNoReparado').style.display = 'none';
+        document.getElementById('modalVentaRapida').style.display = 'none';
         
         document.getElementById('expulsionMensaje').innerText = msg;
         document.getElementById('expulsadoModal').style.display = 'flex';
@@ -1074,9 +1082,9 @@
         printRow("OBS:", linesObs);
         
         y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.sena), col1, y); y += 10;
+        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.senaOriginal || r.sena), col1, y); y += 10;
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - r.sena), 40, y + 9.5, {align:'center'});
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - (r.senaOriginal || r.sena)), 40, y + 9.5, {align:'center'});
         
         doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
         doc.text(lineasGarantia, 40, y + 20, {align:'center'});
@@ -1365,6 +1373,111 @@
         }, 200);
     }
 
+    function abrirVentaRapida() {
+        document.getElementById('modalVentaRapida').style.display = 'flex';
+        document.getElementById('vrBusqueda').value = '';
+        document.getElementById('vrDetalle').style.display = 'none';
+        document.getElementById('vrCant').value = 1;
+        document.getElementById('vrAutocomplete').innerHTML = '';
+    }
+
+    function filtrarVentaRapida() {
+        const input = document.getElementById('vrBusqueda');
+        const val = input.value.toLowerCase();
+        const listDiv = document.getElementById('vrAutocomplete');
+        listDiv.innerHTML = '';
+        
+        const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(val) && item.cantidad > 0);
+        
+        if (filtrados.length === 0) {
+            listDiv.style.display = 'none';
+            return;
+        }
+        
+        filtrados.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `<b>${item.nombre}</b> <span style="color:#2ecc71; float:right; font-weight:bold;">Disp: ${item.cantidad} | ${fmt.format(item.precioVenta)}</span>`;
+            
+            div.onmousedown = function(e) { 
+                input.value = "";
+                document.getElementById('vrStockId').value = item.id;
+                document.getElementById('vrNombre').innerText = "📦 " + item.nombre;
+                document.getElementById('vrPrecioUni').value = item.precioVenta;
+                document.getElementById('vrCostoUni').value = item.costo;
+                document.getElementById('vrMaxCant').value = item.cantidad;
+                document.getElementById('vrCant').value = 1;
+                calcVrTotal();
+                
+                document.getElementById('vrDetalle').style.display = 'block';
+                listDiv.style.display = 'none';
+            };
+            listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+    }
+
+    function calcVrTotal() {
+        let max = parseInt(document.getElementById('vrMaxCant').value) || 1;
+        let cantInput = document.getElementById('vrCant');
+        let cant = parseInt(cantInput.value) || 1;
+        
+        if (cant > max) {
+            showToast("Supera el stock disponible", "#f1c40f");
+            cant = max;
+            cantInput.value = cant;
+        }
+        
+        let p = parseFloat(document.getElementById('vrPrecioUni').value) || 0;
+        document.getElementById('vrTotal').value = fmt.format(p * cant);
+    }
+
+    function procesarVentaRapida() {
+        const sId = document.getElementById('vrStockId').value;
+        if(!sId) return;
+        
+        mostrarLoader("Registrando venta...");
+        const cant = parseInt(document.getElementById('vrCant').value) || 1;
+        const precioTotal = (parseFloat(document.getElementById('vrPrecioUni').value) || 0) * cant;
+        const costoTotal = (parseFloat(document.getElementById('vrCostoUni').value) || 0) * cant;
+        const nombreItem = document.getElementById('vrNombre').innerText.replace("📦 ", "");
+        const metodo = document.getElementById('vrMetodo').value;
+
+        const dataVenta = {
+            orden: "VTA-" + Date.now().toString().slice(-4),
+            cliente: "Venta de Mostrador",
+            modelo: nombreItem,
+            tel: "0",
+            falla: "Venta Directa",
+            precio: precioTotal,
+            sena: precioTotal,
+            senaOriginal: precioTotal,
+            metodoPagoSena: metodo,
+            costoRepuesto: costoTotal,
+            estado: "Entregado",
+            esVentaRapida: true,
+            archivado: false, 
+            fecha: new Date().toLocaleString('es-AR')
+        };
+
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        
+        db.ref(pathActivo).push(dataVenta).then(() => {
+            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            const refStock = db.ref(pathStock).child(sId);
+            refStock.once('value').then(snap => {
+                if(snap.exists()) {
+                    let cantActual = snap.val().cantidad || 0;
+                    refStock.update({cantidad: cantActual - cant});
+                }
+            });
+            
+            document.getElementById('modalVentaRapida').style.display = 'none';
+            ocultarLoader();
+            showToast("VENTA REGISTRADA ✅", "#2ecc71");
+            setTimeout(cargarDatosContabilidad, 1000); 
+        });
+    }
+
     function cerrarModalStock() {
         document.getElementById('modalUsoStock').style.display = 'none';
     }
@@ -1511,13 +1624,17 @@
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
         
+        const saldoFinal = r.precio - (r.sena || 0);
+
         mostrarLoader("Registrando cobro...");
         db.ref(nodoActualizar).child(idParaEstado).update({
             sena: r.precio,
-            metodoPago: metodo
+            saldoCobrado: saldoFinal,
+            metodoPagoSaldo: metodo
         }).then(() => {
             r.sena = r.precio;
-            r.metodoPago = metodo;
+            r.saldoCobrado = saldoFinal;
+            r.metodoPagoSaldo = metodo;
             document.getElementById('modalCobroEntregado').style.display = 'none';
             ocultarLoader();
             ejecutarCambioEstado('Entregado');
@@ -1556,23 +1673,6 @@
         const chk = document.getElementById('checkPagoTotal');
         const precio = document.getElementById('precio').value;
         document.getElementById('sena').value = chk.checked ? precio : "";
-    }
-
-    function togglePago(id) {
-        if(isClientMode) return;
-        const r = getRegistro(id);
-        if(!r) return;
-        
-        const estaPagado = (r.precio - r.sena) === 0;
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
-        
-        db.ref(nodoActualizar).child(id).update({ sena: estaPagado ? 0 : r.precio }).then(() => {
-            r.sena = estaPagado ? 0 : r.precio; 
-            renderTable();
-            showToast(estaPagado ? "PAGO CANCELADO ❌" : "PAGADO ✅", estaPagado ? "#e53e3e" : "#2ecc71");
-        });
     }
 
     function openStatusModal(id) {
@@ -1621,8 +1721,14 @@
         if(!r) return;
 
         let updates = {};
+        let targetArchivado = r.archivado;
 
-        if ((nuevo === 'Pendiente' || nuevo === 'No reparado') && r.repuestosDescontados) {
+        if (nuevo === 'Garantía' && r.archivado) {
+            targetArchivado = false; 
+            updates.archivado = false;
+        }
+
+        if ((nuevo === 'Pendiente' || nuevo === 'No reparado' || nuevo === 'Garantía') && r.repuestosDescontados) {
             const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
             r.repuestosDescontados.forEach(rep => {
                 const refStock = db.ref(pathStock).child(rep.id);
@@ -1639,7 +1745,7 @@
         }
 
         const fechaActual = new Date().toLocaleString('es-AR');
-        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569', 'No reparado': '#e53e3e' };
+        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569', 'No reparado': '#e53e3e', 'Garantía': '#1e40af' };
         let historialActual = r.historialEstados || [];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
         
@@ -1655,13 +1761,25 @@
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
 
-        db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
-            r.estado = nuevo; 
-            r.historialEstados = historialActual;
-            renderTable();
-            document.getElementById('statusModal').style.display = 'none';
-            showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
-        });
+        if (nuevo === 'Garantía' && r.archivado) {
+            let copia = {...r, ...updates};
+            db.ref(pathActivo).child(idParaEstado).set(copia).then(() => {
+                db.ref(pathArchivado).child(idParaEstado).remove();
+                registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
+                registros.push(copia);
+                renderTable();
+                document.getElementById('statusModal').style.display = 'none';
+                showToast(`REINGRESO A GARANTÍA 🔄`, "#3498db");
+            });
+        } else {
+            db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
+                r.estado = nuevo; 
+                r.historialEstados = historialActual;
+                renderTable();
+                document.getElementById('statusModal').style.display = 'none';
+                showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
+            });
+        }
     }
 
     function openPriceModal(id) {
@@ -1700,6 +1818,8 @@
         let fallaHtml = r.falla ? `<div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; text-align:left;">
             <div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
             <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla)}</div>
+            ${r.pin ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/PIN</div>
+            <div style="font-size:14px; font-weight:bold; color:#e53e3e; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
             ${r.obs ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
             <div style="font-size:13px; color:#475569; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
         </div>` : '';
@@ -1767,6 +1887,8 @@
             let matchFiltro = true;
             if (!modoArchivo && r.archivado) matchFiltro = false; 
             if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
+            
+            if (r.esVentaRapida) matchFiltro = false;
 
             return matchBusqueda && matchFiltro;
         });
@@ -1791,7 +1913,6 @@
                     ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
                 </td>
                 <td class="action-btns">
-                    <button onclick="togglePago('${r.id}')">✅</button>
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
                     <button onclick="imprimir('${r.id}')">📄</button>
                     <button onclick="editar('${r.id}')">✏️</button>
@@ -1920,39 +2041,51 @@
     function closeDeleteModal() { document.getElementById('deleteModal').style.display='none'; }
     
     document.getElementById('confirmDeleteBtn').onclick = () => { 
+        if(!idParaBorrar) return;
+        
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         
-        if (registrosArchivados.some(x => x.id === idParaBorrar)) {
-            db.ref(pathArchivado).child(idParaBorrar).remove();
-            registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
-            renderTable();
-            actualizarListasAutocompletado();
-        } else {
-            db.ref(pathActivo).child(idParaBorrar).remove();
-        }
-        closeDeleteModal(); showToast("BORRADO ❌", "#e53e3e"); 
+        db.ref(pathActivo).child(idParaBorrar).remove();
+        db.ref(pathArchivado).child(idParaBorrar).remove();
+        
+        registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
+        registros = registros.filter(x => x.id !== idParaBorrar);
+        
+        renderTable();
+        actualizarListasAutocompletado();
+        
+        closeDeleteModal(); 
+        showToast("BORRADO DEFINITIVO ❌", "#e53e3e"); 
     };
 
     function clickLimpiar(skipToast = false) {
-        idEditando = null; document.getElementById('repairForm').reset();
+        idEditando = null; 
+        document.getElementById('repairForm').reset();
+        
+        const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = "";
+        });
+
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
-        
         document.getElementById('autocomplete-modelo').style.display = 'none';
         document.getElementById('autocomplete-falla').style.display = 'none';
 
         document.getElementById('metodoPago').value = "No pagó";
 
-        fotosTemporales = []; document.getElementById('formThumbnails').innerHTML = "";
+        fotosTemporales = []; 
+        document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
+        
         if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
-        document.getElementById('cliente').focus(); 
     }
 
     function saveDraft() {
         if(idEditando || isClientMode) return;
-        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, falla: document.getElementById('falla').value, metodoPago: document.getElementById('metodoPago').value };
+        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, pin: document.getElementById('pin').value, falla: document.getElementById('falla').value, metodoPago: document.getElementById('metodoPago').value };
         localStorage.setItem('st_matias_draft', JSON.stringify(draft));
     }
 
@@ -1964,6 +2097,7 @@
             document.getElementById('cliente').value = d.cliente || "";
             document.getElementById('tel').value = d.tel || "";
             document.getElementById('modelo').value = d.modelo || "";
+            document.getElementById('pin').value = d.pin || "";
             document.getElementById('falla').value = d.falla || "";
             document.getElementById('metodoPago').value = d.metodoPago || "No pagó";
         }
@@ -2003,6 +2137,29 @@
             ocultarLoader();
             renderContabilidadUI();
         });
+    }
+
+    function generarFilaContabilidad(r, tipoStr, metodo, ingreso, egreso) {
+        let nroLimpio = String(r.orden).replace('MAT-', '');
+        let bgFila = r.esVentaRapida ? 'background: #fdf4ff;' : ''; 
+        
+        let metodoBadge = `<span class="badge-metodo" style="background:#e2e8f0; color:#475569;">${metodo}</span>`;
+        if(metodo === 'Efectivo') metodoBadge = `<span class="badge-metodo bm-efectivo">💵 Efectivo</span>`;
+        if(metodo === 'Transferencia') metodoBadge = `<span class="badge-metodo bm-transferencia">📲 Transf.</span>`;
+        if(metodo === 'Tarjeta') metodoBadge = `<span class="badge-metodo bm-tarjeta">💳 Tarjeta</span>`;
+        if(metodo === 'No pagó') metodoBadge = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
+
+        return `
+        <tr class="tabla-contabilidad-row" style="${bgFila}">
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:#64748b; font-weight:bold;">${r.fecha.split(',')[0]}</td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;">
+                <b>${escaparHTML(r.cliente)}</b> <span style="color:#94a3b8; font-size:11px;">(#${nroLimpio})</span><br>
+                <span style="font-size:11px; color:#64748b; font-weight:bold;">${tipoStr}:</span> <span style="font-size:11px; color:#64748b;">${escaparHTML(r.modelo)}</span>
+            </td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;">${metodoBadge}</td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--success); font-weight:bold; font-size:15px;">${ingreso > 0 ? '+ ' + fmt.format(ingreso) : '-'}</td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--danger); font-weight:bold; font-size:15px;">${egreso > 0 ? '- ' + fmt.format(egreso) : '-'}</td>
+        </tr>`;
     }
 
     function renderContabilidadUI() {
@@ -2055,28 +2212,30 @@
         let filasHTML = '';
 
         ordenesFiltradas.forEach(r => {
-            caja += parseFloat(r.sena) || 0; 
-            gastos += parseFloat(r.costoRepuesto) || 0; 
-            const saldo = (parseFloat(r.precio) || 0) - (parseFloat(r.sena) || 0);
-            if (saldo > 0 && !r.archivado) porIngresar += saldo;
+            let costoRepuesto = parseFloat(r.costoRepuesto) || 0;
+            gastos += costoRepuesto;
 
-            let nroLimpio = String(r.orden).replace('MAT-', '');
-            let metodo = r.metodoPago || 'No pagó';
+            let senaOriginal = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
+            let metSena = r.metodoPagoSena || r.metodoPago || 'No pagó';
             
-            let metodoBadge = `<span class="badge-metodo" style="background:#e2e8f0; color:#475569;">${metodo}</span>`;
-            if(metodo === 'Efectivo') metodoBadge = `<span class="badge-metodo bm-efectivo">💵 Efectivo</span>`;
-            if(metodo === 'Transferencia') metodoBadge = `<span class="badge-metodo bm-transferencia">📲 Transf.</span>`;
-            if(metodo === 'Tarjeta') metodoBadge = `<span class="badge-metodo bm-tarjeta">💳 Tarjeta</span>`;
-            if(metodo === 'No pagó') metodoBadge = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
+            let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+            let metSaldo = r.metodoPagoSaldo || '';
 
-            filasHTML += `
-            <tr class="tabla-contabilidad-row">
-                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:#64748b; font-weight:bold;">${r.fecha.split(',')[0]}</td>
-                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;"><b>${escaparHTML(r.cliente)}</b><br><span style="color:#94a3b8; font-size:11px;">Orden #${nroLimpio}</span></td>
-                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;">${metodoBadge}</td>
-                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--success); font-weight:bold; font-size:15px;">+ ${fmt.format(r.sena || 0)}</td>
-                <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--danger); font-weight:bold; font-size:15px;">- ${fmt.format(r.costoRepuesto || 0)}</td>
-            </tr>`;
+            caja += senaOriginal + saldoCobrado;
+
+            let deuda = (parseFloat(r.precio) || 0) - (senaOriginal + saldoCobrado);
+            if(deuda > 0 && r.estado !== 'Entregado' && r.estado !== 'No reparado' && !r.archivado && !r.esVentaRapida) {
+                porIngresar += deuda;
+            }
+
+            if (senaOriginal > 0 || costoRepuesto > 0 || (senaOriginal === 0 && saldoCobrado === 0)) {
+                let tipo = r.esVentaRapida ? 'Venta Directa' : 'Seña/Adelanto';
+                filasHTML += generarFilaContabilidad(r, tipo, metSena, senaOriginal, costoRepuesto);
+            }
+
+            if (saldoCobrado > 0) {
+                filasHTML += generarFilaContabilidad(r, 'Cobro Saldo Final', metSaldo, saldoCobrado, 0);
+            }
         });
 
         if(ordenesFiltradas.length === 0) {
@@ -2086,7 +2245,7 @@
         document.getElementById('stats-container').innerHTML = `
             <div class="card-stats caja-success">
                 <div class="stat-icon">💵</div>
-                <b>Ingresos (Caja)</b>
+                <b>Ingresos Totales</b>
                 <p style="color:var(--success);">${fmt.format(caja)}</p>
             </div>
             <div class="card-stats caja-warning">
@@ -2112,7 +2271,7 @@
                     <thead>
                         <tr>
                             <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Fecha</th>
-                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Cliente / Orden</th>
+                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Cliente / Equipo</th>
                             <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Método de Pago</th>
                             <th style="background:#f8fafc; padding:12px 15px; color:#166534; font-size:12px; text-transform:uppercase;">Ingreso</th>
                             <th style="background:#f8fafc; padding:12px 15px; color:#991b1b; font-size:12px; text-transform:uppercase;">Egreso</th>
@@ -2124,15 +2283,15 @@
     }
 
     function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;MétodoPago;Precio;Sena;Saldo;Costo;Ganancia;Estado\n";
+        let csv = "\ufeffFecha;Orden;Cliente;Equipo;MétodoPagoSena;MetodoPagoSaldo;PrecioTotal;SenaOriginal;SaldoCobrado;CostoRepuesto;Estado\n";
         let todasLasOrdenes = [...registros, ...registrosArchivados]; 
         todasLasOrdenes.forEach(r => { 
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.metodoPago||'Efectivo'};${r.precio};${r.sena};${r.precio-r.sena};${r.costoRepuesto||0};${(r.sena||0)-(r.costoRepuesto||0)};${r.estado}\n`; 
+            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.metodoPagoSena||r.metodoPago||'No pago'};${r.metodoPagoSaldo||'-'};${r.precio};${r.senaOriginal||r.sena||0};${r.saldoCobrado||0};${r.costoRepuesto||0};${r.estado}\n`; 
         });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = `ST_REPORTE.csv`; link.click();
+        link.download = `ST_REPORTE_FINANCIERO.csv`; link.click();
     }
 
     document.getElementById('repairForm').onsubmit = e => {
@@ -2141,6 +2300,10 @@
         
         mostrarLoader("Guardando Registro...");
 
+        const precioParse = parseMoney(document.getElementById('precio').value);
+        const senaParse = parseMoney(document.getElementById('sena').value);
+        const metodoForm = document.getElementById('metodoPago').value;
+
         const data = {
             orden: document.getElementById('nroOrden').value, 
             cliente: document.getElementById('cliente').value,
@@ -2148,9 +2311,10 @@
             modelo: document.getElementById('modelo').value,
             color: document.getElementById('color').value, 
             imei: document.getElementById('imei').value,
-            precio: parseMoney(document.getElementById('precio').value), 
-            sena: parseMoney(document.getElementById('sena').value),
-            metodoPago: document.getElementById('metodoPago').value, 
+            pin: document.getElementById('pin').value,
+            precio: precioParse, 
+            sena: senaParse,
+            metodoPago: metodoForm, 
             costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
             falla: document.getElementById('falla').value, 
             obs: document.getElementById('obs').value,
@@ -2167,17 +2331,25 @@
             if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
             if(rOriginal.fecha) data.fecha = rOriginal.fecha;
             if(rOriginal.recordatorioEnviado) data.recordatorioEnviado = true;
+            if(rOriginal.senaOriginal !== undefined) data.senaOriginal = rOriginal.senaOriginal;
+            if(rOriginal.metodoPagoSena) data.metodoPagoSena = rOriginal.metodoPagoSena;
+            if(rOriginal.saldoCobrado) data.saldoCobrado = rOriginal.saldoCobrado;
+            if(rOriginal.metodoPagoSaldo) data.metodoPagoSaldo = rOriginal.metodoPagoSaldo;
 
             db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
                 Object.assign(rOriginal, data); 
                 renderTable();
                 actualizarListasAutocompletado();
                 ocultarLoader();
+                clickLimpiar(true);
                 showToast("ACTUALIZADO ✅", "#3498db");
             });
         } 
         else { 
             data.fecha = new Date().toLocaleString('es-AR'); 
+            data.senaOriginal = senaParse;
+            data.metodoPagoSena = metodoForm;
+
             const nuevaOrden = dbRef.push(); 
             nuevaOrden.set(data).then(() => {
                 data.id = nuevaOrden.key;
@@ -2185,10 +2357,10 @@
                 renderTable();
                 actualizarListasAutocompletado();
                 ocultarLoader();
+                clickLimpiar(true);
                 showToast("REGISTRADO ✅", "#2ecc71"); 
             });
         }
-        clickLimpiar(true); 
     };
 
     function editar(id) {
@@ -2198,6 +2370,7 @@
         document.getElementById('nroOrden').value = nroLimpio; document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
+        document.getElementById('pin').value = r.pin || "";
         document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
         document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
         document.getElementById('metodoPago').value = r.metodoPago || 'No pagó'; 
@@ -2483,7 +2656,6 @@
                 showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
             })
             .catch((error) => {
-                // Si el usuario ya existe en el Login, lo REACTIVAMOS creando su base de datos.
                 if (error.code === 'auth/email-already-in-use') {
                     db.ref('usuarios_registrados/' + wa).set({ 
                         whatsapp: wa, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
@@ -2599,12 +2771,10 @@
     document.getElementById('confirmDeleteLicenseBtn').onclick = () => {
         if(!idParaEliminarLicencia) return;
         
-        // 1. Borramos toda la base de datos del usuario
         db.ref('usuarios_registrados/' + idParaEliminarLicencia).remove(); 
         db.ref('reparaciones_usuarios/' + idParaEliminarLicencia).remove(); 
         db.ref('reparaciones_archivadas_usuarios/' + idParaEliminarLicencia).remove(); 
         
-        // 2. Te avisa que tenés que ir a Firebase
         alert("✅ Datos eliminados correctamente de la Base de Datos.\n\n⚠️ IMPORTANTE: Para crearlo de cero en el futuro, recordá ir a tu consola de Firebase > Authentication y borrar su cuenta de login.");
         
         showToast("DATOS ELIMINADOS 🗑️", "#e53e3e"); 
