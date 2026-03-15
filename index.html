@@ -228,6 +228,7 @@
         body.dark-mode .tabla-contabilidad-row:hover { background-color: #334155 !important; }
         body.dark-mode .autocomplete-list div { border-bottom-color: #334155 !important; color: #f1f5f9 !important; }
         body.dark-mode .autocomplete-list div:hover { background-color: #334155 !important; color: #3b82f6 !important; }
+        body.dark-mode #btn-top-ayuda { background-color: #334155 !important; color: #f8fafc !important; }
         
         /* Text Colors Fixes para sobreescribir estilos en línea */
         body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode label { color: #f8fafc !important; }
@@ -247,6 +248,26 @@
         body.dark-mode .badge-metodo.bm-tarjeta { background-color: #713f12 !important; color: #fde047 !important; }
         
         body.dark-mode .modo-archivo-activo { background-color: #111827 !important; }
+
+        /* ESTILOS DEL MENÚ DE AYUDA Y FAQ */
+        .faq-accordion { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: white; transition: 0.3s; }
+        .faq-accordion details summary { outline: none; user-select: none; }
+        .faq-summary { background: #f8fafc; padding: 15px; font-weight: bold; color: #1e293b; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; list-style: none; }
+        .faq-summary::-webkit-details-marker { display: none; }
+        .faq-summary:hover { background: #f1f5f9; }
+        .faq-content { padding: 15px 20px; background: white; color: #475569; font-size: 14px; line-height: 1.6; border-top: 1px solid #e2e8f0; }
+        .faq-content p { margin-top: 0; margin-bottom: 15px; }
+        .faq-content ul { margin-top: 0; padding-left: 20px; margin-bottom: 15px; }
+        .faq-content li { margin-bottom: 8px; }
+        .faq-content p:last-child, .faq-content ul:last-child { margin-bottom: 0; }
+        .faq-content b { color: #1e293b; display: inline-block; font-size: 14.5px;}
+        
+        /* Ajustes Modo Oscuro FAQ */
+        body.dark-mode .faq-accordion { background-color: #0f172a !important; border-color: #334155 !important; }
+        body.dark-mode .faq-summary { background-color: #0f172a !important; color: #f8fafc !important; }
+        body.dark-mode .faq-summary:hover { background-color: #1e293b !important; }
+        body.dark-mode .faq-content { background-color: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
+        body.dark-mode .faq-content b { color: #f8fafc !important; }
     </style>
 </head>
 
@@ -604,9 +625,14 @@
     <div id="gesture-zone-top">
         <div style="display:flex; justify-content: space-between; align-items: center;">
             <h2 style="margin:0;">📱 Mi Taller Web</h2>
-            <div style="display:flex; align-items:center;">
-                <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión...</span>
-                <div id="status-dot" class="online"></div>
+            <div style="display:flex; align-items:center; gap: 12px;">
+                <button id="btn-top-ayuda" onclick="showPage('ayuda')" style="display:none; background: #e2e8f0; border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; color: #475569; font-weight: bold; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;">
+                    <span style="font-size: 14px;">❓</span> AYUDA
+                </button>
+                <div style="display:flex; align-items:center;">
+                    <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión...</span>
+                    <div id="status-dot" class="online"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -791,7 +817,155 @@
                 </table>
             </div>
         </div>
+
+        <!-- SECCIÓN DE AYUDA Y GUÍA -->
+        <div id="page-ayuda" class="page" style="display:none;">
+            
+            <h2 style="margin-top:0; color:#1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">📘 La Guía de Mi Taller Web</h2>
+            
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">🛠️ Sección 1: Gestión (El Corazón del Taller) <span>+</span></summary>
+                    <div class="faq-content">
+                        <p>Es la pantalla principal donde ocurre la magia. Aquí registrás los equipos y controlás el flujo de trabajo.</p>
+                        
+                        <b>A. Formulario de Ingreso</b>
+                        <ul>
+                            <li><b>Datos del Equipo:</b> Completás cliente, WhatsApp (549...), modelo, IMEI y el PIN/Patrón de desbloqueo.</li>
+                            <li><b>Finanzas Iniciales:</b> Cargás el Precio Final y la Seña (si dejó dinero). Podés tildar "Pago Total" para automatizar el cobro.</li>
+                            <li><b>Costo de Repuesto (🔒):</b> Clic en el candado para anotar cuánto te costó la pieza sin que el cliente lo vea.</li>
+                            <li><b>Falla y Fotos:</b> Usá el autocompletado para las fallas (ej: Pantalla + Pin). Sacá fotos directamente con la cámara para tener un respaldo del estado físico del equipo.</li>
+                        </ul>
+
+                        <b>B. Estados de Reparación</b>
+                        <p>Al hacer clic en el botón de estado (ej: "Pendiente"), podés cambiarlo a:</p>
+                        <ul>
+                            <li><b>Reparado:</b> Te pregunta si usaste repuestos del stock para descontarlos.</li>
+                            <li><b>No reparado:</b> Te permite avisar por WhatsApp que no hubo solución.</li>
+                            <li><b>Entregado:</b> Si el cliente debía dinero, se abre una ventana para cobrar el saldo y elegir el método de pago final.</li>
+                            <li><b>Garantía:</b> Reingresa un equipo entregado a la lista de trabajo actual.</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">💰 Sección 2: Contabilidad (Tus Números Claros) <span>+</span></summary>
+                    <div class="faq-content">
+                        <p>Acá dejás de "contar billetes" para analizar tu negocio.</p>
+                        <ul>
+                            <li><b>Tarjetas de Resumen:</b> Mirás de un vistazo tus Ingresos Totales, Saldos por Cobrar, Gastos y la Ganancia Neta.</li>
+                            <li><b>Filtros:</b> Podés ver las finanzas de todo el mes o de un día específico usando el calendario.</li>
+                            <li><b>Exportación:</b> Botón "Descargar Excel" para tener todos los movimientos en un archivo CSV listo para el contador.</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">📦 Sección 3: Stock (Control de Inventario) <span>+</span></summary>
+                    <div class="faq-content">
+                        <p>Evitá el "me olvidé de comprar el módulo".</p>
+                        <ul>
+                            <li><b>Inventario:</b> Cargás repuestos o accesorios (fundas, cables) con su costo y precio de venta.</li>
+                            <li><b>Venta Rápida:</b> En la pestaña Gestión, tenés el botón 🛒 para vender algo del mostrador sin crear una orden técnica.</li>
+                            <li><b>Alerta de Stock:</b> Los artículos con poco inventario resaltan para que sepas qué reponer.</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">👤 Sección 4: Mi Perfil (Tu Marca) <span>+</span></summary>
+                    <div class="faq-content">
+                        <p>Donde el sistema deja de ser genérico y se vuelve tuyo.</p>
+                        <ul>
+                            <li><b>Identidad:</b> Cargás tu Logo, el nombre de tu taller y un subtítulo (ej: "Especialistas en Microelectrónica").</li>
+                            <li><b>Garantía:</b> Escribís tus términos legales que aparecerán al pie de cada ticket PDF.</li>
+                            <li><b>Seguridad:</b> Cambiás tu contraseña de acceso cuando quieras.</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">🚀 Herramientas Especiales <span>+</span></summary>
+                    <div class="faq-content">
+                        <ul>
+                            <li><b>Alerta Amarilla (⚠️):</b> Un botón que aparece solo si tenés equipos reparados hace más de 15 días. Te permite presionar un botón para enviarle un recordatorio al cliente por WhatsApp.</li>
+                            <li><b>Vista del Cliente:</b> Cuando le mandás el WhatsApp al cliente, él recibe un link donde ve una pantalla azul profesional con el estado de su equipo y un botón para bajar su propio PDF.</li>
+                            <li><b>Buscador Inteligente:</b> Buscá por nombre, modelo o número de orden.</li>
+                            <li><b>Limpieza de Fotos:</b> Los administradores pueden borrar fotos viejas (+45 días) para que la base de datos no se sature.</li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+
+            <h2 style="margin-top:40px; color:#1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">❓ Preguntas Frecuentes</h2>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">1. Acceso y Seguridad <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>Me olvidé mi contraseña, ¿qué hago?</b>
+                        Por seguridad, el sistema no tiene un botón de "recuperar" automático para usuarios finales. Deben contactarte directamente a través del botón de Soporte por WhatsApp en la pantalla de inicio para que vos reinicies su clave desde tu panel.</p>
+                        
+                        <p><b>¿Cómo cambio mi contraseña actual?</b>
+                        Ingresá a '👤 MI PERFIL', escribí la nueva clave en el campo 'Nueva Clave' y presioná 'ACTUALIZAR'.</p>
+                        
+                        <p><b>Me aparece un cartel de "Acceso Denegado".</b>
+                        Esto sucede si tu sesión fue iniciada en otro dispositivo o si tu licencia fue suspendida. Si fue por sesión duplicada, simplemente volvé a ingresar tus datos para recuperar el acceso en el dispositivo actual.</p>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">2. Impresión y Tickets <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>¿Cómo imprimo el ticket desde mi celular?</b>
+                        Al presionar el botón de la hoja (📄), el sistema genera un documento PDF. Este archivo se abrirá automáticamente en una pestaña nueva de tu navegador móvil, desde donde podrás enviarlo por WhatsApp al cliente o mandarlo a una impresora térmica vinculada por Bluetooth/Wi-Fi.</p>
+                        
+                        <p><b>Mi logo no aparece en el PDF.</b>
+                        Verificá en '👤 MI PERFIL' que hayas cargado una imagen en el botón '📷 CARGAR LOGO' y que hayas presionado 'ACTUALIZAR' al finalizar.</p>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">3. Fotos y Archivos <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>¿Por qué no puedo subir una foto?</b>
+                        El sistema intenta comprimir las fotos automáticamente para ahorrar espacio. Si falla, asegurate de tener una conexión a internet estable; verás un mensaje de "Sincronizando..." en la parte superior si la conexión es débil.</p>
+                        
+                        <p><b>¿Se borran mis fotos con el tiempo?</b>
+                        Sí, para mantener la velocidad del sistema, las fotos de equipos que ingresaron hace más de 45 días pueden ser eliminadas en las limpiezas de mantenimiento. Los datos de la orden (cliente, falla, precio) permanecen siempre; solo se eliminan las imágenes antiguas.</p>
+                    </div>
+                </details>
+            </div>
+
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">4. Estados y Gestión <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>Cambié un equipo a "Entregado" y desapareció de la lista.</b>
+                        El sistema está diseñado para mantener tu mesa de trabajo limpia. Las órdenes entregadas se mueven automáticamente a la pestaña '📁 ARCHIVADOS' después de 24 horas para que no te molesten en el día a día.</p>
+                        
+                        <p><b>¿Cómo devuelvo un repuesto al stock si la reparación se canceló?</b>
+                        Si marcaste un equipo como "Reparado" (descontando stock) pero luego el cliente se arrepiente, simplemente cambiá el estado a "Pendiente" o "No reparado". El sistema detectará que habías usado un repuesto y lo devolverá automáticamente a tu inventario.</p>
+                    </div>
+                </details>
+            </div>
+
+        </div>
+
     </div>
+
 </div>
 
 <script>
@@ -1097,7 +1271,7 @@
             generarHTMLCliente(regEncontrado, container, { nombreTaller: "Servicio Técnico" });
         });
     }
-
+    
     function generarHTMLCliente(regEncontrado, container, conf) {
         const nombreTaller = conf.nombreTaller || "Servicio Técnico";
         const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
@@ -1222,10 +1396,26 @@
         printRow("FALLA:", linesFalla); 
         printRow("OBS:", linesObs);
         
+        // CALCULO CORRECTO DE PAGOS PARA EL PDF
+        let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
+        let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+        let totalPagado = senaAbonada + saldoCobrado;
+        let saldoPendiente = (parseFloat(r.precio) || 0) - totalPagado;
+
         y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; doc.text("SEÑA: " + fmt.format(r.senaOriginal || r.sena), col1, y); y += 10;
+        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; 
+        doc.text("ABONADO: " + fmt.format(totalPagado), col1, y); y += 10;
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - (r.senaOriginal || r.sena)), 40, y + 9.5, {align:'center'});
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
+        
+        if(saldoPendiente <= 0) {
+            doc.setTextColor(22, 163, 74); // Verde para indicar Pagado
+            doc.text("PAGADO", 40, y + 9.5, {align:'center'});
+            doc.setTextColor(50, 50, 50); // Reset color a gris general
+        } else {
+            doc.setTextColor(26, 42, 58); // Reset color original
+            doc.text("SALDO: " + fmt.format(saldoPendiente), 40, y + 9.5, {align:'center'});
+        }
         
         // Volvemos a aplicar fuente "normal" y un gris más oscuro
         doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(50, 50, 50);
@@ -1284,6 +1474,7 @@
         document.getElementById('app-content').style.display = 'block';
         document.querySelector('.container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
+        document.getElementById('btn-top-ayuda').style.display = 'flex';
 
         if (!isAdmin) {
             db.ref('usuarios_registrados/' + u).on('value', snap => {
@@ -2271,6 +2462,7 @@
         document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
         document.getElementById('page-stock').style.display = p === 'stock' ? 'block' : 'none';
         document.getElementById('page-usuarios').style.display = p === 'usuarios' ? 'block' : 'none';
+        document.getElementById('page-ayuda').style.display = p === 'ayuda' ? 'block' : 'none';
         
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById('btn-nav-'+p);
