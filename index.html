@@ -27,6 +27,7 @@
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
             width: 85%; max-width: 360px; text-align: center;
+            transition: all 0.3s;
         }
         .login-card h2 { color: #1e293b; margin: 15px 0 5px; font-size: 24px; font-weight: 800; }
         .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; margin-top: 0; }
@@ -93,21 +94,21 @@
 
         /* ESTILOS ORIGINALES */
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
-        html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
+        html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; transition: background-color 0.3s ease; }
         
         nav { background: var(--primary); padding: 10px 15px; display: flex; gap: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
         nav::-webkit-scrollbar { display: none; }
         nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; flex-shrink: 0; }
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
-        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; transition: background-color 0.3s; }
+        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
         
-        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s; }
+        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; }
         
         #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(2px); }
-        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: background-color 0.3s; }
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: background-color 0.3s, border-color 0.3s; }
         
         .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
         .opt-pendiente { background: #fff9c4; color: #856404; }
@@ -117,38 +118,38 @@
         .opt-garantia { background: #e0e7ff; color: #1e40af; border-color:#bfdbfe; }
 
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
-        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
-        .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
+        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; transition: color 0.3s; }
+        .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; transition: color 0.3s; }
         .history-item span { font-size: 14px; display: block; margin-top: 2px; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; transition: background-color 0.3s; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; transition: background-color 0.3s, border-color 0.3s; }
         .full { grid-column: 1 / -1; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: background-color 0.3s, color 0.3s; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; transition: color 0.3s; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         
-        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #cbd5e0; border-radius: 8px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px; transition: background-color 0.3s; }
-        .autocomplete-list div { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 15px; color: #1e293b; transition: background-color 0.3s, color 0.3s; }
+        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #cbd5e0; border-radius: 8px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px; transition: background-color 0.3s, border-color 0.3s; }
+        .autocomplete-list div { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 15px; color: #1e293b; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         .autocomplete-list div:last-child { border-bottom: none; }
         .autocomplete-list div:active, .autocomplete-list div:hover { background: #f8fafc; color: var(--secondary); font-weight: bold; }
 
-        .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
+        .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; transition: background-color 0.3s, color 0.3s; }
         .st-pendiente { background: #fff9c4; color: #856404; }
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
         .st-no-reparado { background: #fed7d7; color: #9b2c2c; }
         .st-entregado { background: #e2e8f0; color: #475569; }
         .st-garantia { background: #e0e7ff; color: #1e40af; }
 
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.3s; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
         .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
         #status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
         .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
         .offline { background: #95a5a6; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background-color 0.3s; }
-        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; transition: background-color 0.3s; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; transition: border-color 0.3s; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background 0.3s; }
+        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         .action-btns { display: flex; gap: 4px; }
-        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, color 0.3s; }
+        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
         
         .modo-archivo-activo { background: #f1f5f9 !important; }
         .btn-active-filter { border: 2px solid #3498db !important; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
@@ -171,10 +172,10 @@
         .btn-whatsapp-alerta.notificado { background-color: #94a3b8; color: white; }
 
         /* --- ESTILOS PARA LA CONTABILIDAD MEJORADA --- */
-        .card-stats { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; border: 1px solid #f1f5f9; transition: transform 0.2s, background-color 0.3s; }
+        .card-stats { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; border: 1px solid #f1f5f9; transition: transform 0.3s, background-color 0.3s, border-color 0.3s; }
         .card-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px;}
-        .card-stats p { font-size: 30px; font-weight: 800; margin: 0; }
+        .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px; transition: color 0.3s;}
+        .card-stats p { font-size: 30px; font-weight: 800; margin: 0; transition: color 0.3s; }
         .stat-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.1; }
         
         .caja-success { border-bottom: 5px solid var(--success); }
@@ -182,7 +183,7 @@
         .caja-danger { border-bottom: 5px solid var(--danger); }
         .caja-primary { border-bottom: 5px solid var(--primary); }
 
-        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap; }
+        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap; transition: background-color 0.3s, color 0.3s; }
         .bm-efectivo { background: #dcfce7; color: #166534; }
         .bm-transferencia { background: #dbeafe; color: #1e40af; }
         .bm-tarjeta { background: #fef08a; color: #854d0e; }
@@ -190,7 +191,7 @@
         .tabla-contabilidad-row:hover { background: #f8fafc; }
 
         /* --- MODO OSCURO DEFINITIVO Y BLINDADO (OVERRIDE TOTAL) --- */
-        body.dark-mode { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        body.dark-mode { background-color: #0b0f19 !important; color: #f1f5f9 !important; }
         
         body.dark-mode .container,
         body.dark-mode #gesture-zone-top,
@@ -211,7 +212,7 @@
             border-color: #334155 !important;
         }
 
-        body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
+        body.dark-mode input[type="text"], body.dark-mode input[type="number"], body.dark-mode input[type="password"], body.dark-mode input[type="date"], body.dark-mode select, body.dark-mode textarea {
             background-color: #0f172a !important;
             color: #f8fafc !important;
             border-color: #475569 !important;
@@ -656,7 +657,7 @@
                             <option value="Tarjeta">💳 Tarjeta</option>
                         </select>
                     </div>
-                    
+
                     <div class="full" style="position: relative;">
                         <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#3498db;">(Agregá " + " para sumar varias fallas)</span></label>
                         <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
@@ -669,7 +670,7 @@
                         <label>Agregar Fotos</label>
                         <div style="display:flex; gap:10px;">
                             <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
-                            <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="documentgetElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
+                            <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
                         </div>
                         <div id="formThumbnails" class="thumb-container"></div>
                     </div>
@@ -752,8 +753,18 @@
 
         <div id="page-usuarios" class="page" style="display:none;">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin:0;">🔑 Licencias</h2>
+                <h2 style="margin:0;">🔑 Licencias y Mantenimiento</h2>
             </div>
+            
+            <div style="width: 100%; display: flex; justify-content: flex-start; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;" class="form-grid">
+                <button onclick="exportarBackupGlobal()" class="btn" style="background:#8e44ad; color:white; font-size:12px; padding:12px 25px; border:none; border-radius:30px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;">
+                    💾 DESCARGAR BACKUP GLOBAL (.JSON)
+                </button>
+                <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#475569; color:white; font-size:12px; padding:12px 25px; border:none; border-radius:30px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;">
+                    🧹 LIMPIEZA GLOBAL DE FOTOS (+45 días)
+                </button>
+            </div>
+
             <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
                 <label>Nuevo Usuario (WhatsApp)</label>
                 <div style="display:flex; gap:10px; margin-top:5px;">
@@ -778,12 +789,6 @@
                     </thead>
                     <tbody id="userTableBody"></tbody>
                 </table>
-            </div>
-
-            <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 30px;">
-                <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#475569; color:white; font-size:12px; padding:12px 25px; border:none; border-radius:30px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;">
-                    🧹 LIMPIEZA GLOBAL DE FOTOS (+45 días)
-                </button>
             </div>
         </div>
     </div>
@@ -1190,7 +1195,6 @@
         if (wappHeader) altoHeader += 6;
         if (conf.logo && altoHeader < 30) altoHeader = 30;
         
-        // Sumamos 140 (en lugar de 125) de base para darle más margen abajo y evitar cortes
         const altoDinamico = altoHeader + 140 + (lineasGarantia.length * 4) + (extraLines * 5); 
         
         const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
@@ -2480,6 +2484,42 @@
         link.download = `ST_REPORTE_FINANCIERO.csv`; link.click();
     }
 
+    // --- FUNCIÓN DE BACKUP GLOBAL PARA ADMIN (SEGURA PARA FIREBASE) ---
+    function exportarBackupGlobal() {
+        mostrarLoader("Generando copia de seguridad...");
+        // Descargamos los nodos específicos permitidos para no chocar con las reglas de seguridad
+        const nodos = [
+            'configuracion', 'reparaciones', 'reparaciones_archivadas', 
+            'reparaciones_usuarios', 'reparaciones_archivadas_usuarios', 
+            'stock', 'stock_usuarios', 'usuarios_registrados'
+        ];
+        
+        let backupData = {};
+        let promesas = nodos.map(nodo => {
+            return db.ref(nodo).once('value').then(snap => {
+                backupData[nodo] = snap.val();
+            }).catch(e => {
+                console.warn("No se pudo leer el nodo:", nodo, e);
+            });
+        });
+
+        Promise.all(promesas).then(() => {
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Backup_MiTallerWeb_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            ocultarLoader();
+            showToast("BACKUP DESCARGADO ✅", "#2ecc71");
+        }).catch(err => {
+            ocultarLoader();
+            showToast("Error al generar backup", "#e53e3e");
+            console.error(err);
+        });
+    }
+
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
         const rOriginal = idEditando ? getRegistro(idEditando) : null;
@@ -2565,6 +2605,7 @@
         document.getElementById('metodoPago').value = r.metodoPagoSena || r.metodoPago || 'No pagó'; 
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
+
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
         fotosTemporales = r.fotos || []; actualizarMiniaturasForm();
         window.scrollTo({top:0, behavior:'smooth'});
