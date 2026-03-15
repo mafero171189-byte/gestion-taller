@@ -158,7 +158,7 @@
         .caja-danger { border-bottom: 5px solid var(--danger); }
         .caja-primary { border-bottom: 5px solid var(--primary); }
 
-        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap; }
         .bm-efectivo { background: #dcfce7; color: #166534; }
         .bm-transferencia { background: #dbeafe; color: #1e40af; }
         .bm-tarjeta { background: #fef08a; color: #854d0e; }
@@ -670,6 +670,7 @@
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
     
+    // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
     
@@ -1031,13 +1032,18 @@
         docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
         const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
         const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
-        const linesFalla = docDummy.splitTextToSize(String(r.falla), 40);
+        
+        // Limpiamos el signo + del final si existe
+        const fallaLimpia = String(r.falla || "-").replace(/\s*\+\s*$/, '');
+        const linesFalla = docDummy.splitTextToSize(fallaLimpia, 40);
+        
         const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
         const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
 
         docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
         const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-        const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 74);
+        // AHORA USAMOS 60 PARA ASEGURAR MARGENES PERFECTOS
+        const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 60); 
         
         let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
         
@@ -1089,7 +1095,14 @@
         doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
         doc.text(lineasGarantia, 40, y + 20, {align:'center'});
         
-        doc.save(`Ticket_${nroLimpio}.pdf`);
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.target = '_blank';
+        link.click();
+        
         ocultarLoader();
     }
 
@@ -1728,7 +1741,7 @@
             updates.archivado = false;
         }
 
-        if ((nuevo === 'Pendiente' || nuevo === 'No reparado' || nuevo === 'Garantía') && r.repuestosDescontados) {
+        if ((nuevo === 'Pendiente' || nuevo === 'No reparado') && r.repuestosDescontados) {
             const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
             r.repuestosDescontados.forEach(rep => {
                 const refStock = db.ref(pathStock).child(rep.id);
@@ -1817,7 +1830,7 @@
         
         let fallaHtml = r.falla ? `<div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; text-align:left;">
             <div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
-            <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla)}</div>
+            <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla.replace(/\s*\+\s*$/, ''))}</div>
             ${r.pin ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/PIN</div>
             <div style="font-size:14px; font-weight:bold; color:#e53e3e; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
             ${r.obs ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
@@ -1899,6 +1912,7 @@
         aMostrar.forEach(r => {
             const saldo = r.precio - r.sena;
             const nroLimpio = String(r.orden).replace('MAT-', '');
+            const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
             
             body.innerHTML += `<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
@@ -1906,7 +1920,7 @@
                 <td><b>${escaparHTML(r.cliente)}</b><br><button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button></td>
                 <td>
                     ${escaparHTML(r.modelo)}<br>
-                    <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(r.falla || 'Sin falla registrada')}</span>
+                    <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
                 </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado || 'Pendiente'}</span></td>
                 <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
@@ -2139,16 +2153,10 @@
         });
     }
 
-    function generarFilaContabilidad(r, tipoStr, metodo, ingreso, egreso) {
+    function generarFilaContabilidad(r, tipoStr, metodoBadgesStr, ingreso, egreso) {
         let nroLimpio = String(r.orden).replace('MAT-', '');
         let bgFila = r.esVentaRapida ? 'background: #fdf4ff;' : ''; 
         
-        let metodoBadge = `<span class="badge-metodo" style="background:#e2e8f0; color:#475569;">${metodo}</span>`;
-        if(metodo === 'Efectivo') metodoBadge = `<span class="badge-metodo bm-efectivo">💵 Efectivo</span>`;
-        if(metodo === 'Transferencia') metodoBadge = `<span class="badge-metodo bm-transferencia">📲 Transf.</span>`;
-        if(metodo === 'Tarjeta') metodoBadge = `<span class="badge-metodo bm-tarjeta">💳 Tarjeta</span>`;
-        if(metodo === 'No pagó') metodoBadge = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
-
         return `
         <tr class="tabla-contabilidad-row" style="${bgFila}">
             <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:#64748b; font-weight:bold;">${r.fecha.split(',')[0]}</td>
@@ -2156,9 +2164,13 @@
                 <b>${escaparHTML(r.cliente)}</b> <span style="color:#94a3b8; font-size:11px;">(#${nroLimpio})</span><br>
                 <span style="font-size:11px; color:#64748b; font-weight:bold;">${tipoStr}:</span> <span style="font-size:11px; color:#64748b;">${escaparHTML(r.modelo)}</span>
             </td>
-            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;">${metodoBadge}</td>
-            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--success); font-weight:bold; font-size:15px;">${ingreso > 0 ? '+ ' + fmt.format(ingreso) : '-'}</td>
-            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--danger); font-weight:bold; font-size:15px;">${egreso > 0 ? '- ' + fmt.format(egreso) : '-'}</td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; vertical-align:middle;">
+                <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+                    ${metodoBadgesStr}
+                </div>
+            </td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--success); font-weight:bold; font-size:15px; vertical-align:middle;">${ingreso > 0 ? '+ ' + fmt.format(ingreso) : '-'}</td>
+            <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--danger); font-weight:bold; font-size:15px; vertical-align:middle;">${egreso > 0 ? '- ' + fmt.format(egreso) : '-'}</td>
         </tr>`;
     }
 
@@ -2228,14 +2240,28 @@
                 porIngresar += deuda;
             }
 
-            if (senaOriginal > 0 || costoRepuesto > 0 || (senaOriginal === 0 && saldoCobrado === 0)) {
-                let tipo = r.esVentaRapida ? 'Venta Directa' : 'Seña/Adelanto';
-                filasHTML += generarFilaContabilidad(r, tipo, metSena, senaOriginal, costoRepuesto);
+            const getBadge = (m, monto) => {
+                if(m === 'Efectivo') return `<span class="badge-metodo bm-efectivo">💵 Efectivo: $${monto.toLocaleString('es-AR')}</span>`;
+                if(m === 'Transferencia') return `<span class="badge-metodo bm-transferencia">📲 Transf: $${monto.toLocaleString('es-AR')}</span>`;
+                if(m === 'Tarjeta') return `<span class="badge-metodo bm-tarjeta">💳 Tarjeta: $${monto.toLocaleString('es-AR')}</span>`;
+                return `<span class="badge-metodo" style="background:#e2e8f0; color:#475569;">${m}: $${monto.toLocaleString('es-AR')}</span>`;
+            };
+
+            let metodoBadges = '';
+            if (senaOriginal > 0) {
+                metodoBadges += getBadge(metSena, senaOriginal);
+            }
+            if (saldoCobrado > 0) {
+                metodoBadges += getBadge(metSaldo, saldoCobrado);
+            }
+            if (senaOriginal === 0 && saldoCobrado === 0) {
+                metodoBadges = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
             }
 
-            if (saldoCobrado > 0) {
-                filasHTML += generarFilaContabilidad(r, 'Cobro Saldo Final', metSaldo, saldoCobrado, 0);
-            }
+            let ingresoTotal = senaOriginal + saldoCobrado;
+            let tipo = r.esVentaRapida ? 'Venta Directa' : 'Reparación';
+            
+            filasHTML += generarFilaContabilidad(r, tipo, metodoBadges, ingresoTotal, costoRepuesto);
         });
 
         if(ordenesFiltradas.length === 0) {
@@ -2283,11 +2309,26 @@
     }
 
     function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;MétodoPagoSena;MetodoPagoSaldo;PrecioTotal;SenaOriginal;SaldoCobrado;CostoRepuesto;Estado\n";
+        let csv = "\ufeffFecha;Orden;Cliente;Equipo;MétodosDePago;IngresoTotal;CostoRepuesto;Ganancia;Estado\n";
         let todasLasOrdenes = [...registros, ...registrosArchivados]; 
         todasLasOrdenes.forEach(r => { 
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${r.metodoPagoSena||r.metodoPago||'No pago'};${r.metodoPagoSaldo||'-'};${r.precio};${r.senaOriginal||r.sena||0};${r.saldoCobrado||0};${r.costoRepuesto||0};${r.estado}\n`; 
+            
+            let senaOriginal = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
+            let metSena = r.metodoPagoSena || r.metodoPago || 'No pagó';
+            let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+            let metSaldo = r.metodoPagoSaldo || '';
+
+            let metodosUsados = [];
+            if(senaOriginal > 0) metodosUsados.push(`${metSena} ($${senaOriginal})`);
+            if(saldoCobrado > 0) metodosUsados.push(`${metSaldo} ($${saldoCobrado})`);
+            if(metodosUsados.length === 0) metodosUsados.push('No pagó');
+            
+            let ingresoTotal = senaOriginal + saldoCobrado;
+            let costo = parseFloat(r.costoRepuesto) || 0;
+            let ganancia = ingresoTotal - costo;
+
+            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${metodosUsados.join(' + ')};${ingresoTotal};${costo};${ganancia};${r.estado}\n`; 
         });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
