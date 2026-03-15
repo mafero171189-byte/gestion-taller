@@ -27,7 +27,6 @@
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
             width: 85%; max-width: 360px; text-align: center;
-            transition: all 0.3s;
         }
         .login-card h2 { color: #1e293b; margin: 15px 0 5px; font-size: 24px; font-weight: 800; }
         .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; margin-top: 0; }
@@ -94,21 +93,21 @@
 
         /* ESTILOS ORIGINALES */
         :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
-        html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; transition: background-color 0.3s ease; }
+        html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; }
         
         nav { background: var(--primary); padding: 10px 15px; display: flex; gap: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
         nav::-webkit-scrollbar { display: none; }
         nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; flex-shrink: 0; }
         nav button.active { color: white; background: rgba(255,255,255,0.1); }
-        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
+        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; transition: background-color 0.3s; }
         
-        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; }
+        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s; }
         
         #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(2px); }
-        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: background-color 0.3s, border-color 0.3s; }
+        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: background-color 0.3s; }
         
         .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
         .opt-pendiente { background: #fff9c4; color: #856404; }
@@ -118,38 +117,38 @@
         .opt-garantia { background: #e0e7ff; color: #1e40af; border-color:#bfdbfe; }
 
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
-        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; transition: color 0.3s; }
-        .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; transition: color 0.3s; }
+        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
+        .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; }
         .history-item span { font-size: 14px; display: block; margin-top: 2px; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; transition: background-color 0.3s, border-color 0.3s; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; transition: background-color 0.3s; }
         .full { grid-column: 1 / -1; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; transition: color 0.3s; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: background-color 0.3s, color 0.3s; }
         
-        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #cbd5e0; border-radius: 8px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px; transition: background-color 0.3s, border-color 0.3s; }
-        .autocomplete-list div { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 15px; color: #1e293b; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #cbd5e0; border-radius: 8px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px; transition: background-color 0.3s; }
+        .autocomplete-list div { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 15px; color: #1e293b; transition: background-color 0.3s, color 0.3s; }
         .autocomplete-list div:last-child { border-bottom: none; }
         .autocomplete-list div:active, .autocomplete-list div:hover { background: #f8fafc; color: var(--secondary); font-weight: bold; }
 
-        .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; transition: background-color 0.3s, color 0.3s; }
+        .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
         .st-pendiente { background: #fff9c4; color: #856404; }
         .st-reparado { background: #c8e6c9; color: #1b5e20; }
         .st-no-reparado { background: #fed7d7; color: #9b2c2c; }
         .st-entregado { background: #e2e8f0; color: #475569; }
         .st-garantia { background: #e0e7ff; color: #1e40af; }
 
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.3s; }
+        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-main { background: var(--primary); color: white; width: 100%; }
         .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
         #status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
         .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
         .offline { background: #95a5a6; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background 0.3s; }
-        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background-color 0.3s; }
+        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; transition: background-color 0.3s; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; transition: border-color 0.3s; }
         .action-btns { display: flex; gap: 4px; }
-        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, color 0.3s; }
         
         .modo-archivo-activo { background: #f1f5f9 !important; }
         .btn-active-filter { border: 2px solid #3498db !important; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
@@ -172,10 +171,10 @@
         .btn-whatsapp-alerta.notificado { background-color: #94a3b8; color: white; }
 
         /* --- ESTILOS PARA LA CONTABILIDAD MEJORADA --- */
-        .card-stats { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; border: 1px solid #f1f5f9; transition: transform 0.3s, background-color 0.3s, border-color 0.3s; }
+        .card-stats { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; border: 1px solid #f1f5f9; transition: transform 0.2s, background-color 0.3s; }
         .card-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px; transition: color 0.3s;}
-        .card-stats p { font-size: 30px; font-weight: 800; margin: 0; transition: color 0.3s; }
+        .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px;}
+        .card-stats p { font-size: 30px; font-weight: 800; margin: 0; }
         .stat-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.1; }
         
         .caja-success { border-bottom: 5px solid var(--success); }
@@ -183,48 +182,70 @@
         .caja-danger { border-bottom: 5px solid var(--danger); }
         .caja-primary { border-bottom: 5px solid var(--primary); }
 
-        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap; transition: background-color 0.3s, color 0.3s; }
+        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap; }
         .bm-efectivo { background: #dcfce7; color: #166534; }
         .bm-transferencia { background: #dbeafe; color: #1e40af; }
         .bm-tarjeta { background: #fef08a; color: #854d0e; }
-        .tabla-contabilidad-row { background: white; transition: background-color 0.3s; }
+        .tabla-contabilidad-row { background: white; transition: background-color 0.2s; }
         .tabla-contabilidad-row:hover { background: #f8fafc; }
 
-        /* --- REDISEÑO MODO OSCURO (DEEP SLATE & NEON) --- */
-        body.dark-mode { background-color: #0b0f19; color: #e2e8f0; }
-        body.dark-mode .container, body.dark-mode .modal-box { background: #151e2e; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        body.dark-mode .card-stats { background: #1a2235; border-color: #2a3441; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
-        body.dark-mode .card-stats:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
-        body.dark-mode #gesture-zone-top { background: #151e2e; border-bottom: 1px solid #1e293b; }
-        body.dark-mode .form-grid { background: #111827; border-color: #1e293b; }
-        body.dark-mode input, body.dark-mode select, body.dark-mode textarea { background: #0b0f19; color: #e2e8f0; border: 1px solid #334155; }
-        body.dark-mode input:focus, body.dark-mode select:focus, body.dark-mode textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
-        body.dark-mode label, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4 { color: #f1f5f9; }
-        body.dark-mode .history-item::before, body.dark-mode .history-item b { color: #94a3b8; }
+        /* --- MODO OSCURO DEFINITIVO Y BLINDADO (OVERRIDE TOTAL) --- */
+        body.dark-mode { background-color: #0f172a !important; color: #f1f5f9 !important; }
         
-        body.dark-mode th { background: #0f172a; color: #cbd5e1; border-bottom: 1px solid #1e293b; }
-        body.dark-mode td { border-bottom: 1px solid #1e293b; color: #e2e8f0; }
-        body.dark-mode .action-btns button { background: #1e293b; border-color: #334155; color: #e2e8f0; }
-        body.dark-mode .action-btns button:hover { background: #334155; }
+        body.dark-mode .container,
+        body.dark-mode #gesture-zone-top,
+        body.dark-mode .modal-box,
+        body.dark-mode .form-grid,
+        body.dark-mode .card-stats,
+        body.dark-mode .card-form,
+        body.dark-mode .login-card,
+        body.dark-mode .autocomplete-list,
+        body.dark-mode [style*="background: white"],
+        body.dark-mode [style*="background:white"],
+        body.dark-mode [style*="background: #f8fafc"],
+        body.dark-mode [style*="background:#f8fafc"],
+        body.dark-mode [style*="background: #fdfdfd"],
+        body.dark-mode [style*="background:#fdfdfd"],
+        body.dark-mode [style*="background:#fff5f5"] {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        body.dark-mode input, body.dark-mode select, body.dark-mode textarea {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #475569 !important;
+        }
         
-        body.dark-mode .autocomplete-list { background: #1e293b; border-color: #334155; }
-        body.dark-mode .autocomplete-list div { color: #e2e8f0; border-bottom: 1px solid #0f172a; }
-        body.dark-mode .autocomplete-list div:hover { background: #334155; color: #60a5fa; }
-        body.dark-mode .tabla-contabilidad-row { background: #151e2e; }
-        body.dark-mode .tabla-contabilidad-row:hover { background: #1e293b; }
-        body.dark-mode .login-card { background: rgba(15, 23, 42, 0.95); border: 1px solid #1e293b; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-        body.dark-mode .login-card p { color: #94a3b8; }
-        body.dark-mode .modo-archivo-activo { background: #111827 !important; }
+        body.dark-mode th { background-color: #0f172a !important; color: #94a3b8 !important; border-bottom: 1px solid #334155 !important; }
+        body.dark-mode td { border-bottom: 1px solid #334155 !important; color: #f1f5f9 !important; }
         
-        /* Fix de colores de etiquetas para Dark Mode */
-        body.dark-mode .badge-status.st-pendiente { background: #422006; color: #fbd38d; }
-        body.dark-mode .badge-status.st-reparado { background: #064e3b; color: #86efac; }
-        body.dark-mode .badge-status.st-no-reparado { background: #7f1d1d; color: #fca5a5; }
-        body.dark-mode .badge-status.st-entregado { background: #1e293b; color: #cbd5e1; }
-        body.dark-mode .badge-metodo.bm-efectivo { background: #064e3b; color: #86efac; }
-        body.dark-mode .badge-metodo.bm-transferencia { background: #1e3a8a; color: #93c5fd; }
-        body.dark-mode .badge-metodo.bm-tarjeta { background: #713f12; color: #fde047; }
-        body.dark-mode .table-wrapper { background: transparent !important; border-color: #1e293b !important; }
+        body.dark-mode .action-btns button { background-color: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark-mode .action-btns button:hover { background-color: #334155 !important; }
+        
+        body.dark-mode .tabla-contabilidad-row { background-color: #1e293b !important; }
+        body.dark-mode .tabla-contabilidad-row:hover { background-color: #334155 !important; }
+        body.dark-mode .autocomplete-list div { border-bottom-color: #334155 !important; color: #f1f5f9 !important; }
+        body.dark-mode .autocomplete-list div:hover { background-color: #334155 !important; color: #3b82f6 !important; }
+        
+        /* Text Colors Fixes para sobreescribir estilos en línea */
+        body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode label { color: #f8fafc !important; }
+        body.dark-mode .history-item::before, body.dark-mode .history-item b { color: #94a3b8 !important; }
+        
+        body.dark-mode [style*="color:#1e293b"], body.dark-mode [style*="color: #1e293b"], body.dark-mode [style*="color: #333"] { color: #f1f5f9 !important; }
+        body.dark-mode [style*="color:#475569"], body.dark-mode [style*="color: #475569"], body.dark-mode [style*="color:#64748b"], body.dark-mode [style*="color: #64748b"] { color: #94a3b8 !important; }
+
+        /* Badges y Botones de colores fijos */
+        body.dark-mode .badge-status.st-pendiente { background-color: #78350f !important; color: #fde68a !important; }
+        body.dark-mode .badge-status.st-reparado { background-color: #14532d !important; color: #86efac !important; }
+        body.dark-mode .badge-status.st-no-reparado { background-color: #7f1d1d !important; color: #fca5a5 !important; }
+        body.dark-mode .badge-status.st-entregado { background-color: #334155 !important; color: #e2e8f0 !important; }
+        
+        body.dark-mode .badge-metodo.bm-efectivo { background-color: #14532d !important; color: #86efac !important; }
+        body.dark-mode .badge-metodo.bm-transferencia { background-color: #1e3a8a !important; color: #93c5fd !important; }
+        body.dark-mode .badge-metodo.bm-tarjeta { background-color: #713f12 !important; color: #fde047 !important; }
+        
+        body.dark-mode .modo-archivo-activo { background-color: #111827 !important; }
     </style>
 </head>
 
@@ -648,7 +669,7 @@
                         <label>Agregar Fotos</label>
                         <div style="display:flex; gap:10px;">
                             <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
-                            <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
+                            <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="documentgetElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
                         </div>
                         <div id="formThumbnails" class="thumb-container"></div>
                     </div>
