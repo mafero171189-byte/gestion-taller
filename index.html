@@ -1040,10 +1040,10 @@
         const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
         const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
 
-        docDummy.setFont("helvetica", "italic"); docDummy.setFontSize(8);
+        // Cambiamos a "normal" para unificar la letra y le damos un poco más de ancho a la línea
+        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(8);
         const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-        // AHORA USAMOS 60 PARA ASEGURAR MARGENES PERFECTOS
-        const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 60); 
+        const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 65); 
         
         let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1);
         
@@ -1060,7 +1060,8 @@
         if (wappHeader) altoHeader += 6;
         if (conf.logo && altoHeader < 30) altoHeader = 30;
         
-        const altoDinamico = altoHeader + 125 + (lineasGarantia.length * 4) + (extraLines * 5); 
+        // Sumamos 140 (en lugar de 125) de base para darle más margen abajo y evitar cortes
+        const altoDinamico = altoHeader + 140 + (lineasGarantia.length * 4) + (extraLines * 5); 
         
         const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
         
@@ -1092,7 +1093,8 @@
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("SALDO: " + fmt.format(r.precio - (r.senaOriginal || r.sena)), 40, y + 9.5, {align:'center'});
         
-        doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+        // Volvemos a aplicar fuente "normal" y un gris más oscuro
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(50, 50, 50);
         doc.text(lineasGarantia, 40, y + 20, {align:'center'});
         
         const pdfBlob = doc.output('blob');
@@ -1193,6 +1195,15 @@
         }, errorDeFirebase => {
             ocultarLoader();
             showToast("Problema de conexión con la base de datos", "#e53e3e");
+        });
+
+        // Novedad: Cargamos los archivados en segundo plano al iniciar para que autoOrden() nunca pierda la cuenta
+        const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
+        db.ref(pathArchivado).once('value').then(snap => {
+            const v = snap.val();
+            registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+            historialDescargado = true;
+            actualizarListasAutocompletado();
         });
 
         const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
@@ -2372,8 +2383,11 @@
             if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
             if(rOriginal.fecha) data.fecha = rOriginal.fecha;
             if(rOriginal.recordatorioEnviado) data.recordatorioEnviado = true;
-            if(rOriginal.senaOriginal !== undefined) data.senaOriginal = rOriginal.senaOriginal;
-            if(rOriginal.metodoPagoSena) data.metodoPagoSena = rOriginal.metodoPagoSena;
+            
+            // Permite que la seña original y su método se actualicen si los editás
+            data.senaOriginal = senaParse; 
+            data.metodoPagoSena = metodoForm; 
+            
             if(rOriginal.saldoCobrado) data.saldoCobrado = rOriginal.saldoCobrado;
             if(rOriginal.metodoPagoSaldo) data.metodoPagoSaldo = rOriginal.metodoPagoSaldo;
 
@@ -2413,8 +2427,8 @@
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
         document.getElementById('pin').value = r.pin || "";
         document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
-        document.getElementById('sena').value = r.sena.toLocaleString('es-AR');
-        document.getElementById('metodoPago').value = r.metodoPago || 'No pagó'; 
+        document.getElementById('sena').value = (r.senaOriginal !== undefined ? r.senaOriginal : r.sena).toLocaleString('es-AR');
+        document.getElementById('metodoPago').value = r.metodoPagoSena || r.metodoPago || 'No pagó'; 
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
