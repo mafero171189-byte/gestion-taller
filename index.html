@@ -15,6 +15,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
+        /* Optimizaciones UX / UI */
+        .no-select { user-select: none; -webkit-user-select: none; }
+        nav button, .btn, .status-option, .badge-status, .login-card h2, .card-stats b, th { user-select: none; -webkit-user-select: none; }
+
         /* ESTILOS DEL LOGIN MODERNIZADO */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -83,6 +87,34 @@
         .btn-soporte-wapp:hover {
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+        }
+
+        /* BOTÓN FLOTANTE AYUDA (Nuevo) */
+        .btn-flotante-ayuda {
+            position: fixed;
+            bottom: 30px;
+            left: 25px;
+            background: rgba(52, 152, 219, 0.5);
+            backdrop-filter: blur(5px);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 9000;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-flotante-ayuda:hover, .btn-flotante-ayuda:active {
+            background: rgba(52, 152, 219, 1);
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
         }
 
         #app-content { display: none; }
@@ -201,13 +233,13 @@
         body.dark-mode .card-form,
         body.dark-mode .login-card,
         body.dark-mode .autocomplete-list,
-        body.dark-mode [style*="background: white"],
+        body.dark-mode[style*="background: white"],
         body.dark-mode [style*="background:white"],
-        body.dark-mode [style*="background: #f8fafc"],
-        body.dark-mode [style*="background:#f8fafc"],
-        body.dark-mode [style*="background: #fdfdfd"],
+        body.dark-mode[style*="background: #f8fafc"],
+        body.dark-mode[style*="background:#f8fafc"],
+        body.dark-mode[style*="background: #fdfdfd"],
         body.dark-mode [style*="background:#fdfdfd"],
-        body.dark-mode [style*="background:#fff5f5"] {
+        body.dark-mode[style*="background:#fff5f5"] {
             background-color: #1e293b !important;
             border-color: #334155 !important;
         }
@@ -228,14 +260,15 @@
         body.dark-mode .tabla-contabilidad-row:hover { background-color: #334155 !important; }
         body.dark-mode .autocomplete-list div { border-bottom-color: #334155 !important; color: #f1f5f9 !important; }
         body.dark-mode .autocomplete-list div:hover { background-color: #334155 !important; color: #3b82f6 !important; }
-        body.dark-mode #btn-top-ayuda { background-color: #334155 !important; color: #f8fafc !important; }
+        body.dark-mode .btn-flotante-ayuda { background: rgba(51, 65, 85, 0.6) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        body.dark-mode .btn-flotante-ayuda:hover { background: rgba(51, 65, 85, 1) !important; }
         
         /* Text Colors Fixes para sobreescribir estilos en línea */
         body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode label { color: #f8fafc !important; }
         body.dark-mode .history-item::before, body.dark-mode .history-item b { color: #94a3b8 !important; }
         
-        body.dark-mode [style*="color:#1e293b"], body.dark-mode [style*="color: #1e293b"], body.dark-mode [style*="color: #333"] { color: #f1f5f9 !important; }
-        body.dark-mode [style*="color:#475569"], body.dark-mode [style*="color: #475569"], body.dark-mode [style*="color:#64748b"], body.dark-mode [style*="color: #64748b"] { color: #94a3b8 !important; }
+        body.dark-mode [style*="color:#1e293b"], body.dark-mode[style*="color: #1e293b"], body.dark-mode[style*="color: #333"] { color: #f1f5f9 !important; }
+        body.dark-mode [style*="color:#475569"], body.dark-mode[style*="color: #475569"], body.dark-mode[style*="color:#64748b"], body.dark-mode[style*="color: #64748b"] { color: #94a3b8 !important; }
 
         /* Badges y Botones de colores fijos */
         body.dark-mode .badge-status.st-pendiente { background-color: #78350f !important; color: #fde68a !important; }
@@ -285,7 +318,7 @@
         <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">Ideal para vender cables, fundas o repuestos sin crear orden.</p>
         
         <div style="position: relative; text-align: left;">
-            <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
+            <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
             <div id="vrAutocomplete" class="autocomplete-list" style="width: 100%;"></div>
         </div>
         
@@ -365,6 +398,9 @@
 
 <div id="app-content">
     <div id="toast-alert"></div>
+    
+    <!-- BOTÓN FLOTANTE AYUDA -->
+    <button id="btn-flotante-ayuda" class="btn-flotante-ayuda" onclick="showPage('ayuda')" style="display:none;" title="Abrir Guía y Ayuda">❓</button>
 
     <div id="modalUsoStock" class="modal-overlay" style="z-index: 4500;">
         <div class="modal-box" style="overflow: visible; width: 340px;">
@@ -373,7 +409,7 @@
             <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">¿Usaste repuestos del stock? Buscalos y agregalos a la lista:</p>
             
             <div style="position: relative; text-align: left;">
-                <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" oninput="filtrarStockModal()" onfocus="filtrarStockModal()" onblur="hideAutocomplete('repuestoModalUsado')" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; box-sizing: border-box; font-size:14px;">
+                <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; box-sizing: border-box; font-size:14px;">
                 <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
             </div>
             
@@ -440,7 +476,7 @@
                             <th>Acción</th>
                         </tr>
                     </thead>
-                    <tbody id="olvidadosBody"></tbody>
+                    <tbody id="olvidadosBody" class="no-select"></tbody>
                 </table>
             </div>
         </div>
@@ -497,7 +533,7 @@
     <div id="historyModal" class="modal-overlay">
         <div class="modal-box" style="width:300px;">
             <p style="font-size:18px;"><b>🕒 Historial de la Orden</b></p>
-            <div id="historyContent" style="margin:15px 0; max-height: 350px; overflow-y: auto;"></div>
+            <div id="historyContent" style="margin:15px 0; max-height: 350px; overflow-y: auto; text-align: left;"></div>
             <button onclick="closeHistory()" class="btn-main" style="padding:10px; font-size:13px; font-weight:bold;">CERRAR</button>
         </div>
     </div>
@@ -592,7 +628,7 @@
                             <th>Precio</th>
                         </tr>
                     </thead>
-                    <tbody id="hcBody"></tbody>
+                    <tbody id="hcBody" class="no-select"></tbody>
                 </table>
             </div>
             <div id="hcTotalDiv" style="margin-top: 15px; text-align: right; font-weight: bold; font-size: 16px; color: var(--success);"></div>
@@ -626,9 +662,6 @@
         <div style="display:flex; justify-content: space-between; align-items: center;">
             <h2 style="margin:0;">📱 Mi Taller Web</h2>
             <div style="display:flex; align-items:center; gap: 12px;">
-                <button id="btn-top-ayuda" onclick="showPage('ayuda')" style="display:none; background: #e2e8f0; border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; color: #475569; font-weight: bold; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;">
-                    <span style="font-size: 14px;">❓</span> AYUDA
-                </button>
                 <div style="display:flex; align-items:center;">
                     <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión...</span>
                     <div id="status-dot" class="online"></div>
@@ -647,7 +680,7 @@
                     
                     <div style="position: relative;">
                         <label>Modelo</label>
-                        <input type="text" id="modelo" required oninput="saveDraft(); showAutocomplete('modelo')" onfocus="showAutocomplete('modelo')" onblur="hideAutocomplete('modelo')" autocomplete="off" placeholder="Escribe o selecciona...">
+                        <input type="text" id="modelo" required oninput="saveDraft(); showAutocomplete('modelo')" onfocus="showAutocomplete('modelo')" autocomplete="off" placeholder="Escribe o selecciona...">
                         <div id="autocomplete-modelo" class="autocomplete-list"></div>
                     </div>
                     
@@ -686,7 +719,7 @@
 
                     <div class="full" style="position: relative;">
                         <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#3498db;">(Agregá " + " para sumar varias fallas)</span></label>
-                        <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
+                        <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
                         <div id="autocomplete-falla" class="autocomplete-list"></div>
                     </div>
                     
@@ -712,7 +745,7 @@
             </form>
 
             <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="resetPaginacion()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
+                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
                 <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
@@ -724,7 +757,7 @@
                     <thead>
                         <tr><th>Orden/Hist</th><th>Cliente</th><th>Equipo / Falla</th><th>Estado</th><th>Saldo</th><th>Acciones</th></tr>
                     </thead>
-                    <tbody id="tableBody"></tbody>
+                    <tbody id="tableBody" class="no-select"></tbody>
                 </table>
             </div>
             
@@ -755,7 +788,7 @@
             <h2 style="margin-top:0;">📦 Control de Stock</h2>
             
             <div style="margin-bottom: 15px; margin-top: 10px;">
-                <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box; font-size:15px;">
+                <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box; font-size:15px;">
             </div>
 
             <div class="form-grid">
@@ -772,7 +805,7 @@
             <div class="table-wrapper" style="overflow-x:auto;">
                 <table style="width: 100%; min-width:600px;">
                     <thead><tr><th>Artículo</th><th>Stock Actual</th><th>Costo</th><th>Precio Venta</th><th>Acciones</th></tr></thead>
-                    <tbody id="bodyStock"></tbody>
+                    <tbody id="bodyStock" class="no-select"></tbody>
                 </table>
             </div>
         </div>
@@ -800,7 +833,7 @@
             </div>
 
             <div style="margin-bottom: 15px;">
-                <input type="text" id="search-user" placeholder="🔎 Buscar Usuario por WhatsApp..." onkeyup="listarUsuarios()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box;">
+                <input type="text" id="search-user" placeholder="🔎 Buscar Usuario por WhatsApp..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box;">
             </div>
 
             <div class="table-wrapper" style="overflow-x:auto; background:white; border-radius:12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
@@ -818,9 +851,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE AYUDA Y GUÍA -->
         <div id="page-ayuda" class="page" style="display:none;">
-            
             <h2 style="margin-top:0; color:#1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">📘 La Guía de Mi Taller Web</h2>
             
             <div class="faq-accordion">
@@ -828,7 +859,6 @@
                     <summary class="faq-summary">🛠️ Sección 1: Gestión (El Corazón del Taller) <span>+</span></summary>
                     <div class="faq-content">
                         <p>Es la pantalla principal donde ocurre la magia. Aquí registrás los equipos y controlás el flujo de trabajo.</p>
-                        
                         <b>A. Formulario de Ingreso</b>
                         <ul>
                             <li><b>Datos del Equipo:</b> Completás cliente, WhatsApp (549...), modelo, IMEI y el PIN/Patrón de desbloqueo.</li>
@@ -836,7 +866,6 @@
                             <li><b>Costo de Repuesto (🔒):</b> Clic en el candado para anotar cuánto te costó la pieza sin que el cliente lo vea.</li>
                             <li><b>Falla y Fotos:</b> Usá el autocompletado para las fallas (ej: Pantalla + Pin). Sacá fotos directamente con la cámara para tener un respaldo del estado físico del equipo.</li>
                         </ul>
-
                         <b>B. Estados de Reparación</b>
                         <p>Al hacer clic en el botón de estado (ej: "Pendiente"), podés cambiarlo a:</p>
                         <ul>
@@ -963,9 +992,7 @@
             </div>
 
         </div>
-
     </div>
-
 </div>
 
 <script>
@@ -979,19 +1006,18 @@
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
     
-    // Inicialización Dual Segura
+    // Inicialización
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
     
     const db = firebase.database();
-    let dbRef; 
     let currentUser = null;
     let isUserAdmin = false;
     let isClientMode = false;
 
-    let registros = [];
+    let registros =[];
     let registrosArchivados = [];
-    let stockData = []; 
+    let stockData =[]; 
     let historialDescargado = false; 
 
     let limiteTabla = 50;
@@ -1001,14 +1027,89 @@
     let idParaSuspender = null;
     let idParaEliminarLicencia = null;
 
-    let listaOlvidados = []; 
-    let repuestosSeleccionadosModal = []; 
+    let listaOlvidados =[]; 
+    let repuestosSeleccionadosModal =[]; 
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
+    // ==========================================
+    // 1. HELPERS OPTIMIZACIÓN (DRY & JS Logic)
+    // ==========================================
+
+    function getDbPath(tipo) {
+        if (tipo === 'activo') return isUserAdmin ? 'reparaciones' : `reparaciones_usuarios/${currentUser}`;
+        if (tipo === 'archivado') return isUserAdmin ? 'reparaciones_archivadas' : `reparaciones_archivadas_usuarios/${currentUser}`;
+        if (tipo === 'stock') return isUserAdmin ? 'stock' : `stock_usuarios/${currentUser}`;
+        if (tipo === 'perfil') return isUserAdmin ? 'configuracion/admin' : `usuarios_registrados/${currentUser}`;
+        return '';
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    const debounceRenderTable = debounce(() => { resetPaginacion(); }, 300);
+    const debounceRenderStock = debounce(() => { renderStock(); }, 300);
+    const debounceListarUsuarios = debounce(() => { listarUsuarios(); }, 300);
+    const debounceFiltrarVentaRapida = debounce(() => { filtrarVentaRapida(); }, 300);
+    const debounceFiltrarStockModal = debounce(() => { filtrarStockModal(); }, 300);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('search').addEventListener('input', debounceRenderTable);
+        document.getElementById('search-stock').addEventListener('input', debounceRenderStock);
+        document.getElementById('search-user').addEventListener('input', debounceListarUsuarios);
+        document.getElementById('vrBusqueda').addEventListener('input', debounceFiltrarVentaRapida);
+        document.getElementById('repuestoModalUsado').addEventListener('input', debounceFiltrarStockModal);
+
+        document.getElementById('tableBody').addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                const action = btn.getAttribute('data-action');
+                const id = btn.getAttribute('data-id');
+                if (action === 'fotos') abrirFotos(id);
+                else if (action === 'imprimir') imprimir(id);
+                else if (action === 'editar') editar(id);
+                else if (action === 'archivar') archivar(id);
+                else if (action === 'borrar') openDeleteModal(id);
+                else if (action === 'whatsapp') enviarWhatsApp(id);
+                return;
+            }
+
+            const badge = e.target.closest('span[data-action="estado"]');
+            if (badge) return openStatusModal(badge.getAttribute('data-id'));
+
+            const priceCell = e.target.closest('td[data-action="precio"]');
+            if (priceCell) return openPriceModal(priceCell.getAttribute('data-id'));
+
+            const historyIcon = e.target.closest('span[data-action="historial"]');
+            if (historyIcon) return openHistory(historyIcon.getAttribute('data-id'));
+
+            const clientName = e.target.closest('b[data-action="historial-cliente"]');
+            if (clientName) return abrirHistorialCliente(clientName.getAttribute('data-cliente'), clientName.getAttribute('data-tel'));
+        });
+
+        document.getElementById('bodyStock').addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            if (action === 'editar-stock') editarStock(id);
+            else if (action === 'borrar-stock') eliminarStock(id);
+        });
+
+        document.getElementById('olvidadosBody').addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-action="avisar-olvidado"]');
+            if (btn) enviarWhatsAppOlvidado(btn.getAttribute('data-id'));
+        });
+    });
+
     function escaparHTML(texto) {
         if (!texto) return "";
-        return texto.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        return String(texto).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
     function parseFechaAR(fechaStr) {
@@ -1019,131 +1120,12 @@
         return new Date(fechaPartes[2], parseInt(fechaPartes[1]) - 1, fechaPartes[0]);
     }
 
-    function calcularOlvidados() {
-        if (isClientMode) return;
-        const HOY = new Date();
-        const LIMITE_DIAS = 15; 
-        listaOlvidados = [];
-
-        registros.forEach(r => {
-            if (r.estado === 'Reparado' && !r.archivado && !r.esVentaRapida) {
-                let fechaReparadoStr = r.fecha; 
-                if (r.historialEstados) {
-                    let repEstados = r.historialEstados.filter(h => h.estado === 'Reparado');
-                    if (repEstados.length > 0) {
-                        fechaReparadoStr = repEstados[repEstados.length - 1].fecha;
-                    }
-                }
-
-                let fechaReparacion = parseFechaAR(fechaReparadoStr);
-                let diffTime = HOY.getTime() - fechaReparacion.getTime();
-                let diffDias = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDias >= LIMITE_DIAS) {
-                    listaOlvidados.push({ ...r, diasListo: diffDias });
-                }
-            }
-        });
-
-        listaOlvidados.sort((a, b) => {
-            if (a.recordatorioEnviado === b.recordatorioEnviado) {
-                return a.diasListo - b.diasListo;
-            }
-            return a.recordatorioEnviado ? 1 : -1; 
-        });
-
-        const btn = document.getElementById('btnAlertaAmarilla');
-        if (listaOlvidados.length > 0) {
-            btn.innerHTML = `⚠️ ${listaOlvidados.length} Equipos Olvidados`;
-            btn.style.display = 'inline-block';
-        } else {
-            btn.style.display = 'none';
-        }
-    }
-
-    function abrirModalOlvidados() {
-        const tbody = document.getElementById('olvidadosBody');
-        tbody.innerHTML = '';
-        listaOlvidados.forEach(r => {
-            let botonAccion = r.recordatorioEnviado 
-                ? `<button class="btn-whatsapp-alerta notificado" onclick="enviarWhatsAppOlvidado('${r.id}')">✅ Notificado</button>`
-                : `<button class="btn-whatsapp-alerta activo" onclick="enviarWhatsAppOlvidado('${r.id}')">💬 Avisar</button>`;
-
-            let opacidad = r.recordatorioEnviado ? 'opacity: 0.6;' : '';
-            let colorDias = r.recordatorioEnviado ? '#64748b' : 'red';
-
-            tbody.innerHTML += `
-                <tr style="${opacidad}">
-                    <td><b>${escaparHTML(r.cliente)}</b></td>
-                    <td>${escaparHTML(r.modelo)}</td>
-                    <td style="color: ${colorDias}; font-weight: bold;">${r.diasListo} días</td>
-                    <td>${botonAccion}</td>
-                </tr>
-            `;
-        });
-        document.getElementById('olvidadosModal').style.display = 'flex';
-    }
-
-    function cerrarModalOlvidados() {
-        document.getElementById('olvidadosModal').style.display = 'none';
-    }
-
-    function enviarWhatsAppOlvidado(id) {
-        const r = listaOlvidados.find(x => x.id === id);
-        if (!r) return;
-
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        db.ref(path).once('value', snap => {
-            const conf = snap.val() || {};
-            const nombreTaller = conf.nombreTaller || "nuestro taller";
-            
-            let num = String(r.tel).replace(/\D/g, ''); 
-            if (!num.startsWith('54')) num = '549' + num;
-
-            const msj = `¡Hola ${r.cliente}! ¿Cómo estás? Te hablo de ${nombreTaller}, tu equipo ${r.modelo} ya lleva más de 15 días reparado.`;
-            
-            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msj)}`, '_blank');
-
-            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-            db.ref(pathActivo).child(id).update({ recordatorioEnviado: true }).then(() => {
-                const regOriginal = getRegistro(id);
-                if(regOriginal) regOriginal.recordatorioEnviado = true;
-                
-                calcularOlvidados();
-                abrirModalOlvidados(); 
-            });
-        });
-    }
-
-    function mostrarLoader(msg = "Cargando...") {
-        document.getElementById('loader-text').innerText = msg;
-        document.getElementById('global-loader').style.display = 'flex';
-    }
-    function ocultarLoader() {
-        document.getElementById('global-loader').style.display = 'none';
-    }
-
-    function mostrarExpulsion(msg) {
-        if (dbRef) dbRef.off();
-        ocultarLoader();
-        document.getElementById('passModal').style.display = 'none';
-        document.getElementById('statusModal').style.display = 'none';
-        document.getElementById('photoModal').style.display = 'none';
-        document.getElementById('priceModal').style.display = 'none';
-        document.getElementById('olvidadosModal').style.display = 'none';
-        document.getElementById('modalCobroEntregado').style.display = 'none';
-        document.getElementById('modalNoReparado').style.display = 'none';
-        document.getElementById('modalVentaRapida').style.display = 'none';
-        
-        document.getElementById('expulsionMensaje').innerText = msg;
-        document.getElementById('expulsadoModal').style.display = 'flex';
-    }
-
-    function forzarSalida() { logout(); }
+    // ==========================================
+    // INICIO SISTEMA
+    // ==========================================
 
     function iniciarSeguridad() {
         mostrarLoader("Verificando seguridad...");
-        
         const urlParams = new URLSearchParams(window.location.search);
         const esVistaCliente = urlParams.get('id') && urlParams.get('u');
 
@@ -1159,12 +1141,7 @@
                 }
             } else {
                 if (esVistaCliente) {
-                    try { 
-                        await firebase.auth().signInAnonymously(); 
-                    } catch(e) { 
-                        console.error(e);
-                        checkStoredSession(); 
-                    }
+                    try { await firebase.auth().signInAnonymously(); } catch(e) { checkStoredSession(); }
                 } else {
                     ocultarLoader();
                     checkStoredSession(); 
@@ -1175,16 +1152,414 @@
         setTimeout(() => {
             if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
                 ocultarLoader();
-                if (!esVistaCliente) {
-                    document.getElementById('login-overlay').style.display = 'flex';
-                }
+                if (!esVistaCliente) document.getElementById('login-overlay').style.display = 'flex';
             }
         }, 5000);
     }
 
-    function getRegistro(id) {
-        return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id);
+    function grantAccess(u, isAdmin, isStored = false) {
+        currentUser = u;
+        isUserAdmin = isAdmin;
+        isClientMode = false;
+        
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('app-content').style.display = 'block';
+        document.querySelector('.container').style.display = 'block'; 
+        document.getElementById('btn-nav-perfil').style.display = 'inline-block';
+        document.getElementById('btn-flotante-ayuda').style.display = 'flex'; // Activa el botón flotante
+
+        if (!isAdmin) {
+            db.ref(`usuarios_registrados/${u}`).on('value', snap => {
+                const dataUser = snap.val();
+                if (!dataUser) mostrarExpulsion("Tu licencia ha sido eliminada permanentemente.");
+                else if (dataUser.estado === 'suspendido') mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.");
+                else if (dataUser.tokenSesion && dataUser.tokenSesion !== localStorage.getItem('st_matias_token')) {
+                    mostrarExpulsion("Se inició sesión en otro dispositivo.");
+                }
+            });
+        }
+        
+        db.ref(getDbPath('perfil')).once('value', snap => {
+            if (!(snap.val() || {}).nombreTaller) {
+                setTimeout(() => { showToast("⚠️ Completá datos del taller", "#f1c40f"); openPassModal(); }, 1500);
+            }
+        });
+
+        if (isStored) mostrarLoader("Cargando sistema...");
+
+        const refActivo = db.ref(getDbPath('activo'));
+        registros =[];
+        
+        refActivo.on('child_added', snap => {
+            registros.push({id: snap.key, ...snap.val()});
+            debounceRenderTable();
+            actualizarListasAutocompletado();
+        });
+        refActivo.on('child_changed', snap => {
+            const index = registros.findIndex(x => x.id === snap.key);
+            if (index !== -1) registros[index] = {id: snap.key, ...snap.val()};
+            debounceRenderTable();
+            actualizarListasAutocompletado();
+        });
+        refActivo.on('child_removed', snap => {
+            registros = registros.filter(x => x.id !== snap.key);
+            debounceRenderTable();
+            actualizarListasAutocompletado();
+        });
+
+        refActivo.once('value').then(() => {
+            ocultarLoader();
+            debounceRenderTable();
+            setTimeout(verificarAutoArchivo, 2000);
+        }).catch(() => { ocultarLoader(); });
+
+        db.ref(getDbPath('archivado')).once('value').then(snap => {
+            const v = snap.val();
+            registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) :[];
+            historialDescargado = true;
+            actualizarListasAutocompletado();
+        });
+
+        const refStock = db.ref(getDbPath('stock'));
+        stockData =[];
+        refStock.on('child_added', snap => { stockData.push({id: snap.key, ...snap.val()}); debounceRenderStock(); });
+        refStock.on('child_changed', snap => {
+            const idx = stockData.findIndex(x => x.id === snap.key);
+            if(idx !== -1) stockData[idx] = {id: snap.key, ...snap.val()};
+            debounceRenderStock();
+        });
+        refStock.on('child_removed', snap => {
+            stockData = stockData.filter(x => x.id !== snap.key);
+            debounceRenderStock();
+        });
+        
+        if(isAdmin) {
+            document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
+            listarUsuarios();
+            limpiarFotosAntiguas(false); 
+            limpiarLicenciasExpiradas(); 
+        }
     }
+
+    // ==========================================
+    // RENDERIZADO OPTIMIZADO DEL DOM (HTML BUILDERS)
+    // ==========================================
+
+    function renderTable() {
+        if(isClientMode) return; 
+        const bus = document.getElementById('search').value.toLowerCase();
+        const body = document.getElementById('tableBody');
+        const table = document.getElementById('mainTable');
+        const btnArch = document.getElementById('btnArchivo');
+        const btnPend = document.getElementById('btnPendientes');
+
+        let listaBase = modoArchivo ? [...registros.filter(r => r.archivado), ...registrosArchivados] : registros;
+
+        if(modoArchivo) { 
+            table.classList.add('modo-archivo-activo'); 
+            btnArch.classList.add('btn-active-filter'); btnArch.innerHTML = "📁 ARCHIVADOS ✅";
+        } else { 
+            table.classList.remove('modo-archivo-activo'); 
+            btnArch.classList.remove('btn-active-filter'); btnArch.innerHTML = "📁 ARCHIVADOS";
+        }
+
+        if(modoPendientes) {
+            btnPend.classList.add('btn-active-filter'); btnPend.innerHTML = "⏳ PENDIENTES ✅";
+        } else {
+            btnPend.classList.remove('btn-active-filter'); btnPend.innerHTML = "⏳ PENDIENTES";
+        }
+
+        const filtrados = listaBase.filter(r => {
+            const ordenLimpia = String(r.orden).replace('MAT-', '');
+            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || ordenLimpia.toLowerCase().includes(bus);
+            
+            let matchFiltro = true;
+            if (!modoArchivo && r.archivado) matchFiltro = false; 
+            if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
+            if (r.esVentaRapida) matchFiltro = false;
+
+            return matchBusqueda && matchFiltro;
+        });
+
+        const aMostrar = [...filtrados].reverse().slice(0, limiteTabla);
+        let htmlRows =[];
+
+        aMostrar.forEach(r => {
+            const saldo = r.precio - r.sena;
+            const nroLimpio = String(r.orden).replace('MAT-', '');
+            const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
+            const pagadoStr = saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`;
+            const archBtn = r.archivado ? '🔙' : '📁';
+
+            htmlRows.push(`<tr>
+                <td><b>${nroLimpio}</b> <span style="cursor:pointer;" data-action="historial" data-id="${r.id}">🕒</span><br>
+                <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
+                <td>
+                    <b style="cursor:pointer; color:#3498db; text-decoration:underline;" data-action="historial-cliente" data-cliente="${escaparHTML(r.cliente)}" data-tel="${r.tel}" title="Ver Historial">${escaparHTML(r.cliente)}</b><br>
+                    <button class="btn-wapp" data-action="whatsapp" data-id="${r.id}">📲 WhatsApp</button>
+                </td>
+                <td>
+                    ${escaparHTML(r.modelo)}<br>
+                    <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
+                </td>
+                <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" data-action="estado" data-id="${r.id}">${r.estado || 'Pendiente'}</span></td>
+                <td data-action="precio" data-id="${r.id}" style="cursor: pointer;">${pagadoStr}</td>
+                <td class="action-btns">
+                    <button data-action="fotos" data-id="${r.id}">🖼️</button>
+                    <button data-action="imprimir" data-id="${r.id}">📄</button>
+                    <button data-action="editar" data-id="${r.id}">✏️</button>
+                    <button data-action="archivar" data-id="${r.id}">${archBtn}</button>
+                    <button data-action="borrar" data-id="${r.id}" style="color:red;">❌</button>
+                </td></tr>`);
+        });
+
+        body.innerHTML = htmlRows.join('');
+        document.getElementById('btnCargarMas').style.display = filtrados.length > limiteTabla ? 'inline-block' : 'none';
+        calcularOlvidados();
+    }
+
+    function renderStock() {
+        const bus = document.getElementById('search-stock').value.toLowerCase();
+        const body = document.getElementById('bodyStock');
+        const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(bus));
+        
+        let htmlRows =[];
+        filtrados.forEach(item => {
+            let styleColor = item.cantidad <= 2 ? 'color: var(--danger); font-weight:bold;' : 'color: var(--success); font-weight:bold;';
+            htmlRows.push(`<tr>
+                <td><b>${escaparHTML(item.nombre)}</b></td>
+                <td style="${styleColor}">${item.cantidad} und.</td>
+                <td>${fmt.format(item.costo)}</td>
+                <td>${fmt.format(item.precioVenta)}</td>
+                <td class="action-btns">
+                    <button data-action="editar-stock" data-id="${item.id}">✏️</button>
+                    <button data-action="borrar-stock" data-id="${item.id}" style="color:red;">❌</button>
+                </td>
+            </tr>`);
+        });
+        
+        body.innerHTML = htmlRows.length ? htmlRows.join('') : '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#64748b;">No se encontraron artículos en el inventario</td></tr>';
+    }
+
+    async function listarUsuarios() {
+        if(!isUserAdmin) return;
+        const bus = document.getElementById('search-user').value.toLowerCase();
+        
+        const snapUsers = await db.ref('usuarios_registrados').once('value');
+        const users = snapUsers.val();
+        const body = document.getElementById('userTableBody');
+        
+        if(!users) { body.innerHTML = ""; return; }
+        const ahora = Date.now();
+        
+        const promises = Object.keys(users).map(async wa => {
+            if(wa.toLowerCase().includes(bus)) {
+                const snapData = await db.ref(`reparaciones_usuarios/${wa}`).once('value');
+                const data = snapData.val() || {};
+                const JSON_STR = JSON.stringify(data);
+                const cantOrdenes = Object.keys(data).length;
+                let pesoAprox = JSON_STR ? JSON_STR.length / 1024 : 0;
+                let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
+                
+                let esSuspendido = users[wa].estado === 'suspendido';
+                let diasRestantes = "";
+                let btnAccion = "";
+
+                if (esSuspendido) {
+                    let fechaSusp = users[wa].fechaSuspension || ahora;
+                    let diasPasados = Math.floor((ahora - fechaSusp) / (1000 * 60 * 60 * 24));
+                    let quedan = Math.max(0, 7 - diasPasados);
+                    
+                    diasRestantes = `<br><span style="color:red; font-weight:bold; font-size:11px;">⚠️ Se borrará todo en ${quedan} días</span>`;
+                    btnAccion = `
+                        <button onclick="restaurarLicencia('${wa}')" style="background:var(--success); color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; margin-bottom:5px; width:100%;">♻️ RESTAURAR</button>
+                        <button onclick="openDeleteLicenseModal('${wa}')" style="background:none; border:none; color:#e53e3e; text-decoration:underline; cursor:pointer; font-size:11px; width:100%;">Borrar ahora</button>`;
+                } else {
+                    btnAccion = `<button onclick="openSuspendModal('${wa}')" style="background:#e53e3e; color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%;">⏸️ SUSPENDER</button>`;
+                }
+
+                return `<tr style="${esSuspendido ? 'background:#fff5f5;' : ''}">
+                    <td style="padding:15px;">
+                        <b>${wa}</b> ${esSuspendido ? '⏸️' : '✅'}<br>
+                        <small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small>
+                        ${diasRestantes}
+                    </td>
+                    <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">******</span></td>
+                    <td style="padding:15px; color:#64748b; font-size:13px;">${users[wa].fechaAlta || 'Preexistente'}</td>
+                    <td style="padding:15px;">${btnAccion}</td>
+                </tr>`;
+            }
+            return "";
+        });
+        
+        const rows = await Promise.all(promises);
+        body.innerHTML = rows.join('');
+    }
+
+    function renderRepuestosModal() {
+        const container = document.getElementById('listaRepuestosModal');
+        let htmlRows =[];
+        repuestosSeleccionadosModal.forEach((r, idx) => {
+            htmlRows.push(`
+                <div style="display:flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px;">
+                    <span style="font-weight:bold; color:#1e293b;">📦 ${r.nombre} (x${r.cant})</span>
+                    <div style="display:flex; gap: 5px;">
+                        <button onclick="modificarRepuestoModal(${idx}, 1)" style="border:none; background:#3498db; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">+</button>
+                        <button onclick="modificarRepuestoModal(${idx}, -1)" style="border:none; background:#e53e3e; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">-</button>
+                    </div>
+                </div>
+            `);
+        });
+        container.innerHTML = htmlRows.join('');
+    }
+
+    function abrirModalOlvidados() {
+        const tbody = document.getElementById('olvidadosBody');
+        let htmlRows =[];
+        listaOlvidados.forEach(r => {
+            let botonAccion = r.recordatorioEnviado 
+                ? `<button class="btn-whatsapp-alerta notificado" data-action="avisar-olvidado" data-id="${r.id}">✅ Notificado</button>`
+                : `<button class="btn-whatsapp-alerta activo" data-action="avisar-olvidado" data-id="${r.id}">💬 Avisar</button>`;
+
+            let opacidad = r.recordatorioEnviado ? 'opacity: 0.6;' : '';
+            let colorDias = r.recordatorioEnviado ? '#64748b' : 'red';
+
+            htmlRows.push(`
+                <tr style="${opacidad}">
+                    <td><b>${escaparHTML(r.cliente)}</b></td>
+                    <td>${escaparHTML(r.modelo)}</td>
+                    <td style="color: ${colorDias}; font-weight: bold;">${r.diasListo} días</td>
+                    <td>${botonAccion}</td>
+                </tr>
+            `);
+        });
+        tbody.innerHTML = htmlRows.join('');
+        document.getElementById('olvidadosModal').style.display = 'flex';
+    }
+
+    function abrirHistorialCliente(clienteNombre, clienteTel) {
+        if(isClientMode) return;
+        const body = document.getElementById('hcBody');
+        document.getElementById('hcNombre').innerText = clienteNombre;
+        document.getElementById('hcTel').innerText = "📱 " + (clienteTel || "Sin teléfono");
+        
+        let todasLasOrdenes =[...registros, ...registrosArchivados];
+        let filtradas = todasLasOrdenes.filter(r => 
+            (r.cliente && r.cliente.toLowerCase().trim() === clienteNombre.toLowerCase().trim()) || 
+            (r.tel && r.tel === clienteTel)
+        );
+        
+        filtradas.sort((a,b) => parseFechaAR(b.fecha).getTime() - parseFechaAR(a.fecha).getTime());
+        
+        let totalInvertido = 0;
+        let htmlRows =[];
+        
+        filtradas.forEach(r => {
+            let precio = parseFloat(r.precio) || 0;
+            totalInvertido += precio;
+            let badgeStatus = `<span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}">${r.estado}</span>`;
+            
+            htmlRows.push(`
+                <tr>
+                    <td style="font-size:12px;">${r.fecha ? r.fecha.split(',')[0] : '-'}</td>
+                    <td><b>${escaparHTML(r.modelo)}</b></td>
+                    <td style="font-size:12px;">${escaparHTML(r.falla || '-')}</td>
+                    <td>${badgeStatus}</td>
+                    <td style="font-weight:bold;">${fmt.format(precio)}</td>
+                </tr>
+            `);
+        });
+        
+        body.innerHTML = htmlRows.join('');
+        document.getElementById('hcTotalDiv').innerText = `💰 Inversión Total: ${fmt.format(totalInvertido)}`;
+        document.getElementById('modalHistorialCliente').style.display = 'flex';
+    }
+
+    function abrirFotos(id) {
+        idParaFotos = id; const r = getRegistro(id);
+        if(!r) return;
+        const gallery = document.getElementById('photoGallery'); 
+        document.getElementById('photoFooterAction').style.display = isClientMode ? 'none' : 'flex';
+        
+        let htmlImages = [];
+        (r.fotos ||[]).forEach((src, index) => {
+            let deleteBtn = isClientMode ? '' : `<button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button>`;
+            htmlImages.push(`<div style="position:relative;"><img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover;" onclick="verImagenFull('${src}')">${deleteBtn}</div>`);
+        });
+        gallery.innerHTML = htmlImages.join('');
+        document.getElementById('photoModal').style.display = 'flex';
+    }
+
+    function calcularOlvidados() {
+        if (isClientMode) return;
+        const HOY = new Date();
+        const LIMITE_DIAS = 15; 
+        listaOlvidados =[];
+
+        registros.forEach(r => {
+            if (r.estado === 'Reparado' && !r.archivado && !r.esVentaRapida) {
+                let fechaReparadoStr = r.fecha; 
+                if (r.historialEstados) {
+                    let repEstados = r.historialEstados.filter(h => h.estado === 'Reparado');
+                    if (repEstados.length > 0) fechaReparadoStr = repEstados[repEstados.length - 1].fecha;
+                }
+
+                let fechaReparacion = parseFechaAR(fechaReparadoStr);
+                let diffTime = HOY.getTime() - fechaReparacion.getTime();
+                let diffDias = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDias >= LIMITE_DIAS) listaOlvidados.push({ ...r, diasListo: diffDias });
+            }
+        });
+
+        listaOlvidados.sort((a, b) => {
+            if (a.recordatorioEnviado === b.recordatorioEnviado) return a.diasListo - b.diasListo;
+            return a.recordatorioEnviado ? 1 : -1; 
+        });
+
+        const btn = document.getElementById('btnAlertaAmarilla');
+        if (listaOlvidados.length > 0) {
+            btn.innerHTML = `⚠️ ${listaOlvidados.length} Equipos Olvidados`;
+            btn.style.display = 'inline-block';
+        } else {
+            btn.style.display = 'none';
+        }
+    }
+
+    function cerrarModalOlvidados() { document.getElementById('olvidadosModal').style.display = 'none'; }
+
+    function enviarWhatsAppOlvidado(id) {
+        const r = listaOlvidados.find(x => x.id === id);
+        if (!r) return;
+
+        db.ref(getDbPath('perfil')).once('value', snap => {
+            const conf = snap.val() || {};
+            const nombreTaller = conf.nombreTaller || "nuestro taller";
+            
+            let num = String(r.tel).replace(/\D/g, ''); 
+            if (!num.startsWith('54')) num = '549' + num;
+
+            const msj = `¡Hola ${r.cliente}! ¿Cómo estás? Te hablo de ${nombreTaller}, tu equipo ${r.modelo} ya lleva más de 15 días reparado.`;
+            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msj)}`, '_blank');
+
+            db.ref(getDbPath('activo')).child(id).update({ recordatorioEnviado: true }).then(() => {
+                const regOriginal = getRegistro(id);
+                if(regOriginal) regOriginal.recordatorioEnviado = true;
+                calcularOlvidados();
+                abrirModalOlvidados(); 
+            });
+        });
+    }
+
+    function mostrarLoader(msg = "Cargando...") { document.getElementById('loader-text').innerText = msg; document.getElementById('global-loader').style.display = 'flex'; }
+    function ocultarLoader() { document.getElementById('global-loader').style.display = 'none'; }
+    function mostrarExpulsion(msg) {
+        ocultarLoader(); document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        document.getElementById('expulsionMensaje').innerText = msg; document.getElementById('expulsadoModal').style.display = 'flex';
+    }
+    function forzarSalida() { logout(); }
+
+    function getRegistro(id) { return registros.find(x => x.id === id) || registrosArchivados.find(x => x.id === id); }
 
     function checkStoredSession() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1209,7 +1584,6 @@
             container.style.padding = '0';
             container.style.width = '100%';
             container.style.marginTop = '0';
-
             document.body.style.backgroundColor = '#0f172a';
             document.body.style.display = 'flex';
             document.body.style.alignItems = 'center';
@@ -1217,30 +1591,20 @@
             document.body.style.minHeight = '100vh';
             document.body.style.margin = '0';
 
-            const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
-            const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
+            const pAct = tecnicoUser === 'Admin' ? 'reparaciones' : `reparaciones_usuarios/${tecnicoUser}`;
+            const pArch = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : `reparaciones_archivadas_usuarios/${tecnicoUser}`;
 
-            db.ref(pathActivo).child(clienteId).once('value')
+            db.ref(pAct).child(clienteId).once('value')
             .then(snapActivo => {
-                if (snapActivo.exists()) { 
-                    renderVistaCliente({id: clienteId, ...snapActivo.val()}, container); 
-                } else {
-                    return db.ref(pathArchivado).child(clienteId).once('value').then(snapArchivo => {
-                        if (snapArchivo.exists()) { 
-                            renderVistaCliente({id: clienteId, ...snapArchivo.val()}, container); 
-                        } else {
-                            container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada o expirada</div>`;
-                        }
+                if (snapActivo.exists()) renderVistaCliente({id: clienteId, ...snapActivo.val()}, container); 
+                else return db.ref(pArch).child(clienteId).once('value').then(snapArchivo => {
+                        if (snapArchivo.exists()) renderVistaCliente({id: clienteId, ...snapArchivo.val()}, container); 
+                        else container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada o expirada</div>`;
                     });
-                }
             })
             .catch(error => {
-                container.innerHTML = `
-                    <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
-                        <div style="font-size: 45px; margin-bottom: 10px;">🔍</div>
+                container.innerHTML = `<div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
                         <h2 style="color: #f1c40f; margin-top:0; margin-bottom: 15px;">Orden no disponible</h2>
-                        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">El ticket que intentas buscar no existe, el enlace ha expirado o el equipo ya fue entregado.</p>
-                        <p style="font-size: 12px; color: #475569; margin-top: 25px;">Por favor, comunícate con el taller para más información.</p>
                     </div>`;
             });
             return; 
@@ -1253,23 +1617,17 @@
 
     function renderVistaCliente(regEncontrado, container) {
         if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
-            container.innerHTML = `
-                <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+            container.innerHTML = `<div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
                     <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
                     <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
                 </div>`;
             return;
         }
 
-        const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        
+        const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : `usuarios_registrados/${currentUser}`;
         db.ref(pathPerfil).once('value')
-        .then(snap => {
-            generarHTMLCliente(regEncontrado, container, snap.val() || {});
-        })
-        .catch(err => {
-            generarHTMLCliente(regEncontrado, container, { nombreTaller: "Servicio Técnico" });
-        });
+        .then(snap => generarHTMLCliente(regEncontrado, container, snap.val() || {}))
+        .catch(err => generarHTMLCliente(regEncontrado, container, { nombreTaller: "Servicio Técnico" }));
     }
     
     function generarHTMLCliente(regEncontrado, container, conf) {
@@ -1282,50 +1640,36 @@
         if (regEncontrado.estado === 'No reparado') colorEstado = '#e53e3e';
         if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
 
-        registros = [regEncontrado]; 
+        registros =[regEncontrado]; 
 
         container.innerHTML = `
             <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
                 ${logoHtml}
                 <h1 style="font-size: 22px; margin-bottom: 5px; margin-top:0; color: #3498db;">${nombreTaller}</h1>
                 <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
-                
                 <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
                 <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
-                
                 <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
                     <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
                     <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
                 </div>
-
                 <div style="margin-top:20px;">
                     <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
                 </div>
-
                 <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
             </div>`;
     }
 
     function descargarPDFCliente() {
-        const r = registros[0]; 
-        if(!r) return;
-        const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        
+        const r = registros[0]; if(!r) return;
         mostrarLoader("Generando PDF...");
-        db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {});
-        });
+        db.ref(getDbPath('perfil')).once('value', snap => generarEImprimirPDF(r, snap.val() || {}));
     }
 
     function imprimir(id) {
-        const r = getRegistro(id); 
-        if(!r) return;
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        
+        const r = getRegistro(id); if(!r) return;
         mostrarLoader("Generando PDF...");
-        db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {});
-        });
+        db.ref(getDbPath('perfil')).once('value', snap => generarEImprimirPDF(r, snap.val() || {}));
     }
 
     function generarEImprimirPDF(r, conf) {
@@ -1341,15 +1685,11 @@
         docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
         const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
         const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
-        
-        // Limpiamos el signo + del final si existe
         const fallaLimpia = String(r.falla || "-").replace(/\s*\+\s*$/, '');
         const linesFalla = docDummy.splitTextToSize(fallaLimpia, 40);
-        
         const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
         const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
 
-        // Cambiamos a "normal" para unificar la letra y le damos un poco más de ancho a la línea
         docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(8);
         const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
         const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 65); 
@@ -1396,7 +1736,6 @@
         printRow("FALLA:", linesFalla); 
         printRow("OBS:", linesObs);
         
-        // CALCULO CORRECTO DE PAGOS PARA EL PDF
         let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
         let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
         let totalPagado = senaAbonada + saldoCobrado;
@@ -1409,25 +1748,21 @@
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
         
         if(saldoPendiente <= 0) {
-            doc.setTextColor(22, 163, 74); // Verde para indicar Pagado
+            doc.setTextColor(22, 163, 74);
             doc.text("PAGADO", 40, y + 9.5, {align:'center'});
-            doc.setTextColor(50, 50, 50); // Reset color a gris general
+            doc.setTextColor(50, 50, 50);
         } else {
-            doc.setTextColor(26, 42, 58); // Reset color original
+            doc.setTextColor(26, 42, 58);
             doc.text("SALDO: " + fmt.format(saldoPendiente), 40, y + 9.5, {align:'center'});
         }
         
-        // Volvemos a aplicar fuente "normal" y un gris más oscuro
         doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(50, 50, 50);
         doc.text(lineasGarantia, 40, y + 20, {align:'center'});
         
         const pdfBlob = doc.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        
         const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.target = '_blank';
-        link.click();
+        link.href = URL.createObjectURL(pdfBlob);
+        link.target = '_blank'; link.click();
         
         ocultarLoader();
     }
@@ -1453,7 +1788,7 @@
                 
                 let prefix = userCredential.user.email.split('@')[0];
                 if(prefix !== 'admin') {
-                    db.ref('usuarios_registrados/' + prefix).update({ tokenSesion: token });
+                    db.ref(`usuarios_registrados/${prefix}`).update({ tokenSesion: token });
                 }
             })
             .catch((error) => {
@@ -1461,89 +1796,6 @@
                 err.innerText = "Usuario o clave incorrecta"; 
                 err.style.display = 'block'; 
             });
-    }
-
-    function grantAccess(u, isAdmin, isStored = false) {
-        currentUser = u;
-        isUserAdmin = isAdmin;
-        isClientMode = false;
-        const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
-        dbRef = db.ref(pathActivo);
-        
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('app-content').style.display = 'block';
-        document.querySelector('.container').style.display = 'block'; 
-        document.getElementById('btn-nav-perfil').style.display = 'inline-block';
-        document.getElementById('btn-top-ayuda').style.display = 'flex';
-
-        if (!isAdmin) {
-            db.ref('usuarios_registrados/' + u).on('value', snap => {
-                const dataUser = snap.val();
-                
-                if (!dataUser) {
-                    mostrarExpulsion("Tu licencia ha sido eliminada permanentemente por el administrador.");
-                }
-                else if (dataUser.estado === 'suspendido') {
-                    mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
-                }
-                else if (dataUser.tokenSesion && dataUser.tokenSesion !== localStorage.getItem('st_matias_token')) {
-                    mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
-                }
-            });
-        }
-        
-        const pathPerfil = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
-        db.ref(pathPerfil).once('value', snap => {
-            const conf = snap.val() || {};
-            if (!conf.nombreTaller) {
-                setTimeout(() => {
-                    showToast("⚠️ Completá los datos de tu taller para los PDF", "#f1c40f");
-                    openPassModal();
-                }, 1500);
-            }
-        });
-
-        if (isStored) mostrarLoader("Cargando sistema...");
-
-        dbRef.on('value', snap => {
-            try {
-                const v = snap.val(); 
-                registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                renderTable(); 
-                actualizarListasAutocompletado();
-            } catch (error) {
-                showToast("Error interno al cargar la tabla", "#e53e3e");
-            } finally {
-                ocultarLoader();
-            }
-            setTimeout(verificarAutoArchivo, 2000);
-        }, errorDeFirebase => {
-            ocultarLoader();
-            showToast("Problema de conexión con la base de datos", "#e53e3e");
-        });
-
-        // Novedad: Cargamos los archivados en segundo plano al iniciar para que autoOrden() nunca pierda la cuenta
-        const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
-        db.ref(pathArchivado).once('value').then(snap => {
-            const v = snap.val();
-            registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-            historialDescargado = true;
-            actualizarListasAutocompletado();
-        });
-
-        const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
-        db.ref(pathStock).on('value', snap => {
-            const v = snap.val();
-            stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-            if(document.getElementById('page-stock').style.display === 'block') renderStock();
-        });
-        
-        if(isAdmin) {
-            document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
-            listarUsuarios();
-            limpiarFotosAntiguas(false); 
-            limpiarLicenciasExpiradas(); 
-        }
     }
 
     function logout() { 
@@ -1557,30 +1809,24 @@
     function procesarLogoUpload(input) {
         if (input.files && input.files[0]) {
             const btn = document.getElementById('btnCargarLogo');
-            btn.innerText = "⏳ SUBIENDO...";
-            btn.disabled = true;
+            btn.innerText = "⏳ SUBIENDO..."; btn.disabled = true;
 
             const reader = new FileReader();
             reader.readAsDataURL(input.files[0]);
             reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
+                const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const MAX_WIDTH = 300; 
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     let width = img.width, height = img.height;
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    if (width > 300) { height *= 300 / width; width = 300; }
                     canvas.width = width; canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
                     
                     logoTemporalBase64 = canvas.toDataURL('image/png');
                     const prev = document.getElementById('logoPreview');
-                    prev.src = logoTemporalBase64;
-                    prev.style.display = 'block';
+                    prev.src = logoTemporalBase64; prev.style.display = 'block';
 
-                    btn.innerText = "📷 CARGAR LOGO";
-                    btn.disabled = false;
+                    btn.innerText = "📷 CARGAR LOGO"; btn.disabled = false;
                 };
             };
         }
@@ -1588,15 +1834,13 @@
 
     function borrarLogoUpload() {
         logoTemporalBase64 = "";
-        const prev = document.getElementById('logoPreview');
-        prev.src = "";
-        prev.style.display = 'none';
+        document.getElementById('logoPreview').src = "";
+        document.getElementById('logoPreview').style.display = 'none';
         document.getElementById('logoUpload').value = "";
     }
 
     function openPassModal() { 
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        db.ref(path).once('value', snap => {
+        db.ref(getDbPath('perfil')).once('value', snap => {
             const d = snap.val() || {};
             document.getElementById('confNombreTaller').value = d.nombreTaller || "";
             document.getElementById('confSubtitulo').value = d.subtitulo || "";
@@ -1605,12 +1849,8 @@
             
             logoTemporalBase64 = d.logo || null;
             const prev = document.getElementById('logoPreview');
-            if(logoTemporalBase64) {
-                prev.src = logoTemporalBase64;
-                prev.style.display = 'block';
-            } else {
-                prev.style.display = 'none';
-            }
+            if(logoTemporalBase64) { prev.src = logoTemporalBase64; prev.style.display = 'block'; }
+            else { prev.style.display = 'none'; }
         });
         document.getElementById('passModal').style.display = 'flex'; 
     }
@@ -1618,67 +1858,45 @@
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
     
     function updatePassword() {
+        const updates = { 
+            nombreTaller: document.getElementById('confNombreTaller').value.trim(),
+            subtitulo: document.getElementById('confSubtitulo').value.trim(),
+            wappTicket: document.getElementById('confWappTicket').value.trim(),
+            garantia: document.getElementById('confGarantia').value.trim()
+        };
         const newP = document.getElementById('newPass').value.trim();
-        const nTaller = document.getElementById('confNombreTaller').value.trim();
-        const nSub = document.getElementById('confSubtitulo').value.trim();
-        const nWapp = document.getElementById('confWappTicket').value.trim();
-        const nGarantia = document.getElementById('confGarantia').value.trim();
-
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
         
         if(newP) {
-            firebase.auth().currentUser.updatePassword(newP).then(() => {
-                showToast("CLAVE SEGURA ACTUALIZADA ✅", "#2ecc71");
-            }).catch(e => {
-                showToast("Vuelve a iniciar sesión para cambiar la clave", "#e53e3e");
-            });
+            firebase.auth().currentUser.updatePassword(newP).then(() => { showToast("CLAVE ACTUALIZADA ✅", "#2ecc71"); }).catch(e => { showToast("Vuelve a iniciar sesión para cambiar la clave", "#e53e3e"); });
         }
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64; 
         
         mostrarLoader("Guardando Perfil...");
-        db.ref(path).update(updates).then(() => {
-            ocultarLoader();
-            showToast("PERFIL ACTUALIZADO ✅", "#2ecc71");
-            closePassModal();
+        db.ref(getDbPath('perfil')).update(updates).then(() => {
+            ocultarLoader(); showToast("PERFIL ACTUALIZADO ✅", "#2ecc71"); closePassModal();
         });
     }
 
-    let modelosGlobal = [];
-    let fallasGlobal = [];
+    let modelosGlobal =[]; let fallasGlobal =[];
 
     function actualizarListasAutocompletado() {
         if(isClientMode) return;
-        
         let modelos = new Set(["Samsung Galaxy ", "Motorola Moto ", "iPhone ", "Xiaomi Redmi "]);
-        let fallas = new Set(["Cambio de módulo", "Pin de carga", "Cambio de batería", "Falla de software", "No enciende", "Mojado"]);
-        
-        let todasLasOrdenes = [...registros, ...registrosArchivados];
-        
-        todasLasOrdenes.forEach(r => {
-            if(r.modelo && r.modelo.trim() !== "") modelos.add(r.modelo.trim());
-            if(r.falla && r.falla.trim() !== "") {
-                let partesFalla = r.falla.split('+');
-                partesFalla.forEach(p => fallas.add(p.trim()));
-            }
+        let fallas = new Set(["Cambio de módulo", "Pin de carga", "Cambio de batería", "Falla de software", "No enciende", "Mojado"]);[...registros, ...registrosArchivados].forEach(r => {
+            if(r.modelo && r.modelo.trim()) modelos.add(r.modelo.trim());
+            if(r.falla && r.falla.trim()) r.falla.split('+').forEach(p => fallas.add(p.trim()));
         });
         
-        modelosGlobal = Array.from(modelos).sort();
-        fallasGlobal = Array.from(fallas).sort();
+        modelosGlobal = Array.from(modelos).sort(); fallasGlobal = Array.from(fallas).sort();
     }
 
     function showAutocomplete(campo) {
         const input = document.getElementById(campo);
         let val = input.value.toLowerCase();
         
-        if (campo === 'falla') {
-            let partes = val.split('+');
-            val = partes[partes.length - 1].trim(); 
-        }
+        if (campo === 'falla') val = val.split('+').pop().trim();
 
-        const listDiv = document.getElementById('autocomplete-' + campo);
-        listDiv.innerHTML = '';
-        
+        const listDiv = document.getElementById('autocomplete-' + campo); listDiv.innerHTML = '';
         const arr = campo === 'modelo' ? modelosGlobal : fallasGlobal;
         const filtrados = arr.filter(item => item.toLowerCase().includes(val));
         
@@ -1686,41 +1904,24 @@
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
-            
             const index = item.toLowerCase().indexOf(val);
             if(index >= 0 && val !== '') {
                 div.innerHTML = item.substring(0, index) + "<b style='color:#3498db;'>" + item.substring(index, index+val.length) + "</b>" + item.substring(index + val.length);
-            } else {
-                div.innerText = item;
-            }
+            } else div.innerText = item;
             
             div.onmousedown = function(e) {
                 if (campo === 'falla') {
-                    let partes = input.value.split('+');
-                    partes.pop(); 
-                    if(partes.length > 0) {
-                        input.value = partes.join('+') + ' + ' + item + ' + ';
-                    } else {
-                        input.value = item + ' + ';
-                    }
-                } else {
-                    input.value = item;
-                }
-                listDiv.style.display = 'none';
-                saveDraft();
+                    let partes = input.value.split('+'); partes.pop(); 
+                    input.value = partes.length > 0 ? partes.join('+') + ' + ' + item + ' + ' : item + ' + ';
+                } else input.value = item;
+                listDiv.style.display = 'none'; saveDraft();
             };
             listDiv.appendChild(div);
         });
-        
         listDiv.style.display = 'block';
     }
 
-    function hideAutocomplete(campo) {
-        setTimeout(() => {
-            const listDiv = document.getElementById('autocomplete-' + campo);
-            if(listDiv) listDiv.style.display = 'none';
-        }, 200);
-    }
+    function hideAutocomplete(campo) { setTimeout(() => { const l = document.getElementById('autocomplete-'+campo); if(l) l.style.display = 'none'; }, 200); }
 
     function abrirVentaRapida() {
         document.getElementById('modalVentaRapida').style.display = 'flex';
@@ -1733,20 +1934,14 @@
     function filtrarVentaRapida() {
         const input = document.getElementById('vrBusqueda');
         const val = input.value.toLowerCase();
-        const listDiv = document.getElementById('vrAutocomplete');
-        listDiv.innerHTML = '';
+        const listDiv = document.getElementById('vrAutocomplete'); listDiv.innerHTML = '';
         
         const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(val) && item.cantidad > 0);
-        
-        if (filtrados.length === 0) {
-            listDiv.style.display = 'none';
-            return;
-        }
+        if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
             div.innerHTML = `<b>${item.nombre}</b> <span style="color:#2ecc71; float:right; font-weight:bold;">Disp: ${item.cantidad} | ${fmt.format(item.precioVenta)}</span>`;
-            
             div.onmousedown = function(e) { 
                 input.value = "";
                 document.getElementById('vrStockId').value = item.id;
@@ -1756,7 +1951,6 @@
                 document.getElementById('vrMaxCant').value = item.cantidad;
                 document.getElementById('vrCant').value = 1;
                 calcVrTotal();
-                
                 document.getElementById('vrDetalle').style.display = 'block';
                 listDiv.style.display = 'none';
             };
@@ -1770,14 +1964,8 @@
         let cantInput = document.getElementById('vrCant');
         let cant = parseInt(cantInput.value) || 1;
         
-        if (cant > max) {
-            showToast("Supera el stock disponible", "#f1c40f");
-            cant = max;
-            cantInput.value = cant;
-        }
-        
-        let p = parseFloat(document.getElementById('vrPrecioUni').value) || 0;
-        document.getElementById('vrTotal').value = fmt.format(p * cant);
+        if (cant > max) { showToast("Supera el stock disponible", "#f1c40f"); cant = max; cantInput.value = cant; }
+        document.getElementById('vrTotal').value = fmt.format((parseFloat(document.getElementById('vrPrecioUni').value) || 0) * cant);
     }
 
     function procesarVentaRapida() {
@@ -1788,178 +1976,90 @@
         const cant = parseInt(document.getElementById('vrCant').value) || 1;
         const precioTotal = (parseFloat(document.getElementById('vrPrecioUni').value) || 0) * cant;
         const costoTotal = (parseFloat(document.getElementById('vrCostoUni').value) || 0) * cant;
-        const nombreItem = document.getElementById('vrNombre').innerText.replace("📦 ", "");
-        const metodo = document.getElementById('vrMetodo').value;
 
         const dataVenta = {
-            orden: "VTA-" + Date.now().toString().slice(-4),
-            cliente: "Venta de Mostrador",
-            modelo: nombreItem,
-            tel: "0",
-            falla: "Venta Directa",
-            precio: precioTotal,
-            sena: precioTotal,
-            senaOriginal: precioTotal,
-            metodoPagoSena: metodo,
-            costoRepuesto: costoTotal,
-            estado: "Entregado",
-            esVentaRapida: true,
-            archivado: false, 
-            fecha: new Date().toLocaleString('es-AR')
+            orden: "VTA-" + Date.now().toString().slice(-4), cliente: "Venta de Mostrador", modelo: document.getElementById('vrNombre').innerText.replace("📦 ", ""), tel: "0",
+            falla: "Venta Directa", precio: precioTotal, sena: precioTotal, senaOriginal: precioTotal, metodoPagoSena: document.getElementById('vrMetodo').value,
+            costoRepuesto: costoTotal, estado: "Entregado", esVentaRapida: true, archivado: false, fecha: new Date().toLocaleString('es-AR')
         };
 
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        
-        db.ref(pathActivo).push(dataVenta).then(() => {
-            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
-            const refStock = db.ref(pathStock).child(sId);
-            refStock.once('value').then(snap => {
-                if(snap.exists()) {
-                    let cantActual = snap.val().cantidad || 0;
-                    refStock.update({cantidad: cantActual - cant});
-                }
-            });
-            
+        db.ref(getDbPath('activo')).push(dataVenta).then(() => {
+            const refStock = db.ref(getDbPath('stock')).child(sId);
+            refStock.once('value').then(snap => { if(snap.exists()) refStock.update({cantidad: (snap.val().cantidad || 0) - cant}); });
             document.getElementById('modalVentaRapida').style.display = 'none';
-            ocultarLoader();
-            showToast("VENTA REGISTRADA ✅", "#2ecc71");
+            ocultarLoader(); showToast("VENTA REGISTRADA ✅", "#2ecc71");
             setTimeout(cargarDatosContabilidad, 1000); 
         });
     }
 
-    function cerrarModalStock() {
-        document.getElementById('modalUsoStock').style.display = 'none';
-    }
+    function cerrarModalStock() { document.getElementById('modalUsoStock').style.display = 'none'; }
 
     function filtrarStockModal() {
         if(isClientMode) return;
         const input = document.getElementById('repuestoModalUsado');
         const val = input.value.toLowerCase();
-        const listDiv = document.getElementById('autocomplete-repuestoModalUsado');
-        listDiv.innerHTML = '';
+        const listDiv = document.getElementById('autocomplete-repuestoModalUsado'); listDiv.innerHTML = '';
         
         const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(val) && item.cantidad > 0);
-        
-        if (filtrados.length === 0) {
-            listDiv.style.display = 'none';
-            return;
-        }
+        if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
             div.innerHTML = `<b>${item.nombre}</b> <span style="color:#2ecc71; float:right; font-weight:bold;">Disp: ${item.cantidad}</span>`;
-            
             div.onmousedown = function(e) { 
                 let existe = repuestosSeleccionadosModal.find(r => r.id === item.id);
                 if(existe) {
-                    if(existe.cant < item.cantidad) existe.cant++;
-                    else showToast("No hay más stock disponible", "#f1c40f");
-                } else {
-                    repuestosSeleccionadosModal.push({ id: item.id, nombre: item.nombre, cant: 1, max: item.cantidad });
-                }
+                    if(existe.cant < item.cantidad) existe.cant++; else showToast("No hay más stock disponible", "#f1c40f");
+                } else repuestosSeleccionadosModal.push({ id: item.id, nombre: item.nombre, cant: 1, max: item.cantidad });
                 
-                input.value = ""; 
-                listDiv.style.display = 'none';
-                renderRepuestosModal();
+                input.value = ""; listDiv.style.display = 'none'; renderRepuestosModal();
             };
             listDiv.appendChild(div);
         });
         listDiv.style.display = 'block';
     }
 
-    function renderRepuestosModal() {
-        const container = document.getElementById('listaRepuestosModal');
-        container.innerHTML = "";
-        repuestosSeleccionadosModal.forEach((r, idx) => {
-            container.innerHTML += `
-                <div style="display:flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px;">
-                    <span style="font-weight:bold; color:#1e293b;">📦 ${r.nombre} (x${r.cant})</span>
-                    <div style="display:flex; gap: 5px;">
-                        <button onclick="modificarRepuestoModal(${idx}, 1)" style="border:none; background:#3498db; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">+</button>
-                        <button onclick="modificarRepuestoModal(${idx}, -1)" style="border:none; background:#e53e3e; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">-</button>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
     function modificarRepuestoModal(idx, sum) {
         let r = repuestosSeleccionadosModal[idx];
-        if(sum > 0) {
-            if(r.cant < r.max) r.cant++;
-            else showToast("Stock máximo alcanzado", "#f1c40f");
-        } else {
-            r.cant--;
-            if(r.cant <= 0) repuestosSeleccionadosModal.splice(idx, 1);
-        }
+        if(sum > 0) { if(r.cant < r.max) r.cant++; else showToast("Stock máximo alcanzado", "#f1c40f"); } 
+        else { r.cant--; if(r.cant <= 0) repuestosSeleccionadosModal.splice(idx, 1); }
         renderRepuestosModal();
     }
 
     function procesarReparado(descontar) {
         let repuestosParaGuardar = null;
-
         if(descontar && repuestosSeleccionadosModal.length > 0) {
-            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
             repuestosSeleccionadosModal.forEach(rep => {
-                const refStock = db.ref(pathStock).child(rep.id);
-                refStock.once('value').then(snap => {
-                    if(snap.exists()) {
-                        let cantActual = snap.val().cantidad || 0;
-                        if(cantActual >= rep.cant) { refStock.update({cantidad: cantActual - rep.cant}); }
-                    }
-                });
+                const refStock = db.ref(getDbPath('stock')).child(rep.id);
+                refStock.once('value').then(snap => { if(snap.exists() && snap.val().cantidad >= rep.cant) refStock.update({cantidad: snap.val().cantidad - rep.cant}); });
             });
             repuestosParaGuardar = repuestosSeleccionadosModal;
         } else if (descontar && repuestosSeleccionadosModal.length === 0) {
-            showToast("⚠️ Agregá un repuesto o tocá 'NO USÉ'", "#f1c40f");
-            return;
+            return showToast("⚠️ Agregá un repuesto o tocá 'NO USÉ'", "#f1c40f");
         }
-
-        cerrarModalStock();
-        ejecutarCambioEstado('Reparado', repuestosParaGuardar);
-        enviarWhatsAppReparado(idParaEstado);
+        cerrarModalStock(); ejecutarCambioEstado('Reparado', repuestosParaGuardar); enviarWhatsAppReparado(idParaEstado);
     }
 
     function enviarWhatsAppReparado(id) {
         const r = getRegistro(id); if(!r) return;
-        r.estado = 'Reparado'; 
-        enviarWhatsApp(id); 
+        r.estado = 'Reparado'; enviarWhatsApp(id); 
     }
 
-    function cerrarModalNoReparado() {
-        document.getElementById('modalNoReparado').style.display = 'none';
-    }
-
-    function procesarNoReparado(avisar) {
-        cerrarModalNoReparado();
-        ejecutarCambioEstado('No reparado');
-        if (avisar) {
-            enviarWhatsAppNoReparado(idParaEstado);
-        }
-    }
+    function cerrarModalNoReparado() { document.getElementById('modalNoReparado').style.display = 'none'; }
+    function procesarNoReparado(avisar) { cerrarModalNoReparado(); ejecutarCambioEstado('No reparado'); if (avisar) enviarWhatsAppNoReparado(idParaEstado); }
 
     function enviarWhatsAppNoReparado(id) {
         const r = getRegistro(id); if(!r) return;
-        
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        db.ref(path).once('value', snap => {
+        db.ref(getDbPath('perfil')).once('value', snap => {
             const conf = snap.val() || {}; 
-            const nombreHeader = conf.nombreTaller || "";
-            const subHeader = conf.subtitulo || "";
-            let num = String(r.tel).replace(/\D/g, ''); 
-            if (!num.startsWith('54')) num = '549' + num;
-            
+            let num = String(r.tel).replace(/\D/g, ''); if (!num.startsWith('54')) num = '549' + num;
             const nroLimpio = String(r.orden).replace('MAT-', '');
-            const baseUrl = window.location.origin + window.location.pathname; 
-            const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
+            const seguimientoLink = `${window.location.origin + window.location.pathname}?id=${r.id}&u=${currentUser}`;
             
-            let msjPlano = "";
+            let msjPlano = conf.nombreTaller ? `*${conf.nombreTaller}*` : "";
+            if(conf.subtitulo) msjPlano += ` - ${conf.subtitulo}`;
             
-            if(nombreHeader) msjPlano += `*${nombreHeader}*`;
-            if(subHeader) msjPlano += ` - ${subHeader}`;
-            
-            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
-            msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
+            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n🔎 *SEGUÍ TU REPARACIÓN:*\n${seguimientoLink}\n\n----------------------------\n⚠️ _Este es un mensaje automático_`;
             
             window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
         });
@@ -1968,69 +2068,36 @@
     function procesarCobroEntregado() {
         const metodo = document.getElementById('metodoCobroFinal').value;
         const r = getRegistro(idParaEstado);
-        
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
-        
+        const nodoActualizar = r.archivado ? getDbPath('archivado') : getDbPath('activo');
         const saldoFinal = r.precio - (r.sena || 0);
 
         mostrarLoader("Registrando cobro...");
-        db.ref(nodoActualizar).child(idParaEstado).update({
-            sena: r.precio,
-            saldoCobrado: saldoFinal,
-            metodoPagoSaldo: metodo
-        }).then(() => {
-            r.sena = r.precio;
-            r.saldoCobrado = saldoFinal;
-            r.metodoPagoSaldo = metodo;
+        db.ref(nodoActualizar).child(idParaEstado).update({ sena: r.precio, saldoCobrado: saldoFinal, metodoPagoSaldo: metodo }).then(() => {
+            r.sena = r.precio; r.saldoCobrado = saldoFinal; r.metodoPagoSaldo = metodo;
             document.getElementById('modalCobroEntregado').style.display = 'none';
-            ocultarLoader();
-            ejecutarCambioEstado('Entregado');
+            ocultarLoader(); ejecutarCambioEstado('Entregado');
         });
     }
 
-    let idEditando = null;
-    let modoArchivo = false;
-    let modoPendientes = false;
-    let idParaEstado = null;
-    let idParaPrecio = null;
-    let idParaBorrar = null;
-    let idParaFotos = null;
-    let fotosTemporales = [];
-    let idStockParaBorrar = null;
+    let idEditando = null, modoArchivo = false, modoPendientes = false;
+    let idParaEstado = null, idParaPrecio = null, idParaBorrar = null, idParaFotos = null, idStockParaBorrar = null;
+    let fotosTemporales =[];
 
-    const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    const selectMes = document.getElementById('selectMes');
-    const mesActual = new Date().getMonth();
-    if(selectMes) {
-        mesesNombres.forEach((m, i) => {
-            let opt = document.createElement('option');
-            opt.value = i; opt.text = m;
-            if(i === mesActual) opt.selected = true;
-            selectMes.appendChild(opt);
-        });
-    }
+    const mesesNombres =["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    if(document.getElementById('selectMes')) mesesNombres.forEach((m, i) => document.getElementById('selectMes').appendChild(new Option(m, i, false, i === new Date().getMonth())));
 
     function showToast(text, color) {
         if(isClientMode) return;
-        const t = document.getElementById('toast-alert');
-        t.innerText = text; t.style.background = color; t.style.display = "block";
+        const t = document.getElementById('toast-alert'); t.innerText = text; t.style.background = color; t.style.display = "block";
         setTimeout(() => t.style.display = "none", 3000);
     }
 
-    function togglePagoForm() {
-        const chk = document.getElementById('checkPagoTotal');
-        const precio = document.getElementById('precio').value;
-        document.getElementById('sena').value = chk.checked ? precio : "";
-    }
+    function togglePagoForm() { document.getElementById('sena').value = document.getElementById('checkPagoTotal').checked ? document.getElementById('precio').value : ""; }
 
     function openStatusModal(id) {
         if(isClientMode) return;
-        const r = getRegistro(id);
-        if(!r) return;
-        idParaEstado = id;
-        document.getElementById('statusModal').style.display = 'flex';
+        if(!getRegistro(id)) return;
+        idParaEstado = id; document.getElementById('statusModal').style.display = 'flex';
     }
 
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
@@ -2038,354 +2105,147 @@
     function confirmarEstado(nuevo) {
         if(nuevo === 'Reparado') {
             document.getElementById('statusModal').style.display = 'none';
-            document.getElementById('repuestoModalUsado').value = "";
-            repuestosSeleccionadosModal = [];
-            renderRepuestosModal();
-            document.getElementById('modalUsoStock').style.display = 'flex';
+            document.getElementById('repuestoModalUsado').value = ""; repuestosSeleccionadosModal =[];
+            renderRepuestosModal(); document.getElementById('modalUsoStock').style.display = 'flex';
             return; 
         }
-
         if(nuevo === 'No reparado') {
-            document.getElementById('statusModal').style.display = 'none';
-            document.getElementById('modalNoReparado').style.display = 'flex';
+            document.getElementById('statusModal').style.display = 'none'; document.getElementById('modalNoReparado').style.display = 'flex';
             return;
         }
-
         if(nuevo === 'Entregado') {
             const r = getRegistro(idParaEstado);
             const saldo = r.precio - (r.sena || 0);
             if(saldo > 0) {
-                document.getElementById('statusModal').style.display = 'none';
-                document.getElementById('cobroSaldoMonto').innerText = fmt.format(saldo);
-                document.getElementById('metodoCobroFinal').selectedIndex = 0;
-                document.getElementById('modalCobroEntregado').style.display = 'flex';
+                document.getElementById('statusModal').style.display = 'none'; document.getElementById('cobroSaldoMonto').innerText = fmt.format(saldo);
+                document.getElementById('metodoCobroFinal').selectedIndex = 0; document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             }
         }
-
         ejecutarCambioEstado(nuevo);
     }
 
     function ejecutarCambioEstado(nuevo, repuestosUsados = null) {
-        const r = getRegistro(idParaEstado);
-        if(!r) return;
-
+        const r = getRegistro(idParaEstado); if(!r) return;
         let updates = {};
-        let targetArchivado = r.archivado;
 
-        if (nuevo === 'Garantía' && r.archivado) {
-            targetArchivado = false; 
-            updates.archivado = false;
-        }
+        if (nuevo === 'Garantía' && r.archivado) updates.archivado = false;
 
         if ((nuevo === 'Pendiente' || nuevo === 'No reparado') && r.repuestosDescontados) {
-            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
             r.repuestosDescontados.forEach(rep => {
-                const refStock = db.ref(pathStock).child(rep.id);
-                refStock.once('value').then(snap => {
-                    if(snap.exists()) {
-                        let cantActual = snap.val().cantidad || 0;
-                        refStock.update({cantidad: cantActual + rep.cant});
-                    }
-                });
+                const refStock = db.ref(getDbPath('stock')).child(rep.id);
+                refStock.once('value').then(snap => { if(snap.exists()) refStock.update({cantidad: (snap.val().cantidad || 0) + rep.cant}); });
             });
-            updates.repuestosDescontados = null; 
-            delete r.repuestosDescontados; 
+            updates.repuestosDescontados = null; delete r.repuestosDescontados; 
             setTimeout(() => showToast("📦 Stock devuelto al inventario", "#3498db"), 1000);
         }
 
-        const fechaActual = new Date().toLocaleString('es-AR');
-        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569', 'No reparado': '#e53e3e', 'Garantía': '#1e40af' };
-        let historialActual = r.historialEstados || [];
-        historialActual.push({ estado: nuevo, fecha: fechaActual });
+        let historialActual = r.historialEstados ||[];
+        historialActual.push({ estado: nuevo, fecha: new Date().toLocaleString('es-AR') });
+        updates.estado = nuevo; updates.historialEstados = historialActual;
+        if (repuestosUsados) { updates.repuestosDescontados = repuestosUsados; r.repuestosDescontados = repuestosUsados; }
         
-        updates.estado = nuevo;
-        updates.historialEstados = historialActual;
-
-        if (repuestosUsados) {
-            updates.repuestosDescontados = repuestosUsados;
-            r.repuestosDescontados = repuestosUsados;
-        }
-        
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        const nodoActualizar = r.archivado ? getDbPath('archivado') : getDbPath('activo');
 
         if (nuevo === 'Garantía' && r.archivado) {
             let copia = {...r, ...updates};
-            db.ref(pathActivo).child(idParaEstado).set(copia).then(() => {
-                db.ref(pathArchivado).child(idParaEstado).remove();
+            db.ref(getDbPath('activo')).child(idParaEstado).set(copia).then(() => {
+                db.ref(getDbPath('archivado')).child(idParaEstado).remove();
                 registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
-                registros.push(copia);
-                renderTable();
-                document.getElementById('statusModal').style.display = 'none';
-                showToast(`REINGRESO A GARANTÍA 🔄`, "#3498db");
+                document.getElementById('statusModal').style.display = 'none'; showToast(`REINGRESO A GARANTÍA 🔄`, "#3498db");
             });
         } else {
             db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
-                r.estado = nuevo; 
-                r.historialEstados = historialActual;
-                renderTable();
                 document.getElementById('statusModal').style.display = 'none';
-                showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
+                showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, {'Pendiente':'#f1c40f', 'Reparado':'#2ecc71', 'Entregado':'#475569', 'No reparado':'#e53e3e', 'Garantía':'#1e40af'}[nuevo] || "#3498db");
             });
         }
     }
 
     function openPriceModal(id) {
-        if(isClientMode) return;
-        const r = getRegistro(id);
-        if(!r) return;
-        idParaPrecio = id;
-        document.getElementById('newPriceInput').value = r.precio.toLocaleString('es-AR');
-        document.getElementById('priceModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('newPriceInput').focus(), 100);
+        if(isClientMode || !getRegistro(id)) return;
+        idParaPrecio = id; document.getElementById('newPriceInput').value = getRegistro(id).precio.toLocaleString('es-AR');
+        document.getElementById('priceModal').style.display = 'flex'; setTimeout(() => document.getElementById('newPriceInput').focus(), 100);
     }
-
     function closePriceModal() { document.getElementById('priceModal').style.display = 'none'; }
     
     document.getElementById('confirmPriceBtn').onclick = () => {
         const nuevo = parseMoney(document.getElementById('newPriceInput').value);
-        const r = getRegistro(idParaPrecio);
-        if(!r) return;
+        const r = getRegistro(idParaPrecio); if(!r) return;
 
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
-
-        db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo }).then(() => {
-            r.precio = nuevo; 
-            renderTable();
-            closePriceModal();
-            showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
+        db.ref(r.archivado ? getDbPath('archivado') : getDbPath('activo')).child(idParaPrecio).update({ precio: nuevo }).then(() => {
+            closePriceModal(); showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
         });
     };
 
     function openHistory(id) {
-        const r = getRegistro(id);
-        if(!r) return;
-        
-        let fallaHtml = r.falla ? `<div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; text-align:left;">
-            <div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
-            <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla.replace(/\s*\+\s*$/, ''))}</div>
-            ${r.pin ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/PIN</div>
-            <div style="font-size:14px; font-weight:bold; color:#e53e3e; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
-            ${r.obs ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
-            <div style="font-size:13px; color:#475569; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
+        const r = getRegistro(id); if(!r) return;
+        let h = r.falla ? `<div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0;">
+            <div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla</div>
+            <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px;">${escaparHTML(r.falla.replace(/\s*\+\s*$/, ''))}</div>
+            ${r.pin ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase;">🔒 Clave/PIN</div><div style="font-size:14px; font-weight:bold; color:#e53e3e; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
+            ${r.obs ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase;">📝 Obs</div><div style="font-size:13px; color:#475569;">${escaparHTML(r.obs)}</div>` : ''}
         </div>` : '';
-
-        let h = fallaHtml;
         h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
-        
-        document.getElementById('historyContent').innerHTML = h;
-        document.getElementById('historyModal').style.display = 'flex';
+        document.getElementById('historyContent').innerHTML = h; document.getElementById('historyModal').style.display = 'flex';
     }
-
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
 
-    function resetPaginacion() {
-        limiteTabla = 50;
-        renderTable();
-    }
-
-    function cargarMasOrdenes() {
-        limiteTabla += 50;
-        renderTable();
-    }
-
-    function renderTable() {
-        if(isClientMode) return; 
-        const bus = document.getElementById('search').value.toLowerCase();
-        const body = document.getElementById('tableBody');
-        const table = document.getElementById('mainTable');
-        const btnArch = document.getElementById('btnArchivo');
-        const btnPend = document.getElementById('btnPendientes');
-
-        body.innerHTML = "";
-        
-        let listaBase = [];
-        if (modoArchivo) {
-            const archivadosViejos = registros.filter(r => r.archivado === true);
-            listaBase = [...archivadosViejos, ...registrosArchivados];
-        } else {
-            listaBase = registros;
-        }
-
-        if(modoArchivo) { 
-            table.classList.add('modo-archivo-activo'); 
-            btnArch.classList.add('btn-active-filter');
-            btnArch.innerHTML = "📁 ARCHIVADOS ✅";
-        } else { 
-            table.classList.remove('modo-archivo-activo'); 
-            btnArch.classList.remove('btn-active-filter');
-            btnArch.innerHTML = "📁 ARCHIVADOS";
-        }
-
-        if(modoPendientes) {
-            btnPend.classList.add('btn-active-filter');
-            btnPend.innerHTML = "⏳ PENDIENTES ✅";
-        } else {
-            btnPend.classList.remove('btn-active-filter');
-            btnPend.innerHTML = "⏳ PENDIENTES";
-        }
-
-        const filtrados = listaBase.filter(r => {
-            const ordenLimpia = String(r.orden).replace('MAT-', '');
-            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || ordenLimpia.toLowerCase().includes(bus);
-            
-            let matchFiltro = true;
-            if (!modoArchivo && r.archivado) matchFiltro = false; 
-            if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
-            
-            if (r.esVentaRapida) matchFiltro = false;
-
-            return matchBusqueda && matchFiltro;
-        });
-
-        const filtradosReversos = [...filtrados].reverse();
-        const aMostrar = filtradosReversos.slice(0, limiteTabla);
-
-        aMostrar.forEach(r => {
-            const saldo = r.precio - r.sena;
-            const nroLimpio = String(r.orden).replace('MAT-', '');
-            const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
-            
-            body.innerHTML += `<tr>
-                <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
-                <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
-                <td>
-                    <b style="cursor:pointer; color:#3498db; text-decoration:underline;" onclick="abrirHistorialCliente('${escaparHTML(r.cliente)}', '${r.tel}')" title="Ver Historial">${escaparHTML(r.cliente)}</b><br>
-                    <button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button>
-                </td>
-                <td>
-                    ${escaparHTML(r.modelo)}<br>
-                    <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
-                </td>
-                <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado || 'Pendiente'}</span></td>
-                <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
-                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
-                </td>
-                <td class="action-btns">
-                    <button onclick="abrirFotos('${r.id}')">🖼️</button>
-                    <button onclick="imprimir('${r.id}')">📄</button>
-                    <button onclick="editar('${r.id}')">✏️</button>
-                    <button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>
-                    <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
-                </td></tr>`;
-        });
-
-        if (filtradosReversos.length > limiteTabla) {
-            document.getElementById('btnCargarMas').style.display = 'inline-block';
-        } else {
-            document.getElementById('btnCargarMas').style.display = 'none';
-        }
-
-        calcularOlvidados();
-    }
+    function resetPaginacion() { limiteTabla = 50; renderTable(); }
+    function cargarMasOrdenes() { limiteTabla += 50; renderTable(); }
 
     function formatInput(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; }
-    
-    function parseMoney(s) { 
-        if (!s) return 0;
-        const cleanValue = String(s).replace(/\D/g, "");
-        return parseFloat(cleanValue) || 0; 
-    }
+    function parseMoney(s) { return parseFloat(String(s).replace(/\D/g, "")) || 0; }
     
     function autoOrden() { 
         if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-            let prox = 100;
-            let todos = [...registros, ...registrosArchivados];
-            if (todos.length > 0) {
-                const nums = todos.map(r => { 
-                    const val = String(r.orden).replace('MAT-', '');
-                    const c = val.match(/\d+/); 
-                    return c ? parseInt(c[0]) : 0; 
-                });
-                const max = Math.max(...nums);
-                if (max >= 100) prox = max + 1;
-            }
-            document.getElementById('nroOrden').value = prox;
+            let max = 99;[...registros, ...registrosArchivados].forEach(r => { 
+                const c = String(r.orden).replace('MAT-', '').match(/\d+/); 
+                if(c && parseInt(c[0]) > max) max = parseInt(c[0]); 
+            });
+            document.getElementById('nroOrden').value = max + 1;
         } 
     }
 
-    function revelarCosto() { 
-        let c = document.getElementById('costo-inner');
-        let input = document.getElementById('costoRepuesto');
-        if (c.style.display === "none") {
-            c.style.display = "block";
-            input.focus();
-        } else {
-            c.style.display = "none";
-        }
-    }
-
-    function ocultarCosto() {
-        setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200);
-    }
+    function revelarCosto() { document.getElementById('costo-inner').style.display = document.getElementById('costo-inner').style.display === "none" ? "block" : "none"; if(document.getElementById('costo-inner').style.display==="block") document.getElementById('costoRepuesto').focus();}
+    function ocultarCosto() { setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200); }
 
     function togglePendientes() {
-        modoPendientes = !modoPendientes;
-        limiteTabla = 50; 
-        if(modoPendientes) { modoArchivo = false; showToast("FILTRANDO PENDIENTES ⏳", "#f1c40f"); }
-        else { showToast("MOSTRANDO TODOS 👀", "#3498db"); }
+        modoPendientes = !modoPendientes; limiteTabla = 50; 
+        if(modoPendientes) { modoArchivo = false; showToast("FILTRANDO PENDIENTES ⏳", "#f1c40f"); } else showToast("MOSTRANDO TODOS 👀", "#3498db");
         renderTable();
     }
 
     function toggleArchivo() { 
-        modoArchivo = !modoArchivo; 
-        limiteTabla = 50; 
+        modoArchivo = !modoArchivo; limiteTabla = 50; 
         if(modoArchivo) { 
             modoPendientes = false; 
-            
-            if (historialDescargado) {
-                showToast("MOSTRANDO ARCHIVADOS 📁", "#64748b");
-                renderTable();
-                return; 
-            }
-
+            if (historialDescargado) { showToast("MOSTRANDO ARCHIVADOS 📁", "#64748b"); renderTable(); return; }
             mostrarLoader("Descargando Historial..."); 
-            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-            db.ref(pathArchivado).once('value').then(snap => {
-                const v = snap.val();
-                registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                historialDescargado = true; 
-                actualizarListasAutocompletado();
-                ocultarLoader();
-                showToast("HISTORIAL CARGADO 📁", "#64748b");
-                renderTable(); 
+            db.ref(getDbPath('archivado')).once('value').then(snap => {
+                const v = snap.val(); registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) :[];
+                historialDescargado = true; actualizarListasAutocompletado(); ocultarLoader(); showToast("HISTORIAL CARGADO 📁", "#64748b"); renderTable(); 
             });
-        }
-        else { 
-            showToast("MOSTRANDO ACTIVOS 🔙", "#3498db"); 
-            renderTable(); 
-        }
+        } else { showToast("MOSTRANDO ACTIVOS 🔙", "#3498db"); renderTable(); }
     }
     
     function archivar(id) { 
-        const r = getRegistro(id);
-        if(!r) return;
-
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const r = getRegistro(id); if(!r) return;
+        let copia = {...r}; delete copia.id;
 
         if (r.archivado) {
-            r.archivado = false;
-            let copia = {...r}; delete copia.id;
-            db.ref(pathActivo).child(id).set(copia).then(() => {
-                db.ref(pathArchivado).child(id).remove();
+            copia.archivado = false;
+            db.ref(getDbPath('activo')).child(id).set(copia).then(() => {
+                db.ref(getDbPath('archivado')).child(id).remove();
                 registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
-                renderTable();
                 showToast("RESTAURADO ✅", "#3498db");
             });
         } else {
-            r.archivado = true;
-            let copia = {...r}; delete copia.id;
-
-            db.ref(pathArchivado).child(id).set(copia).then(() => {
-                db.ref(pathActivo).child(id).remove();
-                if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
-                renderTable();
+            copia.archivado = true;
+            db.ref(getDbPath('archivado')).child(id).set(copia).then(() => {
+                db.ref(getDbPath('activo')).child(id).remove();
+                if (historialDescargado) registrosArchivados.push({id: id, ...copia});
                 showToast("ARCHIVADO 🗄️", "#64748b");
             });
         }
@@ -2396,119 +2256,63 @@
     
     document.getElementById('confirmDeleteBtn').onclick = () => { 
         if(!idParaBorrar) return;
-        
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        
-        db.ref(pathActivo).child(idParaBorrar).remove();
-        db.ref(pathArchivado).child(idParaBorrar).remove();
-        
+        db.ref(getDbPath('activo')).child(idParaBorrar).remove();
+        db.ref(getDbPath('archivado')).child(idParaBorrar).remove();
         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
-        registros = registros.filter(x => x.id !== idParaBorrar);
-        
-        renderTable();
-        actualizarListasAutocompletado();
-        
-        closeDeleteModal(); 
-        showToast("BORRADO DEFINITIVO ❌", "#e53e3e"); 
+        closeDeleteModal(); showToast("BORRADO DEFINITIVO ❌", "#e53e3e"); 
     };
 
     function clickLimpiar(skipToast = false) {
-        idEditando = null; 
-        document.getElementById('repairForm').reset();
-        
-        const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs'];
-        inputs.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.value = "";
-        });
-
-        document.getElementById('btnSubmit').innerText = "REGISTRAR";
-        document.getElementById('costo-inner').style.display = "none";
-        document.getElementById('autocomplete-modelo').style.display = 'none';
-        document.getElementById('autocomplete-falla').style.display = 'none';
-
-        document.getElementById('metodoPago').value = "No pagó";
-
-        fotosTemporales = []; 
-        document.getElementById('formThumbnails').innerHTML = "";
+        idEditando = null; document.getElementById('repairForm').reset();['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+        document.getElementById('btnSubmit').innerText = "REGISTRAR"; document.getElementById('costo-inner').style.display = "none";
+        document.getElementById('metodoPago').value = "No pagó"; fotosTemporales =[]; document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
-        
         if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
     }
 
     function saveDraft() {
         if(idEditando || isClientMode) return;
-        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, pin: document.getElementById('pin').value, falla: document.getElementById('falla').value, metodoPago: document.getElementById('metodoPago').value };
-        localStorage.setItem('st_matias_draft', JSON.stringify(draft));
+        localStorage.setItem('st_matias_draft', JSON.stringify({ cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, pin: document.getElementById('pin').value, falla: document.getElementById('falla').value, metodoPago: document.getElementById('metodoPago').value }));
     }
 
     function loadDraft() {
         if(isClientMode) return;
         const saved = localStorage.getItem('st_matias_draft');
         if(saved && !idEditando) {
-            const d = JSON.parse(saved);
-            document.getElementById('cliente').value = d.cliente || "";
-            document.getElementById('tel').value = d.tel || "";
-            document.getElementById('modelo').value = d.modelo || "";
-            document.getElementById('pin').value = d.pin || "";
-            document.getElementById('falla').value = d.falla || "";
+            const d = JSON.parse(saved);['cliente', 'tel', 'modelo', 'pin', 'falla'].forEach(f => { document.getElementById(f).value = d[f] || ""; });
             document.getElementById('metodoPago').value = d.metodoPago || "No pagó";
         }
     }
 
-    function showPage(p) {
-        document.getElementById('page-gestion').style.display = p === 'gestion' ? 'block' : 'none';
-        document.getElementById('page-contabilidad').style.display = p === 'contabilidad' ? 'block' : 'none';
-        document.getElementById('page-stock').style.display = p === 'stock' ? 'block' : 'none';
-        document.getElementById('page-usuarios').style.display = p === 'usuarios' ? 'block' : 'none';
-        document.getElementById('page-ayuda').style.display = p === 'ayuda' ? 'block' : 'none';
-        
+    function showPage(p) {['gestion', 'contabilidad', 'stock', 'usuarios', 'ayuda'].forEach(id => document.getElementById(`page-${id}`).style.display = p === id ? 'block' : 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        const btn = document.getElementById('btn-nav-'+p);
-        if(btn) btn.classList.add('active');
-        
+        if(document.getElementById(`btn-nav-${p}`)) document.getElementById(`btn-nav-${p}`).classList.add('active');
         if(p === 'contabilidad') cargarDatosContabilidad();
         if(p === 'stock') renderStock();
         if(p === 'usuarios') listarUsuarios();
     }
 
-    function limpiarFiltroDia() {
-        document.getElementById('inputDia').value = "";
-    }
+    function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
 
     function cargarDatosContabilidad() {
-        if (historialDescargado) {
-            renderContabilidadUI();
-            return;
-        }
-
+        if (historialDescargado) return renderContabilidadUI();
         mostrarLoader("Calculando Finanzas...");
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        db.ref(pathArchivado).once('value').then(snap => {
-            const v = snap.val();
-            registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-            historialDescargado = true; 
-            ocultarLoader();
-            renderContabilidadUI();
+        db.ref(getDbPath('archivado')).once('value').then(snap => {
+            const v = snap.val(); registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) :[];
+            historialDescargado = true; ocultarLoader(); renderContabilidadUI();
         });
     }
 
     function generarFilaContabilidad(r, tipoStr, metodoBadgesStr, ingreso, egreso) {
-        let nroLimpio = String(r.orden).replace('MAT-', '');
-        let bgFila = r.esVentaRapida ? 'background: #fdf4ff;' : ''; 
-        
         return `
-        <tr class="tabla-contabilidad-row" style="${bgFila}">
+        <tr class="tabla-contabilidad-row" style="${r.esVentaRapida ? 'background: #fdf4ff;' : ''}">
             <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:#64748b; font-weight:bold;">${r.fecha.split(',')[0]}</td>
             <td style="border-bottom: 1px solid #f1f5f9; padding: 15px;">
-                <b>${escaparHTML(r.cliente)}</b> <span style="color:#94a3b8; font-size:11px;">(#${nroLimpio})</span><br>
+                <b>${escaparHTML(r.cliente)}</b> <span style="color:#94a3b8; font-size:11px;">(#${String(r.orden).replace('MAT-', '')})</span><br>
                 <span style="font-size:11px; color:#64748b; font-weight:bold;">${tipoStr}:</span> <span style="font-size:11px; color:#64748b;">${escaparHTML(r.modelo)}</span>
             </td>
             <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; vertical-align:middle;">
-                <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
-                    ${metodoBadgesStr}
-                </div>
+                <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">${metodoBadgesStr}</div>
             </td>
             <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--success); font-weight:bold; font-size:15px; vertical-align:middle;">${ingreso > 0 ? '+ ' + fmt.format(ingreso) : '-'}</td>
             <td style="border-bottom: 1px solid #f1f5f9; padding: 15px; color:var(--danger); font-weight:bold; font-size:15px; vertical-align:middle;">${egreso > 0 ? '- ' + fmt.format(egreso) : '-'}</td>
@@ -2518,443 +2322,197 @@
     function renderContabilidadUI() {
         const mesSeleccionado = parseInt(document.getElementById('selectMes').value);
         const diaSeleccionado = document.getElementById('inputDia').value; 
-        
         let caja = 0, gastos = 0, porIngresar = 0;
-        let todasLasOrdenes = [...registros, ...registrosArchivados]; 
-
-        let tituloTabla = `📅 Registro Mensual (${mesesNombres[mesSeleccionado]})`;
         let fechaFiltroStr = "";
 
         if (diaSeleccionado) {
-            const partesF = diaSeleccionado.split('-');
-            const diaF = parseInt(partesF[2]).toString();
-            const mesF = parseInt(partesF[1]).toString();
-            const anioF = partesF[0];
-            fechaFiltroStr = `${diaF}/${mesF}/${anioF}`;
-            tituloTabla = `📅 Movimientos del Día (${fechaFiltroStr})`;
+            const p = diaSeleccionado.split('-');
+            fechaFiltroStr = `${parseInt(p[2])}/${parseInt(p[1])}/${p[0]}`;
         }
 
-        let ordenesFiltradas = todasLasOrdenes.filter(r => {
-            if (r.fecha) {
-                const fechaOrdenLimpia = r.fecha.split(',')[0].trim(); 
-                if (diaSeleccionado) {
-                    return fechaOrdenLimpia === fechaFiltroStr;
-                } else {
-                    const m = parseInt(fechaOrdenLimpia.split('/')[1]) - 1;
-                    return m === mesSeleccionado;
-                }
-            }
-            return false;
-        });
+        let ordenesFiltradas =[...registros, ...registrosArchivados].filter(r => {
+            if (!r.fecha) return false;
+            const f = r.fecha.split(',')[0].trim(); 
+            return diaSeleccionado ? f === fechaFiltroStr : (parseInt(f.split('/')[1]) - 1) === mesSeleccionado;
+        }).sort((a, b) => parseFechaAR(b.fecha).getTime() - parseFechaAR(a.fecha).getTime());
 
-        ordenesFiltradas.sort((a, b) => {
-            try {
-                const parseD = (str) => {
-                    if (!str) return 0;
-                    let p = str.split(',');
-                    if (!p[0]) return 0;
-                    let f = p[0].trim().split('/'); 
-                    if (f.length !== 3) return 0;
-                    let t = p[1] ? p[1].trim().split(':') : [0,0,0]; 
-                    return new Date(f[2], f[1]-1, f[0], t[0]||0, t[1]||0, t[2]||0).getTime();
-                };
-                return parseD(b.fecha) - parseD(a.fecha);
-            } catch(e) { return 0; }
-        });
-
-        let filasHTML = '';
+        let filasHTML =[];
 
         ordenesFiltradas.forEach(r => {
-            let costoRepuesto = parseFloat(r.costoRepuesto) || 0;
-            gastos += costoRepuesto;
-
+            let costoRepuesto = parseFloat(r.costoRepuesto) || 0; gastos += costoRepuesto;
             let senaOriginal = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
-            let metSena = r.metodoPagoSena || r.metodoPago || 'No pagó';
-            
             let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
-            let metSaldo = r.metodoPagoSaldo || '';
-
             caja += senaOriginal + saldoCobrado;
 
             let deuda = (parseFloat(r.precio) || 0) - (senaOriginal + saldoCobrado);
-            if(deuda > 0 && r.estado !== 'Entregado' && r.estado !== 'No reparado' && !r.archivado && !r.esVentaRapida) {
-                porIngresar += deuda;
-            }
+            if(deuda > 0 && r.estado !== 'Entregado' && r.estado !== 'No reparado' && !r.archivado && !r.esVentaRapida) porIngresar += deuda;
 
-            const getBadge = (m, monto) => {
-                if(m === 'Efectivo') return `<span class="badge-metodo bm-efectivo">💵 Efectivo: $${monto.toLocaleString('es-AR')}</span>`;
-                if(m === 'Transferencia') return `<span class="badge-metodo bm-transferencia">📲 Transf: $${monto.toLocaleString('es-AR')}</span>`;
-                if(m === 'Tarjeta') return `<span class="badge-metodo bm-tarjeta">💳 Tarjeta: $${monto.toLocaleString('es-AR')}</span>`;
-                return `<span class="badge-metodo" style="background:#e2e8f0; color:#475569;">${m}: $${monto.toLocaleString('es-AR')}</span>`;
-            };
+            const getBadge = (m, monto) => `<span class="badge-metodo ${m==='Efectivo'?'bm-efectivo':m==='Transferencia'?'bm-transferencia':m==='Tarjeta'?'bm-tarjeta':''}" ${m!=='Efectivo'&&m!=='Transferencia'&&m!=='Tarjeta'?'style="background:#e2e8f0; color:#475569;"':''}>${m==='Efectivo'?'💵 ':m==='Transferencia'?'📲 ':m==='Tarjeta'?'💳 ':''}${m}: $${monto.toLocaleString('es-AR')}</span>`;
 
             let metodoBadges = '';
-            if (senaOriginal > 0) {
-                metodoBadges += getBadge(metSena, senaOriginal);
-            }
-            if (saldoCobrado > 0) {
-                metodoBadges += getBadge(metSaldo, saldoCobrado);
-            }
-            if (senaOriginal === 0 && saldoCobrado === 0) {
-                metodoBadges = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
-            }
+            if (senaOriginal > 0) metodoBadges += getBadge(r.metodoPagoSena || r.metodoPago || 'No pagó', senaOriginal);
+            if (saldoCobrado > 0) metodoBadges += getBadge(r.metodoPagoSaldo || '', saldoCobrado);
+            if (!senaOriginal && !saldoCobrado) metodoBadges = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
 
-            let ingresoTotal = senaOriginal + saldoCobrado;
-            let tipo = r.esVentaRapida ? 'Venta Directa' : 'Reparación';
-            
-            filasHTML += generarFilaContabilidad(r, tipo, metodoBadges, ingresoTotal, costoRepuesto);
+            filasHTML.push(generarFilaContabilidad(r, r.esVentaRapida ? 'Venta Directa' : 'Reparación', metodoBadges, senaOriginal + saldoCobrado, costoRepuesto));
         });
 
-        if(ordenesFiltradas.length === 0) {
-            filasHTML = `<tr><td colspan="5" style="text-align:center; padding: 40px; color:#94a3b8; font-weight:bold; font-size:15px;">🔍 No hay movimientos registrados en la fecha seleccionada.</td></tr>`;
-        }
-
         document.getElementById('stats-container').innerHTML = `
-            <div class="card-stats caja-success">
-                <div class="stat-icon">💵</div>
-                <b>Ingresos Totales</b>
-                <p style="color:var(--success);">${fmt.format(caja)}</p>
-            </div>
-            <div class="card-stats caja-warning">
-                <div class="stat-icon">⏳</div>
-                <b>Por Cobrar (Saldos)</b>
-                <p style="color:var(--warning);">${fmt.format(porIngresar)}</p>
-            </div>
-            <div class="card-stats caja-danger">
-                <div class="stat-icon">📉</div>
-                <b>Gastos (Repuestos)</b>
-                <p style="color:var(--danger);">${fmt.format(gastos)}</p>
-            </div>
-            <div class="card-stats caja-primary">
-                <div class="stat-icon">💰</div>
-                <b>Ganancia Neta</b>
-                <p style="color:var(--primary);">${fmt.format(caja - gastos)}</p>
-            </div>`;
+            <div class="card-stats caja-success"><div class="stat-icon">💵</div><b>Ingresos Totales</b><p style="color:var(--success);">${fmt.format(caja)}</p></div>
+            <div class="card-stats caja-warning"><div class="stat-icon">⏳</div><b>Por Cobrar (Saldos)</b><p style="color:var(--warning);">${fmt.format(porIngresar)}</p></div>
+            <div class="card-stats caja-danger"><div class="stat-icon">📉</div><b>Gastos (Repuestos)</b><p style="color:var(--danger);">${fmt.format(gastos)}</p></div>
+            <div class="card-stats caja-primary"><div class="stat-icon">💰</div><b>Ganancia Neta</b><p style="color:var(--primary);">${fmt.format(caja - gastos)}</p></div>`;
 
         document.getElementById('contabilidad-diaria').innerHTML = `
             <div class="table-wrapper" style="margin-top:30px; background:white; padding:25px; border-radius:16px; border: 1px solid #f1f5f9; overflow-x:auto; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                <h3 style="margin-top:0; color:#1e293b; font-size:18px; border-bottom: 2px solid #f1f5f9; padding-bottom:15px; margin-bottom:15px;">${tituloTabla}</h3>
+                <h3 style="margin-top:0; color:#1e293b; font-size:18px; border-bottom: 2px solid #f1f5f9; padding-bottom:15px; margin-bottom:15px;">${diaSeleccionado ? `📅 Movimientos del Día (${fechaFiltroStr})` : `📅 Registro Mensual (${mesesNombres[mesSeleccionado]})`}</h3>
                 <table style="width:100%; text-align:left; font-size:14px; min-width:650px; border-collapse: collapse;">
                     <thead>
-                        <tr>
-                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Fecha</th>
-                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Cliente / Equipo</th>
-                            <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Método de Pago</th>
-                            <th style="background:#f8fafc; padding:12px 15px; color:#166534; font-size:12px; text-transform:uppercase;">Ingreso</th>
-                            <th style="background:#f8fafc; padding:12px 15px; color:#991b1b; font-size:12px; text-transform:uppercase;">Egreso</th>
-                        </tr>
+                        <tr><th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Fecha</th>
+                        <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Cliente / Equipo</th>
+                        <th style="background:#f8fafc; padding:12px 15px; color:#475569; font-size:12px; text-transform:uppercase;">Método de Pago</th>
+                        <th style="background:#f8fafc; padding:12px 15px; color:#166534; font-size:12px; text-transform:uppercase;">Ingreso</th>
+                        <th style="background:#f8fafc; padding:12px 15px; color:#991b1b; font-size:12px; text-transform:uppercase;">Egreso</th></tr>
                     </thead>
-                    <tbody>${filasHTML}</tbody>
+                    <tbody>${filasHTML.length ? filasHTML.join('') : `<tr><td colspan="5" style="text-align:center; padding: 40px; color:#94a3b8; font-weight:bold;">🔍 No hay movimientos registrados.</td></tr>`}</tbody>
                 </table>
             </div>`;
     }
 
     function exportarExcel() {
-        let csv = "\ufeffFecha;Orden;Cliente;Equipo;MétodosDePago;IngresoTotal;CostoRepuesto;Ganancia;Estado\n";
-        let todasLasOrdenes = [...registros, ...registrosArchivados]; 
-        todasLasOrdenes.forEach(r => { 
-            const nroLimpio = String(r.orden).replace('MAT-', '');
-            
-            let senaOriginal = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
-            let metSena = r.metodoPagoSena || r.metodoPago || 'No pagó';
-            let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
-            let metSaldo = r.metodoPagoSaldo || '';
-
-            let metodosUsados = [];
-            if(senaOriginal > 0) metodosUsados.push(`${metSena} ($${senaOriginal})`);
-            if(saldoCobrado > 0) metodosUsados.push(`${metSaldo} ($${saldoCobrado})`);
+        // El "sep=;" fuerza a Excel en PC a reconocer las columnas correctamente, ignorando la configuración de Windows.
+        let csv = "\ufeffsep=;\nFecha;Orden;Cliente;Equipo;MétodosDePago;IngresoTotal;CostoRepuesto;Ganancia;Estado\n";[...registros, ...registrosArchivados].forEach(r => { 
+            let sena = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
+            let saldo = parseFloat(r.saldoCobrado) || 0;
+            let metodosUsados =[];
+            if(sena > 0) metodosUsados.push(`${r.metodoPagoSena || r.metodoPago || 'No pagó'} ($${sena})`);
+            if(saldo > 0) metodosUsados.push(`${r.metodoPagoSaldo || ''} ($${saldo})`);
             if(metodosUsados.length === 0) metodosUsados.push('No pagó');
-            
-            let ingresoTotal = senaOriginal + saldoCobrado;
             let costo = parseFloat(r.costoRepuesto) || 0;
-            let ganancia = ingresoTotal - costo;
-
-            csv += `${r.fecha};${nroLimpio};${r.cliente};${r.modelo};${metodosUsados.join(' + ')};${ingresoTotal};${costo};${ganancia};${r.estado}\n`; 
+            
+            // Escapamos los textos entre comillas para que si un usuario usó un ";" o salto de línea, no rompa el Excel
+            let c_cliente = `"${(r.cliente || '').replace(/"/g, '""')}"`;
+            let c_modelo = `"${(r.modelo || '').replace(/"/g, '""')}"`;
+            let c_metodos = `"${metodosUsados.join(' + ')}"`;
+            
+            csv += `${r.fecha};${String(r.orden).replace('MAT-', '')};${c_cliente};${c_modelo};${c_metodos};${sena + saldo};${costo};${(sena + saldo) - costo};${r.estado}\n`; 
         });
-        const link = document.createElement("a");
+        
+        const link = document.createElement("a"); 
         link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-        link.download = `ST_REPORTE_FINANCIERO.csv`; link.click();
+        link.download = `ST_REPORTE_FINANCIERO.csv`; 
+        link.click();
     }
 
-    // --- FUNCIÓN DE BACKUP GLOBAL PARA ADMIN (SEGURA PARA FIREBASE) ---
     function exportarBackupGlobal() {
         mostrarLoader("Generando copia de seguridad...");
-        // Descargamos los nodos específicos permitidos para no chocar con las reglas de seguridad
-        const nodos = [
-            'configuracion', 'reparaciones', 'reparaciones_archivadas', 
-            'reparaciones_usuarios', 'reparaciones_archivadas_usuarios', 
-            'stock', 'stock_usuarios', 'usuarios_registrados'
-        ];
-        
         let backupData = {};
-        let promesas = nodos.map(nodo => {
-            return db.ref(nodo).once('value').then(snap => {
-                backupData[nodo] = snap.val();
-            }).catch(e => {
-                console.warn("No se pudo leer el nodo:", nodo, e);
-            });
-        });
-
-        Promise.all(promesas).then(() => {
-            const blob = new Blob([JSON.stringify(backupData, null, 2)], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Backup_MiTallerWeb_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            ocultarLoader();
-            showToast("BACKUP DESCARGADO ✅", "#2ecc71");
-        }).catch(err => {
-            ocultarLoader();
-            showToast("Error al generar backup", "#e53e3e");
-            console.error(err);
+        Promise.all(['configuracion', 'reparaciones', 'reparaciones_archivadas', 'reparaciones_usuarios', 'reparaciones_archivadas_usuarios', 'stock', 'stock_usuarios', 'usuarios_registrados'].map(nodo => 
+            db.ref(nodo).once('value').then(snap => { backupData[nodo] = snap.val(); }).catch(e => {})
+        )).then(() => {
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(backupData, null, 2)], {type: "application/json"}));
+            a.download = `Backup_MiTallerWeb_${new Date().toISOString().slice(0,10)}.json`; a.click();
+            ocultarLoader(); showToast("BACKUP DESCARGADO ✅", "#2ecc71");
         });
     }
 
     document.getElementById('repairForm').onsubmit = e => {
         e.preventDefault();
         const rOriginal = idEditando ? getRegistro(idEditando) : null;
-        
         mostrarLoader("Guardando Registro...");
 
-        const precioParse = parseMoney(document.getElementById('precio').value);
-        const senaParse = parseMoney(document.getElementById('sena').value);
-        const metodoForm = document.getElementById('metodoPago').value;
-
         const data = {
-            orden: document.getElementById('nroOrden').value, 
-            cliente: document.getElementById('cliente').value,
-            tel: document.getElementById('tel').value, 
-            modelo: document.getElementById('modelo').value,
-            color: document.getElementById('color').value, 
-            imei: document.getElementById('imei').value,
-            pin: document.getElementById('pin').value,
-            precio: precioParse, 
-            sena: senaParse,
-            metodoPago: metodoForm, 
-            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), 
-            falla: document.getElementById('falla').value, 
-            obs: document.getElementById('obs').value,
-            archivado: rOriginal ? rOriginal.archivado : false, 
-            estado: rOriginal ? rOriginal.estado : "Pendiente",
-            fotos: rOriginal ? (rOriginal.fotos || []) : fotosTemporales
+            orden: document.getElementById('nroOrden').value, cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, 
+            modelo: document.getElementById('modelo').value, color: document.getElementById('color').value, imei: document.getElementById('imei').value,
+            pin: document.getElementById('pin').value, precio: parseMoney(document.getElementById('precio').value), 
+            sena: parseMoney(document.getElementById('sena').value), senaOriginal: parseMoney(document.getElementById('sena').value),
+            metodoPago: document.getElementById('metodoPago').value, metodoPagoSena: document.getElementById('metodoPago').value,
+            costoRepuesto: parseMoney(document.getElementById('costoRepuesto').value), falla: document.getElementById('falla').value, 
+            obs: document.getElementById('obs').value, archivado: rOriginal ? rOriginal.archivado : false, 
+            estado: rOriginal ? rOriginal.estado : "Pendiente", fotos: rOriginal ? (rOriginal.fotos ||[]) : fotosTemporales
         };
 
         if(idEditando) { 
-            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-            const nodoActualizar = rOriginal.archivado ? pathArchivado : pathActivo;
-            
             if(rOriginal.historialEstados) data.historialEstados = rOriginal.historialEstados;
             if(rOriginal.fecha) data.fecha = rOriginal.fecha;
             if(rOriginal.recordatorioEnviado) data.recordatorioEnviado = true;
-            
-            // Permite que la seña original y su método se actualicen si los editás
-            data.senaOriginal = senaParse; 
-            data.metodoPagoSena = metodoForm; 
-            
             if(rOriginal.saldoCobrado) data.saldoCobrado = rOriginal.saldoCobrado;
             if(rOriginal.metodoPagoSaldo) data.metodoPagoSaldo = rOriginal.metodoPagoSaldo;
 
-            db.ref(nodoActualizar).child(idEditando).update(data).then(() => {
-                Object.assign(rOriginal, data); 
-                renderTable();
-                actualizarListasAutocompletado();
-                ocultarLoader();
-                clickLimpiar(true);
-                showToast("ACTUALIZADO ✅", "#3498db");
+            db.ref(rOriginal.archivado ? getDbPath('archivado') : getDbPath('activo')).child(idEditando).update(data).then(() => {
+                ocultarLoader(); clickLimpiar(true); showToast("ACTUALIZADO ✅", "#3498db");
             });
-        } 
-        else { 
+        } else { 
             data.fecha = new Date().toLocaleString('es-AR'); 
-            data.senaOriginal = senaParse;
-            data.metodoPagoSena = metodoForm;
-
-            const nuevaOrden = dbRef.push(); 
-            nuevaOrden.set(data).then(() => {
-                data.id = nuevaOrden.key;
-                if (!getRegistro(nuevaOrden.key)) registros.push(data);
-                renderTable();
-                actualizarListasAutocompletado();
-                ocultarLoader();
-                clickLimpiar(true);
-                showToast("REGISTRADO ✅", "#2ecc71"); 
+            db.ref(getDbPath('activo')).push(data).then(() => {
+                ocultarLoader(); clickLimpiar(true); showToast("REGISTRADO ✅", "#2ecc71"); 
             });
         }
     };
 
     function editar(id) {
-        idEditando = id; const r = getRegistro(id);
-        if(!r) return;
-        const nroLimpio = String(r.orden).replace('MAT-', '');
-        document.getElementById('nroOrden').value = nroLimpio; document.getElementById('cliente').value = r.cliente;
+        idEditando = id; const r = getRegistro(id); if(!r) return;
+        document.getElementById('nroOrden').value = String(r.orden).replace('MAT-', ''); document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel; document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || ""; document.getElementById('imei').value = r.imei || "";
-        document.getElementById('pin').value = r.pin || "";
-        document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
+        document.getElementById('pin').value = r.pin || ""; document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
         document.getElementById('sena').value = (r.senaOriginal !== undefined ? r.senaOriginal : r.sena).toLocaleString('es-AR');
         document.getElementById('metodoPago').value = r.metodoPagoSena || r.metodoPago || 'No pagó'; 
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
 
-        document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
-        fotosTemporales = r.fotos || []; actualizarMiniaturasForm();
-        window.scrollTo({top:0, behavior:'smooth'});
+        document.getElementById('btnSubmit').innerText = "ACTUALIZAR"; fotosTemporales = r.fotos ||[]; actualizarMiniaturasForm(); window.scrollTo({top:0, behavior:'smooth'});
     }
 
     function enviarWhatsApp(id) {
-        const r = getRegistro(id);
-        if(!r) return;
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        db.ref(path).once('value', snap => {
-            const conf = snap.val() || {};
-            const nombreHeader = conf.nombreTaller || "";
-            const subHeader = conf.subtitulo || "";
-            let num = String(r.tel).replace(/\D/g, ''); 
-            if (!num.startsWith('54')) num = '549' + num;
-            
-            const nroLimpio = String(r.orden).replace('MAT-', '');
-            const baseUrl = window.location.origin + window.location.pathname;
-            const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
-            
-            let msjPlano = "";
-            
-            if(nombreHeader) msjPlano += `*${nombreHeader}*`;
-            if(subHeader) msjPlano += ` - ${subHeader}`;
-            
-            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* ${r.estado.toUpperCase()}\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
-            msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
-            
+        const r = getRegistro(id); if(!r) return;
+        db.ref(getDbPath('perfil')).once('value', snap => {
+            const conf = snap.val() || {}; let num = String(r.tel).replace(/\D/g, ''); if (!num.startsWith('54')) num = '549' + num;
+            const msjPlano = `${conf.nombreTaller ? `*${conf.nombreTaller}*` : ""}${conf.subtitulo ? ` - ${conf.subtitulo}` : ""}\n\n📌 *ORDEN:* ${String(r.orden).replace('MAT-', '')}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* ${r.estado.toUpperCase()}\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${window.location.origin + window.location.pathname}?id=${r.id}&u=${currentUser}\n\n----------------------------\n⚠️ _Este es un mensaje automático_`;
             window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
         });
     }
 
-    function renderStock() {
-        const busInput = document.getElementById('search-stock');
-        const bus = busInput ? busInput.value.toLowerCase() : '';
-        const body = document.getElementById('bodyStock');
-        body.innerHTML = '';
-        
-        const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(bus));
-        
-        filtrados.forEach(item => {
-            let styleColor = item.cantidad <= 2 ? 'color: var(--danger); font-weight:bold;' : 'color: var(--success); font-weight:bold;';
-            
-            body.innerHTML += `<tr>
-                <td><b>${escaparHTML(item.nombre)}</b></td>
-                <td style="${styleColor}">${item.cantidad} und.</td>
-                <td>${fmt.format(item.costo)}</td>
-                <td>${fmt.format(item.precioVenta)}</td>
-                <td class="action-btns">
-                    <button onclick="editarStock('${item.id}')">✏️</button>
-                    <button onclick="eliminarStock('${item.id}')" style="color:red;">❌</button>
-                </td>
-            </tr>`;
-        });
-        
-        if(filtrados.length === 0) {
-            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#64748b;">No se encontraron artículos en el inventario</td></tr>';
-        }
-    }
-    
     function guardarStock() {
-        const id = document.getElementById('stockId').value;
-        const nombre = document.getElementById('stockNombre').value.trim();
-        const cantidad = parseInt(document.getElementById('stockCantidad').value) || 0;
-        const costo = parseMoney(document.getElementById('stockCosto').value);
-        const precioVenta = parseMoney(document.getElementById('stockPrecio').value);
+        const payload = { 
+            nombre: document.getElementById('stockNombre').value.trim(), cantidad: parseInt(document.getElementById('stockCantidad').value) || 0,
+            costo: parseMoney(document.getElementById('stockCosto').value), precioVenta: parseMoney(document.getElementById('stockPrecio').value)
+        };
+        if(!payload.nombre) return showToast("⚠️ Falta el nombre del artículo", "#e53e3e");
         
-        if(!nombre) { showToast("⚠️ Falta el nombre del artículo", "#e53e3e"); return; }
-        
-        mostrarLoader("Guardando artículo...");
-
-        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
-        const payload = { nombre, cantidad, costo, precioVenta };
-        
-        if(id) {
-            db.ref(pathStock).child(id).update(payload).then(() => {
-                showToast("ARTÍCULO ACTUALIZADO ✅", "#3498db");
-                limpiarStock();
-                ocultarLoader();
-            }).catch(e => {
-                ocultarLoader();
-                alert("Error de Firebase al actualizar: " + e.message); 
-                showToast("❌ Error al guardar en la base de datos", "#e53e3e");
-            });
-        } else {
-            db.ref(pathStock).push(payload).then(() => {
-                showToast("ARTÍCULO GUARDADO ✅", "#2ecc71");
-                limpiarStock();
-                ocultarLoader();
-            }).catch(e => {
-                ocultarLoader();
-                alert("Error de Firebase al guardar: " + e.message); 
-                showToast("❌ Error al guardar en la base de datos", "#e53e3e");
-            });
-        }
+        mostrarLoader("Guardando artículo..."); const id = document.getElementById('stockId').value;
+        if(id) db.ref(getDbPath('stock')).child(id).update(payload).then(() => { ocultarLoader(); limpiarStock(); showToast("ACTUALIZADO ✅", "#3498db"); });
+        else db.ref(getDbPath('stock')).push(payload).then(() => { ocultarLoader(); limpiarStock(); showToast("GUARDADO ✅", "#2ecc71"); });
     }
     
     function editarStock(id) {
-        const item = stockData.find(x => x.id === id);
-        if(!item) return;
-        
-        document.getElementById('stockId').value = item.id;
-        document.getElementById('stockNombre').value = item.nombre;
-        document.getElementById('stockCantidad').value = item.cantidad;
-        document.getElementById('stockCosto').value = (item.costo || 0).toLocaleString('es-AR');
+        const item = stockData.find(x => x.id === id); if(!item) return;
+        document.getElementById('stockId').value = item.id; document.getElementById('stockNombre').value = item.nombre;
+        document.getElementById('stockCantidad').value = item.cantidad; document.getElementById('stockCosto').value = (item.costo || 0).toLocaleString('es-AR');
         document.getElementById('stockPrecio').value = (item.precioVenta || 0).toLocaleString('es-AR');
-        
         window.scrollTo({top:0, behavior:'smooth'});
     }
     
-    function eliminarStock(id) {
-        idStockParaBorrar = id;
-        document.getElementById('deleteStockModal').style.display = 'flex';
-    }
-
+    function eliminarStock(id) { idStockParaBorrar = id; document.getElementById('deleteStockModal').style.display = 'flex'; }
     function ejecutarBorradoStock() {
-        if(!idStockParaBorrar) return;
-        document.getElementById('deleteStockModal').style.display = 'none';
-        mostrarLoader("Borrando...");
-        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
-        db.ref(pathStock).child(idStockParaBorrar).remove().then(() => {
-            ocultarLoader();
-            showToast("ARTÍCULO ELIMINADO ❌", "#e53e3e");
-            idStockParaBorrar = null;
-        }).catch(err => {
-            ocultarLoader();
-            showToast("Error al borrar artículo", "#e53e3e");
-        });
+        if(!idStockParaBorrar) return; document.getElementById('deleteStockModal').style.display = 'none'; mostrarLoader("Borrando...");
+        db.ref(getDbPath('stock')).child(idStockParaBorrar).remove().then(() => { ocultarLoader(); showToast("ELIMINADO ❌", "#e53e3e"); idStockParaBorrar = null; });
     }
     
-    function limpiarStock() {
-        document.getElementById('stockId').value = "";
-        document.getElementById('stockNombre').value = "";
-        document.getElementById('stockCantidad').value = "";
-        document.getElementById('stockCosto').value = "";
-        document.getElementById('stockPrecio').value = "";
-        document.getElementById('search-stock').value = "";
-        renderStock();
-        document.getElementById('stockNombre').focus();
+    function limpiarStock() {['stockId', 'stockNombre', 'stockCantidad', 'stockCosto', 'stockPrecio', 'search-stock'].forEach(id => document.getElementById(id).value = "");
+        renderStock(); document.getElementById('stockNombre').focus();
     }
 
     function comprimirFoto(archivo, callback) {
-        const reader = new FileReader();
-        reader.readAsDataURL(archivo);
+        const reader = new FileReader(); reader.readAsDataURL(archivo);
         reader.onload = (e) => {
-            const img = new Image();
-            img.src = e.target.result;
+            const img = new Image(); img.src = e.target.result;
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = 600;
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                 let width = img.width, height = img.height;
-                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                canvas.width = width; canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                callback(dataUrl);
+                if (width > 600) { height *= 600 / width; width = 600; }
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.7));
             };
         };
     }
@@ -2962,86 +2520,43 @@
     function agregarFotoTemporal(input) {
         if (input.files && input.files[0]) {
             mostrarLoader("Comprimiendo foto...");
-            comprimirFoto(input.files[0], (fotoComprimida) => {
-                fotosTemporales.push(fotoComprimida);
-                actualizarMiniaturasForm();
-                ocultarLoader();
-                showToast("FOTO LISTA ✅", "#2ecc71");
-            });
+            comprimirFoto(input.files[0], (foto) => { fotosTemporales.push(foto); actualizarMiniaturasForm(); ocultarLoader(); showToast("FOTO LISTA ✅", "#2ecc71"); });
         }
     }
 
     function subirFotoDirecta(input) {
         if (input.files && input.files[0]) {
             mostrarLoader("Comprimiendo foto...");
-            comprimirFoto(input.files[0], (fotoComprimida) => {
-                const r = getRegistro(idParaFotos);
-                let fotos = [...(r.fotos || [])];
-                fotos.push(fotoComprimida);
-                
-                const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-                const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-                const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
-                
-                db.ref(nodoActualizar).child(idParaFotos).update({ fotos: fotos }).then(() => {
-                    r.fotos = fotos; 
-                    abrirFotos(idParaFotos);
-                    ocultarLoader();
-                    showToast("FOTO AGREGADA ✅", "#2ecc71");
-                });
+            comprimirFoto(input.files[0], (foto) => {
+                const r = getRegistro(idParaFotos); let fotos =[...(r.fotos || []), foto];
+                db.ref(r.archivado ? getDbPath('archivado') : getDbPath('activo')).child(idParaFotos).update({ fotos: fotos }).then(() => { ocultarLoader(); showToast("FOTO AGREGADA ✅", "#2ecc71"); });
             });
         }
     }
 
     function actualizarMiniaturasForm() {
-        const container = document.getElementById('formThumbnails'); container.innerHTML = "";
-        fotosTemporales.forEach((src, idx) => { container.innerHTML += `<img src="${src}" class="thumb-preview" onclick="fotosTemporales.splice(${idx},1); actualizarMiniaturasForm()">`; });
-    }
-
-    function abrirFotos(id) {
-        idParaFotos = id; const r = getRegistro(id);
-        if(!r) return;
-        const gallery = document.getElementById('photoGallery'); gallery.innerHTML = "";
-        document.getElementById('photoFooterAction').style.display = isClientMode ? 'none' : 'flex';
-        (r.fotos || []).forEach((src, index) => {
-            let deleteBtn = isClientMode ? '' : `<button onclick="eliminarFoto('${id}', ${index})" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:50%; width:24px; height:24px; font-weight:bold;">X</button>`;
-            gallery.innerHTML += `<div style="position:relative;"><img src="${src}" style="width:100%; border-radius:8px; height:120px; object-fit:cover;" onclick="verImagenFull('${src}')">${deleteBtn}</div>`;
-        });
-        document.getElementById('photoModal').style.display = 'flex';
+        const container = document.getElementById('formThumbnails'); 
+        let htmlImages =[];
+        fotosTemporales.forEach((src, idx) => { htmlImages.push(`<img src="${src}" class="thumb-preview" onclick="fotosTemporales.splice(${idx},1); actualizarMiniaturasForm()">`); });
+        container.innerHTML = htmlImages.join('');
     }
 
     function eliminarFoto(id, index) {
-        const r = getRegistro(id); let fotos = [...(r.fotos || [])];
-        fotos.splice(index, 1); 
-        
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
-        
-        db.ref(nodoActualizar).child(id).update({ fotos: fotos }).then(() => {
-            r.fotos = fotos;
-            abrirFotos(id);
-        });
+        const r = getRegistro(id); let fotos = [...(r.fotos || [])]; fotos.splice(index, 1); 
+        db.ref(r.archivado ? getDbPath('archivado') : getDbPath('activo')).child(id).update({ fotos: fotos });
     }
 
     function verificarAutoArchivo() {
         if(isClientMode) return;
         const ahora = new Date();
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-
         registros.forEach(r => {
             if (r.estado === 'Entregado' && !r.archivado && r.historialEstados) {
                 const ent = r.historialEstados.filter(h => h.estado === 'Entregado').pop();
                 if (ent) {
                     const p = ent.fecha.split(', ')[0].split('/'), h = ent.fecha.split(', ')[1].split(':'), d = new Date(p[2], p[1]-1, p[0], h[0], h[1]);
                     if (ahora - d >= 24 * 60 * 60 * 1000) {
-                        r.archivado = true;
-                        let copia = {...r}; delete copia.id;
-
-                        db.ref(pathArchivado).child(r.id).set(copia).then(() => {
-                            db.ref(pathActivo).child(r.id).remove();
-                        });
+                        let copia = {...r}; copia.archivado = true; delete copia.id;
+                        db.ref(getDbPath('archivado')).child(r.id).set(copia).then(() => { db.ref(getDbPath('activo')).child(r.id).remove(); });
                     }
                 }
             }
@@ -3058,264 +2573,122 @@
     viewer.addEventListener('touchend', () => { isDragging = false; });
     
     db.ref(".info/connected").on("value", s => {
-        const isOnline = s.val();
-        const dot = document.getElementById('status-dot');
-        const msg = document.getElementById('sync-msg');
-        if(dot) dot.className = isOnline ? "online" : "offline";
-        if(msg) msg.style.display = isOnline ? "none" : "inline";
+        const isOnline = s.val(); const dot = document.getElementById('status-dot'); const msg = document.getElementById('sync-msg');
+        if(dot) dot.className = isOnline ? "online" : "offline"; if(msg) msg.style.display = isOnline ? "none" : "inline";
     });
 
     function crearLicencia() {
-        const wa = document.getElementById('new-user-wa').value.trim();
-        if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
-        
+        const wa = document.getElementById('new-user-wa').value.trim(); if(!wa) return showToast("INGRESE UN NÚMERO", "#e53e3e");
         mostrarLoader("Activando licencia...");
-        const emailFalso = wa + '@mitallerweb.com';
-        const passPorDefecto = '123456'; 
-        
-        secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, passPorDefecto)
+        secondaryApp.auth().createUserWithEmailAndPassword(wa + '@mitallerweb.com', '123456')
             .then(() => {
                 secondaryApp.auth().signOut();
-                return db.ref('usuarios_registrados/' + wa).set({ 
-                    whatsapp: wa, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
-                    nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null
-                });
+                return db.ref(`usuarios_registrados/${wa}`).set({ whatsapp: wa, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador', nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null });
             })
-            .then(() => {
-                ocultarLoader();
+            .then(() => { 
+                ocultarLoader(); 
                 document.getElementById('new-user-wa').value = ""; 
-                showToast("LICENCIA ACTIVADA ✅", "#2ecc71");
+                showToast("ACTIVADA ✅", "#2ecc71"); 
+                listarUsuarios(); // <-- REFRESCO AUTOMÁTICO
             })
             .catch((error) => {
                 if (error.code === 'auth/email-already-in-use') {
-                    db.ref('usuarios_registrados/' + wa).set({ 
-                        whatsapp: wa, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador',
-                        nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null
-                    }).then(() => {
-                        ocultarLoader();
+                    db.ref(`usuarios_registrados/${wa}`).set({ whatsapp: wa, fechaAlta: new Date().toLocaleString('es-AR'), rol: 'operador', nombreTaller: "", subtitulo: "", wappTicket: "", garantia: "", estado: 'activo', fechaSuspension: null })
+                    .then(() => { 
+                        ocultarLoader(); 
                         document.getElementById('new-user-wa').value = ""; 
-                        showToast("LICENCIA REACTIVADA ✅", "#3498db");
+                        showToast("REACTIVADA ✅", "#3498db"); 
+                        listarUsuarios(); // <-- REFRESCO AUTOMÁTICO
                     });
-                } else {
-                    ocultarLoader();
-                    showToast("Error: Hubo un fallo en el sistema", "#e53e3e");
-                    console.error(error);
-                }
+                } else { ocultarLoader(); showToast("Error: Hubo un fallo", "#e53e3e"); }
             });
     }
 
-    function listarUsuarios() {
-        if(!isUserAdmin) return;
-        const bus = document.getElementById('search-user').value.toLowerCase();
-        db.ref('usuarios_registrados').off('value'); 
-        db.ref('usuarios_registrados').on('value', snapUsers => {
-            const users = snapUsers.val();
-            const body = document.getElementById('userTableBody');
-            body.innerHTML = "";
-            if(users) {
-                const ahora = Date.now();
-                
-                Object.keys(users).forEach(wa => {
-                    if(wa.toLowerCase().includes(bus)) {
-                        db.ref('reparaciones_usuarios/' + wa).once('value', snapData => {
-                            const data = snapData.val() || {};
-                            const JSON_STR = JSON.stringify(data);
-                            const cantOrdenes = Object.keys(data).length;
-                            let pesoAprox = JSON_STR ? JSON_STR.length / 1024 : 0;
-                            let colorUso = pesoAprox > 500 ? 'red' : (pesoAprox > 200 ? 'orange' : 'green');
-                            
-                            let esSuspendido = users[wa].estado === 'suspendido';
-                            let diasRestantes = "";
-                            let btnAccion = "";
-
-                            if (esSuspendido) {
-                                let fechaSusp = users[wa].fechaSuspension || ahora;
-                                let diasPasados = Math.floor((ahora - fechaSusp) / (1000 * 60 * 60 * 24));
-                                let quedan = 7 - diasPasados;
-                                if (quedan < 0) quedan = 0;
-                                
-                                diasRestantes = `<br><span style="color:red; font-weight:bold; font-size:11px;">⚠️ Se borrará todo en ${quedan} días</span>`;
-                                btnAccion = `
-                                    <button onclick="restaurarLicencia('${wa}')" style="background:var(--success); color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; margin-bottom:5px; width:100%;">♻️ RESTAURAR</button>
-                                    <button onclick="openDeleteLicenseModal('${wa}')" style="background:none; border:none; color:#e53e3e; text-decoration:underline; cursor:pointer; font-size:11px; width:100%;">Borrar ahora</button>`;
-                            } else {
-                                btnAccion = `<button onclick="openSuspendModal('${wa}')" style="background:#e53e3e; color:white; border:none; padding:6px; border-radius:6px; cursor:pointer; font-weight:bold; width:100%;">⏸️ SUSPENDER</button>`;
-                            }
-
-                            body.innerHTML += `<tr style="${esSuspendido ? 'background:#fff5f5;' : ''}">
-                                <td style="padding:15px;">
-                                    <b>${wa}</b> ${esSuspendido ? '⏸️' : '✅'}<br>
-                                    <small style="color:${colorUso}">📊 Uso: ${pesoAprox.toFixed(1)} KB (${cantOrdenes} órdenes)</small>
-                                    ${diasRestantes}
-                                </td>
-                                <td style="padding:15px;"><span style="background:#eee; padding:3px 8px; border-radius:4px; font-family:monospace;">******</span></td>
-                                <td style="padding:15px; color:#64748b; font-size:13px;">${users[wa].fechaAlta || 'Preexistente'}</td>
-                                <td style="padding:15px;">${btnAccion}</td>
-                            </tr>`;
-                        });
-                    }
-                });
-            }
-        });
-    }
-
-    function openSuspendModal(id) {
-        idParaSuspender = id;
-        document.getElementById('suspendModal').style.display = 'flex';
-    }
-    
-    function closeSuspendModal() {
-        document.getElementById('suspendModal').style.display = 'none';
-        idParaSuspender = null;
-    }
+    function openSuspendModal(id) { idParaSuspender = id; document.getElementById('suspendModal').style.display = 'flex'; }
+    function closeSuspendModal() { document.getElementById('suspendModal').style.display = 'none'; idParaSuspender = null; }
 
     document.getElementById('confirmSuspendBtn').onclick = () => {
         if(!idParaSuspender) return;
-        db.ref('usuarios_registrados/' + idParaSuspender).update({
-            estado: 'suspendido',
-            fechaSuspension: Date.now()
-        }).then(() => {
-            showToast("LICENCIA SUSPENDIDA ⏸️", "#f1c40f");
-            closeSuspendModal();
+        db.ref(`usuarios_registrados/${idParaSuspender}`).update({ estado: 'suspendido', fechaSuspension: Date.now() }).then(() => { 
+            showToast("SUSPENDIDA ⏸️", "#f1c40f"); 
+            closeSuspendModal(); 
+            listarUsuarios(); // <-- REFRESCO AUTOMÁTICO
         });
     };
 
-    function restaurarLicencia(id) {
-        db.ref('usuarios_registrados/' + id).update({
-            estado: 'activo',
-            fechaSuspension: null
-        }).then(() => {
-            showToast("LICENCIA RESTAURADA ♻️", "#2ecc71");
-        });
+    function restaurarLicencia(id) { 
+        db.ref(`usuarios_registrados/${id}`).update({ estado: 'activo', fechaSuspension: null }).then(() => { 
+            showToast("RESTAURADA ♻️", "#2ecc71"); 
+            listarUsuarios(); // <-- REFRESCO AUTOMÁTICO
+        }); 
     }
 
-    function openDeleteLicenseModal(id) {
-        idParaEliminarLicencia = id;
-        document.getElementById('deleteLicenseModal').style.display = 'flex';
-    }
-
-    function closeDeleteLicenseModal() {
-        document.getElementById('deleteLicenseModal').style.display = 'none';
-        idParaEliminarLicencia = null;
-    }
+    function openDeleteLicenseModal(id) { idParaEliminarLicencia = id; document.getElementById('deleteLicenseModal').style.display = 'flex'; }
+    function closeDeleteLicenseModal() { document.getElementById('deleteLicenseModal').style.display = 'none'; idParaEliminarLicencia = null; }
 
     document.getElementById('confirmDeleteLicenseBtn').onclick = () => {
         if(!idParaEliminarLicencia) return;
-        
-        db.ref('usuarios_registrados/' + idParaEliminarLicencia).remove(); 
-        db.ref('reparaciones_usuarios/' + idParaEliminarLicencia).remove(); 
-        db.ref('reparaciones_archivadas_usuarios/' + idParaEliminarLicencia).remove(); 
-        
-        alert("✅ Datos eliminados correctamente de la Base de Datos.\n\n⚠️ IMPORTANTE: Para crearlo de cero en el futuro, recordá ir a tu consola de Firebase > Authentication y borrar su cuenta de login.");
-        
+        db.ref(`usuarios_registrados/${idParaEliminarLicencia}`).remove(); 
+        db.ref(`reparaciones_usuarios/${idParaEliminarLicencia}`).remove(); 
+        db.ref(`reparaciones_archivadas_usuarios/${idParaEliminarLicencia}`).remove(); 
+        alert("✅ Datos eliminados.\n\n⚠️ IMPORTANTE: Para crearlo de cero, recordá ir a tu consola de Firebase > Authentication y borrar su cuenta de login.");
         showToast("DATOS ELIMINADOS 🗑️", "#e53e3e"); 
         closeDeleteLicenseModal();
+        listarUsuarios(); // <-- REFRESCO AUTOMÁTICO
     };
 
     function limpiarLicenciasExpiradas() {
         if (!isUserAdmin) return;
         db.ref('usuarios_registrados').once('value').then(snap => {
-            const users = snap.val();
-            if (!users) return;
-            const ahora = Date.now();
-            const SIETE_DIAS = 7 * 24 * 60 * 60 * 1000; 
-            
+            const users = snap.val(); if (!users) return;
             Object.keys(users).forEach(wa => {
                 const u = users[wa];
-                if (u.estado === 'suspendido' && u.fechaSuspension) {
-                    if (ahora - u.fechaSuspension >= SIETE_DIAS) {
-                        db.ref('usuarios_registrados/' + wa).remove();
-                        db.ref('reparaciones_usuarios/' + wa).remove();
-                        db.ref('reparaciones_archivadas_usuarios/' + wa).remove();
-                    }
+                if (u.estado === 'suspendido' && u.fechaSuspension && (Date.now() - u.fechaSuspension >= 7 * 24 * 60 * 60 * 1000)) {
+                    db.ref(`usuarios_registrados/${wa}`).remove(); db.ref(`reparaciones_usuarios/${wa}`).remove(); db.ref(`reparaciones_archivadas_usuarios/${wa}`).remove();
                 }
             });
         });
     }
 
-    // --- MOTOR DE LIMPIEZA DE FOTOS BLINDADO (+45 DÍAS) ---
     function limpiarFotosAntiguas(manual = false) {
         if (!isUserAdmin) return;
-        const DIAS_LIMITE = 45;
-        const ahora = new Date();
-        let fotosBorradas = 0;
-        let promesasBorrado = [];
-        
+        const DIAS_LIMITE = 45; const ahora = new Date(); let fotosBorradas = 0; let promesasBorrado =[];
         if (manual) mostrarLoader("Limpiando base de datos profundamente...");
 
-        // Helper ultra seguro para leer fechas sin importar cómo vengan guardadas
         const parseFechaLimpia = (fechaStr) => {
             if (!fechaStr) return null;
             let match = String(fechaStr).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (match) return new Date(match[3], parseInt(match[2]) - 1, match[1]);
-            return null;
+            return match ? new Date(match[3], parseInt(match[2]) - 1, match[1]) : null;
         };
 
         const evaluarYBorrar = (ordenData, refPath) => {
             if (ordenData && ordenData.fotos && Array.isArray(ordenData.fotos) && ordenData.fotos.length > 0) {
                 let fechaOrden = parseFechaLimpia(ordenData.fecha);
-                if (fechaOrden) {
-                    let difDias = Math.floor((ahora - fechaOrden) / (1000 * 60 * 60 * 24));
-                    if (difDias >= DIAS_LIMITE) {
-                        let p = db.ref(refPath).remove().then(() => { fotosBorradas++; }).catch(e => { /* Ignorar errores aislados */ });
-                        promesasBorrado.push(p);
-                    }
+                if (fechaOrden && Math.floor((ahora - fechaOrden) / (1000 * 60 * 60 * 24)) >= DIAS_LIMITE) {
+                    promesasBorrado.push(db.ref(refPath).remove().then(() => { fotosBorradas++; }).catch(e => {}));
                 }
             }
         };
 
-        const checkFlat = (nodo) => {
-            return db.ref(nodo).once('value').then(snap => {
-                let data = snap.val();
-                if(data && typeof data === 'object') {
-                    Object.keys(data).forEach(id => evaluarYBorrar(data[id], `${nodo}/${id}/fotos`));
-                }
-            }).catch(e => { /* Si falla leer un nodo, sigue con el resto */ });
-        };
+        const checkFlat = (nodo) => db.ref(nodo).once('value').then(snap => { let data = snap.val(); if(data && typeof data === 'object') Object.keys(data).forEach(id => evaluarYBorrar(data[id], `${nodo}/${id}/fotos`)); }).catch(e => {});
+        const checkNested = (nodo) => db.ref(nodo).once('value').then(snap => { let data = snap.val(); if(data && typeof data === 'object') Object.keys(data).forEach(wa => { if(data[wa] && typeof data[wa] === 'object') Object.keys(data[wa]).forEach(id => evaluarYBorrar(data[wa][id], `${nodo}/${wa}/${id}/fotos`)); }); }).catch(e => {});
 
-        const checkNested = (nodo) => {
-            return db.ref(nodo).once('value').then(snap => {
-                let data = snap.val();
-                if(data && typeof data === 'object') {
-                    Object.keys(data).forEach(wa => {
-                        if(data[wa] && typeof data[wa] === 'object') {
-                            Object.keys(data[wa]).forEach(id => evaluarYBorrar(data[wa][id], `${nodo}/${wa}/${id}/fotos`));
-                        }
-                    });
-                }
-            }).catch(e => { /* Ignorar si falla lectura anidada */ });
-        };
-
-        Promise.all([
-            checkFlat('reparaciones'),
-            checkFlat('reparaciones_archivadas'),
-            checkNested('reparaciones_usuarios'),
-            checkNested('reparaciones_archivadas_usuarios')
-        ]).then(() => {
-            // Recién acá esperamos a que Firebase termine de eliminar todas las fotos detectadas
-            return Promise.all(promesasBorrado);
-        }).then(() => {
+        Promise.all([checkFlat('reparaciones'), checkFlat('reparaciones_archivadas'), checkNested('reparaciones_usuarios'), checkNested('reparaciones_archivadas_usuarios')])
+        .then(() => Promise.all(promesasBorrado)).then(() => {
             if (manual) ocultarLoader();
             if (fotosBorradas > 0) showToast(`LIMPIEZA ÉXITO: Borradas fotos de ${fotosBorradas} equipos 🧹`, "#3498db");
             else if (manual) showToast("TODO LIMPIO: No hay fotos de +45 días", "#2ecc71");
-        }).catch(err => {
-            // Este catch es por si falla el Promise.all, pero como blindamos los errores, no debería saltar
-            if (manual) ocultarLoader();
-            if (manual) showToast("Proceso terminado con excepciones menores", "#f1c40f");
-        });
+        }).catch(err => { if (manual) { ocultarLoader(); showToast("Proceso terminado con excepciones menores", "#f1c40f"); } });
     }
 
     function toggleLoginPassword() {
-        const passInput = document.getElementById('passIn');
-        const toggleIcon = document.getElementById('togglePass');
+        const passInput = document.getElementById('passIn'); const toggleIcon = document.getElementById('togglePass');
         if (passInput.type === 'password') { passInput.type = 'text'; toggleIcon.innerText = '🔒'; }
         else { passInput.type = 'password'; toggleIcon.innerText = '👁️'; }
     }
 
     document.getElementById('userIn').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('passIn').focus(); });
     document.getElementById('passIn').addEventListener('keypress', e => { if (e.key === 'Enter') checkAccess(); });
-
-    // --- FUNCIONES MODO OSCURO Y HISTORIAL ---
 
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
@@ -3324,62 +2697,7 @@
         document.getElementById('btn-dark-mode').innerText = isDark ? '☀️' : '🌙';
     }
 
-    // Cargar preferencia guardada al iniciar
-    if(localStorage.getItem('st_matias_dark_mode') === 'yes') {
-        document.body.classList.add('dark-mode');
-        if(document.getElementById('btn-dark-mode')) document.getElementById('btn-dark-mode').innerText = '☀️';
-    }
-
-    function abrirHistorialCliente(clienteNombre, clienteTel) {
-        if(isClientMode) return;
-        const body = document.getElementById('hcBody');
-        body.innerHTML = '';
-        
-        document.getElementById('hcNombre').innerText = clienteNombre;
-        document.getElementById('hcTel').innerText = "📱 " + (clienteTel || "Sin teléfono");
-        
-        let todasLasOrdenes = [...registros, ...registrosArchivados];
-        
-        // Filtrar por nombre exacto o aproximado
-        let filtradas = todasLasOrdenes.filter(r => 
-            (r.cliente && r.cliente.toLowerCase().trim() === clienteNombre.toLowerCase().trim()) || 
-            (r.tel && r.tel === clienteTel)
-        );
-        
-        // Ordenar por fecha (más reciente primero)
-        filtradas.sort((a,b) => {
-            const parseD = (str) => {
-                if(!str) return 0;
-                let p = str.split(',');
-                if(!p[0]) return 0;
-                let f = p[0].trim().split('/');
-                if(f.length !== 3) return 0;
-                return new Date(f[2], f[1]-1, f[0]).getTime();
-            };
-            return parseD(b.fecha) - parseD(a.fecha);
-        });
-        
-        let totalInvertido = 0;
-        
-        filtradas.forEach(r => {
-            let precio = parseFloat(r.precio) || 0;
-            totalInvertido += precio;
-            let badgeStatus = `<span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}">${r.estado}</span>`;
-            
-            body.innerHTML += `
-                <tr>
-                    <td style="font-size:12px;">${r.fecha ? r.fecha.split(',')[0] : '-'}</td>
-                    <td><b>${escaparHTML(r.modelo)}</b></td>
-                    <td style="font-size:12px;">${escaparHTML(r.falla || '-')}</td>
-                    <td>${badgeStatus}</td>
-                    <td style="font-weight:bold;">${fmt.format(precio)}</td>
-                </tr>
-            `;
-        });
-        
-        document.getElementById('hcTotalDiv').innerText = `💰 Inversión Total: ${fmt.format(totalInvertido)}`;
-        document.getElementById('modalHistorialCliente').style.display = 'flex';
-    }
+    if(localStorage.getItem('st_matias_dark_mode') === 'yes') { document.body.classList.add('dark-mode'); if(document.getElementById('btn-dark-mode')) document.getElementById('btn-dark-mode').innerText = '☀️'; }
 
 </script>
 </body>
