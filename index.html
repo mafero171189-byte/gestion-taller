@@ -2246,11 +2246,33 @@
         const filtradosReversos = [...filtrados].reverse();
         const aMostrar = filtradosReversos.slice(0, limiteTabla);
 
-        aMostrar.forEach(r => {
-            const saldo = r.precio - r.sena;
+                aMostrar.forEach(r => {
+            // Aseguramos que los valores sean números para evitar errores
+            const precioActual = parseFloat(r.precio) || 0;
+            const senaActual = parseFloat(r.sena) || 0;
+            const saldo = precioActual - senaActual;
+            
             const nroLimpio = String(r.orden).replace('MAT-', '');
             const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
             
+            // Lógica corregida para el estado de pago
+            let estadoPagoHTML = "";
+            if (precioActual === 0) {
+                if (senaActual > 0) {
+                    // Si dejó seña pero aún no pasaste el precio final
+                    estadoPagoHTML = `<b style="color:green;">A Favor: ${fmt.format(senaActual)}</b>`;
+                } else {
+                    // Si recién ingresa y está todo en 0
+                    estadoPagoHTML = `<span style="color:#f1c40f; font-weight:bold;">A COTIZAR</span>`; 
+                }
+            } else if (saldo > 0) {
+                // Si debe plata
+                estadoPagoHTML = `<span style="color:red;">${fmt.format(saldo)}</span>`;
+            } else {
+                // Si el saldo es 0 o menor, y el precio es mayor a 0
+                estadoPagoHTML = `<b style="color:green;">PAGADO</b>`;
+            }
+
             body.innerHTML += `<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
                 <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
@@ -2264,7 +2286,7 @@
                 </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" onclick="openStatusModal('${r.id}')">${r.estado || 'Pendiente'}</span></td>
                 <td onclick="openPriceModal('${r.id}')" style="cursor: pointer;">
-                    ${saldo > 0 ? `<span style="color:red;">${fmt.format(saldo)}</span>` : `<b style="color:green;">PAGADO</b>`}
+                    ${estadoPagoHTML}
                 </td>
                 <td class="action-btns">
                     <button onclick="abrirFotos('${r.id}')">🖼️</button>
@@ -2274,6 +2296,7 @@
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
                 </td></tr>`;
         });
+
 
         if (filtradosReversos.length > limiteTabla) {
             document.getElementById('btnCargarMas').style.display = 'inline-block';
