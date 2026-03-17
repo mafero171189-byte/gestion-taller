@@ -404,8 +404,16 @@
     <div id="modalCobroEntregado" class="modal-overlay" style="z-index: 4700;">
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">💳</div>
-            <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;">Cobrar Saldo Pendiente</p>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
+            <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;" id="tituloCobroEntregado">Cobrar Saldo Pendiente</p>
+            
+            <div id="cobroSaldoContainer">
+                <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
+            </div>
+
+            <div id="cobroCotizarContainer" style="display:none; text-align: left; margin-bottom: 15px;">
+                <label id="cobroAvisoCotizar" style="font-size: 13px; color: #475569; font-weight:bold;"></label>
+                <input type="text" id="cobroPrecioFinal" placeholder="0" oninput="formatInput(this)" style="width: 100%; padding: 10px; border: 2px solid var(--success); border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 5px; text-align:center;">
+            </div>
             
             <div style="text-align: left; margin-bottom: 20px;">
                 <label style="font-size: 12px; font-weight: bold; color: #64748b;">¿Cómo paga este saldo restante?</label>
@@ -414,7 +422,7 @@
                     <option value="Transferencia">📲 Transferencia</option>
                     <option value="Tarjeta">💳 Tarjeta</option>
                 </select>
-                <p style="font-size: 11px; color:#94a3b8; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
+                <p id="cobroAvisoSaldo" style="font-size: 11px; color:#94a3b8; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
             </div>
             
             <div style="display:flex; gap:10px;">
@@ -677,6 +685,7 @@
                     <div>
                         <label>Método de Pago (Seña)</label>
                         <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()">
+                            <option value="A Cotizar">🔍 A Cotizar</option>
                             <option value="No pagó">❌ No pagó aún</option>
                             <option value="Efectivo">💵 Efectivo</option>
                             <option value="Transferencia">📲 Transferencia</option>
@@ -1397,28 +1406,41 @@
         printRow("OBS:", linesObs);
         
         // CALCULO CORRECTO DE PAGOS PARA EL PDF
+        let precioActual = parseFloat(r.precio) || 0;
         let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
         let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
         let totalPagado = senaAbonada + saldoCobrado;
-        let saldoPendiente = (parseFloat(r.precio) || 0) - totalPagado;
+        let saldoPendiente = precioActual - totalPagado;
 
         y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(r.precio), col1, y); y += 7; 
+        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(precioActual), col1, y); y += 7; 
         doc.text("ABONADO: " + fmt.format(totalPagado), col1, y); y += 10;
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
         
-        if(saldoPendiente <= 0) {
-            doc.setTextColor(22, 163, 74); // Verde para indicar Pagado
-            doc.text("PAGADO", 40, y + 9.5, {align:'center'});
-            doc.setTextColor(50, 50, 50); // Reset color a gris general
-        } else {
-            doc.setTextColor(26, 42, 58); // Reset color original
+        if (precioActual === 0) {
+            if (totalPagado > 0) {
+                // Si el precio es 0 pero dejó seña (poco común, pero por las dudas)
+                doc.setTextColor(22, 163, 74); // Verde
+                doc.text("A FAVOR: " + fmt.format(totalPagado), 40, y + 9.5, {align:'center'});
+            } else {
+                // Si no hay precio ni seña
+                doc.setTextColor(180, 130, 0); // Color ocre/amarillo oscuro
+                doc.text("A COTIZAR", 40, y + 9.5, {align:'center'});
+            }
+        } else if (saldoPendiente > 0) {
+            // Si el precio es mayor a 0 y hay deuda
+            doc.setTextColor(26, 42, 58); // Color azul oscuro/negro
             doc.text("SALDO: " + fmt.format(saldoPendiente), 40, y + 9.5, {align:'center'});
+        } else {
+            // Si el precio es mayor a 0 y la deuda es 0 o menor
+            doc.setTextColor(22, 163, 74); // Verde
+            doc.text("PAGADO", 40, y + 9.5, {align:'center'});
         }
         
         // Volvemos a aplicar fuente "normal" y un gris más oscuro
-        doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(50, 50, 50);
+        doc.setTextColor(50, 50, 50); 
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); 
         doc.text(lineasGarantia, 40, y + 20, {align:'center'});
         
         const pdfBlob = doc.output('blob');
@@ -1973,17 +1995,35 @@
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
         
-        const saldoFinal = r.precio - (r.sena || 0);
+        let precioActual = parseFloat(r.precio) || 0;
+        let senaPrevia = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        let updates = {};
+
+        if (precioActual === 0) {
+            let nuevoPrecio = parseMoney(document.getElementById('cobroPrecioFinal').value);
+            if (nuevoPrecio <= 0) {
+                showToast("⚠️ Ingresá un precio válido mayor a 0", "#f1c40f");
+                return;
+            }
+            let saldoFinal = nuevoPrecio - senaPrevia;
+            if(saldoFinal < 0) {
+                showToast("⚠️ El precio no puede ser menor a la seña previa", "#e53e3e");
+                return;
+            }
+            updates.precio = nuevoPrecio;
+            updates.sena = nuevoPrecio; // Soporte legado para evitar cálculos en rojo en otras vistas
+            updates.saldoCobrado = saldoFinal;
+            updates.metodoPagoSaldo = saldoFinal > 0 ? metodo : '';
+        } else {
+            let saldoFinal = precioActual - senaPrevia;
+            updates.sena = precioActual; // Legado
+            updates.saldoCobrado = saldoFinal;
+            updates.metodoPagoSaldo = metodo;
+        }
 
         mostrarLoader("Registrando cobro...");
-        db.ref(nodoActualizar).child(idParaEstado).update({
-            sena: r.precio,
-            saldoCobrado: saldoFinal,
-            metodoPagoSaldo: metodo
-        }).then(() => {
-            r.sena = r.precio;
-            r.saldoCobrado = saldoFinal;
-            r.metodoPagoSaldo = metodo;
+        db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
+            Object.assign(r, updates);
             document.getElementById('modalCobroEntregado').style.display = 'none';
             ocultarLoader();
             ejecutarCambioEstado('Entregado');
@@ -2053,10 +2093,34 @@
 
         if(nuevo === 'Entregado') {
             const r = getRegistro(idParaEstado);
-            const saldo = r.precio - (r.sena || 0);
-            if(saldo > 0) {
+            let precio = parseFloat(r.precio) || 0;
+            let sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            let saldo = precio - sena;
+            
+            if(precio === 0) {
+                // Modo A Cotizar -> Entregado
                 document.getElementById('statusModal').style.display = 'none';
+                document.getElementById('tituloCobroEntregado').innerText = "Cobrar Equipo";
+                
+                let textoSena = sena > 0 ? `<br><span style="color:var(--success);">Seña a favor: ${fmt.format(sena)}</span>` : '';
+                document.getElementById('cobroAvisoCotizar').innerHTML = `Ingresá el <b>Precio Final</b> a cobrar:${textoSena}`;
+                
+                document.getElementById('cobroSaldoContainer').style.display = 'none';
+                document.getElementById('cobroCotizarContainer').style.display = 'block';
+                document.getElementById('cobroPrecioFinal').value = '';
+                document.getElementById('cobroAvisoSaldo').style.display = 'none'; // Se oculta el texto aclaratorio en este modo
+                document.getElementById('metodoCobroFinal').selectedIndex = 0;
+                document.getElementById('modalCobroEntregado').style.display = 'flex';
+                setTimeout(() => document.getElementById('cobroPrecioFinal').focus(), 100);
+                return;
+            } else if(saldo > 0) {
+                // Tiene Saldo Pendiente Normal
+                document.getElementById('statusModal').style.display = 'none';
+                document.getElementById('tituloCobroEntregado').innerText = "Cobrar Saldo Pendiente";
+                document.getElementById('cobroSaldoContainer').style.display = 'block';
+                document.getElementById('cobroCotizarContainer').style.display = 'none';
                 document.getElementById('cobroSaldoMonto').innerText = fmt.format(saldo);
+                document.getElementById('cobroAvisoSaldo').style.display = 'block';
                 document.getElementById('metodoCobroFinal').selectedIndex = 0;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
@@ -2246,7 +2310,7 @@
         const filtradosReversos = [...filtrados].reverse();
         const aMostrar = filtradosReversos.slice(0, limiteTabla);
 
-                aMostrar.forEach(r => {
+        aMostrar.forEach(r => {
             // Aseguramos que los valores sean números para evitar errores
             const precioActual = parseFloat(r.precio) || 0;
             const senaActual = parseFloat(r.sena) || 0;
@@ -2451,7 +2515,7 @@
         document.getElementById('autocomplete-modelo').style.display = 'none';
         document.getElementById('autocomplete-falla').style.display = 'none';
 
-        document.getElementById('metodoPago').value = "No pagó";
+        document.getElementById('metodoPago').value = "A Cotizar";
 
         fotosTemporales = []; 
         document.getElementById('formThumbnails').innerHTML = "";
@@ -2476,7 +2540,7 @@
             document.getElementById('modelo').value = d.modelo || "";
             document.getElementById('pin').value = d.pin || "";
             document.getElementById('falla').value = d.falla || "";
-            document.getElementById('metodoPago').value = d.metodoPago || "No pagó";
+            document.getElementById('metodoPago').value = d.metodoPago || "A Cotizar";
         }
     }
 
@@ -2619,7 +2683,11 @@
                 metodoBadges += getBadge(metSaldo, saldoCobrado);
             }
             if (senaOriginal === 0 && saldoCobrado === 0) {
-                metodoBadges = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
+                if ((metSena === 'A Cotizar' || !metSena) && (parseFloat(r.precio) || 0) === 0) {
+                    metodoBadges = `<span class="badge-metodo" style="background:#fef08a; color:#854d0e;">🔍 A Cotizar</span>`;
+                } else {
+                    metodoBadges = `<span class="badge-metodo" style="background:#fee2e2; color:#991b1b;">❌ No pagó</span>`;
+                }
             }
 
             let ingresoTotal = senaOriginal + saldoCobrado;
@@ -2686,7 +2754,10 @@
             let metodosUsados = [];
             if(senaOriginal > 0) metodosUsados.push(`${metSena} ($${senaOriginal})`);
             if(saldoCobrado > 0) metodosUsados.push(`${metSaldo} ($${saldoCobrado})`);
-            if(metodosUsados.length === 0) metodosUsados.push('No pagó');
+            if(metodosUsados.length === 0) {
+                if ((parseFloat(r.precio) || 0) === 0) metodosUsados.push('A Cotizar');
+                else metodosUsados.push('No pagó');
+            }
             
             let ingresoTotal = senaOriginal + saldoCobrado;
             let costo = parseFloat(r.costoRepuesto) || 0;
@@ -2817,7 +2888,7 @@
         document.getElementById('pin').value = r.pin || "";
         document.getElementById('precio').value = r.precio.toLocaleString('es-AR');
         document.getElementById('sena').value = (r.senaOriginal !== undefined ? r.senaOriginal : r.sena).toLocaleString('es-AR');
-        document.getElementById('metodoPago').value = r.metodoPagoSena || r.metodoPago || 'No pagó'; 
+        document.getElementById('metodoPago').value = r.metodoPagoSena || r.metodoPago || 'A Cotizar'; 
         document.getElementById('costoRepuesto').value = (r.costoRepuesto || 0).toLocaleString('es-AR');
         document.getElementById('falla').value = r.falla; document.getElementById('obs').value = r.obs || "";
 
