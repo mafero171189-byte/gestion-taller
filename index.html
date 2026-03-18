@@ -270,7 +270,6 @@
         body.dark-mode .faq-content b { color: #f8fafc !important; }
     </style>
 </head>
-
 <body onload="iniciarSeguridad()">
 
 <div id="global-loader">
@@ -790,13 +789,20 @@
                 <h2 style="margin:0;">🔑 Licencias y Mantenimiento</h2>
             </div>
             
-            <div style="width: 100%; display: flex; justify-content: flex-start; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;" class="form-grid">
-                <button onclick="exportarBackupGlobal()" class="btn" style="background:#8e44ad; color:white; font-size:12px; padding:12px 25px; border:none; border-radius:30px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;">
-                    💾 DESCARGAR BACKUP GLOBAL (.JSON)
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                
+                <button id="btnBackupGlobal" onclick="ejecutarBackup(true)" class="btn" style="background:#27ae60; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">
+                    💾 BACKUP TOTAL (Recomendado para PC)
                 </button>
-                <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#475569; color:white; font-size:12px; padding:12px 25px; border:none; border-radius:30px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;">
-                    🧹 LIMPIEZA GLOBAL DE FOTOS (+45 días)
+
+                <button id="btnBackupLigero" onclick="ejecutarBackup(false)" class="btn btn-alerta-amarilla" style="font-size:13px; padding:15px; border-radius:8px; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #856404; background: #FFD700; border: none; font-weight: bold; width: 100%;">
+                    📱 BACKUP LIGERO (Sin fotos - Ideal Celular)
                 </button>
+                
+                <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#475569; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">
+                    🧹 LIMPIEZA GLOBAL DE FOTOS Viejas (+45 días)
+                </button>
+
             </div>
 
             <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
@@ -2708,12 +2714,7 @@
             msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO ACTUAL:* ${r.estado}\n`;
             
             if(r.estado === 'Reparado') {
-                let precioActual = parseFloat(r.precio) || 0;
-                let senaOriginal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-                let saldo = precioActual - senaOriginal;
-                
                 msjPlano += `\n✅ *¡Tu equipo ya está listo y podés pasar a retirarlo!*`;
-                if(saldo > 0) msjPlano += `\n💰 *Saldo a abonar:* ${fmt.format(saldo)}`;
             }
             
             msjPlano += `\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
@@ -3354,30 +3355,85 @@
         });
     }
 
-    function exportarBackupGlobal() {
-        mostrarLoader("Generando Backup Global... Esto puede tardar si hay muchas fotos.");
-        db.ref().once('value').then(snap => {
-            const backupData = snap.val();
-            if(!backupData) {
+    function ejecutarBackup(esCompleto) {
+        const esCelular = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (esCompleto && esCelular) {
+            if(!confirm("⚠️ ESTÁS EN UN CELULAR. El Backup Total empaqueta todas las fotos y es muy pesado. Puede dar un error crítico y cerrar la pestaña.\n\n¿Querés intentar descargarlo igual? (Te recomendamos usar el LIGERO)")) {
+                return; 
+            }
+        }
+
+        mostrarLoader(esCompleto ? "Generando Backup TOTAL..." : "Preparando Backup LIGERO sin fotos...");
+
+        Promise.all([
+            db.ref('reparaciones').once('value'),
+            db.ref('reparaciones_archivadas').once('value'),
+            db.ref('reparaciones_usuarios').once('value'),
+            db.ref('reparaciones_archivadas_usuarios').once('value'),
+            db.ref('stock').once('value'),
+            db.ref('stock_usuarios').once('value'),
+            db.ref('usuarios_registrados').once('value'),
+            db.ref('configuracion').once('value')
+        ]).then(snapshots => {
+            
+            const backupData = {
+                reparaciones: snapshots[0].val() || null,
+                reparaciones_archivadas: snapshots[1].val() || null,
+                reparaciones_usuarios: snapshots[2].val() || null,
+                reparaciones_archivadas_usuarios: snapshots[3].val() || null,
+                stock: snapshots[4].val() || null,
+                stock_usuarios: snapshots[5].val() || null,
+                usuarios_registrados: snapshots[6].val() || null,
+                configuracion: snapshots[7].val() || null
+            };
+
+            Object.keys(backupData).forEach(key => {
+                if (backupData[key] === null) delete backupData[key];
+            });
+
+            if (Object.keys(backupData).length === 0) {
                 ocultarLoader();
-                showToast("Error: No se encontraron datos para respaldar", "#e53e3e");
+                showToast("Error: Base de datos vacía", "#e53e3e");
                 return;
             }
             
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "Backup_TOTAL_MiTallerWeb_" + new Date().toISOString().split('T')[0] + ".json");
-            document.body.appendChild(downloadAnchorNode); 
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            if (!esCompleto) {
+                const limpiarFotos = (nodo) => {
+                    if(nodo) {
+                        Object.keys(nodo).forEach(id => {
+                            if(nodo[id].fotos) delete nodo[id].fotos;
+                        });
+                    }
+                };
+                limpiarFotos(backupData.reparaciones);
+                limpiarFotos(backupData.reparaciones_archivadas);
+                if (backupData.reparaciones_usuarios) Object.keys(backupData.reparaciones_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_usuarios[wa]));
+                if (backupData.reparaciones_archivadas_usuarios) Object.keys(backupData.reparaciones_archivadas_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_archivadas_usuarios[wa]));
+            }
+
+            const jsonString = JSON.stringify(backupData);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Backup_${esCompleto ? "TOTAL" : "LIGERO"}_MiTallerWeb_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a); 
+            a.click();
+            
+            setTimeout(() => {
+                a.remove();
+                URL.revokeObjectURL(url);
+            }, 1000); 
             
             ocultarLoader();
-            showToast("¡SÚPER BACKUP DESCARGADO! 💾", "#2ecc71");
+            showToast("¡BACKUP DESCARGADO! 💾", "#2ecc71");
+            
         }).catch(err => {
             ocultarLoader();
-            showToast("Error crítico en la descarga", "#e53e3e");
-            console.error(err);
+            alert("Detalle del error: " + (err.message || err));
+            showToast("Error en la descarga", "#e53e3e");
         });
     }
 
