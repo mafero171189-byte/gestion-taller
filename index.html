@@ -854,6 +854,14 @@
                     🧹 LIMPIEZA GLOBAL DE FOTOS Viejas (+45 días)
                 </button>
 
+                <div style="border-top:1px dashed #cbd5e0; padding-top:15px; margin-top:5px;">
+                    <p style="font-size:12px; color:#64748b; margin:0 0 10px 0; text-align:center;">⚠️ <b>Restaurar Backup</b> — sobrescribe TODOS los datos actuales</p>
+                    <label for="inputRestoreBackup" style="display:block; width:100%; padding:15px; background:#e53e3e; color:white; border-radius:8px; text-align:center; font-weight:bold; font-size:13px; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 10px rgba(229,62,62,0.3);">
+                        📂 RESTAURAR DESDE BACKUP (.json)
+                    </label>
+                    <input type="file" id="inputRestoreBackup" accept=".json" style="display:none;" onchange="restaurarBackup(this)">
+                </div>
+
             </div>
 
             <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
@@ -2423,8 +2431,13 @@
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
 
-        db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo }).then(() => {
-            r.precio = nuevo; 
+        const precioAnterior = parseFloat(r.precio) || 0;
+        const historialPrecios = r.historialPrecios || [];
+        historialPrecios.push({ precioAnterior, precioNuevo: nuevo, fecha: new Date().toLocaleString('es-AR'), usuario: currentUser });
+
+        db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo, historialPrecios }).then(() => {
+            r.precio = nuevo;
+            r.historialPrecios = historialPrecios;
             renderTable();
             closePriceModal();
             showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
@@ -2447,6 +2460,14 @@
         let h = fallaHtml;
         h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
+        if(r.historialPrecios && r.historialPrecios.length > 0) {
+            h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e2e8f0;"><div style="font-size:11px; font-weight:bold; color:#64748b; text-transform:uppercase; margin-bottom:8px;">💲 Cambios de Precio</div>`;
+            r.historialPrecios.forEach(p => {
+                const fmt2 = new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', minimumFractionDigits:0});
+                h += `<div class="history-item" style="border-left-color:#f1c40f;"><b>${p.fecha}</b><span>${fmt2.format(p.precioAnterior)} → <b style="color:var(--success);">${fmt2.format(p.precioNuevo)}</b></span></div>`;
+            });
+            h += `</div>`;
+        }
         
         document.getElementById('historyContent').innerHTML = h;
         document.getElementById('historyModal').style.display = 'flex';
@@ -2514,12 +2535,14 @@
             btnArch.innerHTML = "📁 HIST. DE REPARACIONES Y VENTAS";
         }
 
+        const cantPendientes = registros.filter(r => !r.archivado && r.estado === 'Pendiente').length;
+        const labelPend = cantPendientes > 0 ? `⏳ PENDIENTES <span style="background:white; color:#856404; border-radius:50%; padding:1px 7px; font-size:12px; font-weight:900;">${cantPendientes}</span>` : "⏳ PENDIENTES";
         if(modoPendientes) {
             btnPend.classList.add('btn-active-filter');
-            btnPend.innerHTML = "⏳ PENDIENTES ✅";
+            btnPend.innerHTML = labelPend + " ✅";
         } else {
             btnPend.classList.remove('btn-active-filter');
-            btnPend.innerHTML = "⏳ PENDIENTES";
+            btnPend.innerHTML = labelPend;
         }
 
         // Si hay texto de búsqueda, buscar en TODO (activos + historial)
@@ -3812,6 +3835,78 @@
             }
             showToast("Error en la descarga", "#e53e3e");
         });
+    }
+
+    function restaurarBackup(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser || fbUser.email.split('@')[0].toLowerCase() !== 'admin') {
+            alert("❌ Solo el Admin puede restaurar un backup.");
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            let data;
+            try {
+                data = JSON.parse(e.target.result);
+            } catch(err) {
+                alert("❌ El archivo no es un JSON válido.\nVerificá que sea un backup generado por Mi Taller Web.");
+                input.value = '';
+                return;
+            }
+
+            const nodosEsperados = ['reparaciones', 'reparaciones_archivadas', 'reparaciones_usuarios', 
+                                    'reparaciones_archivadas_usuarios', 'stock', 'stock_usuarios', 
+                                    'usuarios_registrados', 'configuracion'];
+            const tieneAlguno = nodosEsperados.some(n => data[n]);
+            if (!tieneAlguno) {
+                alert("❌ El archivo no parece ser un backup válido de Mi Taller Web.");
+                input.value = '';
+                return;
+            }
+
+            const confirmacion = confirm(
+                "⚠️ ATENCIÓN — ACCIÓN IRREVERSIBLE\n\n" +
+                "Esto SOBRESCRIBIRÁ todos los datos actuales con los del backup.\n\n" +
+                "Archivo: " + file.name + "\n\n" +
+                "¿Estás completamente seguro?"
+            );
+            if (!confirmacion) { input.value = ''; return; }
+
+            const dobleConfirm = confirm("🔴 ÚLTIMA CONFIRMACIÓN\n\nTodos los datos actuales serán reemplazados.\n¿Continuar con la restauración?");
+            if (!dobleConfirm) { input.value = ''; return; }
+
+            mostrarLoader("Restaurando backup... no cierres la app");
+
+            fbUser.getIdToken(true).then(() => {
+                const promesas = [];
+
+                if (data.reparaciones) promesas.push(db.ref('reparaciones').set(data.reparaciones));
+                if (data.reparaciones_archivadas) promesas.push(db.ref('reparaciones_archivadas').set(data.reparaciones_archivadas));
+                if (data.reparaciones_usuarios) promesas.push(db.ref('reparaciones_usuarios').set(data.reparaciones_usuarios));
+                if (data.reparaciones_archivadas_usuarios) promesas.push(db.ref('reparaciones_archivadas_usuarios').set(data.reparaciones_archivadas_usuarios));
+                if (data.stock) promesas.push(db.ref('stock').set(data.stock));
+                if (data.stock_usuarios) promesas.push(db.ref('stock_usuarios').set(data.stock_usuarios));
+                if (data.usuarios_registrados) promesas.push(db.ref('usuarios_registrados').set(data.usuarios_registrados));
+                if (data.configuracion) promesas.push(db.ref('configuracion').set(data.configuracion));
+
+                return Promise.all(promesas);
+            }).then(() => {
+                ocultarLoader();
+                input.value = '';
+                alert("✅ Backup restaurado con éxito.\nLa app se va a recargar para aplicar los cambios.");
+                window.location.reload();
+            }).catch(err => {
+                ocultarLoader();
+                input.value = '';
+                alert("❌ Error al restaurar:\n" + (err.message || err));
+            });
+        };
+        reader.readAsText(file);
     }
 
     // ====== HISTORIAL DE CLIENTE (VISTA RÁPIDA) ======
