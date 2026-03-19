@@ -765,7 +765,7 @@
             </form>
 
             <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-                <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="resetPaginacion()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
+                <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
                 <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
                 <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 HISTORIAL DE REPARACIONES Y VENTAS</button>
@@ -2462,6 +2462,25 @@
         }, 300);
     }
 
+    function busquedaGlobal() {
+        const bus = document.getElementById('search').value.trim();
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            limiteTabla = 50;
+            if (bus.length > 0 && !historialDescargado) {
+                const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+                db.ref(pathArchivado).once('value').then(snap => {
+                    const v = snap.val();
+                    registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    historialDescargado = true;
+                    renderTable();
+                });
+            } else {
+                renderTable();
+            }
+        }, 300);
+    }
+
     function cargarMasOrdenes() {
         limiteTabla += 50;
         renderTable();
@@ -2503,15 +2522,22 @@
             btnPend.innerHTML = "⏳ PENDIENTES";
         }
 
-        const filtrados = listaBase.filter(r => {
+        // Si hay texto de búsqueda, buscar en TODO (activos + historial)
+        let listaFinal = listaBase;
+        if (bus.length > 0 && !modoArchivo && !modoPendientes) {
+            const archivadosViejos = registros.filter(r => r.archivado === true);
+            listaFinal = [...registros.filter(r => !r.archivado), ...archivadosViejos, ...registrosArchivados];
+        }
+
+        const filtrados = listaFinal.filter(r => {
             const ordenLimpia = String(r.orden).replace('MAT-', '');
             let equipoLimpio = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim().toLowerCase();
-            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || equipoLimpio.includes(bus) || ordenLimpia.toLowerCase().includes(bus);
+            const matchBusqueda = bus.length === 0 || (r.cliente||"").toLowerCase().includes(bus) || equipoLimpio.includes(bus) || ordenLimpia.toLowerCase().includes(bus) || (r.falla||"").toLowerCase().includes(bus) || (r.tel||"").toLowerCase().includes(bus);
             
             let matchFiltro = true;
-            if (!modoArchivo && r.archivado) matchFiltro = false; 
-            if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
-            if (!modoArchivo && r.esVentaRapida) matchFiltro = false;
+            if (bus.length === 0 && !modoArchivo && r.archivado) matchFiltro = false; 
+            if (bus.length === 0 && modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
+            if (bus.length === 0 && !modoArchivo && r.esVentaRapida) matchFiltro = false;
 
             return matchBusqueda && matchFiltro;
         });
@@ -2542,6 +2568,7 @@
             }
 
             let badgeVentaRapida = r.esVentaRapida ? `<br><span style="background:#8e44ad; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:3px;">🛒 VENTA DIRECTA</span>` : '';
+            let badgeHistorial = (r.archivado && !modoArchivo && bus.length > 0) ? `<br><span style="background:#64748b; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:2px;">📁 HISTORIAL</span>` : '';
 
             body.innerHTML += `<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
@@ -2551,7 +2578,7 @@
                     ${!r.esVentaRapida ? `<button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button>` : ''}
                 </td>
                 <td>
-                    ${escaparHTML(equipoCompleto)} ${badgeVentaRapida}<br>
+                    ${escaparHTML(equipoCompleto)} ${badgeVentaRapida}${badgeHistorial}<br>
                     <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
                 </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" ${!r.esVentaRapida ? `onclick="openStatusModal('${r.id}')"` : ''}>${r.estado || 'Pendiente'}</span></td>
