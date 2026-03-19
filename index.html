@@ -1788,7 +1788,7 @@
             } finally {
                 ocultarLoader();
             }
-            setTimeout(verificarAutoArchivo, 2000);
+            // verificarAutoArchivo eliminado — el archivado es inmediato al entregar
         }, errorDeFirebase => {
             ocultarLoader();
             showToast("Problema de conexión con la base de datos", "#e53e3e");
@@ -3601,21 +3601,16 @@
 
     function exportarExcel() {
         if (isClientMode) return;
-        const mesFiltro = document.getElementById('selectMes') ? document.getElementById('selectMes').options[document.getElementById('selectMes').selectedIndex].text : "Mensual";
-        const diaFiltro = document.getElementById('inputDia') ? document.getElementById('inputDia').value : "";
-        let archivoNombre = `Contabilidad_${diaFiltro || mesFiltro}.csv`;
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Orden,Cliente,Equipo,Fecha,Hora,Concepto,Metodo,Monto Cobrado\n";
-
-        let todasLasOrdenes = [...registros, ...registrosArchivados];
-        
         const mesObj = document.getElementById('selectMes');
         const diaObj = document.getElementById('inputDia');
+        const mesFiltro = mesObj ? mesObj.options[mesObj.selectedIndex].text : "Mensual";
+        const diaFiltro = diaObj ? diaObj.value : "";
+        let archivoNombre = `Contabilidad_${diaFiltro || mesFiltro}.csv`;
+
         const m = mesObj ? mesObj.value : mesActual;
-        const d = diaObj ? diaObj.value : "";
-        
-        let targetMonthStr = ""; let targetYearStr = "";
+        const d = diaFiltro;
+
+        let targetMonthStr = "", targetYearStr = "";
         if (d) {
             let dObj = new Date(d + 'T12:00:00');
             targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
@@ -3625,55 +3620,129 @@
             targetYearStr = String(new Date().getFullYear());
         }
 
-        todasLasOrdenes.forEach(r => {
-            let datePart = r.fecha ? r.fecha.split(',')[0].trim() : "";
-            if (!datePart) return;
-            let p = datePart.split('/');
-            let coinc = false;
-            if (d) { let df = d.split('-'); coinc = (p[0].padStart(2,'0') === df[2] && p[1].padStart(2,'0') === df[1] && p[2] === df[0]); } 
-            else { coinc = (p[1].padStart(2,'0') === targetMonthStr && p[2] === targetYearStr); }
+        // Mapa: una entrada por orden, acumula todo
+        const mapaOrdenes = {};
 
-            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
-
-            if (coinc) {
-                let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-                let hora = r.fecha.split(',')[1] ? r.fecha.split(',')[1].trim() : '';
-                
-                if (r.esVentaRapida) {
-                    let pActual = parseFloat(r.precio) || 0;
-                    csvContent += `"${r.orden}","${r.cliente}","${equipoCompleto}","${datePart}","${hora}","Venta Directa","${r.metodoPagoSena || 'Efectivo'}","${pActual}"\n`;
-                } else if (senaOrig > 0) {
-                    csvContent += `"${r.orden}","${r.cliente}","${equipoCompleto}","${datePart}","${hora}","Seña","${r.metodoPagoSena || 'Efectivo'}","${senaOrig}"\n`;
-                }
+        const coincideFecha = (fechaStr) => {
+            if (!fechaStr) return false;
+            let p = fechaStr.split(',')[0].trim().split('/');
+            if (p.length !== 3) return false;
+            if (d) {
+                let df = d.split('-');
+                return (p[0].padStart(2,'0') === df[2] && p[1].padStart(2,'0') === df[1] && p[2] === df[0]);
             }
+            return (p[1].padStart(2,'0') === targetMonthStr && p[2] === targetYearStr);
+        };
 
+        let todasLasOrdenes = [...registros, ...registrosArchivados];
+
+        todasLasOrdenes.forEach(r => {
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+            let datePart = r.fecha ? r.fecha.split(',')[0].trim() : "";
+            let horaIngreso = r.fecha && r.fecha.split(',')[1] ? r.fecha.split(',')[1].trim() : '';
+            let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            let costoRep = parseFloat(r.costoRepuesto) || 0;
+
+            // Fecha de entrega si aplica
+            let fechaEntrega = '', horaEntrega = '', cobroSaldo = 0, metodoSaldo = '';
             if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
                 let ent = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
                 if (ent) {
-                    let evDate = ent.fecha.split(',')[0].trim();
-                    let evP = evDate.split('/');
-                    let cEV = false;
-                    if (d) { let df = d.split('-'); cEV = (evP[0].padStart(2,'0') === df[2] && evP[1].padStart(2,'0') === df[1] && evP[2] === df[0]); } 
-                    else { cEV = (evP[1].padStart(2,'0') === targetMonthStr && evP[2] === targetYearStr); }
+                    fechaEntrega = ent.fecha.split(',')[0].trim();
+                    horaEntrega = ent.fecha.split(',')[1] ? ent.fecha.split(',')[1].trim() : '';
+                    cobroSaldo = parseFloat(r.saldoCobrado) || 0;
+                    metodoSaldo = r.metodoPagoSaldo || 'Efectivo';
+                }
+            }
 
-                    if (cEV) {
-                        let cobro = parseFloat(r.saldoCobrado) || 0;
-                        let hora = ent.fecha.split(',')[1] ? ent.fecha.split(',')[1].trim() : '';
-                        if (cobro > 0) {
-                            csvContent += `"${r.orden}","${r.cliente}","${equipoCompleto}","${evDate}","${hora}","Saldo","${r.metodoPagoSaldo || 'Efectivo'}","${cobro}"\n`;
-                        }
+            const conicideIngreso = coincideFecha(r.fecha);
+            const coincidesaldo = fechaEntrega ? coincideFecha(fechaEntrega + ', ' + horaEntrega) : false;
+
+            if (!conicideIngreso && !coincidesaldo) return;
+
+            if (!mapaOrdenes[r.id]) {
+                mapaOrdenes[r.id] = {
+                    orden: r.orden,
+                    cliente: r.esVentaRapida ? equipoCompleto : (r.cliente || '-'),
+                    equipo: r.esVentaRapida ? '-' : equipoCompleto,
+                    fechaIngreso: datePart,
+                    horaIngreso: horaIngreso,
+                    fechaEntrega: '',
+                    conceptos: [],
+                    metodos: new Set(),
+                    totalCobrado: 0,
+                    costoRepuesto: 0
+                };
+            }
+
+            const entrada = mapaOrdenes[r.id];
+
+            if (conicideIngreso) {
+                if (r.esVentaRapida) {
+                    let pActual = parseFloat(r.precio) || 0;
+                    entrada.conceptos.push('Venta Directa');
+                    if (r.metodoPagoSena) entrada.metodos.add(r.metodoPagoSena);
+                    entrada.totalCobrado += pActual;
+                } else {
+                    if (senaOrig > 0) {
+                        entrada.conceptos.push('Seña');
+                        if (r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') entrada.metodos.add(r.metodoPagoSena);
+                        entrada.totalCobrado += senaOrig;
+                    }
+                    if (costoRep > 0) {
+                        entrada.costoRepuesto += costoRep;
                     }
                 }
             }
+
+            if (coincidesaldo && cobroSaldo > 0) {
+                entrada.conceptos.push('Saldo');
+                if (metodoSaldo) entrada.metodos.add(metodoSaldo);
+                entrada.totalCobrado += cobroSaldo;
+                entrada.fechaEntrega = fechaEntrega;
+            }
         });
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", archivoNombre);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        if (Object.keys(mapaOrdenes).length === 0) {
+            showToast("No hay movimientos para exportar", "#f1c40f");
+            return;
+        }
+
+        let filas = [["Orden","Cliente","Equipo","Fecha Ingreso","Fecha Entrega","Concepto","Metodo de Pago","Total Cobrado","Costo Repuesto","Ganancia Neta"]];
+
+        Object.values(mapaOrdenes).forEach(e => {
+            let conceptoStr = [...new Set(e.conceptos)].join(' + ') || '-';
+            let metodoStr = e.metodos.size > 0 ? [...e.metodos].join(' / ') : 'Efectivo';
+            let gananciaNeta = e.totalCobrado - e.costoRepuesto;
+            filas.push([
+                e.orden,
+                e.cliente,
+                e.equipo,
+                e.fechaIngreso,
+                e.fechaEntrega || '-',
+                conceptoStr,
+                metodoStr,
+                e.totalCobrado,
+                e.costoRepuesto > 0 ? -e.costoRepuesto : 0,
+                gananciaNeta
+            ]);
+        });
+
+        const csvLines = filas.map(fila =>
+            fila.map(cel => `"${String(cel).replace(/"/g, '""')}"`).join(',')
+        ).join('\r\n');
+
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvLines], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.style.display = 'none';
+        a.download = archivoNombre;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { try { a.remove(); URL.revokeObjectURL(url); } catch(e) {} }, 2000);
+        showToast("✅ EXCEL DESCARGADO", "#2ecc71");
     }
 
     // ====== PANEL DE ADMIN: USUARIOS, LICENCIAS Y BACKUP ======
@@ -4039,26 +4108,7 @@
     }
 
     // ====== MANTENIMIENTO: AUTO-ARCHIVO Y LIMPIEZA DE FOTOS ======
-    function verificarAutoArchivo() {
-        if (isClientMode) return;
-        const HOY = new Date();
-        const UNA_HORA = 60 * 60 * 1000; 
-
-        registros.forEach(r => {
-            if (r.estado === 'Entregado' && !r.archivado) {
-                if (r.historialEstados) {
-                    let ultimosEstados = r.historialEstados.filter(e => e.estado === 'Entregado');
-                    if (ultimosEstados.length > 0) {
-                        let f = parseFechaAR(ultimosEstados[ultimosEstados.length - 1].fecha);
-                        let diffTime = HOY.getTime() - f.getTime();
-                        if (diffTime >= UNA_HORA) {
-                            archivar(r.id);
-                        }
-                    }
-                }
-            }
-        });
-    }
+    // verificarAutoArchivo eliminada — archivado inmediato al entregar
 
     function limpiarFotosAntiguas(forzar = false) {
         if (!isUserAdmin) return;
