@@ -9,6 +9,17 @@
     <meta name="theme-color" content="#1e293b">
     <link rel="apple-touch-icon" href="icon.png">
 
+    <script>
+        // Aplicar modo oscuro ANTES de renderizar para evitar parpadeo
+        (function() {
+            if (localStorage.getItem('st_matias_darkmode') === 'on') {
+                document.documentElement.classList.add('dark-mode-early');
+            }
+        })();
+    </script>
+    <style>
+        html.dark-mode-early body { background-color: #0b0f19 !important; }
+    </style>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -756,7 +767,7 @@
 
                     <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
                         <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
-                        <button type="button" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
+                        <button type="button" id="btnLimpiar" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
                         
                         <input type="file" id="inputFotoCam" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)">
                         <input type="file" id="inputFotoGal" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
@@ -1654,6 +1665,10 @@
         }
     }
 
+    // Control de intentos de login
+    let loginIntentos = parseInt(localStorage.getItem('st_login_intentos') || '0');
+    let loginBloqueadoHasta = parseInt(localStorage.getItem('st_login_bloqueado') || '0');
+
     function checkAccess() {
         const u = document.getElementById('userIn').value.trim().toLowerCase();
         const p = document.getElementById('passIn').value.trim();
@@ -1662,6 +1677,16 @@
         err.style.display = 'none';
 
         if(!u || !p) return;
+
+        // Verificar bloqueo temporal
+        const ahora = Date.now();
+        if (loginBloqueadoHasta > ahora) {
+            const segsRestantes = Math.ceil((loginBloqueadoHasta - ahora) / 1000);
+            err.innerText = `Demasiados intentos fallidos. Esperá ${segsRestantes} segundos.`;
+            err.style.display = 'block';
+            return;
+        }
+
         mostrarLoader("Iniciando sesión segura...");
 
         const emailFalso = (u === 'admin' ? 'admin' : u) + '@mitallerweb.com';
@@ -1670,8 +1695,15 @@
         firebase.auth().setPersistence(persistencia)
             .then(() => firebase.auth().signInWithEmailAndPassword(emailFalso, p))
             .then((userCredential) => {
+                // Login exitoso: resetear contadores
+                loginIntentos = 0;
+                loginBloqueadoHasta = 0;
+                localStorage.removeItem('st_login_intentos');
+                localStorage.removeItem('st_login_bloqueado');
+
                 const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-                localStorage.setItem('st_matias_token', token);
+                const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000 }; // 30 días
+                localStorage.setItem('st_matias_token', JSON.stringify(tokenData));
                 
                 let prefix = userCredential.user.email.split('@')[0];
                 if(prefix !== 'admin') {
@@ -1680,8 +1712,21 @@
             })
             .catch((error) => {
                 ocultarLoader();
-                err.innerText = "Usuario o clave incorrecta"; 
-                err.style.display = 'block'; 
+                loginIntentos++;
+                localStorage.setItem('st_login_intentos', loginIntentos);
+
+                if (loginIntentos >= 5) {
+                    // Bloquear 2 minutos
+                    loginBloqueadoHasta = Date.now() + 2 * 60 * 1000;
+                    localStorage.setItem('st_login_bloqueado', loginBloqueadoHasta);
+                    loginIntentos = 0;
+                    localStorage.removeItem('st_login_intentos');
+                    err.innerText = "Demasiados intentos. Bloqueado por 2 minutos.";
+                } else {
+                    const restantes = 5 - loginIntentos;
+                    err.innerText = `Usuario o clave incorrecta (${restantes} intento${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''})`;
+                }
+                err.style.display = 'block';
             });
     }
 
@@ -1708,7 +1753,7 @@
                 else if (dataUser.estado === 'suspendido') {
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
-                else if (dataUser.tokenSesion && dataUser.tokenSesion !== localStorage.getItem('st_matias_token')) {
+                else if (dataUser.tokenSesion && dataUser.tokenSesion !== (() => { try { const t = JSON.parse(localStorage.getItem('st_matias_token')); return (t && t.expira > Date.now()) ? t.valor : null; } catch(e) { return localStorage.getItem('st_matias_token'); } })()) {
                     mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
                 }
             });
@@ -1774,7 +1819,9 @@
 
     function logout() { 
         firebase.auth().signOut().then(() => {
-            localStorage.removeItem('st_matias_token'); 
+            localStorage.removeItem('st_matias_token');
+            localStorage.removeItem('st_login_intentos');
+            localStorage.removeItem('st_login_bloqueado'); 
             sessionStorage.removeItem('st_matias_session');
             window.location.href = window.location.origin + window.location.pathname; 
         });
@@ -2488,7 +2535,13 @@
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             limiteTabla = 50;
-            if (bus.length > 0 && !historialDescargado) {
+            if (bus.length === 0) {
+                // Campo vacío: volver al estado normal (solo activos, sin modo archivo forzado)
+                modoArchivo = false;
+                renderTable();
+                return;
+            }
+            if (!historialDescargado) {
                 const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
                 db.ref(pathArchivado).once('value').then(snap => {
                     const v = snap.val();
@@ -2756,7 +2809,9 @@
     };
 
     function clickLimpiar(skipToast = false) {
-        idEditando = null; 
+        idEditando = null;
+        const btnL = document.getElementById('btnLimpiar');
+        if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#94a3b8"; }
         document.getElementById('repairForm').reset();
         
         const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs'];
@@ -2791,7 +2846,7 @@
             equipo: document.getElementById('equipo').value,
             marca: document.getElementById('marca').value,
             modelo: document.getElementById('modelo').value, 
-            pin: document.getElementById('pin').value, 
+            // PIN no se guarda en borrador por seguridad
             falla: document.getElementById('falla').value, 
             metodoPago: document.getElementById('metodoPago').value 
         };
@@ -2810,7 +2865,6 @@
                     document.getElementById('equipo').value = d.equipo || "Smartphone";
                     document.getElementById('marca').value = d.marca || "Samsung";
                     document.getElementById('modelo').value = d.modelo || "";
-                    document.getElementById('pin').value = d.pin || "";
                     document.getElementById('falla').value = d.falla || "";
                     document.getElementById('metodoPago').value = d.metodoPago || "A Cotizar";
                 }
@@ -2939,6 +2993,8 @@
         document.getElementById('obs').value = r.obs || "";
         
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR DATOS";
+        document.getElementById('btnLimpiar').innerText = "✖ CANCELAR";
+        document.getElementById('btnLimpiar').style.background = "#e53e3e";
         document.getElementById('costo-inner').style.display = "none"; 
         
         fotosTemporales = [];
@@ -3225,9 +3281,26 @@
     window.addEventListener('DOMContentLoaded', () => {
         const savedDark = localStorage.getItem('st_matias_darkmode');
         if (savedDark === 'on') { document.body.classList.add('dark-mode'); }
+        document.documentElement.classList.remove('dark-mode-early');
     });
 
+    function formularioTieneDatos() {
+        if (isClientMode) return false;
+        const cliente = document.getElementById('cliente') ? document.getElementById('cliente').value.trim() : '';
+        const modelo = document.getElementById('modelo') ? document.getElementById('modelo').value.trim() : '';
+        const falla = document.getElementById('falla') ? document.getElementById('falla').value.trim() : '';
+        return (cliente.length > 0 || modelo.length > 0 || falla.length > 0);
+    }
+
     function showPage(pageId) {
+        // Si hay datos en el formulario y no estamos editando, preguntar antes de cambiar de página
+        if (pageId !== 'gestion' && !idEditando && formularioTieneDatos()) {
+            if (!confirm("Tenés datos en el formulario que se perderán.\n¿Salir sin registrar?")) {
+                return;
+            }
+            clickLimpiar(true); // limpiar silenciosamente
+        }
+
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         
