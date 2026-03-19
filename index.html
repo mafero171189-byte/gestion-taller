@@ -291,18 +291,21 @@
         <div id="vrDetalle" style="display:none; text-align:left; margin-top:15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
             <b id="vrNombre" style="color:#1e293b; font-size: 15px;"></b>
             <input type="hidden" id="vrStockId">
-            <input type="hidden" id="vrPrecioUni">
             <input type="hidden" id="vrCostoUni">
             <input type="hidden" id="vrMaxCant">
             
-            <div style="display:flex; gap:10px; margin-top:15px;">
+            <div style="display:flex; gap:5px; margin-top:15px;">
                 <div style="flex:1;">
-                    <label>Cantidad</label>
-                    <input type="number" id="vrCant" value="1" min="1" oninput="calcVrTotal()" style="padding:8px;">
+                    <label style="font-size:11px;">Precio Un. $</label>
+                    <input type="number" id="vrPrecioUni" oninput="calcVrTotal()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e0;">
                 </div>
                 <div style="flex:1;">
-                    <label>Total $</label>
-                    <input type="text" id="vrTotal" readonly style="background:#e2e8f0; font-weight:bold; padding:8px;">
+                    <label style="font-size:11px;">Cantidad</label>
+                    <input type="number" id="vrCant" value="1" min="1" oninput="calcVrTotal()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e0;">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:11px;">Total $</label>
+                    <input type="text" id="vrTotal" readonly style="width:100%; background:#e2e8f0; font-weight:bold; padding:8px; border-radius:6px; border:none;">
                 </div>
             </div>
             
@@ -722,7 +725,7 @@
                 <input type="text" id="search" placeholder="🔎 Buscar por Cliente, Modelo o Nro Orden..." onkeyup="resetPaginacion()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
                 <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
                 <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
-                <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 ARCHIVADOS</button>
+                <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 HISTORIAL DE REPARACIONES Y VENTAS</button>
                 <button class="btn btn-alerta-amarilla" id="btnAlertaAmarilla" onclick="abrirModalOlvidados()" style="display: none;">⚠️ 0 Equipos Olvidados</button>
             </div>
 
@@ -754,7 +757,12 @@
                 </div>
             </div>
             
-            <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;"></div>
+            <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 20px;"></div>
+            
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="search-conta" placeholder="🔎 Buscar movimiento por Orden, Cliente, Concepto o Método..." oninput="renderTablaContabilidad()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box; font-size:15px;">
+            </div>
+
             <div id="contabilidad-diaria"></div>
         </div>
 
@@ -967,7 +975,7 @@
                     <summary class="faq-summary">4. Estados y Gestión <span>+</span></summary>
                     <div class="faq-content">
                         <p><b>Cambié un equipo a "Entregado" y desapareció de la lista.</b>
-                        El sistema está diseñado para mantener tu mesa de trabajo limpia. Las órdenes entregadas se mueven automáticamente a la pestaña '📁 ARCHIVADOS' después de 24 horas para que no te molesten en el día a día.</p>
+                        El sistema está diseñado para mantener tu mesa de trabajo limpia. Las órdenes entregadas se mueven automáticamente a la pestaña '📁 HISTORIAL DE REPARACIONES Y VENTAS' después de 24 horas para que no te molesten en el día a día.</p>
                         
                         <p><b>¿Cómo devuelvo un repuesto al stock si la reparación se canceló?</b>
                         Si marcaste un equipo como "Reparado" (descontando stock) pero luego el cliente se arrepiente, simplemente cambiá el estado a "Pendiente" o "No reparado". El sistema detectará que habías usado un repuesto y lo devolverá automáticamente a tu inventario.</p>
@@ -1016,7 +1024,7 @@
     let listaOlvidados = []; 
     let repuestosSeleccionadosModal = []; 
     
-    let debounceTimer; // Variable para controlar el buscador y no saturar
+    let debounceTimer;
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
@@ -1030,7 +1038,7 @@
         let partes = fechaStr.split(',');
         let fechaPartes = partes[0].trim().split('/');
         if (fechaPartes.length !== 3) return new Date();
-        return new Date(fechaPartes[2], parseInt(fechaPartes[1]) - 1, fechaPartes[0]);
+        return new Date(fechaPartes[2], parseInt(fechaPartes[1]) - 1, fechaPartes[0], ...((partes[1]||"00:00").trim().split(':')));
     }
 
     function calcularOlvidados() {
@@ -2048,8 +2056,7 @@
             ejecutarCambioEstado('Entregado');
         });
     }
-
-    let idEditando = null;
+	let idEditando = null;
     let modoArchivo = false;
     let modoPendientes = false;
     let idParaEstado = null;
@@ -2299,11 +2306,11 @@
         if(modoArchivo) { 
             table.classList.add('modo-archivo-activo'); 
             btnArch.classList.add('btn-active-filter');
-            btnArch.innerHTML = "📁 ARCHIVADOS ✅";
+            btnArch.innerHTML = "📁 HISTORIAL DE REPARACIONES Y VENTAS ✅";
         } else { 
             table.classList.remove('modo-archivo-activo'); 
             btnArch.classList.remove('btn-active-filter');
-            btnArch.innerHTML = "📁 ARCHIVADOS";
+            btnArch.innerHTML = "📁 HISTORIAL DE REPARACIONES Y VENTAS";
         }
 
         if(modoPendientes) {
@@ -2321,7 +2328,6 @@
             let matchFiltro = true;
             if (!modoArchivo && r.archivado) matchFiltro = false; 
             if (modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
-            
             if (!modoArchivo && r.esVentaRapida) matchFiltro = false;
 
             return matchBusqueda && matchFiltro;
@@ -2441,7 +2447,7 @@
             modoPendientes = false; 
             
             if (historialDescargado) {
-                showToast("MOSTRANDO ARCHIVADOS 📁", "#64748b");
+                showToast("MOSTRANDO HISTORIAL 📁", "#64748b");
                 renderTable();
                 return; 
             }
@@ -2488,7 +2494,7 @@
                 db.ref(pathActivo).child(id).remove();
                 if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
                 renderTable();
-                showToast("ARCHIVADO 🗄️", "#64748b");
+                showToast("ENVIADO AL HISTORIAL 🗄️", "#64748b");
             });
         }
     }
@@ -2565,7 +2571,6 @@
         }
     }
 
-    // FIX EDICIÓN: Evitar duplicados y conservar saldoCobrado y estado.
     document.getElementById('repairForm').onsubmit = function(e) {
         e.preventDefault();
         
@@ -2601,13 +2606,11 @@
         if (idEditando) {
             const r = getRegistro(idEditando);
             if (r) {
-                // Al editar, NO pisamos la fecha, ni el estado, ni el saldo cobrado
                 data.saldoCobrado = r.saldoCobrado || 0;
                 data.metodoPagoSaldo = r.metodoPagoSaldo || "";
                 data.senaOriginal = r.senaOriginal !== undefined ? r.senaOriginal : senaActual;
             }
         } else {
-            // Si es una orden NUEVA
             data.senaOriginal = senaActual;
             data.saldoCobrado = 0;
             data.metodoPagoSaldo = "";
@@ -2668,12 +2671,12 @@
         document.getElementById('imei').value = r.imei || "";
         document.getElementById('pin').value = r.pin || "";
         
-        document.getElementById('precio').value = r.precio ? fmt.format(r.precio).replace('$ ', '') : "";
+        document.getElementById('precio').value = r.precio ? fmt.format(r.precio).replace('$ ', '') : "";
         
         let senaReal = r.senaOriginal !== undefined ? r.senaOriginal : r.sena;
         document.getElementById('sena').value = senaReal ? fmt.format(senaReal).replace(/\D/g, '') : "";
         
-        document.getElementById('costoRepuesto').value = r.costoRepuesto ? fmt.format(r.costoRepuesto).replace('$ ', '') : "";
+        document.getElementById('costoRepuesto').value = r.costoRepuesto ? fmt.format(r.costoRepuesto).replace('$ ', '') : "";
         
         document.getElementById('metodoPago').value = r.metodoPagoSena || "A Cotizar";
         
@@ -2900,8 +2903,8 @@
         document.getElementById('stockId').value = item.id;
         document.getElementById('stockNombre').value = item.nombre;
         document.getElementById('stockCantidad').value = item.cantidad;
-        document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
-        document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
+        document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
+        document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -2950,6 +2953,10 @@
     }
 
     // ====== CONTABILIDAD ======
+    let movimientosActuales = [];
+    let sortColConta = 'fechaRaw';
+    let sortAscConta = false;
+
     function toggleDarkMode() {
         const body = document.body;
         body.classList.toggle('dark-mode');
@@ -2977,7 +2984,6 @@
 
     function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
 
-    // FIX CONTABILIDAD UNIFICADA: Agrupa ingresos y egresos de la misma orden en un solo renglón
     function cargarDatosContabilidad() {
         const mesObj = document.getElementById('selectMes');
         const diaObj = document.getElementById('inputDia');
@@ -2999,9 +3005,9 @@
 
         let ingresoEfectivo = 0, ingresoTransf = 0, ingresoTarjeta = 0;
         let gastosRepuestos = 0, porCobrar = 0;
+        let movsMap = {};
 
         let todasLasOrdenes = [...registros, ...registrosArchivados];
-        let movimientosAgrupados = [];
 
         todasLasOrdenes.forEach(r => {
             let datePart = r.fecha ? r.fecha.split(/[, ]+/)[0].trim() : "";
@@ -3034,80 +3040,65 @@
                 }
             }
 
-            let montoIngreso = 0;
-            let montoEgreso = 0;
-            let metodos = [];
-            let detalles = [];
-            let horaDisplay = "";
-
-            if (coincideIngreso) {
-                let costoRep = parseFloat(r.costoRepuesto) || 0;
-                if (costoRep > 0) {
-                    gastosRepuestos += costoRep;
-                    montoEgreso += costoRep;
-                    detalles.push("Repuesto");
+            if (coincideIngreso || coincideSaldo) {
+                if (!movsMap[r.id]) {
+                    movsMap[r.id] = { id: r.id, orden: r.orden, cliente: r.esVentaRapida ? r.modelo : r.cliente, desc: new Set(), metodo: new Set(), ingreso: 0, egreso: 0, fechaRaw: r.fecha, esVentaRapida: r.esVentaRapida };
                 }
                 
-                if (r.esVentaRapida) {
-                    let pActual = parseFloat(r.precio) || 0;
-                    if (pActual > 0) {
-                        montoIngreso += pActual;
-                        metodos.push(r.metodoPagoSena);
-                        detalles.push("Venta Directa");
-                        horaDisplay = r.fecha.split(',')[1] || '';
-                        
-                        if (r.metodoPagoSena === 'Transferencia') ingresoTransf += pActual;
-                        else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += pActual;
-                        else ingresoEfectivo += pActual;
-                    }
-                } else {
-                    let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-                    if (senaOrig > 0) {
-                        montoIngreso += senaOrig;
-                        metodos.push(r.metodoPagoSena);
-                        detalles.push("Seña");
-                        horaDisplay = r.fecha.split(',')[1] || '';
-                        
-                        if (r.metodoPagoSena === 'Transferencia') ingresoTransf += senaOrig;
-                        else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += senaOrig;
-                        else ingresoEfectivo += senaOrig;
+                let mov = movsMap[r.id];
+
+                if (coincideIngreso) {
+                    let costoRep = parseFloat(r.costoRepuesto) || 0;
+                    if (costoRep > 0) {
+                        gastosRepuestos += costoRep;
+                        mov.egreso += costoRep;
+                        mov.desc.add('Repuesto');
                     }
                     
-                    let precioActual = parseFloat(r.precio) || 0;
-                    if (precioActual > 0) {
-                        let s = precioActual - senaOrig;
-                        if (s > 0 && r.estado !== 'Entregado') porCobrar += s;
+                    if (r.esVentaRapida) {
+                        let pActual = parseFloat(r.precio) || 0;
+                        if (pActual > 0) {
+                            mov.ingreso += pActual;
+                            mov.desc.add('Venta Directa');
+                            if(r.metodoPagoSena && r.metodoPagoSena !== '-') mov.metodo.add(r.metodoPagoSena);
+                            
+                            if (r.metodoPagoSena === 'Transferencia') ingresoTransf += pActual;
+                            else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += pActual;
+                            else ingresoEfectivo += pActual;
+                        }
+                    } else {
+                        let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+                        if (senaOrig > 0) {
+                            mov.ingreso += senaOrig;
+                            mov.desc.add('Seña');
+                            if(r.metodoPagoSena && r.metodoPagoSena !== '-' && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') mov.metodo.add(r.metodoPagoSena);
+                            
+                            if (r.metodoPagoSena === 'Transferencia') ingresoTransf += senaOrig;
+                            else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += senaOrig;
+                            else ingresoEfectivo += senaOrig;
+                        }
+                        
+                        let precioActual = parseFloat(r.precio) || 0;
+                        if (precioActual > 0) {
+                            let s = precioActual - senaOrig;
+                            if (s > 0 && r.estado !== 'Entregado') porCobrar += s;
+                        }
                     }
                 }
-            }
 
-            if (coincideSaldo) {
-                let cobro = parseFloat(r.saldoCobrado) || 0;
-                if (cobro > 0) {
-                    montoIngreso += cobro;
-                    metodos.push(r.metodoPagoSaldo);
-                    detalles.push("Saldo");
-                    horaDisplay = estadoEntregado.fecha.split(',')[1] || '';
-                    
-                    if (r.metodoPagoSaldo === 'Transferencia') ingresoTransf += cobro;
-                    else if (r.metodoPagoSaldo === 'Tarjeta') ingresoTarjeta += cobro;
-                    else ingresoEfectivo += cobro;
+                if (coincideSaldo) {
+                    let cobro = parseFloat(r.saldoCobrado) || 0;
+                    if (cobro > 0) {
+                        mov.ingreso += cobro;
+                        mov.desc.add('Saldo');
+                        if(r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
+                        mov.fechaRaw = estadoEntregado.fecha; 
+                        
+                        if (r.metodoPagoSaldo === 'Transferencia') ingresoTransf += cobro;
+                        else if (r.metodoPagoSaldo === 'Tarjeta') ingresoTarjeta += cobro;
+                        else ingresoEfectivo += cobro;
+                    }
                 }
-            }
-
-            if (montoIngreso > 0 || montoEgreso > 0) {
-                let metodosUnicos = [...new Set(metodos.filter(m => m && m !== 'A Cotizar' && m !== 'No pagó'))];
-                let metodoFinal = metodosUnicos.length > 0 ? metodosUnicos.join(' + ') : (r.metodoPagoSena || 'A Cotizar');
-                
-                movimientosAgrupados.push({
-                    orden: r.orden,
-                    cliente: r.esVentaRapida ? r.modelo : r.cliente,
-                    desc: detalles.join(' + '),
-                    metodo: metodoFinal,
-                    ingreso: montoIngreso,
-                    egreso: montoEgreso,
-                    fecha: horaDisplay
-                });
             }
         });
 
@@ -3125,34 +3116,156 @@
             <div class="card-stats caja-primary"><b>✅ GANANCIA NETA</b><p style="color:var(--primary);">${fmt.format(gananciaNeta)}</p><span class="stat-icon">📊</span></div>
         `;
 
-        let listHtml = `<h3 style="margin-top:30px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">📋 Detalle de Movimientos Financieros</h3>`;
-        
-        if(movimientosAgrupados.length === 0) {
-            listHtml += `<p style="color:#64748b; font-style:italic;">No hay movimientos registrados en esta fecha.</p>`;
+        movimientosActuales = Object.values(movsMap).filter(m => m.ingreso > 0 || m.egreso > 0).map(m => {
+            return {
+                id: m.id, orden: m.orden, cliente: m.cliente, 
+                descStr: Array.from(m.desc).join(' + '),
+                metodoStr: m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo',
+                ingreso: m.ingreso, egreso: m.egreso, fechaRaw: m.fechaRaw,
+                esVentaRapida: m.esVentaRapida
+            };
+        });
+
+        renderTablaContabilidad();
+    }
+
+    function ordenarConta(col) {
+        if (sortColConta === col) {
+            sortAscConta = !sortAscConta;
         } else {
-            // AHORA LA TABLA TIENE COLUMNA DE INGRESO (VERDE) Y EGRESO (ROJO) SEPARADAS
-            listHtml += `<div class="table-wrapper" style="overflow-x:auto;"><table style="width:100%; min-width:700px;">
-                <thead><tr><th>Hora</th><th>Orden</th><th>Cliente / Venta</th><th>Concepto</th><th>Método</th><th style="color:var(--success);">Ingreso</th><th style="color:var(--danger);">Egreso</th></tr></thead><tbody>`;
+            sortColConta = col;
+            sortAscConta = true;
+        }
+        renderTablaContabilidad();
+    }
+
+function renderTablaContabilidad() {
+        let bus = document.getElementById('search-conta').value.toLowerCase();
+        let arr = [...movimientosActuales];
+        
+        if (bus) {
+            arr = arr.filter(m => 
+                (m.cliente||'').toLowerCase().includes(bus) ||
+                String(m.orden).toLowerCase().includes(bus) ||
+                (m.descStr||'').toLowerCase().includes(bus) ||
+                (m.metodoStr||'').toLowerCase().includes(bus)
+            );
+        }
+
+        arr.sort((a, b) => {
+            let valA = a[sortColConta];
+            let valB = b[sortColConta];
+
+            if (sortColConta === 'fechaRaw') {
+                valA = parseFechaAR(a.fechaRaw).getTime();
+                valB = parseFechaAR(b.fechaRaw).getTime();
+            } else if (sortColConta === 'orden') {
+                valA = parseInt(String(a.orden).replace(/\D/g,'')) || 0;
+                valB = parseInt(String(b.orden).replace(/\D/g,'')) || 0;
+            } else if (sortColConta === 'cliente' || sortColConta === 'descStr' || sortColConta === 'metodoStr') {
+                valA = (valA || '').toLowerCase();
+                valB = (valB || '').toLowerCase();
+            }
+
+            if (valA < valB) return sortAscConta ? -1 : 1;
+            if (valA > valB) return sortAscConta ? 1 : -1;
+            return 0;
+        });
+
+        let listHtml = `<h3 style="margin-top:0px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">📋 Detalle de Movimientos Financieros</h3>`;
+        
+        if(arr.length === 0) {
+            listHtml += `<p style="color:#64748b; font-style:italic;">No se encontraron movimientos.</p>`;
+        } else {
+            listHtml += `<div class="table-wrapper" style="overflow-x:auto;"><table style="width:100%; min-width:750px;">
+                <thead>
+                    <tr>
+                        <th style="cursor:pointer;" onclick="ordenarConta('fechaRaw')">Fecha ${sortColConta==='fechaRaw' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('orden')">Orden ${sortColConta==='orden' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('cliente')">Cliente / Venta ${sortColConta==='cliente' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('descStr')">Concepto ${sortColConta==='descStr' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('metodoStr')">Método ${sortColConta==='metodoStr' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer; color:var(--success);" onclick="ordenarConta('ingreso')">Ingreso ${sortColConta==='ingreso' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer; color:var(--danger);" onclick="ordenarConta('egreso')">Egreso ${sortColConta==='egreso' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead><tbody>`;
             
-            movimientosAgrupados.sort((a,b) => (b.ingreso + b.egreso) - (a.ingreso + a.egreso));
-            
-            movimientosAgrupados.forEach(v => {
-                let badgeMetodo = v.metodo === '-' ? '<span style="color:#94a3b8; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodo.split(' + ')[0] || 'efectivo').toLowerCase()}">${v.metodo}</span>`;
-                let ordenTxt = String(v.orden).includes('VTA') ? `<span style="color:#8e44ad; font-weight:bold;">${v.orden}</span>` : v.orden;
+            arr.forEach(v => {
+                let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#94a3b8; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase()}">${v.metodoStr}</span>`;
+                let ordenTxt = v.esVentaRapida ? `<span style="color:#8e44ad; font-weight:bold;">${v.orden}</span>` : v.orden;
+                
+                // Mostrar fecha y hora completa
+                let fechaDisplay = v.fechaRaw ? v.fechaRaw : '-';
                 
                 listHtml += `<tr class="tabla-contabilidad-row">
-                    <td style="color:#64748b; font-size:12px;">${v.fecha || '-'}</td>
+                    <td style="color:#64748b; font-size:12px;">${fechaDisplay}</td>
                     <td><b>${ordenTxt}</b></td>
                     <td>${escaparHTML(v.cliente)}</td>
-                    <td style="color:#475569; font-size:13px;">${v.desc}</td>
+                    <td style="color:#475569; font-size:13px;">${v.descStr}</td>
                     <td>${badgeMetodo}</td>
                     <td>${v.ingreso > 0 ? `<b style="color:var(--success);">+${fmt.format(v.ingreso)}</b>` : '<span style="color:#cbd5e0;">-</span>'}</td>
                     <td>${v.egreso > 0 ? `<b style="color:var(--danger);">-${fmt.format(v.egreso)}</b>` : '<span style="color:#cbd5e0;">-</span>'}</td>
+                    <td class="action-btns"><button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button></td>
                 </tr>`;
             });
             listHtml += `</tbody></table></div>`;
         }
         document.getElementById('contabilidad-diaria').innerHTML = listHtml;
+    }
+
+    function eliminarMovimiento(idOrden, descAgrupada) {
+        if(!confirm(`¿Estás seguro de REVERTIR los movimientos de este renglón?\n(${descAgrupada})`)) return;
+        const r = getRegistro(idOrden);
+        if(!r) return;
+
+        mostrarLoader("Anulando movimientos...");
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+
+        if (r.esVentaRapida) {
+            db.ref(nodoActualizar).child(idOrden).remove().then(() => {
+                const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+                db.ref(pathStock).once('value', snap => {
+                    let st = snap.val();
+                    if(st) {
+                        let stockItem = Object.keys(st).find(k => st[k].nombre === r.modelo);
+                        if(stockItem) {
+                            db.ref(pathStock).child(stockItem).update({cantidad: st[stockItem].cantidad + 1});
+                        }
+                    }
+                    registros = registros.filter(x => x.id !== idOrden);
+                    registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
+                    ocultarLoader();
+                    showToast("Venta Anulada (Stock repuesto)", "#e53e3e");
+                    cargarDatosContabilidad();
+                });
+            });
+            return;
+        }
+
+        let updates = {};
+        if (descAgrupada.includes('Seña')) {
+            updates.senaOriginal = 0;
+            updates.sena = r.saldoCobrado || 0; 
+            updates.metodoPagoSena = '';
+        }
+        if (descAgrupada.includes('Saldo')) {
+            updates.saldoCobrado = 0;
+            updates.sena = r.senaOriginal || r.sena || 0;
+            updates.metodoPagoSaldo = '';
+        }
+        if (descAgrupada.includes('Repuesto')) {
+            updates.costoRepuesto = 0;
+        }
+
+        db.ref(nodoActualizar).child(idOrden).update(updates).then(() => {
+            Object.assign(r, updates);
+            ocultarLoader();
+            showToast("Movimientos Financieros Anulados", "#e53e3e");
+            cargarDatosContabilidad();
+        });
     }
 
     function exportarExcel() {
