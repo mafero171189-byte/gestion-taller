@@ -455,6 +455,20 @@
         </div>
     </div>
 
+    <div id="patternModal" class="modal-overlay" style="z-index: 6000;">
+        <div class="modal-box" style="width: 320px;">
+            <p style="margin-top:0; color:#1e293b; font-size:16px;"><b>✍️ Dibujar Patrón</b></p>
+            <div style="display:flex; justify-content:center; margin-top:15px; margin-bottom:15px;">
+                <canvas id="patternCanvas" width="240" height="240" style="background:#f8fafc; border-radius:12px; border: 2px solid #cbd5e0; touch-action:none;"></canvas>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button type="button" onclick="cerrarPatternModal()" style="flex:1; padding:10px; border-radius:8px; border:none; font-weight:bold; color:#475569; background:#e2e8f0; cursor:pointer;">CANCELAR</button>
+                <button type="button" onclick="limpiarPattern()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#94a3b8; color:white; font-weight:bold; cursor:pointer;">BORRAR</button>
+                <button type="button" onclick="guardarPattern()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">GUARDAR</button>
+            </div>
+        </div>
+    </div>
+
     <div id="passModal" class="modal-overlay">
         <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
             <p><b>👤 Mi Perfil - Configuración</b></p>
@@ -654,16 +668,45 @@
                     <div><label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()"></div>
                     <div><label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()"></div>
                     
-                    <div style="position: relative;">
+                    <div>
+                        <label>Equipo</label>
+                        <select id="equipo" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+                            <option value="Smartphone">📱 Smartphone</option>
+                            <option value="Tablet">📳 Tablet</option>
+                            <option value="PC/Notebook">💻 PC/Notebook</option>
+                            <option value="Consola">🎮 Consola</option>
+                            <option value="Otro">🔧 Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label>Marca</label>
+                        <select id="marca" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+                            <option value="Samsung">Samsung</option>
+                            <option value="Apple">Apple</option>
+                            <option value="Motorola">Motorola</option>
+                            <option value="Xiaomi">Xiaomi</option>
+                            <option value="Huawei">Huawei</option>
+                            <option value="Oppo">Oppo</option>
+                            <option value="Otra">Otra</option>
+                        </select>
+                    </div>
+
+                    <div>
                         <label>Modelo</label>
-                        <input type="text" id="modelo" required oninput="saveDraft(); showAutocomplete('modelo')" onfocus="showAutocomplete('modelo')" onblur="hideAutocomplete('modelo')" autocomplete="off" placeholder="Escribe o selecciona...">
-                        <div id="autocomplete-modelo" class="autocomplete-list"></div>
+                        <input type="text" id="modelo" required oninput="saveDraft()" autocomplete="off" placeholder="Escribe el modelo...">
                     </div>
                     
                     <div><label>Color</label><input type="text" id="color" oninput="saveDraft()"></div>
                     <div><label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()"></div>
                     
-                    <div><label>Clave/PIN 🔒</label><input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()"></div>
+                    <div style="display:flex; align-items:flex-start; gap:5px;">
+                        <div style="flex:1;">
+                            <label>Clave/PIN 🔒</label>
+                            <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
+                        </div>
+                        <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #cbd5e0; background:#f1f5f9; cursor:pointer; height:43px; margin-top:19px;" title="Dibujar Patrón">✍️</button>
+                    </div>
                     
                     <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
                     <div>
@@ -852,7 +895,7 @@
                         
                         <b>A. Formulario de Ingreso</b>
                         <ul>
-                            <li><b>Datos del Equipo:</b> Completás cliente, WhatsApp (549...), modelo, IMEI y el PIN/Patrón de desbloqueo.</li>
+                            <li><b>Datos del Equipo:</b> Completás cliente, WhatsApp (549...), equipo, marca, modelo, IMEI y el PIN/Patrón de desbloqueo.</li>
                             <li><b>Finanzas Iniciales:</b> Cargás el Precio Final y la Seña (si dejó dinero). Podés tildar "Pago Total" para automatizar el cobro.</li>
                             <li><b>Costo de Repuesto (🔒):</b> Clic en el candado para anotar cuánto te costó la pieza sin que el cliente lo vea.</li>
                             <li><b>Falla y Fotos:</b> Usá el autocompletado para las fallas (ej: Pantalla + Pin). Sacá fotos directamente con la cámara para tener un respaldo del estado físico del equipo.</li>
@@ -1028,6 +1071,132 @@
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
+    // ====== LÓGICA DEL PATRÓN DE DESBLOQUEO ======
+    let patternCanvas, ctxPattern;
+    let isDrawingPattern = false;
+    let patternPath = [];
+    const patternNodes = [];
+    
+    function initPattern() {
+        patternCanvas = document.getElementById('patternCanvas');
+        if(!patternCanvas) return;
+        ctxPattern = patternCanvas.getContext('2d');
+        
+        // Crear cuadrícula 3x3
+        let idx = 1;
+        for(let row = 0; row < 3; row++) {
+            for(let col = 0; col < 3; col++) {
+                patternNodes.push({ id: idx++, x: 40 + col * 80, y: 40 + row * 80 });
+            }
+        }
+        
+        const getTouchPos = (e) => {
+            const rect = patternCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        const startDrawing = (e) => {
+            e.preventDefault();
+            isDrawingPattern = true;
+            patternPath = [];
+            addNodeToPath(getTouchPos(e));
+            drawPattern(getTouchPos(e));
+        };
+
+        const moveDrawing = (e) => {
+            if(!isDrawingPattern) return;
+            e.preventDefault();
+            const pos = getTouchPos(e);
+            addNodeToPath(pos);
+            drawPattern(pos);
+        };
+
+        const stopDrawing = () => {
+            isDrawingPattern = false;
+            drawPattern();
+        };
+
+        patternCanvas.addEventListener('mousedown', startDrawing);
+        patternCanvas.addEventListener('mousemove', moveDrawing);
+        window.addEventListener('mouseup', stopDrawing);
+        patternCanvas.addEventListener('touchstart', startDrawing, {passive: false});
+        patternCanvas.addEventListener('touchmove', moveDrawing, {passive: false});
+        window.addEventListener('touchend', stopDrawing);
+    }
+
+    function addNodeToPath(pos) {
+        for(let node of patternNodes) {
+            if(!patternPath.includes(node.id)) {
+                let dx = pos.x - node.x;
+                let dy = pos.y - node.y;
+                if(Math.sqrt(dx*dx + dy*dy) < 25) { 
+                    patternPath.push(node.id);
+                    break;
+                }
+            }
+        }
+    }
+
+    function drawPattern(currentPos = null) {
+        ctxPattern.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
+        
+        ctxPattern.lineWidth = 4;
+        ctxPattern.strokeStyle = '#3498db';
+        ctxPattern.lineCap = 'round';
+        ctxPattern.lineJoin = 'round';
+        
+        if(patternPath.length > 0) {
+            ctxPattern.beginPath();
+            let firstNode = patternNodes[patternPath[0]-1];
+            ctxPattern.moveTo(firstNode.x, firstNode.y);
+            
+            for(let i=1; i<patternPath.length; i++) {
+                let node = patternNodes[patternPath[i]-1];
+                ctxPattern.lineTo(node.x, node.y);
+            }
+            
+            if(isDrawingPattern && currentPos) {
+                ctxPattern.lineTo(currentPos.x, currentPos.y);
+            }
+            ctxPattern.stroke();
+        }
+
+        for(let node of patternNodes) {
+            ctxPattern.beginPath();
+            ctxPattern.arc(node.x, node.y, 8, 0, Math.PI * 2);
+            ctxPattern.fillStyle = patternPath.includes(node.id) ? '#3498db' : '#cbd5e0';
+            ctxPattern.fill();
+        }
+    }
+
+    function abrirPatternModal() {
+        document.getElementById('patternModal').style.display = 'flex';
+        if(!patternCanvas) initPattern();
+        limpiarPattern();
+    }
+
+    function cerrarPatternModal() {
+        document.getElementById('patternModal').style.display = 'none';
+    }
+
+    function limpiarPattern() {
+        patternPath = [];
+        drawPattern();
+    }
+
+    function guardarPattern() {
+        if(patternPath.length === 0) {
+            showToast("Dibujá un patrón primero", "#f1c40f");
+            return;
+        }
+        document.getElementById('pin').value = "Patrón: " + patternPath.join('-');
+        saveDraft();
+        cerrarPatternModal();
+    }
+    // ====== FIN LÓGICA DEL PATRÓN ======
+
     function escaparHTML(texto) {
         if (!texto) return "";
         return texto.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -1093,11 +1262,13 @@
 
             let opacidad = r.recordatorioEnviado ? 'opacity: 0.6;' : '';
             let colorDias = r.recordatorioEnviado ? '#64748b' : 'red';
+            
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
 
             tbody.innerHTML += `
                 <tr style="${opacidad}">
                     <td><b>${escaparHTML(r.cliente)}</b></td>
-                    <td>${escaparHTML(r.modelo)}</td>
+                    <td>${escaparHTML(equipoCompleto)}</td>
                     <td style="color: ${colorDias}; font-weight: bold;">${r.diasListo} días</td>
                     <td>${botonAccion}</td>
                 </tr>
@@ -1122,7 +1293,8 @@
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
 
-            const msj = `¡Hola ${r.cliente}! ¿Cómo estás? Te hablo de ${nombreTaller}, tu equipo ${r.modelo} ya lleva más de 15 días reparado.`;
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
+            const msj = `¡Hola ${r.cliente}! ¿Cómo estás? Te hablo de ${nombreTaller}, tu equipo ${equipoCompleto} ya lleva más de 15 días reparado.`;
             
             window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msj)}`, '_blank');
 
@@ -1362,7 +1534,9 @@
         
         docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
         const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
-        const linesEquipo = docDummy.splitTextToSize(`${r.modelo} (${r.color || '-'})`, 40);
+        
+        let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''} (${r.color || '-'})`.trim();
+        const linesEquipo = docDummy.splitTextToSize(equipoCompleto, 40);
         
         const fallaLimpia = String(r.falla || "-").replace(/\s*\+\s*$/, '');
         const linesFalla = docDummy.splitTextToSize(fallaLimpia, 40);
@@ -1688,42 +1862,36 @@
         });
     }
 
-    let modelosGlobal = [];
     let fallasGlobal = [];
 
     function actualizarListasAutocompletado() {
         if(isClientMode) return;
         
-        let modelos = new Set(["Samsung Galaxy ", "Motorola Moto ", "iPhone ", "Xiaomi Redmi "]);
         let fallas = new Set(["Cambio de módulo", "Pin de carga", "Cambio de batería", "Falla de software", "No enciende", "Mojado"]);
-        
         let todasLasOrdenes = [...registros, ...registrosArchivados];
         
         todasLasOrdenes.forEach(r => {
-            if(r.modelo && r.modelo.trim() !== "") modelos.add(r.modelo.trim());
             if(r.falla && r.falla.trim() !== "") {
                 let partesFalla = r.falla.split('+');
                 partesFalla.forEach(p => fallas.add(p.trim()));
             }
         });
         
-        modelosGlobal = Array.from(modelos).sort();
         fallasGlobal = Array.from(fallas).sort();
     }
 
     function showAutocomplete(campo) {
+        if(campo !== 'falla') return; // Ya no hay autocompletado para modelo
         const input = document.getElementById(campo);
         let val = input.value.toLowerCase();
         
-        if (campo === 'falla') {
-            let partes = val.split('+');
-            val = partes[partes.length - 1].trim(); 
-        }
+        let partes = val.split('+');
+        val = partes[partes.length - 1].trim(); 
 
         const listDiv = document.getElementById('autocomplete-' + campo);
         listDiv.innerHTML = '';
         
-        const arr = campo === 'modelo' ? modelosGlobal : fallasGlobal;
+        const arr = fallasGlobal;
         const filtrados = arr.filter(item => item.toLowerCase().includes(val));
         
         if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
@@ -1742,16 +1910,12 @@
             
             div.onmousedown = function(e) {
                 e.preventDefault(); 
-                if (campo === 'falla') {
-                    let partes = input.value.split('+');
-                    partes.pop(); 
-                    if(partes.length > 0) {
-                        input.value = partes.join('+') + ' + ' + item + ' + ';
-                    } else {
-                        input.value = item + ' + ';
-                    }
+                let p = input.value.split('+');
+                p.pop(); 
+                if(p.length > 0) {
+                    input.value = p.join('+') + ' + ' + item + ' + ';
                 } else {
-                    input.value = item;
+                    input.value = item + ' + ';
                 }
                 listDiv.style.display = 'none';
                 saveDraft();
@@ -2005,7 +2169,9 @@
             if(nombreHeader) msjPlano += `*${nombreHeader}*`;
             if(subHeader) msjPlano += ` - ${subHeader}`;
             
-            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
+
+            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${equipoCompleto}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
             msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
             
             window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
@@ -2209,6 +2375,22 @@
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#3498db");
             });
+        } else if (nuevo === 'Entregado' && !r.archivado) {
+            // ✅ AUTO-ARCHIVAR: Al marcar como Entregado, la orden pasa INMEDIATAMENTE al Historial
+            updates.archivado = true;
+            let copia = {...r, ...updates};
+            delete copia.id;
+            db.ref(pathArchivado).child(idParaEstado).set(copia).then(() => {
+                db.ref(pathActivo).child(idParaEstado).remove();
+                r.estado = nuevo;
+                r.historialEstados = historialActual;
+                r.archivado = true;
+                if (historialDescargado) { registrosArchivados.push({id: idParaEstado, ...copia}); }
+                registros = registros.filter(x => x.id !== idParaEstado);
+                renderTable();
+                document.getElementById('statusModal').style.display = 'none';
+                showToast(`ENTREGADO ✅ — GUARDADO EN HISTORIAL 🗄️`, '#64748b');
+            });
         } else {
             db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
                 r.estado = nuevo; 
@@ -2306,11 +2488,11 @@
         if(modoArchivo) { 
             table.classList.add('modo-archivo-activo'); 
             btnArch.classList.add('btn-active-filter');
-            btnArch.innerHTML = "📁 HISTORIAL DE REPARACIONES Y VENTAS ✅";
+            btnArch.innerHTML = "📁 HIST. DE REPARACIONES Y VENTAS ✅";
         } else { 
             table.classList.remove('modo-archivo-activo'); 
             btnArch.classList.remove('btn-active-filter');
-            btnArch.innerHTML = "📁 HISTORIAL DE REPARACIONES Y VENTAS";
+            btnArch.innerHTML = "📁 HIST. DE REPARACIONES Y VENTAS";
         }
 
         if(modoPendientes) {
@@ -2323,7 +2505,8 @@
 
         const filtrados = listaBase.filter(r => {
             const ordenLimpia = String(r.orden).replace('MAT-', '');
-            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || (r.modelo||"").toLowerCase().includes(bus) || ordenLimpia.toLowerCase().includes(bus);
+            let equipoLimpio = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim().toLowerCase();
+            const matchBusqueda = (r.cliente||"").toLowerCase().includes(bus) || equipoLimpio.includes(bus) || ordenLimpia.toLowerCase().includes(bus);
             
             let matchFiltro = true;
             if (!modoArchivo && r.archivado) matchFiltro = false; 
@@ -2343,6 +2526,7 @@
             
             const nroLimpio = String(r.orden).replace('MAT-', '');
             const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
             
             let estadoPagoHTML = "";
             if (precioActual === 0) {
@@ -2367,7 +2551,7 @@
                     ${!r.esVentaRapida ? `<button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button>` : ''}
                 </td>
                 <td>
-                    ${escaparHTML(r.modelo)} ${badgeVentaRapida}<br>
+                    ${escaparHTML(equipoCompleto)} ${badgeVentaRapida}<br>
                     <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
                 </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" ${!r.esVentaRapida ? `onclick="openStatusModal('${r.id}')"` : ''}>${r.estado || 'Pendiente'}</span></td>
@@ -2531,9 +2715,11 @@
             if(el) el.value = "";
         });
 
+        document.getElementById('equipo').value = "Smartphone";
+        document.getElementById('marca').value = "Samsung";
+        
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
-        document.getElementById('autocomplete-modelo').style.display = 'none';
         document.getElementById('autocomplete-falla').style.display = 'none';
 
         document.getElementById('metodoPago').value = "A Cotizar";
@@ -2542,12 +2728,23 @@
         document.getElementById('formThumbnails').innerHTML = "";
         localStorage.removeItem('st_matias_draft');
         
+        if(typeof limpiarPattern === 'function') limpiarPattern();
+        
         if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
     }
 
     function saveDraft() {
         if(idEditando || isClientMode) return;
-        const draft = { cliente: document.getElementById('cliente').value, tel: document.getElementById('tel').value, modelo: document.getElementById('modelo').value, pin: document.getElementById('pin').value, falla: document.getElementById('falla').value, metodoPago: document.getElementById('metodoPago').value };
+        const draft = { 
+            cliente: document.getElementById('cliente').value, 
+            tel: document.getElementById('tel').value, 
+            equipo: document.getElementById('equipo').value,
+            marca: document.getElementById('marca').value,
+            modelo: document.getElementById('modelo').value, 
+            pin: document.getElementById('pin').value, 
+            falla: document.getElementById('falla').value, 
+            metodoPago: document.getElementById('metodoPago').value 
+        };
         localStorage.setItem('st_matias_draft', JSON.stringify(draft));
     }
 
@@ -2560,6 +2757,8 @@
                 if(d && typeof d === 'object') {
                     document.getElementById('cliente').value = d.cliente || "";
                     document.getElementById('tel').value = d.tel || "";
+                    document.getElementById('equipo').value = d.equipo || "Smartphone";
+                    document.getElementById('marca').value = d.marca || "Samsung";
                     document.getElementById('modelo').value = d.modelo || "";
                     document.getElementById('pin').value = d.pin || "";
                     document.getElementById('falla').value = d.falla || "";
@@ -2577,6 +2776,8 @@
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         
         let c = document.getElementById('cliente').value.trim();
+        let eq = document.getElementById('equipo').value;
+        let ma = document.getElementById('marca').value;
         let m = document.getElementById('modelo').value.trim();
         let precioActual = parseMoney(document.getElementById('precio').value);
         let senaActual = parseMoney(document.getElementById('sena').value);
@@ -2591,6 +2792,8 @@
             orden: document.getElementById('nroOrden').value,
             cliente: c,
             tel: document.getElementById('tel').value,
+            equipo: eq,
+            marca: ma,
             modelo: m,
             color: document.getElementById('color').value,
             imei: document.getElementById('imei').value,
@@ -2666,6 +2869,8 @@
         document.getElementById('nroOrden').value = r.orden;
         document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel;
+        document.getElementById('equipo').value = r.equipo || "Smartphone";
+        document.getElementById('marca').value = r.marca || "Samsung";
         document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || "";
         document.getElementById('imei').value = r.imei || "";
@@ -2714,7 +2919,9 @@
             if(nombreHeader) msjPlano += `*${nombreHeader}*`;
             if(subHeader) msjPlano += ` - ${subHeader}`;
             
-            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${r.modelo}\n🛠️ *ESTADO ACTUAL:* ${r.estado}\n`;
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
+            
+            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${equipoCompleto}\n🛠️ *ESTADO ACTUAL:* ${r.estado}\n`;
             
             if(r.estado === 'Reparado') {
                 msjPlano += `\n✅ *¡Tu equipo ya está listo y podés pasar a retirarlo!*`;
@@ -3042,7 +3249,8 @@
 
             if (coincideIngreso || coincideSaldo) {
                 if (!movsMap[r.id]) {
-                    movsMap[r.id] = { id: r.id, orden: r.orden, cliente: r.esVentaRapida ? r.modelo : r.cliente, desc: new Set(), metodo: new Set(), ingreso: 0, egreso: 0, fechaRaw: r.fecha, esVentaRapida: r.esVentaRapida };
+                    let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+                    movsMap[r.id] = { id: r.id, orden: r.orden, cliente: r.esVentaRapida ? equipoCompleto : r.cliente, desc: new Set(), metodo: new Set(), ingreso: 0, egreso: 0, fechaRaw: r.fecha, esVentaRapida: r.esVentaRapida, equipo: equipoCompleto };
                 }
                 
                 let mov = movsMap[r.id];
@@ -3122,7 +3330,7 @@
                 descStr: Array.from(m.desc).join(' + '),
                 metodoStr: m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo',
                 ingreso: m.ingreso, egreso: m.egreso, fechaRaw: m.fechaRaw,
-                esVentaRapida: m.esVentaRapida
+                esVentaRapida: m.esVentaRapida, equipo: m.equipo
             };
         });
 
@@ -3139,7 +3347,7 @@
         renderTablaContabilidad();
     }
 
-function renderTablaContabilidad() {
+    function renderTablaContabilidad() {
         let bus = document.getElementById('search-conta').value.toLowerCase();
         let arr = [...movimientosActuales];
         
@@ -3148,7 +3356,8 @@ function renderTablaContabilidad() {
                 (m.cliente||'').toLowerCase().includes(bus) ||
                 String(m.orden).toLowerCase().includes(bus) ||
                 (m.descStr||'').toLowerCase().includes(bus) ||
-                (m.metodoStr||'').toLowerCase().includes(bus)
+                (m.metodoStr||'').toLowerCase().includes(bus) ||
+                (m.equipo||'').toLowerCase().includes(bus)
             );
         }
 
@@ -3195,7 +3404,6 @@ function renderTablaContabilidad() {
                 let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#94a3b8; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase()}">${v.metodoStr}</span>`;
                 let ordenTxt = v.esVentaRapida ? `<span style="color:#8e44ad; font-weight:bold;">${v.orden}</span>` : v.orden;
                 
-                // Mostrar fecha y hora completa
                 let fechaDisplay = v.fechaRaw ? v.fechaRaw : '-';
                 
                 listHtml += `<tr class="tabla-contabilidad-row">
@@ -3275,7 +3483,7 @@ function renderTablaContabilidad() {
         let archivoNombre = `Contabilidad_${diaFiltro || mesFiltro}.csv`;
 
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Orden,Cliente,Fecha,Hora,Concepto,Metodo,Monto Cobrado\n";
+        csvContent += "Orden,Cliente,Equipo,Fecha,Hora,Concepto,Metodo,Monto Cobrado\n";
 
         let todasLasOrdenes = [...registros, ...registrosArchivados];
         
@@ -3302,15 +3510,17 @@ function renderTablaContabilidad() {
             if (d) { let df = d.split('-'); coinc = (p[0].padStart(2,'0') === df[2] && p[1].padStart(2,'0') === df[1] && p[2] === df[0]); } 
             else { coinc = (p[1].padStart(2,'0') === targetMonthStr && p[2] === targetYearStr); }
 
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+
             if (coinc) {
                 let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
                 let hora = r.fecha.split(',')[1] ? r.fecha.split(',')[1].trim() : '';
                 
                 if (r.esVentaRapida) {
                     let pActual = parseFloat(r.precio) || 0;
-                    csvContent += `"${r.orden}","${r.modelo}","${datePart}","${hora}","Venta Directa","${r.metodoPagoSena || 'Efectivo'}","${pActual}"\n`;
+                    csvContent += `"${r.orden}","${r.cliente}","${equipoCompleto}","${datePart}","${hora}","Venta Directa","${r.metodoPagoSena || 'Efectivo'}","${pActual}"\n`;
                 } else if (senaOrig > 0) {
-                    csvContent += `"${r.orden}","${r.cliente}","${datePart}","${hora}","Seña","${r.metodoPagoSena || 'Efectivo'}","${senaOrig}"\n`;
+                    csvContent += `"${r.orden}","${r.cliente}","${equipoCompleto}","${datePart}","${hora}","Seña","${r.metodoPagoSena || 'Efectivo'}","${senaOrig}"\n`;
                 }
             }
 
@@ -3327,7 +3537,7 @@ function renderTablaContabilidad() {
                         let cobro = parseFloat(r.saldoCobrado) || 0;
                         let hora = ent.fecha.split(',')[1] ? ent.fecha.split(',')[1].trim() : '';
                         if (cobro > 0) {
-                            csvContent += `"${r.orden}","${r.cliente}","${evDate}","${hora}","Saldo","${r.metodoPagoSaldo || 'Efectivo'}","${cobro}"\n`;
+                            csvContent += `"${r.orden}","${r.cliente}","${equipoCompleto}","${evDate}","${hora}","Saldo","${r.metodoPagoSaldo || 'Efectivo'}","${cobro}"\n`;
                         }
                     }
                 }
@@ -3469,83 +3679,110 @@ function renderTablaContabilidad() {
     }
 
     function ejecutarBackup(esCompleto) {
+        // Verificar sesión de Firebase Auth antes de intentar el backup
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser || !fbUser.email || fbUser.email.split('@')[0].toLowerCase() !== 'admin') {
+            alert("❌ Tu sesión de Admin expiró o no está activa.\nCerrá sesión, volvé a ingresar con Admin y probá de nuevo.");
+            showToast("Sesión inválida — volvé a loguearte", "#e53e3e");
+            return;
+        }
+
         const esCelular = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
         if (esCompleto && esCelular) {
             if(!confirm("⚠️ ESTÁS EN UN CELULAR. El Backup Total empaqueta todas las fotos y es muy pesado. Puede dar un error crítico y cerrar la pestaña.\n\n¿Querés intentar descargarlo igual? (Te recomendamos usar el LIGERO)")) {
-                return; 
+                return;
             }
         }
 
         mostrarLoader(esCompleto ? "Generando Backup TOTAL..." : "Preparando Backup LIGERO sin fotos...");
 
-        Promise.all([
-            db.ref('reparaciones').once('value'),
-            db.ref('reparaciones_archivadas').once('value'),
-            db.ref('reparaciones_usuarios').once('value'),
-            db.ref('reparaciones_archivadas_usuarios').once('value'),
-            db.ref('stock').once('value'),
-            db.ref('stock_usuarios').once('value'),
-            db.ref('usuarios_registrados').once('value'),
-            db.ref('configuracion').once('value')
-        ]).then(snapshots => {
-            
-            const backupData = {
-                reparaciones: snapshots[0].val() || null,
-                reparaciones_archivadas: snapshots[1].val() || null,
-                reparaciones_usuarios: snapshots[2].val() || null,
-                reparaciones_archivadas_usuarios: snapshots[3].val() || null,
-                stock: snapshots[4].val() || null,
-                stock_usuarios: snapshots[5].val() || null,
-                usuarios_registrados: snapshots[6].val() || null,
-                configuracion: snapshots[7].val() || null
-            };
+        // Forzar refresco del token antes de leer
+        fbUser.getIdToken(true).then(() => {
 
-            Object.keys(backupData).forEach(key => {
-                if (backupData[key] === null) delete backupData[key];
-            });
+            return Promise.all([
+                db.ref('reparaciones').once('value'),
+                db.ref('reparaciones_archivadas').once('value'),
+                db.ref('reparaciones_usuarios').once('value'),
+                db.ref('reparaciones_archivadas_usuarios').once('value'),
+                db.ref('stock').once('value'),
+                db.ref('stock_usuarios').once('value'),
+                db.ref('usuarios_registrados').once('value'),
+                db.ref('configuracion/admin').once('value')
+            ]);
 
-            if (Object.keys(backupData).length === 0) {
-                ocultarLoader();
-                showToast("Error: Base de datos vacía", "#e53e3e");
-                return;
-            }
-            
-            if (!esCompleto) {
-                const limpiarFotos = (nodo) => {
-                    if(nodo) {
-                        Object.keys(nodo).forEach(id => {
-                            if(nodo[id].fotos) delete nodo[id].fotos;
-                        });
-                    }
+        }).then(snapshots => {
+            try {
+                const backupData = {
+                    reparaciones: snapshots[0].val() || null,
+                    reparaciones_archivadas: snapshots[1].val() || null,
+                    reparaciones_usuarios: snapshots[2].val() || null,
+                    reparaciones_archivadas_usuarios: snapshots[3].val() || null,
+                    stock: snapshots[4].val() || null,
+                    stock_usuarios: snapshots[5].val() || null,
+                    usuarios_registrados: snapshots[6].val() || null,
+                    configuracion: snapshots[7].val() ? { admin: snapshots[7].val() } : null
                 };
-                limpiarFotos(backupData.reparaciones);
-                limpiarFotos(backupData.reparaciones_archivadas);
-                if (backupData.reparaciones_usuarios) Object.keys(backupData.reparaciones_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_usuarios[wa]));
-                if (backupData.reparaciones_archivadas_usuarios) Object.keys(backupData.reparaciones_archivadas_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_archivadas_usuarios[wa]));
+
+                Object.keys(backupData).forEach(key => {
+                    if (backupData[key] === null) delete backupData[key];
+                });
+
+                if (Object.keys(backupData).length === 0) {
+                    ocultarLoader();
+                    showToast("⚠️ Base de datos vacía, no hay nada que respaldar", "#e53e3e");
+                    return;
+                }
+
+                if (!esCompleto) {
+                    const limpiarFotos = (nodo) => {
+                        if (nodo && typeof nodo === 'object') {
+                            Object.keys(nodo).forEach(id => {
+                                if (nodo[id] && nodo[id].fotos) delete nodo[id].fotos;
+                            });
+                        }
+                    };
+                    limpiarFotos(backupData.reparaciones);
+                    limpiarFotos(backupData.reparaciones_archivadas);
+                    if (backupData.reparaciones_usuarios) Object.keys(backupData.reparaciones_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_usuarios[wa]));
+                    if (backupData.reparaciones_archivadas_usuarios) Object.keys(backupData.reparaciones_archivadas_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_archivadas_usuarios[wa]));
+                }
+
+                const jsonString = JSON.stringify(backupData);
+                const blob = new Blob([jsonString], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.style.display = 'none';
+                a.download = `Backup_${esCompleto ? "TOTAL" : "LIGERO"}_MiTallerWeb_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+
+                setTimeout(() => {
+                    try { a.remove(); URL.revokeObjectURL(url); } catch(e) {}
+                }, 2000);
+
+                ocultarLoader();
+                showToast("¡BACKUP DESCARGADO! 💾", "#2ecc71");
+
+            } catch(errInterno) {
+                ocultarLoader();
+                console.error("Error interno backup:", errInterno);
+                alert("❌ Error al generar el archivo:\n" + (errInterno.message || errInterno) + "\n\nSi el problema persiste, intentá con el Backup LIGERO (sin fotos).");
+                showToast("Error al generar el backup", "#e53e3e");
             }
 
-            const jsonString = JSON.stringify(backupData);
-            const blob = new Blob([jsonString], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Backup_${esCompleto ? "TOTAL" : "LIGERO"}_MiTallerWeb_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a); 
-            a.click();
-            
-            setTimeout(() => {
-                a.remove();
-                URL.revokeObjectURL(url);
-            }, 1000); 
-            
-            ocultarLoader();
-            showToast("¡BACKUP DESCARGADO! 💾", "#2ecc71");
-            
         }).catch(err => {
             ocultarLoader();
-            alert("Detalle del error: " + (err.message || err));
+            console.error("Error Firebase backup:", err);
+            const msg = err.message || String(err);
+            if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+                alert("❌ Error de permisos.\n\nVerificá que:\n1. Las reglas de Firebase estén actualizadas\n2. Tu usuario sea Admin (email: admin@mitallerweb.com)\n\nEmail actual: " + (firebase.auth().currentUser ? firebase.auth().currentUser.email : 'no logueado'));
+            } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
+                alert("❌ Sin conexión a internet.\nVerificá tu red e intentá de nuevo.");
+            } else {
+                alert("❌ Error al leer la base de datos:\n" + msg);
+            }
             showToast("Error en la descarga", "#e53e3e");
         });
     }
@@ -3589,10 +3826,12 @@ function renderTablaContabilidad() {
             totalInvertido += precio;
             let badgeStatus = `<span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}">${r.estado}</span>`;
             
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+
             body.innerHTML += `
                 <tr>
                     <td style="font-size:12px;">${r.fecha ? r.fecha.split(',')[0] : '-'}</td>
-                    <td><b>${escaparHTML(r.modelo)}</b></td>
+                    <td><b>${escaparHTML(equipoCompleto)}</b></td>
                     <td style="font-size:12px;">${escaparHTML(r.falla || '-')}</td>
                     <td>${badgeStatus}</td>
                     <td style="font-weight:bold;">${fmt.format(precio)}</td>
