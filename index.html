@@ -2565,6 +2565,28 @@
         document.getElementById('modalPagoMP').style.display = 'none';
     }
 
+    function pagarConPayPal() {
+        if (!currentUser) {
+            alert("Error: No se identificó el usuario.");
+            return;
+        }
+        
+        // REEMPLAZÁ ESTO con tu link real de PayPal
+        // Puede ser paypal.me/TuUsuario/MontoUSD o un link de botón de pago generado en PayPal
+        const linkPayPal = 'https://paypal.me/MatiasRodriguez1789/15USD';
+        
+        const mensaje = `Hola! Ya pagué la licencia internacional de Mi Taller Web por PayPal. \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
+        const urlWhatsapp = `https://wa.me/5491135654094?text=${encodeURIComponent(mensaje)}`;
+
+        cerrarModalPagoMP();
+        
+        // Abre PayPal
+        window.open(linkPayPal, '_blank');
+        
+        // Abre WhatsApp después de 2 segundos para que te envíen el comprobante
+        setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
+    }
+
     function activarLicenciaManual(numeroWa) {
         if (!numeroWa) {
             numeroWa = document.getElementById('activar-pago-wa') ? document.getElementById('activar-pago-wa').value.trim() : '';
@@ -5435,7 +5457,7 @@
         <div class="mp-modal-body">
             <div class="mp-step">
                 <div class="mp-step-num">1</div>
-                <div class="mp-step-text">Te abrimos <b>Mercado Pago</b> para completar el pago de tu licencia.</div>
+                <div class="mp-step-text">Elegí <b>Mercado Pago</b> (Argentina) o <b>PayPal</b> (Internacional) para pagar tu licencia.</div>
             </div>
             <div class="mp-step">
                 <div class="mp-step-num">2</div>
@@ -5448,8 +5470,13 @@
         </div>
         <div class="mp-modal-footer">
             <button class="mp-btn-pagar" id="mpBtnIrAPagar">
-                <span>💳</span> IR A MERCADO PAGO
+                <span>💳</span> IR A MERCADO PAGO (AR$)
             </button>
+            
+            <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde); margin-top: 5px;">
+                <span>🌍</span> PAGAR CON PAYPAL (USD)
+            </button>
+            
             <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
         </div>
     </div>
