@@ -893,7 +893,7 @@
                     <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                     
                     <div class="full" style="display:flex; flex-direction: column; gap:5px;">
-                        <label>Agregar Fotos <span id="fotoContador" style="font-weight:700; color:#2d3a8c; text-transform:none; font-size:11px;">(0 / 5)</span></label>
+                        <label>Agregar Fotos</label>
                         <div style="display:flex; gap:10px;">
                             <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
                             <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
@@ -1151,7 +1151,7 @@
                         <ul>
                             <li>Completá el <b>nombre del artículo</b> (ej: "Módulo iPhone 13", "Funda Samsung A54"), el <b>costo de compra</b> y el <b>precio de venta al público</b>.</li>
                             <li>Cargá la <b>cantidad disponible</b> actual. Podés actualizarla manualmente cuando recibís nueva mercadería.</li>
-
+                            <li>El campo <b>stock mínimo</b> define a partir de qué cantidad el artículo se resalta como "bajo stock" para que no te olvides de reponerlo.</li>
                         </ul>
 
                         <b>Descuento Automático de Stock</b>
@@ -1201,7 +1201,7 @@
                         <ul>
                             <li>Podés cambiar tu contraseña de acceso en cualquier momento desde este panel.</li>
                             <li>Dejá el campo "Nueva Clave" vacío si no querés cambiarla al actualizar el resto de los datos.</li>
-
+                            <li>También podés configurar un <b>patrón de desbloqueo</b> como método de acceso rápido desde dispositivos de confianza.</li>
                         </ul>
                     </div>
                 </details>
@@ -1235,11 +1235,22 @@
 
                         <b>📁 Historial y Archivo</b>
                         <ul>
-                            <li>Las órdenes entregadas se archivan automáticamente para mantener limpia tu vista de trabajo pendiente.</li>
+                            <li>Las órdenes entregadas se archivan automáticamente después de 24 horas para mantener limpia tu vista de trabajo.</li>
                             <li>Podés ver el historial completo de cualquier cliente haciendo clic en su nombre: verás todas sus reparaciones anteriores y el total invertido.</li>
                         </ul>
 
+                        <b>🧹 Limpieza de Fotos (Solo Administradores)</b>
+                        <ul>
+                            <li>Desde el panel de administración, podés ejecutar una limpieza manual que elimina las fotos de órdenes con más de 45 días de antigüedad.</li>
+                            <li>Los datos de las órdenes (cliente, equipo, precio, estado) nunca se borran, solo las imágenes.</li>
+                            <li>El sistema también ejecuta esta limpieza automáticamente cada 7 días para mantener la base de datos liviana.</li>
+                        </ul>
 
+                        <b>📊 Panel de Administración (Solo para el dueño del sistema)</b>
+                        <ul>
+                            <li>Desde el panel admin podés ver todos los usuarios activos, gestionar licencias (prueba / permanente), definir fechas de vencimiento y suspender o eliminar accesos.</li>
+                            <li>Las licencias en prueba tienen un contador de días visible para el usuario en la barra superior.</li>
+                        </ul>
                     </div>
                 </details>
             </div>
@@ -1268,7 +1279,8 @@
                         <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br>
                         No. Por seguridad, el sistema permite solo una sesión activa por cuenta. Si iniciás sesión en un segundo dispositivo, el primero quedará desconectado automáticamente.</p>
 
-
+                        <p><b>¿Para qué sirve el patrón de desbloqueo?</b><br>
+                        Es un método de acceso rápido alternativo a la contraseña. Podés configurarlo desde Mi Perfil. Es útil si usás el sistema principalmente desde un dispositivo fijo (tu celular de taller, por ejemplo).</p>
                     </div>
                 </details>
             </div>
@@ -1305,7 +1317,7 @@
                         El sistema comprime las fotos automáticamente. Si la subida falla, verificá que tengas conexión a internet estable. Un indicador "Sincronizando..." aparece en la parte superior cuando la conexión es débil. Intentá con una foto de menor resolución si el problema persiste.</p>
 
                         <p><b>¿Cuántas fotos puedo subir por orden?</b><br>
-                        El límite es de <b>5 fotos por orden</b>. Al intentar agregar una sexta, el sistema te avisará con un mensaje de error. El contador visible junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: <i>2 / 5</i>). Priorizá las que muestren el estado físico del equipo: pantalla rota, golpes, estado de los puertos.</p>
+                        El sistema no tiene un límite fijo, pero por rendimiento se recomienda no superar las 5 fotos por orden. Priorizá las que muestren el estado físico del equipo (pantalla rota, golpes, estado de los puertos).</p>
 
                         <p><b>¿Se borran mis fotos con el tiempo?</b><br>
                         Sí. Para mantener la velocidad del sistema, las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan en las limpiezas automáticas. Los datos de la orden (cliente, falla, precio, estado) se conservan siempre. Solo desaparecen las imágenes.</p>
@@ -1322,7 +1334,7 @@
                     <summary class="faq-summary">🔄 Estados y Flujo de Reparación <span>+</span></summary>
                     <div class="faq-content">
                         <p><b>Cambié un equipo a "Entregado" y desapareció de la lista principal.</b><br>
-                        Es por diseño: el sistema mantiene tu mesa de trabajo limpia. Las órdenes entregadas se mueven a la pestaña <b>📁 Historial</b> automáticamente cuando se entrega el equipo. Podés seguir viéndolas y buscándolas desde ahí.</p>
+                        Es por diseño: el sistema mantiene tu mesa de trabajo limpia. Las órdenes entregadas se mueven a la pestaña <b>📁 Historial</b> luego de 24 horas. Podés seguir viéndolas y buscándolas desde ahí.</p>
 
                         <p><b>¿Puedo revertir un cambio de estado?</b><br>
                         Sí, podés cambiar el estado libremente mientras la orden esté activa. La excepción es "Entregado": una vez entregado y archivado, no se puede volver a activo fácilmente. Usá el estado con cuidado.</p>
@@ -1373,7 +1385,11 @@
                         <p><b>El stock de un artículo quedó en negativo, ¿qué hago?</b><br>
                         Actualizá la cantidad manualmente desde la sección Stock ingresando el número correcto. Esto puede pasar si ingresaste repuestos manualmente y el sistema los descontó además.</p>
 
+                        <p><b>¿Puedo vender desde stock sin descontar cantidad?</b><br>
+                        No directamente, ya que el sistema siempre descuenta al vender. Si necesitás registrar una venta sin afectar el stock, podés hacerlo como una entrada manual en Contabilidad (función disponible para administradores).</p>
 
+                        <p><b>¿Cómo configuro el stock mínimo para las alertas?</b><br>
+                        Al crear o editar un artículo en la sección Stock, completá el campo <b>"Stock mínimo"</b>. Cuando la cantidad disponible llegue a ese número o menos, el artículo se resaltará visualmente como alerta de reposición.</p>
                     </div>
                 </details>
             </div>
@@ -3630,11 +3646,6 @@
 
     function agregarFotoTemporal(input) {
         if(input.files && input.files[0]) {
-            if(fotosTemporales.length >= 5) {
-                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
-                input.value = "";
-                return;
-            }
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
                 const id = Date.now();
                 fotosTemporales.push({id: id, b64: base64});
@@ -3654,11 +3665,6 @@
                 </div>
             `;
         });
-        const contador = document.getElementById('fotoContador');
-        if(contador) {
-            contador.innerText = `(${fotosTemporales.length} / 5)`;
-            contador.style.color = fotosTemporales.length >= 5 ? '#dc2626' : '#2d3a8c';
-        }
     }
     function eliminarFotoTemporal(id) { fotosTemporales = fotosTemporales.filter(f => f.id !== id); renderThumbnails(); }
 
@@ -3690,17 +3696,12 @@
     function subirFotoDirecta(input) {
         if(!idParaFotos) return;
         if(input.files && input.files[0]) {
-            const r = getRegistro(idParaFotos);
-            let fotosActuales = r.fotos || [];
-            if(fotosActuales.length >= 5) {
-                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
-                input.value = "";
-                return;
-            }
             document.getElementById('loader-text').innerText = "Subiendo foto...";
             document.getElementById('global-loader').style.display = 'flex';
             
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
+                const r = getRegistro(idParaFotos);
+                let fotosActuales = r.fotos || [];
                 fotosActuales.push(base64);
                 
                 const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
