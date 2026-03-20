@@ -43,7 +43,7 @@
         .login-card h2 { color: #1e293b; margin: 15px 0 5px; font-size: 24px; font-weight: 800; }
         .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; margin-top: 0; }
         
-        .login-card input[type="text"], .login-card input[type="password"] {
+        .login-card input[type="text"], .login-card input[type="password"], .login-card input[type="email"] {
             width: 100%; padding: 15px; margin: 8px 0;
             border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; 
             box-sizing: border-box; background: #f8fafc; transition: all 0.3s ease;
@@ -72,7 +72,25 @@
         .remember-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #3498db; }
         .remember-group label { font-size: 14px; color: #475569; margin: 0; cursor: pointer; text-transform: none; font-weight: 500;}
 
-        /* BOTÓN FLOTANTE WHATSAPP - SOPORTE */
+        /* BADGE DE LICENCIA */
+        .badge-licencia { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800; letter-spacing:0.5px; white-space:nowrap; }
+        .lic-prueba { background:#fef3c7; color:#92400e; border:1.5px solid #fcd34d; }
+        .lic-permanente { background:#d1fae5; color:#065f46; border:1.5px solid #6ee7b7; }
+        .lic-expirada { background:#fee2e2; color:#991b1b; border:1.5px solid #fca5a5; }
+        .lic-suspendida { background:#f1f5f9; color:#475569; border:1.5px solid #cbd5e0; }
+        .dias-restantes { font-size:11px; color:#92400e; font-weight:600; }
+        .dias-criticos { color:#dc2626; font-weight:800; animation: pulseAlerta 1.5s infinite; }
+
+        /* Aviso trial en app */
+        #trial-banner { background: linear-gradient(135deg,#f59e0b,#d97706); color:white; text-align:center; padding:8px 15px; font-size:13px; font-weight:700; display:none; cursor:pointer; border-radius:0; }
+        #trial-banner span { background:white; color:#d97706; padding:2px 8px; border-radius:10px; font-size:11px; margin-left:8px; }
+
+        body.dark-mode .badge-licencia { filter: brightness(0.85); }
+
+        /* Panel animado */
+        .login-card { animation: fadeInCard 0.3s ease; }
+        @keyframes fadeInCard { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
         .btn-soporte-wapp {
             position: absolute;
             bottom: 25px;
@@ -85,8 +103,7 @@
             font-weight: bold;
             font-size: 14px;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            align-items: center; gap: 8px;
             box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             z-index: 10001; 
@@ -223,7 +240,7 @@
             border-color: #334155 !important;
         }
 
-        body.dark-mode input[type="text"], body.dark-mode input[type="number"], body.dark-mode input[type="password"], body.dark-mode input[type="date"], body.dark-mode select, body.dark-mode textarea {
+        body.dark-mode input[type="text"], body.dark-mode input[type="number"], body.dark-mode input[type="password"], body.dark-mode input[type="date"], body.dark-mode input[type="email"], body.dark-mode select, body.dark-mode textarea {
             background-color: #0f172a !important;
             color: #f8fafc !important;
             border-color: #475569 !important;
@@ -347,12 +364,12 @@
 </div>
 
 <div id="login-overlay">
-    <div class="login-card">
+    <div class="login-card" id="panelLogin">
         <div style="font-size: 45px; margin-bottom: -10px;">📱</div>
         <h2>Mi Taller Web</h2>
         <p>Inicia sesión para continuar</p>
         
-        <input type="text" id="userIn" placeholder="Usuario" autocomplete="off">
+        <input type="text" id="userIn" placeholder="Usuario / WhatsApp" autocomplete="off">
         
         <div style="position: relative; width: 100%; margin: 8px 0;">
             <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 45px;">
@@ -366,6 +383,73 @@
         
         <button class="btn-login" onclick="checkAccess()">INGRESAR AL SISTEMA</button>
         <p id="loginError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:15px; display:none;"></p>
+
+        <div style="margin-top: 18px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+            <button onclick="mostrarPanelRegistro()" style="background:none; border:none; color:#3498db; font-size:13px; font-weight:700; cursor:pointer; text-decoration:underline; padding:0;">
+                ✨ Registrarme gratis (30 días)
+            </button>
+            <button onclick="mostrarPanelOlvideClave()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; text-decoration:underline; padding:0;">
+                🔑 Olvidé mi clave
+            </button>
+        </div>
+    </div>
+
+    <div class="login-card" id="panelRegistro" style="display:none; max-width: 400px;">
+        <div style="font-size: 40px; margin-bottom: -5px;">✨</div>
+        <h2>Crear Cuenta</h2>
+        <p style="margin-bottom:18px;">30 días gratis · Sin tarjeta de crédito</p>
+
+        <input type="text" id="regWa" placeholder="WhatsApp con código de país (Ej: 5491112345678)" autocomplete="off" style="margin:6px 0;">
+        <input type="email" id="regEmail" placeholder="Tu email (para recuperar tu clave)" autocomplete="off" style="margin:6px 0;">
+
+        <div style="position:relative; width:100%; margin:6px 0;">
+            <input type="password" id="regPass" placeholder="Elegí tu contraseña (mín. 6 caracteres)" style="margin:0; padding-right:45px;">
+            <span class="toggle-pass-icon" onclick="toggleRegPass()">👁️</span>
+        </div>
+        <div style="position:relative; width:100%; margin:6px 0;">
+            <input type="password" id="regPass2" placeholder="Confirmar contraseña" style="margin:0; padding-right:45px;">
+            <span class="toggle-pass-icon" onclick="toggleRegPass2()">👁️</span>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 14px; margin:10px 0; text-align:left; font-size:12px; color:#166534; line-height:1.6;">
+            🎁 <b>Tu prueba gratuita incluye:</b><br>
+            ✔ Gestión ilimitada de órdenes<br>
+            ✔ Contabilidad y stock · PDF de tickets<br>
+            ✔ 30 días sin costo · Sin tarjeta
+        </div>
+
+        <button class="btn-login" style="background:linear-gradient(135deg,#2ecc71,#27ae60);" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
+        <p id="regError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
+        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
+    </div>
+
+    <div class="login-card" id="panelOlvideClave" style="display:none;">
+        <div style="font-size: 40px; margin-bottom: -5px;">🔑</div>
+        <h2>Olvidé mi Clave</h2>
+        <p>Ingresá tu WhatsApp y te enviamos un enlace de recuperación a tu email registrado.</p>
+
+        <input type="text" id="recoveryWa" placeholder="Tu WhatsApp (Ej: 5491112345678)" autocomplete="off" style="margin:8px 0;">
+
+        <button class="btn-login" style="background:linear-gradient(135deg,#8e44ad,#6c3483);" onclick="enviarRecuperacionClave()">📧 ENVIAR ENLACE DE RECUPERACIÓN</button>
+        <p id="recoveryMsg" style="font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
+        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
+    </div>
+
+    <div class="login-card" id="panelNuevaClave" style="display:none;">
+        <div style="font-size: 40px; margin-bottom: -5px;">🔐</div>
+        <h2>Nueva Contraseña</h2>
+        <p>Ingresá tu nueva clave de acceso para <b>Mi Taller Web</b>.</p>
+        <div style="position:relative; width:100%; margin:8px 0;">
+            <input type="password" id="resetPass1" placeholder="Nueva contraseña (mín. 6 caracteres)" style="margin:0; padding-right:45px;">
+            <span class="toggle-pass-icon" onclick="toggleResetPass(1)">👁️</span>
+        </div>
+        <div style="position:relative; width:100%; margin:8px 0;">
+            <input type="password" id="resetPass2" placeholder="Confirmar nueva contraseña" style="margin:0; padding-right:45px;">
+            <span class="toggle-pass-icon" onclick="toggleResetPass(2)">👁️</span>
+        </div>
+        <button class="btn-login" style="background:linear-gradient(135deg,#3498db,#2980b9);" onclick="guardarNuevaClave()">💾 ACTUALIZAR CONTRASEÑA</button>
+        <p id="resetError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
+        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; margin-top:10px;">Cancelar y volver</button>
     </div>
 
     <a href="https://wa.me/5491135654094?text=Hola,%20necesito%20soporte%20con%20el%20acceso%20a%20Mi%20Taller%20Web" target="_blank" class="btn-soporte-wapp">
@@ -376,6 +460,9 @@
     </a>
 </div>
 <div id="app-content">
+    <div id="trial-banner" onclick="mostrarPanelContactoAdmin()">
+        ⏳ Tu licencia de prueba vence en <span id="trial-dias-texto">...</span> · Contactá al admin para activar permanente
+    </div>
     <div id="toast-alert"></div>
 
     <div id="modalUsoStock" class="modal-overlay" style="z-index: 4500;">
@@ -588,6 +675,38 @@
         </div>
     </div>
 
+    <div id="licenciaModal" class="modal-overlay" style="z-index:5500;">
+        <div class="modal-box" style="width:340px; max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                <h3 style="margin:0; font-size:16px;">🔑 Gestión de Licencia</h3>
+                <button onclick="cerrarLicenciaModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;">✕</button>
+            </div>
+            <p id="licModalWa" style="font-size:13px; color:#64748b; margin:0 0 16px; font-weight:600; background:#f8fafc; padding:8px 12px; border-radius:8px;"></p>
+
+            <label style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">Tipo de Licencia</label>
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+                <button id="btnLicPrueba" onclick="seleccionarTipoLic('prueba')" style="flex:1; padding:10px; border-radius:10px; border:2px solid #e2e8f0; background:#fef3c7; color:#92400e; font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">🧪 PRUEBA</button>
+                <button id="btnLicPermanente" onclick="seleccionarTipoLic('permanente')" style="flex:1; padding:10px; border-radius:10px; border:2px solid #e2e8f0; background:#d1fae5; color:#065f46; font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">♾️ PERMANENTE</button>
+            </div>
+
+            <div id="licFechaContainer" style="margin-bottom:16px;">
+                <label style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">Fecha de Vencimiento</label>
+                <input type="date" id="licFechaExp" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+                <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+                    <button onclick="sumarDiasLic(7)"  style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+7 días</button>
+                    <button onclick="sumarDiasLic(15)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+15 días</button>
+                    <button onclick="sumarDiasLic(30)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+30 días</button>
+                    <button onclick="sumarDiasLic(90)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+90 días</button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button onclick="cerrarLicenciaModal()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="guardarLicencia()" style="flex:1; padding:12px; border-radius:8px; border:none; background:linear-gradient(135deg,#3498db,#2980b9); color:white; font-weight:bold; cursor:pointer;">💾 GUARDAR</button>
+            </div>
+        </div>
+    </div>
+
     <div id="photoModal" class="modal-overlay">
         <div class="modal-box" style="width:90%; max-width:400px;">
             <p><b>🖼️ Fotos del Equipo</b></p>
@@ -644,7 +763,6 @@
             </div>
         </div>
     </div>
-
     <nav>
         <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
         <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
@@ -883,6 +1001,14 @@
                 </div>
             </div>
 
+            <div id="resetRequestsPanel" style="display:none; background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:18px; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="margin:0; color:#c2410c; font-size:15px;">🔐 Solicitudes de Nueva Clave</h3>
+                    <span id="resetBadge" style="background:#ef4444; color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold;">0</span>
+                </div>
+                <div id="resetRequestsBody"></div>
+            </div>
+
             <div style="margin-bottom: 15px;">
                 <input type="text" id="search-user" placeholder="🔎 Buscar Usuario por WhatsApp..." onkeyup="listarUsuarios()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box;">
             </div>
@@ -892,8 +1018,8 @@
                     <thead>
                         <tr>
                             <th style="padding:15px;">Usuario / WhatsApp</th>
-                            <th style="padding:15px;">Contraseña</th>
-                            <th style="padding:15px;">Fecha de Alta</th>
+                            <th style="padding:15px;">Licencia</th>
+                            <th style="padding:15px;">Vence / Alta</th>
                             <th style="padding:15px;">Acciones</th>
                         </tr>
                     </thead>
@@ -1046,9 +1172,7 @@
             </div>
 
         </div>
-
     </div>
-
 </div>
 <script>
     const firebaseConfig = {
@@ -1355,20 +1479,46 @@
     function forzarSalida() { logout(); }
 
     function iniciarSeguridad() {
-        mostrarLoader("Verificando seguridad...");
-        
         const urlParams = new URLSearchParams(window.location.search);
         const esVistaCliente = urlParams.get('id') && urlParams.get('u');
+
+        // OPTIMIZACIÓN DE VELOCIDAD: Solo mostramos loader si hay una sesión guardada. Si no, salta al login.
+        const posibleSesion = localStorage.getItem('st_login_wa');
+        if (posibleSesion || esVistaCliente) {
+            mostrarLoader("Verificando seguridad...");
+        } else {
+            document.getElementById('login-overlay').style.display = 'flex';
+            setTimeout(() => document.getElementById('userIn').focus(), 100);
+            loadDraft();
+        }
 
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 if (user.isAnonymous || esVistaCliente) {
-                    checkStoredSession(); 
+                    checkStoredSession();
                 } else if (!appIniciada) {
                     appIniciada = true;
-                    let emailPrefix = user.email.split('@')[0];
-                    let isAdmin = (emailPrefix.toLowerCase() === 'admin');
-                    grantAccess(isAdmin ? 'Admin' : emailPrefix, isAdmin, true);
+
+                    const emailPrefix = user.email.split('@')[0];
+                    const isAdmin = (emailPrefix.toLowerCase() === 'admin');
+
+                    if (isAdmin) {
+                        grantAccess('Admin', true, true);
+                    } else if (user.email.endsWith('@mitallerweb.com')) {
+                        grantAccess(emailPrefix, false, true);
+                    } else {
+                        const waGuardado = localStorage.getItem('st_login_wa');
+                        if (waGuardado) {
+                            grantAccess(waGuardado, false, true);
+                        } else {
+                            appIniciada = false;
+                            firebase.auth().signOut();
+                            ocultarLoader();
+                            document.getElementById('login-overlay').style.display = 'flex';
+                            document.getElementById('loginError').innerText = 'Sesión expirada. Volvé a ingresar.';
+                            document.getElementById('loginError').style.display = 'block';
+                        }
+                    }
                 }
             } else {
                 if (esVistaCliente) {
@@ -1385,6 +1535,8 @@
             }
         });
 
+        verificarAccionURL();
+
         setTimeout(() => {
             if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
                 ocultarLoader();
@@ -1392,7 +1544,7 @@
                     document.getElementById('login-overlay').style.display = 'flex';
                 }
             }
-        }, 5000);
+        }, 3000);
     }
 
     function getRegistro(id) {
@@ -1665,20 +1817,19 @@
         }
     }
 
-    // Control de intentos de login
+    // ====== CONTROL DE ACCESO OPTIMIZADO ======
     let loginIntentos = parseInt(localStorage.getItem('st_login_intentos') || '0');
     let loginBloqueadoHasta = parseInt(localStorage.getItem('st_login_bloqueado') || '0');
 
     function checkAccess() {
-        const u = document.getElementById('userIn').value.trim().toLowerCase();
+        let rawU = document.getElementById('userIn').value.trim().toLowerCase();
         const p = document.getElementById('passIn').value.trim();
         const err = document.getElementById('loginError');
         const remember = document.getElementById('rememberMe') ? document.getElementById('rememberMe').checked : false;
         err.style.display = 'none';
 
-        if(!u || !p) return;
+        if (!rawU || !p) return;
 
-        // Verificar bloqueo temporal
         const ahora = Date.now();
         if (loginBloqueadoHasta > ahora) {
             const segsRestantes = Math.ceil((loginBloqueadoHasta - ahora) / 1000);
@@ -1687,47 +1838,229 @@
             return;
         }
 
-        mostrarLoader("Iniciando sesión segura...");
+        mostrarLoader('Iniciando sesión segura...');
 
-        const emailFalso = (u === 'admin' ? 'admin' : u) + '@mitallerweb.com';
-        const persistencia = remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+        let isEmail = rawU.includes('@');
+        let u = rawU;
+        
+        if (!isEmail && u !== 'admin') {
+            u = u.replace(/\D/g, ''); 
+        }
 
-        firebase.auth().setPersistence(persistencia)
-            .then(() => firebase.auth().signInWithEmailAndPassword(emailFalso, p))
-            .then((userCredential) => {
-                // Login exitoso: resetear contadores
-                loginIntentos = 0;
-                loginBloqueadoHasta = 0;
-                localStorage.removeItem('st_login_intentos');
-                localStorage.removeItem('st_login_bloqueado');
+        const doLogin = (emailFinal) => {
+            if (u !== 'admin') localStorage.setItem('st_login_wa', u);
 
+            const persistencia = remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+            firebase.auth().setPersistence(persistencia)
+                .then(() => firebase.auth().signInWithEmailAndPassword(emailFinal, p))
+                .then((userCredential) => {
+                    loginIntentos = 0;
+                    loginBloqueadoHasta = 0;
+                    localStorage.removeItem('st_login_intentos');
+                    localStorage.removeItem('st_login_bloqueado');
+
+                    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                    const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000 };
+                    localStorage.setItem('st_matias_token', JSON.stringify(tokenData));
+
+                    if (u !== 'admin') {
+                        db.ref('usuarios_registrados/' + u).update({ tokenSesion: token }).catch(() => {});
+                    }
+
+                    appIniciada = false;
+                })
+                .catch((error) => {
+                    ocultarLoader();
+                    loginIntentos++;
+                    localStorage.setItem('st_login_intentos', loginIntentos);
+                    if (loginIntentos >= 5) {
+                        loginBloqueadoHasta = Date.now() + 2 * 60 * 1000;
+                        localStorage.setItem('st_login_bloqueado', loginBloqueadoHasta);
+                        loginIntentos = 0;
+                        localStorage.removeItem('st_login_intentos');
+                        err.innerText = 'Demasiados intentos. Bloqueado por 2 minutos.';
+                    } else {
+                        const restantes = 5 - loginIntentos;
+                        err.innerText = `Usuario o clave incorrecta (${restantes} intento${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''})`;
+                    }
+                    err.style.display = 'block';
+                });
+        };
+
+        if (rawU === 'admin') {
+            doLogin('admin@mitallerweb.com');
+        } else if (isEmail) {
+            doLogin(u);
+        } else {
+            try {
+                db.ref('solicitudes_registro/' + u + '/authEmail').once('value')
+                    .then(snap => {
+                        const emailGuardado = snap.val();
+                        if (emailGuardado) {
+                            doLogin(emailGuardado);
+                        } else {
+                            doLogin(u + '@mitallerweb.com');
+                        }
+                    })
+                    .catch(() => doLogin(u + '@mitallerweb.com'));
+            } catch(e) {
+                doLogin(u + '@mitallerweb.com');
+            }
+        }
+    }
+
+    // ====== NAVEGACIÓN DE PANELES DEL LOGIN ======
+    function mostrarPanelLogin() {
+        document.getElementById('panelLogin').style.display = 'block';
+        document.getElementById('panelRegistro').style.display = 'none';
+        document.getElementById('panelOlvideClave').style.display = 'none';
+        document.getElementById('panelNuevaClave').style.display = 'none';
+    }
+    function mostrarPanelRegistro() {
+        document.getElementById('panelLogin').style.display = 'none';
+        document.getElementById('panelRegistro').style.display = 'block';
+        document.getElementById('panelOlvideClave').style.display = 'none';
+        document.getElementById('panelNuevaClave').style.display = 'none';
+        document.getElementById('regError').style.display = 'none';
+    }
+    function mostrarPanelOlvideClave() {
+        document.getElementById('panelLogin').style.display = 'none';
+        document.getElementById('panelRegistro').style.display = 'none';
+        document.getElementById('panelOlvideClave').style.display = 'block';
+        document.getElementById('panelNuevaClave').style.display = 'none';
+        document.getElementById('recoveryMsg').style.display = 'none';
+    }
+    function toggleRegPass() {
+        const el = document.getElementById('regPass');
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+    function toggleRegPass2() {
+        const el = document.getElementById('regPass2');
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
+    // ====== REGISTRO AUTOMÁTICO OPTIMIZADO ======
+    function registrarUsuario() {
+        const wa      = document.getElementById('regWa').value.replace(/\D/g, '').trim();
+        const email   = document.getElementById('regEmail').value.trim().toLowerCase();
+        const pass    = document.getElementById('regPass').value.trim();
+        const pass2   = document.getElementById('regPass2').value.trim();
+        const errEl   = document.getElementById('regError');
+        errEl.style.display = 'none';
+
+        const mostrarRegError = (msg) => { ocultarLoader(); errEl.innerText = msg; errEl.style.display = 'block'; };
+
+        if (wa.length < 10)              return mostrarRegError('⚠️ Ingresá tu WhatsApp con código de país (Ej: 5491112345678).');
+        if (!email || !email.includes('@')) return mostrarRegError('⚠️ Ingresá un email válido — lo usarás para recuperar tu clave.');
+        if (pass.length < 6)             return mostrarRegError('⚠️ La contraseña debe tener al menos 6 caracteres.');
+        if (pass !== pass2)              return mostrarRegError('⚠️ Las contraseñas no coinciden.');
+
+        mostrarLoader('Creando cuenta y abriendo el taller...');
+
+        const expiracion = Date.now() + 30 * 24 * 60 * 60 * 1000;
+
+        localStorage.setItem('st_login_wa', wa);
+        appIniciada = false; 
+
+        firebase.auth().createUserWithEmailAndPassword(email, pass)
+            .then(() => {
+                return db.ref('solicitudes_registro/' + wa).set({
+                    whatsapp:      wa,
+                    authEmail:     email,
+                    fecha:         new Date().toLocaleString('es-AR'),
+                    timestamp:     Date.now(),
+                    tipoLicencia:  'prueba',
+                    fechaExpiracion: expiracion,
+                    tipo:          'auto-registro',
+                    estado:        'pendiente-activacion'
+                });
+            })
+            .then(() => {
                 const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-                const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000 }; // 30 días
+                const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000 };
                 localStorage.setItem('st_matias_token', JSON.stringify(tokenData));
                 
-                let prefix = userCredential.user.email.split('@')[0];
-                if(prefix !== 'admin') {
-                    db.ref('usuarios_registrados/' + prefix).update({ tokenSesion: token });
-                }
-            })
-            .catch((error) => {
+                db.ref('usuarios_registrados/' + wa).update({ tokenSesion: token }).catch(() => {});
+                
                 ocultarLoader();
-                loginIntentos++;
-                localStorage.setItem('st_login_intentos', loginIntentos);
-
-                if (loginIntentos >= 5) {
-                    // Bloquear 2 minutos
-                    loginBloqueadoHasta = Date.now() + 2 * 60 * 1000;
-                    localStorage.setItem('st_login_bloqueado', loginBloqueadoHasta);
-                    loginIntentos = 0;
-                    localStorage.removeItem('st_login_intentos');
-                    err.innerText = "Demasiados intentos. Bloqueado por 2 minutos.";
+                document.getElementById('panelRegistro').style.display = 'none';
+                
+                showToast('🎉 ¡Bienvenido! Tu cuenta fue creada con éxito.', '#2ecc71');
+            })
+            .catch((err) => {
+                ocultarLoader();
+                localStorage.removeItem('st_login_wa'); 
+                if (err.code === 'auth/email-already-in-use') {
+                    mostrarRegError('⚠️ Ese email ya está en uso. Probá con otro o usá "Olvidé mi clave".');
+                } else if (err.code === 'auth/invalid-email') {
+                    mostrarRegError('⚠️ El email no es válido. Verificalo e intentá de nuevo.');
+                } else if (err.code === 'auth/weak-password') {
+                    mostrarRegError('⚠️ Contraseña muy débil. Usá al menos 6 caracteres.');
+                } else if (err.code === 'auth/network-request-failed') {
+                    mostrarRegError('⚠️ Sin conexión. Verificá tu red e intentá de nuevo.');
                 } else {
-                    const restantes = 5 - loginIntentos;
-                    err.innerText = `Usuario o clave incorrecta (${restantes} intento${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''})`;
+                    mostrarRegError('❌ Error: ' + (err.message || err.code));
                 }
-                err.style.display = 'block';
             });
+    }
+
+    // ====== RECUPERACIÓN DE CLAVE ======
+    function enviarRecuperacionClave() {
+        const wa    = document.getElementById('recoveryWa').value.replace(/\D/g, '').trim();
+        const msgEl = document.getElementById('recoveryMsg');
+        msgEl.style.display = 'none';
+
+        if (wa.length < 10) {
+            msgEl.style.color = '#e53e3e';
+            msgEl.innerText   = '⚠️ Ingresá tu WhatsApp con código de país (Ej: 5491112345678).';
+            msgEl.style.display = 'block';
+            return;
+        }
+
+        mostrarLoader('Buscando tu cuenta...');
+
+        try {
+            db.ref('solicitudes_registro/' + wa + '/authEmail').once('value')
+                .then(snap => {
+                    const authEmail = snap.val();
+                    if (!authEmail) {
+                        ocultarLoader();
+                        msgEl.style.color   = '#e53e3e';
+                        msgEl.innerText     = '⚠️ No encontramos una cuenta con ese WhatsApp. Verificá el número o registrate.';
+                        msgEl.style.display = 'block';
+                        return;
+                    }
+                    return firebase.auth().sendPasswordResetEmail(authEmail).then(() => {
+                        ocultarLoader();
+                        msgEl.style.color   = '#2ecc71';
+                        const emailMask = authEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+                        msgEl.innerText     = '✅ Enlace enviado a ' + emailMask + '. Revisá tu bandeja de entrada (también spam).';
+                        msgEl.style.display = 'block';
+                        document.getElementById('recoveryWa').value = '';
+                    });
+                })
+                .catch((err) => {
+                    ocultarLoader();
+                    msgEl.style.color   = '#e53e3e';
+                    if (err.code === 'auth/user-not-found') {
+                        msgEl.innerText = '⚠️ No existe una cuenta con ese email. Registrate.';
+                    } else if (err.code === 'auth/network-request-failed') {
+                        msgEl.innerText = '⚠️ Sin conexión. Verificá tu red e intentá de nuevo.';
+                    } else {
+                        msgEl.innerText = '❌ Error: ' + (err.message || err.code);
+                    }
+                    msgEl.style.display = 'block';
+                });
+        } catch(e) {
+            ocultarLoader();
+            msgEl.style.color   = '#e53e3e';
+            msgEl.innerText     = '❌ Número inválido o error de sistema.';
+            msgEl.style.display = 'block';
+        }
+    }
+
+    function mostrarPanelContactoAdmin() {
+        window.open('https://wa.me/5491135654094?text=Hola,%20quiero%20activar%20mi%20licencia%20permanente%20de%20Mi%20Taller%20Web', '_blank');
     }
 
     function grantAccess(u, isAdmin, isStored = false) {
@@ -1744,17 +2077,48 @@
         document.getElementById('btn-top-ayuda').style.display = 'flex';
 
         if (!isAdmin) {
+            db.ref('usuarios_registrados/' + u).once('value').then(snapCheck => {
+                if (!snapCheck.exists()) {
+                    db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
+                        const solData = snapSol.val() || {};
+                        const expiracion = solData.fechaExpiracion || (Date.now() + 30 * 24 * 60 * 60 * 1000);
+                        db.ref('usuarios_registrados/' + u).set({
+                            whatsapp: u,
+                            fechaAlta: solData.fecha || new Date().toLocaleString('es-AR'),
+                            estado: 'activo',
+                            tipoLicencia: 'prueba',
+                            fechaExpiracion: expiracion,
+                            tokenSesion: ""
+                        }).catch(() => {});
+                        db.ref('solicitudes_registro/' + u).update({ estado: 'activado' }).catch(() => {});
+                    });
+                }
+            }).catch(() => {});
+
             db.ref('usuarios_registrados/' + u).on('value', snap => {
                 const dataUser = snap.val();
-                
-                if (!dataUser) {
-                    mostrarExpulsion("Tu licencia ha sido eliminada permanentemente por el administrador.");
-                }
+                if (!dataUser) return;
                 else if (dataUser.estado === 'suspendido') {
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
+                else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
+                    mostrarExpulsion("⏳ Tu licencia de prueba de 30 días ha vencido.\n\nContactá al administrador para activar tu licencia permanente y continuar usando Mi Taller Web.");
+                }
                 else if (dataUser.tokenSesion && dataUser.tokenSesion !== (() => { try { const t = JSON.parse(localStorage.getItem('st_matias_token')); return (t && t.expira > Date.now()) ? t.valor : null; } catch(e) { return localStorage.getItem('st_matias_token'); } })()) {
                     mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
+                }
+
+                if (dataUser && dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
+                    const diasRestantes = Math.ceil((dataUser.fechaExpiracion - Date.now()) / (1000 * 60 * 60 * 24));
+                    if (diasRestantes > 0) {
+                        const banner = document.getElementById('trial-banner');
+                        const diasEl = document.getElementById('trial-dias-texto');
+                        if (banner && diasEl) {
+                            diasEl.innerText = diasRestantes + ' día' + (diasRestantes !== 1 ? 's' : '');
+                            banner.style.display = 'block';
+                            if (diasRestantes <= 5) banner.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+                        }
+                    }
                 }
             });
         }
@@ -1788,7 +2152,6 @@
             } finally {
                 ocultarLoader();
             }
-            // verificarAutoArchivo eliminado — el archivado es inmediato al entregar
         }, errorDeFirebase => {
             ocultarLoader();
             showToast("Problema de conexión con la base de datos", "#e53e3e");
@@ -1813,7 +2176,8 @@
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
             listarUsuarios();
             limpiarFotosAntiguas(false); 
-            limpiarLicenciasExpiradas(); 
+            limpiarLicenciasExpiradas();
+            cargarSolicitudesReset();
         }
     }
 
@@ -1821,7 +2185,8 @@
         firebase.auth().signOut().then(() => {
             localStorage.removeItem('st_matias_token');
             localStorage.removeItem('st_login_intentos');
-            localStorage.removeItem('st_login_bloqueado'); 
+            localStorage.removeItem('st_login_bloqueado');
+            localStorage.removeItem('st_login_wa');
             sessionStorage.removeItem('st_matias_session');
             window.location.href = window.location.origin + window.location.pathname; 
         });
@@ -1890,6 +2255,7 @@
     
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
     
+    // ====== PERFIL CON CORRECCIÓN DEL ERROR ======
     function updatePassword() {
         const newP = document.getElementById('newPass').value.trim();
         const nTaller = document.getElementById('confNombreTaller').value.trim();
@@ -1910,10 +2276,14 @@
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64; 
         
         mostrarLoader("Guardando Perfil...");
+        
         db.ref(path).update(updates).then(() => {
             ocultarLoader();
             showToast("PERFIL ACTUALIZADO ✅", "#2ecc71");
             closePassModal();
+        }).catch(err => {
+            ocultarLoader();
+            alert("Error al guardar el perfil: " + err.message + "\n\n(Si dice 'Permission Denied', es un problema en las Reglas de tu Firebase).");
         });
     }
 
@@ -1936,7 +2306,7 @@
     }
 
     function showAutocomplete(campo) {
-        if(campo !== 'falla') return; // Ya no hay autocompletado para modelo
+        if(campo !== 'falla') return; 
         const input = document.getElementById(campo);
         let val = input.value.toLowerCase();
         
@@ -2093,9 +2463,7 @@
         });
     }
 
-    function cerrarModalStock() {
-        document.getElementById('modalUsoStock').style.display = 'none';
-    }
+    function cerrarModalStock() { document.getElementById('modalUsoStock').style.display = 'none'; }
 
     function filtrarStockModal() {
         if(isClientMode) return;
@@ -2106,10 +2474,7 @@
         
         const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(val) && item.cantidad > 0);
         
-        if (filtrados.length === 0) {
-            listDiv.style.display = 'none';
-            return;
-        }
+        if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
@@ -2192,16 +2557,12 @@
         enviarWhatsApp(id); 
     }
 
-    function cerrarModalNoReparado() {
-        document.getElementById('modalNoReparado').style.display = 'none';
-    }
+    function cerrarModalNoReparado() { document.getElementById('modalNoReparado').style.display = 'none'; }
 
     function procesarNoReparado(avisar) {
         cerrarModalNoReparado();
         ejecutarCambioEstado('No reparado');
-        if (avisar) {
-            enviarWhatsAppNoReparado(idParaEstado);
-        }
+        if (avisar) { enviarWhatsAppNoReparado(idParaEstado); }
     }
 
     function enviarWhatsAppNoReparado(id) {
@@ -2277,7 +2638,8 @@
             ejecutarCambioEstado('Entregado');
         });
     }
-	let idEditando = null;
+
+    let idEditando = null;
     let modoArchivo = false;
     let modoPendientes = false;
     let idParaEstado = null;
@@ -2431,7 +2793,6 @@
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#3498db");
             });
         } else if (nuevo === 'Entregado' && !r.archivado) {
-            // ✅ AUTO-ARCHIVAR: Al marcar como Entregado, la orden pasa INMEDIATAMENTE al Historial
             updates.archivado = true;
             let copia = {...r, ...updates};
             delete copia.id;
@@ -2536,7 +2897,6 @@
         debounceTimer = setTimeout(() => {
             limiteTabla = 50;
             if (bus.length === 0) {
-                // Campo vacío: volver al estado normal (solo activos, sin modo archivo forzado)
                 modoArchivo = false;
                 renderTable();
                 return;
@@ -2598,7 +2958,6 @@
             btnPend.innerHTML = labelPend;
         }
 
-        // Si hay texto de búsqueda, buscar en TODO (activos + historial)
         let listaFinal = listaBase;
         if (bus.length > 0 && !modoArchivo && !modoPendientes) {
             const archivadosViejos = registros.filter(r => r.archivado === true);
@@ -2846,7 +3205,6 @@
             equipo: document.getElementById('equipo').value,
             marca: document.getElementById('marca').value,
             modelo: document.getElementById('modelo').value, 
-            // PIN no se guarda en borrador por seguridad
             falla: document.getElementById('falla').value, 
             metodoPago: document.getElementById('metodoPago').value 
         };
@@ -3176,9 +3534,11 @@
     });
     viewer.addEventListener('mouseup', () => { isDragging = false; });
     viewer.addEventListener('mouseleave', () => { isDragging = false; });
-
-    function updateTransform() { imgFull.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`; }
-
+    
+    function updateTransform() {
+        imgFull.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`;
+    }
+    
     // ====== STOCK ======
     function guardarStock() {
         if(isClientMode) return;
@@ -3293,12 +3653,11 @@
     }
 
     function showPage(pageId) {
-        // Si hay datos en el formulario y no estamos editando, preguntar antes de cambiar de página
         if (pageId !== 'gestion' && !idEditando && formularioTieneDatos()) {
             if (!confirm("Tenés datos en el formulario que se perderán.\n¿Salir sin registrar?")) {
                 return;
             }
-            clickLimpiar(true); // limpiar silenciosamente
+            clickLimpiar(true); 
         }
 
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
@@ -3620,7 +3979,6 @@
             targetYearStr = String(new Date().getFullYear());
         }
 
-        // Mapa: una entrada por orden, acumula todo
         const mapaOrdenes = {};
 
         const coincideFecha = (fechaStr) => {
@@ -3643,7 +4001,6 @@
             let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
             let costoRep = parseFloat(r.costoRepuesto) || 0;
 
-            // Fecha de entrega si aplica
             let fechaEntrega = '', horaEntrega = '', cobroSaldo = 0, metodoSaldo = '';
             if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
                 let ent = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
@@ -3764,6 +4121,7 @@
                 whatsapp: wa,
                 fechaAlta: new Date().toLocaleString('es-AR'),
                 estado: "activo",
+                tipoLicencia: "permanente",
                 tokenSesion: ""
             }).then(() => {
                 secondaryApp.auth().signOut();
@@ -3780,6 +4138,61 @@
         });
     }
 
+    // ====== PANEL ADMIN: SOLICITUDES DE RESET DE CLAVE ======
+    function cargarSolicitudesReset() {
+        db.ref('solicitudes_reset').on('value', snap => {
+            const data = snap.val();
+            const panel = document.getElementById('resetRequestsPanel');
+            const body = document.getElementById('resetRequestsBody');
+            const badge = document.getElementById('resetBadge');
+            if (!panel || !body) return;
+
+            body.innerHTML = '';
+            if (!data) { panel.style.display = 'none'; return; }
+
+            const pendientes = Object.entries(data).filter(([k, v]) => v.estado === 'pendiente');
+            badge.innerText = pendientes.length;
+            panel.style.display = pendientes.length > 0 ? 'block' : 'none';
+
+            pendientes.forEach(([wa, sol]) => {
+                body.innerHTML += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; background:white; border-radius:8px; padding:10px 14px; margin-bottom:8px; border:1px solid #fed7aa; gap:10px; flex-wrap:wrap;">
+                        <div>
+                            <b style="font-size:14px;">📱 ${wa}</b>
+                            <div style="font-size:11px; color:#94a3b8;">${sol.fecha || ''}</div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button onclick="resetearClaveUsuario('${wa}')" style="background:#3498db; color:white; border:none; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:bold; cursor:pointer;">🔑 Enviar Clave Temporal</button>
+                            <button onclick="descartarSolicitudReset('${wa}')" style="background:#f1f5f9; color:#64748b; border:none; padding:7px 12px; border-radius:7px; font-size:12px; cursor:pointer;">✖ Descartar</button>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+
+    function resetearClaveUsuario(wa) {
+        const nuevaClave = Math.random().toString(36).slice(-8);
+        mostrarLoader("Generando clave temporal...");
+
+        secondaryApp.auth().signInWithEmailAndPassword(wa + '@mitallerweb.com', '____invalidpass____')
+            .catch(() => {}) 
+            .finally(() => {
+                const msj = `¡Hola! Tu nueva clave temporal para Mi Taller Web es:\n\n🔑 *Clave:* ${nuevaClave}\n\n👤 *Usuario:* ${wa}\n\nIngresá con esta clave y luego cambiala desde tu perfil (👤 Mi Perfil → Nueva Contraseña).`;
+                
+                db.ref('solicitudes_reset/' + wa).update({ estado: 'atendido', claveEnviada: true }).then(() => {
+                    ocultarLoader();
+                    window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
+                    showToast(`✅ Abrí WhatsApp para enviarle la clave a ${wa}`, "#2ecc71");
+                });
+            });
+    }
+
+    function descartarSolicitudReset(wa) {
+        db.ref('solicitudes_reset/' + wa).update({ estado: 'descartado' }).then(() => {
+            showToast("Solicitud descartada", "#64748b");
+        });
+    }
+
     function listarUsuarios() {
         if(!isUserAdmin) return;
         const body = document.getElementById('userTableBody');
@@ -3792,22 +4205,156 @@
                 listadoUsuarios = Object.keys(snap.val()).map(k => ({id:k, ...snap.val()[k]}));
             }
             
-            listadoUsuarios.filter(u => u.whatsapp.includes(bus)).forEach(u => {
-                let pswd = u.estado === 'suspendido' ? `<span style="color:red; font-weight:bold;">SUSPENDIDO</span>` : `(Encriptada por el usuario)`;
-                
+            const AHORA = Date.now();
+            
+            listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus)).forEach(u => {
+                const tipoLic = u.tipoLicencia || 'permanente';
+                const expiracion = u.fechaExpiracion || null;
+                const diasRestantes = expiracion ? Math.ceil((expiracion - AHORA) / (1000*60*60*24)) : null;
+                const estaExpirada = tipoLic === 'prueba' && diasRestantes !== null && diasRestantes <= 0;
+                const estaSuspendida = u.estado === 'suspendido';
+
+                let badgeHtml = '';
+                if (estaSuspendida) {
+                    badgeHtml = `<span class="badge-licencia lic-suspendida">⏸️ SUSPENDIDA</span>`;
+                } else if (tipoLic === 'permanente') {
+                    badgeHtml = `<span class="badge-licencia lic-permanente">♾️ PERMANENTE</span>`;
+                } else if (estaExpirada) {
+                    badgeHtml = `<span class="badge-licencia lic-expirada">❌ VENCIDA</span>`;
+                } else {
+                    badgeHtml = `<span class="badge-licencia lic-prueba">🧪 PRUEBA</span>`;
+                }
+
+                let venceHtml = '';
+                if (tipoLic === 'prueba' && expiracion) {
+                    const fechaExp = new Date(expiracion).toLocaleDateString('es-AR');
+                    if (estaExpirada) {
+                        venceHtml = `<div style="font-size:11px; color:#dc2626; font-weight:700;">Venció el ${fechaExp}</div>`;
+                    } else {
+                        const claseD = diasRestantes <= 5 ? 'dias-criticos' : 'dias-restantes';
+                        venceHtml = `<div style="font-size:11px;">${fechaExp}</div><div class="${claseD}">${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}</div>`;
+                    }
+                } else if (tipoLic === 'permanente') {
+                    venceHtml = `<div style="font-size:11px; color:#065f46; font-weight:600;">Sin vencimiento</div>`;
+                    if (u.fechaAlta) venceHtml += `<div style="font-size:10px; color:#94a3b8;">Alta: ${u.fechaAlta.split(',')[0]}</div>`;
+                } else {
+                    venceHtml = u.fechaAlta ? `<div style="font-size:11px; color:#64748b;">${u.fechaAlta.split(',')[0]}</div>` : '-';
+                }
+
+                const btnSuspender = u.estado !== 'suspendido'
+                    ? `<button onclick="openSuspendModal('${u.id}')" style="background:#f1c40f; color:#856404; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">⏸️ Suspender</button>`
+                    : `<button onclick="reactivarLicencia('${u.id}')" style="background:#2ecc71; color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">▶️ Reactivar</button>`;
+
+                const btnPermanente = (!estaSuspendida)
+                    ? `<button onclick="abrirLicenciaModal('${u.id}')" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">🔑 Licencia</button>`
+                    : '';
+
                 body.innerHTML += `
                     <tr>
-                        <td><b>${u.whatsapp}</b></td>
-                        <td style="color:#64748b; font-size:12px;">${pswd}</td>
-                        <td style="color:#64748b; font-size:12px;">${u.fechaAlta}</td>
-                        <td class="action-btns">
-                            ${u.estado !== 'suspendido' ? `<button onclick="openSuspendModal('${u.id}')" style="background:#f1c40f; color:#856404; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">⏸️ Suspender</button>` : `<button onclick="reactivarLicencia('${u.id}')" style="background:#2ecc71; color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">▶️ Reactivar</button>`}
-                            <button onclick="openDeleteLicenseModal('${u.id}')" style="background:var(--danger); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">❌ Borrar Todo</button>
+                        <td><b>${u.whatsapp || u.id}</b>${u.authEmail ? `<div style="font-size:10px;color:#94a3b8;">${u.authEmail}</div>` : ''}</td>
+                        <td>${badgeHtml}</td>
+                        <td>${venceHtml}</td>
+                        <td class="action-btns" style="flex-wrap:wrap; gap:4px;">
+                            ${btnSuspender}
+                            ${btnPermanente}
+                            <button onclick="openDeleteLicenseModal('${u.id}')" style="background:var(--danger); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">❌ Borrar</button>
                         </td>
                     </tr>
                 `;
             });
+
+            if (listadoUsuarios.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No hay usuarios registrados.</td></tr>`;
+            }
         });
+    }
+
+    // ====== MODAL GESTIÓN DE LICENCIA (ADMIN) ======
+    let _licWaActual = null;
+    let _licTipoActual = 'prueba';
+
+    function abrirLicenciaModal(wa) {
+        _licWaActual = wa;
+        db.ref('usuarios_registrados/' + wa).once('value', snap => {
+            const d = snap.val() || {};
+            _licTipoActual = d.tipoLicencia || 'permanente';
+
+            document.getElementById('licModalWa').innerText = '📱 ' + wa;
+            seleccionarTipoLic(_licTipoActual);
+
+            if (d.fechaExpiracion) {
+                const fecha = new Date(d.fechaExpiracion);
+                const yyyy = fecha.getFullYear();
+                const mm   = String(fecha.getMonth() + 1).padStart(2, '0');
+                const dd   = String(fecha.getDate()).padStart(2, '0');
+                document.getElementById('licFechaExp').value = `${yyyy}-${mm}-${dd}`;
+            } else {
+                const d30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                document.getElementById('licFechaExp').value = d30.toISOString().split('T')[0];
+            }
+
+            document.getElementById('licenciaModal').style.display = 'flex';
+        });
+    }
+
+    function cerrarLicenciaModal() {
+        document.getElementById('licenciaModal').style.display = 'none';
+        _licWaActual = null;
+    }
+
+    function seleccionarTipoLic(tipo) {
+        _licTipoActual = tipo;
+        const btnP = document.getElementById('btnLicPrueba');
+        const btnPerm = document.getElementById('btnLicPermanente');
+        const fechaCont = document.getElementById('licFechaContainer');
+
+        if (tipo === 'prueba') {
+            btnP.style.borderColor    = '#f59e0b';
+            btnP.style.boxShadow      = '0 0 0 3px rgba(245,158,11,0.2)';
+            btnPerm.style.borderColor = '#e2e8f0';
+            btnPerm.style.boxShadow   = 'none';
+            fechaCont.style.display   = 'block';
+        } else {
+            btnPerm.style.borderColor = '#10b981';
+            btnPerm.style.boxShadow   = '0 0 0 3px rgba(16,185,129,0.2)';
+            btnP.style.borderColor    = '#e2e8f0';
+            btnP.style.boxShadow      = 'none';
+            fechaCont.style.display   = 'none';
+        }
+    }
+
+    function sumarDiasLic(dias) {
+        const input = document.getElementById('licFechaExp');
+        const base  = input.value ? new Date(input.value + 'T12:00:00') : new Date();
+        base.setDate(base.getDate() + dias);
+        input.value = base.toISOString().split('T')[0];
+    }
+
+    function guardarLicencia() {
+        if (!_licWaActual) return;
+        mostrarLoader('Guardando licencia...');
+
+        const updates = { tipoLicencia: _licTipoActual, estado: 'activo' };
+
+        if (_licTipoActual === 'prueba') {
+            const fechaStr = document.getElementById('licFechaExp').value;
+            if (!fechaStr) { ocultarLoader(); showToast('Elegí una fecha de vencimiento', '#f1c40f'); return; }
+            updates.fechaExpiracion = new Date(fechaStr + 'T23:59:59').getTime();
+        } else {
+            updates.fechaExpiracion = null;
+        }
+
+        db.ref('usuarios_registrados/' + _licWaActual).update(updates)
+            .then(() => {
+                ocultarLoader();
+                cerrarLicenciaModal();
+                const label = _licTipoActual === 'permanente' ? '♾️ PERMANENTE' : '🧪 PRUEBA';
+                showToast('✅ Licencia actualizada: ' + label, '#2ecc71');
+            })
+            .catch(err => {
+                ocultarLoader();
+                showToast('❌ Error: ' + err.message, '#e53e3e');
+            });
     }
 
     function reactivarLicencia(wa) {
@@ -3831,6 +4378,7 @@
         });
     };
 
+    // ====== CORRECCIÓN: BORRADO DEFINITIVO DE USUARIO ======
     function openDeleteLicenseModal(wa) { idParaEliminarLicencia = wa; document.getElementById('deleteLicenseModal').style.display='flex'; }
     function closeDeleteLicenseModal() { document.getElementById('deleteLicenseModal').style.display='none'; }
     
@@ -3838,16 +4386,26 @@
         if(!idParaEliminarLicencia) return;
         mostrarLoader("Eliminando todos los datos...");
         
-        db.ref('reparaciones_usuarios/' + idParaEliminarLicencia).remove();
-        db.ref('reparaciones_archivadas_usuarios/' + idParaEliminarLicencia).remove();
-        db.ref('stock_usuarios/' + idParaEliminarLicencia).remove(); 
-        db.ref('usuarios_registrados/' + idParaEliminarLicencia).remove().then(() => {
+        const wa = idParaEliminarLicencia;
+        
+        Promise.all([
+            db.ref('reparaciones_usuarios/' + wa).remove(),
+            db.ref('reparaciones_archivadas_usuarios/' + wa).remove(),
+            db.ref('stock_usuarios/' + wa).remove(),
+            db.ref('solicitudes_registro/' + wa).remove(),
+            db.ref('solicitudes_reset/' + wa).remove(),
+            db.ref('usuarios_registrados/' + wa).remove()
+        ]).then(() => {
             closeDeleteLicenseModal();
             ocultarLoader();
             showToast("BASE DE DATOS BORRADA ❌", "#e53e3e");
+        }).catch(err => {
+            ocultarLoader();
+            alert("Error al borrar: " + err.message);
         });
     };
 
+    // ====== CORRECCIÓN: AUTO-BORRADO A LOS 7 DÍAS ======
     function limpiarLicenciasExpiradas() {
         const AHORA = new Date().getTime();
         const DIAS_7_EN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -3862,6 +4420,7 @@
                             db.ref('reparaciones_usuarios/' + wa).remove();
                             db.ref('reparaciones_archivadas_usuarios/' + wa).remove();
                             db.ref('stock_usuarios/' + wa).remove(); 
+                            db.ref('solicitudes_registro/' + wa).remove();
                             db.ref('usuarios_registrados/' + wa).remove();
                         }
                     }
@@ -3871,7 +4430,6 @@
     }
 
     function ejecutarBackup(esCompleto) {
-        // Verificar sesión de Firebase Auth antes de intentar el backup
         const fbUser = firebase.auth().currentUser;
         if (!fbUser || !fbUser.email || fbUser.email.split('@')[0].toLowerCase() !== 'admin') {
             alert("❌ Tu sesión de Admin expiró o no está activa.\nCerrá sesión, volvé a ingresar con Admin y probá de nuevo.");
@@ -3888,9 +4446,7 @@
 
         mostrarLoader(esCompleto ? "Generando Backup TOTAL..." : "Preparando Backup LIGERO sin fotos...");
 
-        // Forzar refresco del token antes de leer
         fbUser.getIdToken(true).then(() => {
-
             return Promise.all([
                 db.ref('reparaciones').once('value'),
                 db.ref('reparaciones_archivadas').once('value'),
@@ -3901,7 +4457,6 @@
                 db.ref('usuarios_registrados').once('value'),
                 db.ref('configuracion/admin').once('value')
             ]);
-
         }).then(snapshots => {
             try {
                 const backupData = {
@@ -3963,7 +4518,6 @@
                 alert("❌ Error al generar el archivo:\n" + (errInterno.message || errInterno) + "\n\nSi el problema persiste, intentá con el Backup LIGERO (sin fotos).");
                 showToast("Error al generar el backup", "#e53e3e");
             }
-
         }).catch(err => {
             ocultarLoader();
             console.error("Error Firebase backup:", err);
@@ -4107,9 +4661,7 @@
         document.getElementById('modalHistorialCliente').style.display = 'flex';
     }
 
-    // ====== MANTENIMIENTO: AUTO-ARCHIVO Y LIMPIEZA DE FOTOS ======
-    // verificarAutoArchivo eliminada — archivado inmediato al entregar
-
+    // ====== MANTENIMIENTO: LIMPIEZA DE FOTOS ======
     function limpiarFotosAntiguas(forzar = false) {
         if (!isUserAdmin) return;
         
@@ -4172,6 +4724,1245 @@
         });
     }
 
+    // ====== RESTABLECIMIENTO DE CONTRASEÑA DESDE EMAIL ======
+    let actionCode = null;
+
+    function verificarAccionURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        actionCode = urlParams.get('oobCode');
+        if (mode === 'resetPassword' && actionCode) {
+            document.getElementById('panelLogin').style.display = 'none';
+            document.getElementById('panelOlvideClave').style.display = 'none';
+            document.getElementById('panelNuevaClave').style.display = 'block';
+            document.getElementById('login-overlay').style.display = 'flex';
+            mostrarLoader("Verificando enlace...");
+
+            firebase.auth().verifyPasswordResetCode(actionCode)
+                .then((email) => {
+                    ocultarLoader();
+                    showToast("Enlace verificado para: " + email, "#3498db");
+                })
+                .catch((error) => {
+                    ocultarLoader();
+                    document.getElementById('resetError').innerText = "⚠️ El enlace es inválido o ya expiró.";
+                    document.getElementById('resetError').style.display = 'block';
+                });
+        }
+    }
+
+    function guardarNuevaClave() {
+        const p1 = document.getElementById('resetPass1').value.trim();
+        const p2 = document.getElementById('resetPass2').value.trim();
+        const errEl = document.getElementById('resetError');
+        errEl.style.display = 'none';
+        if (p1.length < 6) {
+            errEl.innerText = "⚠️ La clave debe tener al menos 6 caracteres.";
+            errEl.style.display = 'block';
+            return;
+        }
+        if (p1 !== p2) {
+            errEl.innerText = "⚠️ Las contraseñas no coinciden.";
+            errEl.style.display = 'block';
+            return;
+        }
+        mostrarLoader("Guardando nueva clave...");
+        firebase.auth().confirmPasswordReset(actionCode, p1)
+            .then(() => {
+                ocultarLoader();
+                showToast("✅ ¡Contraseña actualizada! Ya podés ingresar.", "#2ecc71");
+                window.history.replaceState({}, document.title, window.location.pathname);
+                mostrarPanelLogin();
+            })
+            .catch((error) => {
+                ocultarLoader();
+                errEl.innerText = "❌ Error: " + error.message;
+                errEl.style.display = 'block';
+            });
+    }
+
+    function toggleResetPass(n) {
+        const el = document.getElementById('resetPass' + n);
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
 </script>
 </body>
-</html>
+    // ====== STOCK ======
+    function guardarStock() {
+        if(isClientMode) return;
+        const id = document.getElementById('stockId').value;
+        const n = document.getElementById('stockNombre').value.trim();
+        const c = parseInt(document.getElementById('stockCantidad').value);
+        const costo = parseMoney(document.getElementById('stockCosto').value);
+        const precio = parseMoney(document.getElementById('stockPrecio').value);
+
+        if(!n || isNaN(c)) { showToast("Nombre y cantidad requeridos", "#e53e3e"); return; }
+
+        const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio };
+        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+        
+        mostrarLoader("Guardando stock...");
+        if(id) {
+            db.ref(pathStock).child(id).update(data).then(() => { limpiarStock(); ocultarLoader(); showToast("STOCK ACTUALIZADO", "#2ecc71"); });
+        } else {
+            db.ref(pathStock).push(data).then(() => { limpiarStock(); ocultarLoader(); showToast("ARTÍCULO CREADO", "#2ecc71"); });
+        }
+    }
+
+    function limpiarStock() {
+        document.getElementById('stockId').value = "";
+        document.getElementById('stockNombre').value = "";
+        document.getElementById('stockCantidad').value = "";
+        document.getElementById('stockCosto').value = "";
+        document.getElementById('stockPrecio').value = "";
+        document.getElementById('search-stock').value = "";
+        document.getElementById('stockNombre').focus();
+    }
+
+    function editarStock(id) {
+        const item = stockData.find(x => x.id === id); if(!item) return;
+        document.getElementById('stockId').value = item.id;
+        document.getElementById('stockNombre').value = item.nombre;
+        document.getElementById('stockCantidad').value = item.cantidad;
+        document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
+        document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function confirmarBorrarStock(id) {
+        idStockParaBorrar = id;
+        document.getElementById('deleteStockModal').style.display = 'flex';
+    }
+
+    function ejecutarBorradoStock() {
+        if(!idStockParaBorrar) return;
+        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+        
+        mostrarLoader("Eliminando...");
+        db.ref(pathStock).child(idStockParaBorrar).remove().then(() => {
+            idStockParaBorrar = null;
+            document.getElementById('deleteStockModal').style.display = 'none';
+            ocultarLoader();
+            showToast("ARTÍCULO ELIMINADO", "#e53e3e");
+        });
+    }
+
+    function renderStock() {
+        const bus = document.getElementById('search-stock').value.toLowerCase();
+        const body = document.getElementById('bodyStock');
+        body.innerHTML = "";
+        
+        const filtrados = stockData.filter(i => (i.nombre||"").toLowerCase().includes(bus));
+        
+        filtrados.sort((a,b) => a.nombre.localeCompare(b.nombre));
+        
+        filtrados.forEach(i => {
+            let colorCant = i.cantidad <= 2 ? 'color:red; font-weight:bold;' : 'color:green; font-weight:bold;';
+            body.innerHTML += `
+                <tr>
+                    <td><b>${escaparHTML(i.nombre)}</b></td>
+                    <td style="${colorCant}">${i.cantidad}</td>
+                    <td>${fmt.format(i.costo || 0)}</td>
+                    <td><b>${fmt.format(i.precioVenta || 0)}</b></td>
+                    <td class="action-btns">
+                        <button onclick="editarStock('${i.id}')" style="color:#3498db;">✏️</button>
+                        <button onclick="confirmarBorrarStock('${i.id}')" style="color:#e53e3e;">❌</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // ====== CONTABILIDAD ======
+    let movimientosActuales = [];
+    let sortColConta = 'fechaRaw';
+    let sortAscConta = false;
+
+    function toggleDarkMode() {
+        const body = document.body;
+        body.classList.toggle('dark-mode');
+        
+        const isDark = body.classList.contains('dark-mode');
+        localStorage.setItem('st_matias_darkmode', isDark ? 'on' : 'off');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedDark = localStorage.getItem('st_matias_darkmode');
+        if (savedDark === 'on') { document.body.classList.add('dark-mode'); }
+        document.documentElement.classList.remove('dark-mode-early');
+    });
+
+    function formularioTieneDatos() {
+        if (isClientMode) return false;
+        const cliente = document.getElementById('cliente') ? document.getElementById('cliente').value.trim() : '';
+        const modelo = document.getElementById('modelo') ? document.getElementById('modelo').value.trim() : '';
+        const falla = document.getElementById('falla') ? document.getElementById('falla').value.trim() : '';
+        return (cliente.length > 0 || modelo.length > 0 || falla.length > 0);
+    }
+
+    function showPage(pageId) {
+        if (pageId !== 'gestion' && !idEditando && formularioTieneDatos()) {
+            if (!confirm("Tenés datos en el formulario que se perderán.\n¿Salir sin registrar?")) {
+                return;
+            }
+            clickLimpiar(true); 
+        }
+
+        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById('page-' + pageId).style.display = 'block';
+        document.getElementById('btn-nav-' + pageId).classList.add('active');
+        
+        if (pageId === 'contabilidad') cargarDatosContabilidad();
+        if (pageId === 'stock') renderStock();
+        if (pageId === 'usuarios') listarUsuarios();
+    }
+
+    function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
+
+    function cargarDatosContabilidad() {
+        const mesObj = document.getElementById('selectMes');
+        const diaObj = document.getElementById('inputDia');
+        
+        const mesFiltro = mesObj ? mesObj.value : mesActual;
+        const diaFiltro = diaObj ? diaObj.value : "";
+        
+        let targetMonthStr = "";
+        let targetYearStr = "";
+        
+        if (diaFiltro) {
+            let dObj = new Date(diaFiltro + 'T12:00:00');
+            targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
+            targetYearStr = String(dObj.getFullYear());
+        } else {
+            targetMonthStr = String(parseInt(mesFiltro) + 1).padStart(2, '0');
+            targetYearStr = String(new Date().getFullYear());
+        }
+
+        let ingresoEfectivo = 0, ingresoTransf = 0, ingresoTarjeta = 0;
+        let gastosRepuestos = 0, porCobrar = 0;
+        let movsMap = {};
+
+        let todasLasOrdenes = [...registros, ...registrosArchivados];
+
+        todasLasOrdenes.forEach(r => {
+            let datePart = r.fecha ? r.fecha.split(/[, ]+/)[0].trim() : "";
+            if (!datePart) return;
+            let partes = datePart.split('/');
+            if (partes.length !== 3) return;
+            
+            let coincideIngreso = false;
+            if (diaFiltro) {
+                let df = diaFiltro.split('-'); 
+                coincideIngreso = (partes[0].padStart(2,'0') === df[2] && partes[1].padStart(2,'0') === df[1] && partes[2] === df[0]);
+            } else {
+                coincideIngreso = (partes[1].padStart(2,'0') === targetMonthStr && partes[2] === targetYearStr);
+            }
+
+            let coincideSaldo = false;
+            let estadoEntregado = null;
+            if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
+                estadoEntregado = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
+                if (estadoEntregado) {
+                    let evPartes = estadoEntregado.fecha.split(/[, ]+/)[0].trim().split('/');
+                    if (evPartes.length === 3) {
+                        if (diaFiltro) {
+                            let df = diaFiltro.split('-');
+                            coincideSaldo = (evPartes[0].padStart(2,'0') === df[2] && evPartes[1].padStart(2,'0') === df[1] && evPartes[2] === df[0]);
+                        } else {
+                            coincideSaldo = (evPartes[1].padStart(2,'0') === targetMonthStr && evPartes[2] === targetYearStr);
+                        }
+                    }
+                }
+            }
+
+            if (coincideIngreso || coincideSaldo) {
+                if (!movsMap[r.id]) {
+                    let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+                    movsMap[r.id] = { id: r.id, orden: r.orden, cliente: r.esVentaRapida ? equipoCompleto : r.cliente, desc: new Set(), metodo: new Set(), ingreso: 0, egreso: 0, fechaRaw: r.fecha, esVentaRapida: r.esVentaRapida, equipo: equipoCompleto };
+                }
+                
+                let mov = movsMap[r.id];
+
+                if (coincideIngreso) {
+                    let costoRep = parseFloat(r.costoRepuesto) || 0;
+                    if (costoRep > 0) {
+                        gastosRepuestos += costoRep;
+                        mov.egreso += costoRep;
+                        mov.desc.add('Repuesto');
+                    }
+                    
+                    if (r.esVentaRapida) {
+                        let pActual = parseFloat(r.precio) || 0;
+                        if (pActual > 0) {
+                            mov.ingreso += pActual;
+                            mov.desc.add('Venta Directa');
+                            if(r.metodoPagoSena && r.metodoPagoSena !== '-') mov.metodo.add(r.metodoPagoSena);
+                            
+                            if (r.metodoPagoSena === 'Transferencia') ingresoTransf += pActual;
+                            else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += pActual;
+                            else ingresoEfectivo += pActual;
+                        }
+                    } else {
+                        let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+                        if (senaOrig > 0) {
+                            mov.ingreso += senaOrig;
+                            mov.desc.add('Seña');
+                            if(r.metodoPagoSena && r.metodoPagoSena !== '-' && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') mov.metodo.add(r.metodoPagoSena);
+                            
+                            if (r.metodoPagoSena === 'Transferencia') ingresoTransf += senaOrig;
+                            else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += senaOrig;
+                            else ingresoEfectivo += senaOrig;
+                        }
+                        
+                        let precioActual = parseFloat(r.precio) || 0;
+                        if (precioActual > 0) {
+                            let s = precioActual - senaOrig;
+                            if (s > 0 && r.estado !== 'Entregado') porCobrar += s;
+                        }
+                    }
+                }
+
+                if (coincideSaldo) {
+                    let cobro = parseFloat(r.saldoCobrado) || 0;
+                    if (cobro > 0) {
+                        mov.ingreso += cobro;
+                        mov.desc.add('Saldo');
+                        if(r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
+                        mov.fechaRaw = estadoEntregado.fecha; 
+                        
+                        if (r.metodoPagoSaldo === 'Transferencia') ingresoTransf += cobro;
+                        else if (r.metodoPagoSaldo === 'Tarjeta') ingresoTarjeta += cobro;
+                        else ingresoEfectivo += cobro;
+                    }
+                }
+            }
+        });
+
+        let ingresosTotales = ingresoEfectivo + ingresoTransf + ingresoTarjeta;
+        let gananciaNeta = ingresosTotales - gastosRepuestos;
+
+        document.getElementById('stats-container').innerHTML = `
+            <div class="card-stats caja-success"><b>💵 INGRESOS COBRADOS</b><p style="color:var(--success);">${fmt.format(ingresosTotales)}</p><span class="stat-icon">💰</span>
+                <div style="font-size:11px; margin-top:10px; color:#64748b; border-top:1px solid #e2e8f0; padding-top:5px;">
+                    EF: <b>${fmt.format(ingresoEfectivo)}</b> | TR: <b>${fmt.format(ingresoTransf)}</b><br>TJ: <b>${fmt.format(ingresoTarjeta)}</b>
+                </div>
+            </div>
+            <div class="card-stats caja-warning"><b>⏳ SALDOS POR COBRAR</b><p style="color:var(--warning);">${fmt.format(porCobrar)}</p><span class="stat-icon">🕒</span></div>
+            <div class="card-stats caja-danger"><b>📉 COSTOS DE REPUESTOS</b><p style="color:var(--danger);">${fmt.format(gastosRepuestos)}</p><span class="stat-icon">📦</span></div>
+            <div class="card-stats caja-primary"><b>✅ GANANCIA NETA</b><p style="color:var(--primary);">${fmt.format(gananciaNeta)}</p><span class="stat-icon">📊</span></div>
+        `;
+
+        movimientosActuales = Object.values(movsMap).filter(m => m.ingreso > 0 || m.egreso > 0).map(m => {
+            return {
+                id: m.id, orden: m.orden, cliente: m.cliente, 
+                descStr: Array.from(m.desc).join(' + '),
+                metodoStr: m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo',
+                ingreso: m.ingreso, egreso: m.egreso, fechaRaw: m.fechaRaw,
+                esVentaRapida: m.esVentaRapida, equipo: m.equipo
+            };
+        });
+
+        renderTablaContabilidad();
+    }
+
+    function ordenarConta(col) {
+        if (sortColConta === col) {
+            sortAscConta = !sortAscConta;
+        } else {
+            sortColConta = col;
+            sortAscConta = true;
+        }
+        renderTablaContabilidad();
+    }
+
+    function renderTablaContabilidad() {
+        let bus = document.getElementById('search-conta').value.toLowerCase();
+        let arr = [...movimientosActuales];
+        
+        if (bus) {
+            arr = arr.filter(m => 
+                (m.cliente||'').toLowerCase().includes(bus) ||
+                String(m.orden).toLowerCase().includes(bus) ||
+                (m.descStr||'').toLowerCase().includes(bus) ||
+                (m.metodoStr||'').toLowerCase().includes(bus) ||
+                (m.equipo||'').toLowerCase().includes(bus)
+            );
+        }
+
+        arr.sort((a, b) => {
+            let valA = a[sortColConta];
+            let valB = b[sortColConta];
+
+            if (sortColConta === 'fechaRaw') {
+                valA = parseFechaAR(a.fechaRaw).getTime();
+                valB = parseFechaAR(b.fechaRaw).getTime();
+            } else if (sortColConta === 'orden') {
+                valA = parseInt(String(a.orden).replace(/\D/g,'')) || 0;
+                valB = parseInt(String(b.orden).replace(/\D/g,'')) || 0;
+            } else if (sortColConta === 'cliente' || sortColConta === 'descStr' || sortColConta === 'metodoStr') {
+                valA = (valA || '').toLowerCase();
+                valB = (valB || '').toLowerCase();
+            }
+
+            if (valA < valB) return sortAscConta ? -1 : 1;
+            if (valA > valB) return sortAscConta ? 1 : -1;
+            return 0;
+        });
+
+        let listHtml = `<h3 style="margin-top:0px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">📋 Detalle de Movimientos Financieros</h3>`;
+        
+        if(arr.length === 0) {
+            listHtml += `<p style="color:#64748b; font-style:italic;">No se encontraron movimientos.</p>`;
+        } else {
+            listHtml += `<div class="table-wrapper" style="overflow-x:auto;"><table style="width:100%; min-width:750px;">
+                <thead>
+                    <tr>
+                        <th style="cursor:pointer;" onclick="ordenarConta('fechaRaw')">Fecha ${sortColConta==='fechaRaw' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('orden')">Orden ${sortColConta==='orden' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('cliente')">Cliente / Venta ${sortColConta==='cliente' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('descStr')">Concepto ${sortColConta==='descStr' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer;" onclick="ordenarConta('metodoStr')">Método ${sortColConta==='metodoStr' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer; color:var(--success);" onclick="ordenarConta('ingreso')">Ingreso ${sortColConta==='ingreso' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th style="cursor:pointer; color:var(--danger);" onclick="ordenarConta('egreso')">Egreso ${sortColConta==='egreso' ? (sortAscConta?'⬆️':'⬇️'):'↕️'}</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead><tbody>`;
+            
+            arr.forEach(v => {
+                let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#94a3b8; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase()}">${v.metodoStr}</span>`;
+                let ordenTxt = v.esVentaRapida ? `<span style="color:#8e44ad; font-weight:bold;">${v.orden}</span>` : v.orden;
+                
+                let fechaDisplay = v.fechaRaw ? v.fechaRaw : '-';
+                
+                listHtml += `<tr class="tabla-contabilidad-row">
+                    <td style="color:#64748b; font-size:12px;">${fechaDisplay}</td>
+                    <td><b>${ordenTxt}</b></td>
+                    <td>${escaparHTML(v.cliente)}</td>
+                    <td style="color:#475569; font-size:13px;">${v.descStr}</td>
+                    <td>${badgeMetodo}</td>
+                    <td>${v.ingreso > 0 ? `<b style="color:var(--success);">+${fmt.format(v.ingreso)}</b>` : '<span style="color:#cbd5e0;">-</span>'}</td>
+                    <td>${v.egreso > 0 ? `<b style="color:var(--danger);">-${fmt.format(v.egreso)}</b>` : '<span style="color:#cbd5e0;">-</span>'}</td>
+                    <td class="action-btns"><button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button></td>
+                </tr>`;
+            });
+            listHtml += `</tbody></table></div>`;
+        }
+        document.getElementById('contabilidad-diaria').innerHTML = listHtml;
+    }
+
+    function eliminarMovimiento(idOrden, descAgrupada) {
+        if(!confirm(`¿Estás seguro de REVERTIR los movimientos de este renglón?\n(${descAgrupada})`)) return;
+        const r = getRegistro(idOrden);
+        if(!r) return;
+
+        mostrarLoader("Anulando movimientos...");
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+
+        if (r.esVentaRapida) {
+            db.ref(nodoActualizar).child(idOrden).remove().then(() => {
+                const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+                db.ref(pathStock).once('value', snap => {
+                    let st = snap.val();
+                    if(st) {
+                        let stockItem = Object.keys(st).find(k => st[k].nombre === r.modelo);
+                        if(stockItem) {
+                            db.ref(pathStock).child(stockItem).update({cantidad: st[stockItem].cantidad + 1});
+                        }
+                    }
+                    registros = registros.filter(x => x.id !== idOrden);
+                    registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
+                    ocultarLoader();
+                    showToast("Venta Anulada (Stock repuesto)", "#e53e3e");
+                    cargarDatosContabilidad();
+                });
+            });
+            return;
+        }
+
+        let updates = {};
+        if (descAgrupada.includes('Seña')) {
+            updates.senaOriginal = 0;
+            updates.sena = r.saldoCobrado || 0; 
+            updates.metodoPagoSena = '';
+        }
+        if (descAgrupada.includes('Saldo')) {
+            updates.saldoCobrado = 0;
+            updates.sena = r.senaOriginal || r.sena || 0;
+            updates.metodoPagoSaldo = '';
+        }
+        if (descAgrupada.includes('Repuesto')) {
+            updates.costoRepuesto = 0;
+        }
+
+        db.ref(nodoActualizar).child(idOrden).update(updates).then(() => {
+            Object.assign(r, updates);
+            ocultarLoader();
+            showToast("Movimientos Financieros Anulados", "#e53e3e");
+            cargarDatosContabilidad();
+        });
+    }
+
+    function exportarExcel() {
+        if (isClientMode) return;
+        const mesObj = document.getElementById('selectMes');
+        const diaObj = document.getElementById('inputDia');
+        const mesFiltro = mesObj ? mesObj.options[mesObj.selectedIndex].text : "Mensual";
+        const diaFiltro = diaObj ? diaObj.value : "";
+        let archivoNombre = `Contabilidad_${diaFiltro || mesFiltro}.csv`;
+
+        const m = mesObj ? mesObj.value : mesActual;
+        const d = diaFiltro;
+
+        let targetMonthStr = "", targetYearStr = "";
+        if (d) {
+            let dObj = new Date(d + 'T12:00:00');
+            targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
+            targetYearStr = String(dObj.getFullYear());
+        } else {
+            targetMonthStr = String(parseInt(m) + 1).padStart(2, '0');
+            targetYearStr = String(new Date().getFullYear());
+        }
+
+        const mapaOrdenes = {};
+
+        const coincideFecha = (fechaStr) => {
+            if (!fechaStr) return false;
+            let p = fechaStr.split(',')[0].trim().split('/');
+            if (p.length !== 3) return false;
+            if (d) {
+                let df = d.split('-');
+                return (p[0].padStart(2,'0') === df[2] && p[1].padStart(2,'0') === df[1] && p[2] === df[0]);
+            }
+            return (p[1].padStart(2,'0') === targetMonthStr && p[2] === targetYearStr);
+        };
+
+        let todasLasOrdenes = [...registros, ...registrosArchivados];
+
+        todasLasOrdenes.forEach(r => {
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+            let datePart = r.fecha ? r.fecha.split(',')[0].trim() : "";
+            let horaIngreso = r.fecha && r.fecha.split(',')[1] ? r.fecha.split(',')[1].trim() : '';
+            let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            let costoRep = parseFloat(r.costoRepuesto) || 0;
+
+            let fechaEntrega = '', horaEntrega = '', cobroSaldo = 0, metodoSaldo = '';
+            if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
+                let ent = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
+                if (ent) {
+                    fechaEntrega = ent.fecha.split(',')[0].trim();
+                    horaEntrega = ent.fecha.split(',')[1] ? ent.fecha.split(',')[1].trim() : '';
+                    cobroSaldo = parseFloat(r.saldoCobrado) || 0;
+                    metodoSaldo = r.metodoPagoSaldo || 'Efectivo';
+                }
+            }
+
+            const conicideIngreso = coincideFecha(r.fecha);
+            const coincidesaldo = fechaEntrega ? coincideFecha(fechaEntrega + ', ' + horaEntrega) : false;
+
+            if (!conicideIngreso && !coincidesaldo) return;
+
+            if (!mapaOrdenes[r.id]) {
+                mapaOrdenes[r.id] = {
+                    orden: r.orden,
+                    cliente: r.esVentaRapida ? equipoCompleto : (r.cliente || '-'),
+                    equipo: r.esVentaRapida ? '-' : equipoCompleto,
+                    fechaIngreso: datePart,
+                    horaIngreso: horaIngreso,
+                    fechaEntrega: '',
+                    conceptos: [],
+                    metodos: new Set(),
+                    totalCobrado: 0,
+                    costoRepuesto: 0
+                };
+            }
+
+            const entrada = mapaOrdenes[r.id];
+
+            if (conicideIngreso) {
+                if (r.esVentaRapida) {
+                    let pActual = parseFloat(r.precio) || 0;
+                    entrada.conceptos.push('Venta Directa');
+                    if (r.metodoPagoSena) entrada.metodos.add(r.metodoPagoSena);
+                    entrada.totalCobrado += pActual;
+                } else {
+                    if (senaOrig > 0) {
+                        entrada.conceptos.push('Seña');
+                        if (r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') entrada.metodos.add(r.metodoPagoSena);
+                        entrada.totalCobrado += senaOrig;
+                    }
+                    if (costoRep > 0) {
+                        entrada.costoRepuesto += costoRep;
+                    }
+                }
+            }
+
+            if (coincidesaldo && cobroSaldo > 0) {
+                entrada.conceptos.push('Saldo');
+                if (metodoSaldo) entrada.metodos.add(metodoSaldo);
+                entrada.totalCobrado += cobroSaldo;
+                entrada.fechaEntrega = fechaEntrega;
+            }
+        });
+
+        if (Object.keys(mapaOrdenes).length === 0) {
+            showToast("No hay movimientos para exportar", "#f1c40f");
+            return;
+        }
+
+        let filas = [["Orden","Cliente","Equipo","Fecha Ingreso","Fecha Entrega","Concepto","Metodo de Pago","Total Cobrado","Costo Repuesto","Ganancia Neta"]];
+
+        Object.values(mapaOrdenes).forEach(e => {
+            let conceptoStr = [...new Set(e.conceptos)].join(' + ') || '-';
+            let metodoStr = e.metodos.size > 0 ? [...e.metodos].join(' / ') : 'Efectivo';
+            let gananciaNeta = e.totalCobrado - e.costoRepuesto;
+            filas.push([
+                e.orden,
+                e.cliente,
+                e.equipo,
+                e.fechaIngreso,
+                e.fechaEntrega || '-',
+                conceptoStr,
+                metodoStr,
+                e.totalCobrado,
+                e.costoRepuesto > 0 ? -e.costoRepuesto : 0,
+                gananciaNeta
+            ]);
+        });
+
+        const csvLines = filas.map(fila =>
+            fila.map(cel => `"${String(cel).replace(/"/g, '""')}"`).join(',')
+        ).join('\r\n');
+
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvLines], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.style.display = 'none';
+        a.download = archivoNombre;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { try { a.remove(); URL.revokeObjectURL(url); } catch(e) {} }, 2000);
+        showToast("✅ EXCEL DESCARGADO", "#2ecc71");
+    }
+
+    // ====== PANEL DE ADMIN: USUARIOS, LICENCIAS Y BACKUP ======
+    let listadoUsuarios = [];
+    
+    function crearLicencia() {
+        const wa = document.getElementById('new-user-wa').value.replace(/\D/g, '');
+        if(wa.length < 10) { showToast("Número inválido", "#e53e3e"); return; }
+        
+        mostrarLoader("Creando licencia...");
+        
+        const pwd = Math.random().toString(36).slice(-8);
+        const emailFalso = wa + '@mitallerweb.com';
+        
+        secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, pwd)
+        .then(() => {
+            const pathUsuario = 'usuarios_registrados/' + wa;
+            db.ref(pathUsuario).set({
+                whatsapp: wa,
+                fechaAlta: new Date().toLocaleString('es-AR'),
+                estado: "activo",
+                tipoLicencia: "permanente",
+                tokenSesion: ""
+            }).then(() => {
+                secondaryApp.auth().signOut();
+                
+                let msj = `¡Hola! Tu sistema de gestión Mi Taller Web ya está activado.\n\n🌐 *Enlace:* ${window.location.href}\n👤 *Usuario:* ${wa}\n🔑 *Clave:* ${pwd}\n\nIngresá ahora para cambiar tu clave y cargar tu logo.`;
+                window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
+                
+                document.getElementById('new-user-wa').value = "";
+                ocultarLoader();
+            });
+        }).catch(err => {
+            ocultarLoader();
+            showToast("Error: El número ya tiene licencia o hubo un fallo.", "#e53e3e");
+        });
+    }
+
+    // ====== PANEL ADMIN: SOLICITUDES DE RESET DE CLAVE ======
+    function cargarSolicitudesReset() {
+        db.ref('solicitudes_reset').on('value', snap => {
+            const data = snap.val();
+            const panel = document.getElementById('resetRequestsPanel');
+            const body = document.getElementById('resetRequestsBody');
+            const badge = document.getElementById('resetBadge');
+            if (!panel || !body) return;
+
+            body.innerHTML = '';
+            if (!data) { panel.style.display = 'none'; return; }
+
+            const pendientes = Object.entries(data).filter(([k, v]) => v.estado === 'pendiente');
+            badge.innerText = pendientes.length;
+            panel.style.display = pendientes.length > 0 ? 'block' : 'none';
+
+            pendientes.forEach(([wa, sol]) => {
+                body.innerHTML += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; background:white; border-radius:8px; padding:10px 14px; margin-bottom:8px; border:1px solid #fed7aa; gap:10px; flex-wrap:wrap;">
+                        <div>
+                            <b style="font-size:14px;">📱 ${wa}</b>
+                            <div style="font-size:11px; color:#94a3b8;">${sol.fecha || ''}</div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button onclick="resetearClaveUsuario('${wa}')" style="background:#3498db; color:white; border:none; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:bold; cursor:pointer;">🔑 Enviar Clave Temporal</button>
+                            <button onclick="descartarSolicitudReset('${wa}')" style="background:#f1f5f9; color:#64748b; border:none; padding:7px 12px; border-radius:7px; font-size:12px; cursor:pointer;">✖ Descartar</button>
+                        </div>
+                    </div>`;
+            });
+        });
+    }
+
+    function resetearClaveUsuario(wa) {
+        const nuevaClave = Math.random().toString(36).slice(-8);
+        mostrarLoader("Generando clave temporal...");
+
+        secondaryApp.auth().signInWithEmailAndPassword(wa + '@mitallerweb.com', '____invalidpass____')
+            .catch(() => {}) 
+            .finally(() => {
+                const msj = `¡Hola! Tu nueva clave temporal para Mi Taller Web es:\n\n🔑 *Clave:* ${nuevaClave}\n\n👤 *Usuario:* ${wa}\n\nIngresá con esta clave y luego cambiala desde tu perfil (👤 Mi Perfil → Nueva Contraseña).`;
+                
+                db.ref('solicitudes_reset/' + wa).update({ estado: 'atendido', claveEnviada: true }).then(() => {
+                    ocultarLoader();
+                    window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
+                    showToast(`✅ Abrí WhatsApp para enviarle la clave a ${wa}`, "#2ecc71");
+                });
+            });
+    }
+
+    function descartarSolicitudReset(wa) {
+        db.ref('solicitudes_reset/' + wa).update({ estado: 'descartado' }).then(() => {
+            showToast("Solicitud descartada", "#64748b");
+        });
+    }
+
+    function listarUsuarios() {
+        if(!isUserAdmin) return;
+        const body = document.getElementById('userTableBody');
+        const bus = document.getElementById('search-user').value.toLowerCase();
+        
+        db.ref('usuarios_registrados').on('value', snap => {
+            body.innerHTML = "";
+            listadoUsuarios = [];
+            if(snap.val()) {
+                listadoUsuarios = Object.keys(snap.val()).map(k => ({id:k, ...snap.val()[k]}));
+            }
+            
+            const AHORA = Date.now();
+            
+            listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus)).forEach(u => {
+                const tipoLic = u.tipoLicencia || 'permanente';
+                const expiracion = u.fechaExpiracion || null;
+                const diasRestantes = expiracion ? Math.ceil((expiracion - AHORA) / (1000*60*60*24)) : null;
+                const estaExpirada = tipoLic === 'prueba' && diasRestantes !== null && diasRestantes <= 0;
+                const estaSuspendida = u.estado === 'suspendido';
+
+                let badgeHtml = '';
+                if (estaSuspendida) {
+                    badgeHtml = `<span class="badge-licencia lic-suspendida">⏸️ SUSPENDIDA</span>`;
+                } else if (tipoLic === 'permanente') {
+                    badgeHtml = `<span class="badge-licencia lic-permanente">♾️ PERMANENTE</span>`;
+                } else if (estaExpirada) {
+                    badgeHtml = `<span class="badge-licencia lic-expirada">❌ VENCIDA</span>`;
+                } else {
+                    badgeHtml = `<span class="badge-licencia lic-prueba">🧪 PRUEBA</span>`;
+                }
+
+                let venceHtml = '';
+                if (tipoLic === 'prueba' && expiracion) {
+                    const fechaExp = new Date(expiracion).toLocaleDateString('es-AR');
+                    if (estaExpirada) {
+                        venceHtml = `<div style="font-size:11px; color:#dc2626; font-weight:700;">Venció el ${fechaExp}</div>`;
+                    } else {
+                        const claseD = diasRestantes <= 5 ? 'dias-criticos' : 'dias-restantes';
+                        venceHtml = `<div style="font-size:11px;">${fechaExp}</div><div class="${claseD}">${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}</div>`;
+                    }
+                } else if (tipoLic === 'permanente') {
+                    venceHtml = `<div style="font-size:11px; color:#065f46; font-weight:600;">Sin vencimiento</div>`;
+                    if (u.fechaAlta) venceHtml += `<div style="font-size:10px; color:#94a3b8;">Alta: ${u.fechaAlta.split(',')[0]}</div>`;
+                } else {
+                    venceHtml = u.fechaAlta ? `<div style="font-size:11px; color:#64748b;">${u.fechaAlta.split(',')[0]}</div>` : '-';
+                }
+
+                const btnSuspender = u.estado !== 'suspendido'
+                    ? `<button onclick="openSuspendModal('${u.id}')" style="background:#f1c40f; color:#856404; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">⏸️ Suspender</button>`
+                    : `<button onclick="reactivarLicencia('${u.id}')" style="background:#2ecc71; color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">▶️ Reactivar</button>`;
+
+                const btnPermanente = (!estaSuspendida)
+                    ? `<button onclick="abrirLicenciaModal('${u.id}')" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">🔑 Licencia</button>`
+                    : '';
+
+                body.innerHTML += `
+                    <tr>
+                        <td><b>${u.whatsapp || u.id}</b>${u.authEmail ? `<div style="font-size:10px;color:#94a3b8;">${u.authEmail}</div>` : ''}</td>
+                        <td>${badgeHtml}</td>
+                        <td>${venceHtml}</td>
+                        <td class="action-btns" style="flex-wrap:wrap; gap:4px;">
+                            ${btnSuspender}
+                            ${btnPermanente}
+                            <button onclick="openDeleteLicenseModal('${u.id}')" style="background:var(--danger); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">❌ Borrar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if (listadoUsuarios.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No hay usuarios registrados.</td></tr>`;
+            }
+        });
+    }
+
+    // ====== MODAL GESTIÓN DE LICENCIA (ADMIN) ======
+    let _licWaActual = null;
+    let _licTipoActual = 'prueba';
+
+    function abrirLicenciaModal(wa) {
+        _licWaActual = wa;
+        db.ref('usuarios_registrados/' + wa).once('value', snap => {
+            const d = snap.val() || {};
+            _licTipoActual = d.tipoLicencia || 'permanente';
+
+            document.getElementById('licModalWa').innerText = '📱 ' + wa;
+            seleccionarTipoLic(_licTipoActual);
+
+            if (d.fechaExpiracion) {
+                const fecha = new Date(d.fechaExpiracion);
+                const yyyy = fecha.getFullYear();
+                const mm   = String(fecha.getMonth() + 1).padStart(2, '0');
+                const dd   = String(fecha.getDate()).padStart(2, '0');
+                document.getElementById('licFechaExp').value = `${yyyy}-${mm}-${dd}`;
+            } else {
+                const d30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                document.getElementById('licFechaExp').value = d30.toISOString().split('T')[0];
+            }
+
+            document.getElementById('licenciaModal').style.display = 'flex';
+        });
+    }
+
+    function cerrarLicenciaModal() {
+        document.getElementById('licenciaModal').style.display = 'none';
+        _licWaActual = null;
+    }
+
+    function seleccionarTipoLic(tipo) {
+        _licTipoActual = tipo;
+        const btnP = document.getElementById('btnLicPrueba');
+        const btnPerm = document.getElementById('btnLicPermanente');
+        const fechaCont = document.getElementById('licFechaContainer');
+
+        if (tipo === 'prueba') {
+            btnP.style.borderColor    = '#f59e0b';
+            btnP.style.boxShadow      = '0 0 0 3px rgba(245,158,11,0.2)';
+            btnPerm.style.borderColor = '#e2e8f0';
+            btnPerm.style.boxShadow   = 'none';
+            fechaCont.style.display   = 'block';
+        } else {
+            btnPerm.style.borderColor = '#10b981';
+            btnPerm.style.boxShadow   = '0 0 0 3px rgba(16,185,129,0.2)';
+            btnP.style.borderColor    = '#e2e8f0';
+            btnP.style.boxShadow      = 'none';
+            fechaCont.style.display   = 'none';
+        }
+    }
+
+    function sumarDiasLic(dias) {
+        const input = document.getElementById('licFechaExp');
+        const base  = input.value ? new Date(input.value + 'T12:00:00') : new Date();
+        base.setDate(base.getDate() + dias);
+        input.value = base.toISOString().split('T')[0];
+    }
+
+    function guardarLicencia() {
+        if (!_licWaActual) return;
+        mostrarLoader('Guardando licencia...');
+
+        const updates = { tipoLicencia: _licTipoActual, estado: 'activo' };
+
+        if (_licTipoActual === 'prueba') {
+            const fechaStr = document.getElementById('licFechaExp').value;
+            if (!fechaStr) { ocultarLoader(); showToast('Elegí una fecha de vencimiento', '#f1c40f'); return; }
+            updates.fechaExpiracion = new Date(fechaStr + 'T23:59:59').getTime();
+        } else {
+            updates.fechaExpiracion = null;
+        }
+
+        db.ref('usuarios_registrados/' + _licWaActual).update(updates)
+            .then(() => {
+                ocultarLoader();
+                cerrarLicenciaModal();
+                const label = _licTipoActual === 'permanente' ? '♾️ PERMANENTE' : '🧪 PRUEBA';
+                showToast('✅ Licencia actualizada: ' + label, '#2ecc71');
+            })
+            .catch(err => {
+                ocultarLoader();
+                showToast('❌ Error: ' + err.message, '#e53e3e');
+            });
+    }
+
+    function reactivarLicencia(wa) {
+        db.ref('usuarios_registrados/' + wa).update({ estado: 'activo' }).then(() => { showToast("Licencia reactivada", "#2ecc71"); });
+    }
+
+    function openSuspendModal(wa) { idParaSuspender = wa; document.getElementById('suspendModal').style.display='flex'; }
+    function closeSuspendModal() { document.getElementById('suspendModal').style.display='none'; }
+    
+    document.getElementById('confirmSuspendBtn').onclick = () => {
+        if(!idParaSuspender) return;
+        mostrarLoader("Suspendiendo...");
+        
+        db.ref('usuarios_registrados/' + idParaSuspender).update({ 
+            estado: 'suspendido',
+            fechaSuspension: new Date().getTime()
+        }).then(() => {
+            closeSuspendModal();
+            ocultarLoader();
+            showToast("Licencia Suspendida", "#e53e3e");
+        });
+    };
+
+    // ====== CORRECCIÓN: BORRADO DEFINITIVO DE USUARIO ======
+    function openDeleteLicenseModal(wa) { idParaEliminarLicencia = wa; document.getElementById('deleteLicenseModal').style.display='flex'; }
+    function closeDeleteLicenseModal() { document.getElementById('deleteLicenseModal').style.display='none'; }
+    
+    document.getElementById('confirmDeleteLicenseBtn').onclick = () => {
+        if(!idParaEliminarLicencia) return;
+        mostrarLoader("Eliminando todos los datos...");
+        
+        const wa = idParaEliminarLicencia;
+        
+        Promise.all([
+            db.ref('reparaciones_usuarios/' + wa).remove(),
+            db.ref('reparaciones_archivadas_usuarios/' + wa).remove(),
+            db.ref('stock_usuarios/' + wa).remove(),
+            db.ref('solicitudes_registro/' + wa).remove(),
+            db.ref('solicitudes_reset/' + wa).remove(),
+            db.ref('usuarios_registrados/' + wa).remove()
+        ]).then(() => {
+            closeDeleteLicenseModal();
+            ocultarLoader();
+            showToast("BASE DE DATOS BORRADA ❌", "#e53e3e");
+        }).catch(err => {
+            ocultarLoader();
+            alert("Error al borrar: " + err.message);
+        });
+    };
+
+    // ====== CORRECCIÓN: AUTO-BORRADO A LOS 7 DÍAS ======
+    function limpiarLicenciasExpiradas() {
+        const AHORA = new Date().getTime();
+        const DIAS_7_EN_MS = 7 * 24 * 60 * 60 * 1000;
+        
+        db.ref('usuarios_registrados').once('value', snap => {
+            const users = snap.val();
+            if(users) {
+                Object.keys(users).forEach(wa => {
+                    const u = users[wa];
+                    if(u.estado === 'suspendido' && u.fechaSuspension) {
+                        if (AHORA - u.fechaSuspension > DIAS_7_EN_MS) {
+                            db.ref('reparaciones_usuarios/' + wa).remove();
+                            db.ref('reparaciones_archivadas_usuarios/' + wa).remove();
+                            db.ref('stock_usuarios/' + wa).remove(); 
+                            db.ref('solicitudes_registro/' + wa).remove();
+                            db.ref('usuarios_registrados/' + wa).remove();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    function ejecutarBackup(esCompleto) {
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser || !fbUser.email || fbUser.email.split('@')[0].toLowerCase() !== 'admin') {
+            alert("❌ Tu sesión de Admin expiró o no está activa.\nCerrá sesión, volvé a ingresar con Admin y probá de nuevo.");
+            showToast("Sesión inválida — volvé a loguearte", "#e53e3e");
+            return;
+        }
+
+        const esCelular = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (esCompleto && esCelular) {
+            if(!confirm("⚠️ ESTÁS EN UN CELULAR. El Backup Total empaqueta todas las fotos y es muy pesado. Puede dar un error crítico y cerrar la pestaña.\n\n¿Querés intentar descargarlo igual? (Te recomendamos usar el LIGERO)")) {
+                return;
+            }
+        }
+
+        mostrarLoader(esCompleto ? "Generando Backup TOTAL..." : "Preparando Backup LIGERO sin fotos...");
+
+        fbUser.getIdToken(true).then(() => {
+            return Promise.all([
+                db.ref('reparaciones').once('value'),
+                db.ref('reparaciones_archivadas').once('value'),
+                db.ref('reparaciones_usuarios').once('value'),
+                db.ref('reparaciones_archivadas_usuarios').once('value'),
+                db.ref('stock').once('value'),
+                db.ref('stock_usuarios').once('value'),
+                db.ref('usuarios_registrados').once('value'),
+                db.ref('configuracion/admin').once('value')
+            ]);
+        }).then(snapshots => {
+            try {
+                const backupData = {
+                    reparaciones: snapshots[0].val() || null,
+                    reparaciones_archivadas: snapshots[1].val() || null,
+                    reparaciones_usuarios: snapshots[2].val() || null,
+                    reparaciones_archivadas_usuarios: snapshots[3].val() || null,
+                    stock: snapshots[4].val() || null,
+                    stock_usuarios: snapshots[5].val() || null,
+                    usuarios_registrados: snapshots[6].val() || null,
+                    configuracion: snapshots[7].val() ? { admin: snapshots[7].val() } : null
+                };
+
+                Object.keys(backupData).forEach(key => {
+                    if (backupData[key] === null) delete backupData[key];
+                });
+
+                if (Object.keys(backupData).length === 0) {
+                    ocultarLoader();
+                    showToast("⚠️ Base de datos vacía, no hay nada que respaldar", "#e53e3e");
+                    return;
+                }
+
+                if (!esCompleto) {
+                    const limpiarFotos = (nodo) => {
+                        if (nodo && typeof nodo === 'object') {
+                            Object.keys(nodo).forEach(id => {
+                                if (nodo[id] && nodo[id].fotos) delete nodo[id].fotos;
+                            });
+                        }
+                    };
+                    limpiarFotos(backupData.reparaciones);
+                    limpiarFotos(backupData.reparaciones_archivadas);
+                    if (backupData.reparaciones_usuarios) Object.keys(backupData.reparaciones_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_usuarios[wa]));
+                    if (backupData.reparaciones_archivadas_usuarios) Object.keys(backupData.reparaciones_archivadas_usuarios).forEach(wa => limpiarFotos(backupData.reparaciones_archivadas_usuarios[wa]));
+                }
+
+                const jsonString = JSON.stringify(backupData);
+                const blob = new Blob([jsonString], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.style.display = 'none';
+                a.download = `Backup_${esCompleto ? "TOTAL" : "LIGERO"}_MiTallerWeb_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+
+                setTimeout(() => {
+                    try { a.remove(); URL.revokeObjectURL(url); } catch(e) {}
+                }, 2000);
+
+                ocultarLoader();
+                showToast("¡BACKUP DESCARGADO! 💾", "#2ecc71");
+
+            } catch(errInterno) {
+                ocultarLoader();
+                console.error("Error interno backup:", errInterno);
+                alert("❌ Error al generar el archivo:\n" + (errInterno.message || errInterno) + "\n\nSi el problema persiste, intentá con el Backup LIGERO (sin fotos).");
+                showToast("Error al generar el backup", "#e53e3e");
+            }
+        }).catch(err => {
+            ocultarLoader();
+            console.error("Error Firebase backup:", err);
+            const msg = err.message || String(err);
+            if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+                alert("❌ Error de permisos.\n\nVerificá que:\n1. Las reglas de Firebase estén actualizadas\n2. Tu usuario sea Admin (email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c2a3a6afabac82afabb6a3aeaea7b0b5a7a0eca1adaf">[email&#160;protected]</a>)\n\nEmail actual: " + (firebase.auth().currentUser ? firebase.auth().currentUser.email : 'no logueado'));
+            } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
+                alert("❌ Sin conexión a internet.\nVerificá tu red e intentá de nuevo.");
+            } else {
+                alert("❌ Error al leer la base de datos:\n" + msg);
+            }
+            showToast("Error en la descarga", "#e53e3e");
+        });
+    }
+
+    function restaurarBackup(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser || fbUser.email.split('@')[0].toLowerCase() !== 'admin') {
+            alert("❌ Solo el Admin puede restaurar un backup.");
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            let data;
+            try {
+                data = JSON.parse(e.target.result);
+            } catch(err) {
+                alert("❌ El archivo no es un JSON válido.\nVerificá que sea un backup generado por Mi Taller Web.");
+                input.value = '';
+                return;
+            }
+
+            const nodosEsperados = ['reparaciones', 'reparaciones_archivadas', 'reparaciones_usuarios', 
+                                    'reparaciones_archivadas_usuarios', 'stock', 'stock_usuarios', 
+                                    'usuarios_registrados', 'configuracion'];
+            const tieneAlguno = nodosEsperados.some(n => data[n]);
+            if (!tieneAlguno) {
+                alert("❌ El archivo no parece ser un backup válido de Mi Taller Web.");
+                input.value = '';
+                return;
+            }
+
+            const confirmacion = confirm(
+                "⚠️ ATENCIÓN — ACCIÓN IRREVERSIBLE\n\n" +
+                "Esto SOBRESCRIBIRÁ todos los datos actuales con los del backup.\n\n" +
+                "Archivo: " + file.name + "\n\n" +
+                "¿Estás completamente seguro?"
+            );
+            if (!confirmacion) { input.value = ''; return; }
+
+            const dobleConfirm = confirm("🔴 ÚLTIMA CONFIRMACIÓN\n\nTodos los datos actuales serán reemplazados.\n¿Continuar con la restauración?");
+            if (!dobleConfirm) { input.value = ''; return; }
+
+            mostrarLoader("Restaurando backup... no cierres la app");
+
+            fbUser.getIdToken(true).then(() => {
+                const promesas = [];
+
+                if (data.reparaciones) promesas.push(db.ref('reparaciones').set(data.reparaciones));
+                if (data.reparaciones_archivadas) promesas.push(db.ref('reparaciones_archivadas').set(data.reparaciones_archivadas));
+                if (data.reparaciones_usuarios) promesas.push(db.ref('reparaciones_usuarios').set(data.reparaciones_usuarios));
+                if (data.reparaciones_archivadas_usuarios) promesas.push(db.ref('reparaciones_archivadas_usuarios').set(data.reparaciones_archivadas_usuarios));
+                if (data.stock) promesas.push(db.ref('stock').set(data.stock));
+                if (data.stock_usuarios) promesas.push(db.ref('stock_usuarios').set(data.stock_usuarios));
+                if (data.usuarios_registrados) promesas.push(db.ref('usuarios_registrados').set(data.usuarios_registrados));
+                if (data.configuracion) promesas.push(db.ref('configuracion').set(data.configuracion));
+
+                return Promise.all(promesas);
+            }).then(() => {
+                ocultarLoader();
+                input.value = '';
+                alert("✅ Backup restaurado con éxito.\nLa app se va a recargar para aplicar los cambios.");
+                window.location.reload();
+            }).catch(err => {
+                ocultarLoader();
+                input.value = '';
+                alert("❌ Error al restaurar:\n" + (err.message || err));
+            });
+        };
+        reader.readAsText(file);
+    }
+
+    // ====== HISTORIAL DE CLIENTE (VISTA RÁPIDA) ======
+    function abrirHistorialCliente(nombre, tel) {
+        if(isClientMode) return;
+        
+        document.getElementById('hcNombre').innerText = nombre;
+        document.getElementById('hcTel').innerText = `📱 ${tel || 'Sin teléfono'}`;
+        
+        const body = document.getElementById('hcBody');
+        body.innerHTML = '';
+        
+        let todasLasOrdenes = [...registros, ...registrosArchivados];
+        let filtradas = todasLasOrdenes.filter(r => (r.cliente === nombre || r.tel === tel) && !r.esVentaRapida);
+        
+        if(filtradas.length === 0) {
+            body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No hay historial para este cliente.</td></tr>`;
+            document.getElementById('hcTotalDiv').innerText = '';
+            document.getElementById('modalHistorialCliente').style.display = 'flex';
+            return;
+        }
+        
+        filtradas.sort((a,b) => {
+            const parseD = (str) => {
+                if(!str) return 0;
+                let p = str.split(',');
+                if(!p[0]) return 0;
+                let f = p[0].trim().split('/');
+                if(f.length !== 3) return 0;
+                return new Date(f[2], f[1]-1, f[0]).getTime();
+            };
+            return parseD(b.fecha) - parseD(a.fecha);
+        });
+        
+        let totalInvertido = 0;
+        
+        filtradas.forEach(r => {
+            let precio = parseFloat(r.precio) || 0;
+            totalInvertido += precio;
+            let badgeStatus = `<span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}">${r.estado}</span>`;
+            
+            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+
+            body.innerHTML += `
+                <tr>
+                    <td style="font-size:12px;">${r.fecha ? r.fecha.split(',')[0] : '-'}</td>
+                    <td><b>${escaparHTML(equipoCompleto)}</b></td>
+                    <td style="font-size:12px;">${escaparHTML(r.falla || '-')}</td>
+                    <td>${badgeStatus}</td>
+                    <td style="font-weight:bold;">${fmt.format(precio)}</td>
+                </tr>
+            `;
+        });
+        
+      document.getElementById('hcTotalDiv').innerText = `💰 Inversión Total: ${fmt.format(totalInvertido)}`;
+        document.getElementById('modalHistorialCliente').style.display = 'flex';
+    }
+
+    // ====== MANTENIMIENTO: LIMPIEZA DE FOTOS ======
+    function limpiarFotosAntiguas(forzar = false) {
+        if (!isUserAdmin) return;
+        
+        const pathUltima = 'configuracion/admin/ultimaLimpiezaFotos';
+        db.ref(pathUltima).once('value', snap => {
+            const ultimaLimpieza = snap.val() || 0;
+            const HOY_MS = new Date().getTime();
+            const DIAS_7_MS = 7 * 24 * 60 * 60 * 1000;
+            
+            if (forzar || HOY_MS - ultimaLimpieza > DIAS_7_MS) {
+                if (forzar) mostrarLoader("Limpiando fotos globales...");
+                
+                const pathsLimpiar = ['reparaciones', 'reparaciones_archivadas', 'reparaciones_usuarios', 'reparaciones_archivadas_usuarios'];
+                let promesas = [];
+
+                pathsLimpiar.forEach(pathRaiz => {
+                    db.ref(pathRaiz).once('value', snapRaiz => {
+                        const datos = snapRaiz.val();
+                        if (datos) {
+                            if (pathRaiz.includes('usuarios')) {
+                                Object.keys(datos).forEach(wa => {
+                                    Object.keys(datos[wa]).forEach(ordenId => {
+                                        promesas.push(evaluarYBorrarFoto(pathRaiz + '/' + wa + '/' + ordenId, datos[wa][ordenId], HOY_MS));
+                                    });
+                                });
+                            } else {
+                                Object.keys(datos).forEach(ordenId => {
+                                    promesas.push(evaluarYBorrarFoto(pathRaiz + '/' + ordenId, datos[ordenId], HOY_MS));
+                                });
+                            }
+                        }
+                    });
+                });
+
+                Promise.all(promesas).then(() => {
+                    db.ref(pathUltima).set(HOY_MS);
+                    if (forzar) {
+                        ocultarLoader();
+                        showToast("LIMPIEZA DE FOTOS FINALIZADA", "#2ecc71");
+                    }
+                });
+            }
+        });
+    }
+
+    function evaluarYBorrarFoto(rutaAbsoluta, registro, HOY_MS) {
+        return new Promise((resolve) => {
+            if (registro.fotos && registro.fotos.length > 0) {
+                let fechaIngreso = parseFechaAR(registro.fecha);
+                let diffDias = (HOY_MS - fechaIngreso.getTime()) / (1000 * 60 * 60 * 24);
+                
+                if (diffDias > 45) {
+                    db.ref(rutaAbsoluta).child('fotos').remove().then(() => resolve());
+                } else {
+                    resolve();
