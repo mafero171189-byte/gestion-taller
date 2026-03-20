@@ -22,6 +22,7 @@
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -449,6 +450,75 @@
         body.dark-mode .revertir-modal-header p  { color: #9ca3af; }
         body.dark-mode .revertir-modal-desc  { background: #1f2937; border-color: #374151; color: #d1d5db; }
         body.dark-mode .revertir-divider     { background: #1f2937; }
+
+        /* === SELECTOR CÓDIGO DE PAÍS PERSONALIZADO === */
+        .phone-row {
+            display: flex; gap: 0; margin: 6px 0; border: 1.5px solid #e5e7eb;
+            border-radius: 10px; background: #f9fafb;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            align-items: stretch;
+        }
+        .phone-row:focus-within {
+            border-color: #1e4d8c;
+            box-shadow: 0 0 0 4px rgba(45,58,140,0.12);
+            background: #fff;
+        }
+        .phone-row > input[type="tel"],
+        .phone-row > input[type="text"] {
+            border: none !important; outline: none !important; box-shadow: none !important;
+            background: transparent !important; flex: 1 !important;
+            padding: 13px 14px !important; width: auto !important;
+            font-size: 15px !important; font-family: 'Outfit', sans-serif !important; font-weight: 500 !important;
+            color: #111827 !important; min-width: 0 !important; margin: 0 !important;
+            border-radius: 0 9px 9px 0 !important;
+        }
+        /* Botón bandera */
+        .dial-btn {
+            display: flex; align-items: center; gap: 5px; padding: 0 10px 0 12px;
+            cursor: pointer; flex-shrink: 0; border-right: 1.5px solid #e5e7eb;
+            border-radius: 9px 0 0 9px; background: transparent;
+            font-size: 14px; font-weight: 700; color: #374151;
+            white-space: nowrap; user-select: none; font-family: 'Outfit', sans-serif;
+            min-width: 85px; -webkit-tap-highlight-color: transparent;
+        }
+        .dial-btn:hover, .dial-btn:active { background: rgba(0,0,0,0.05); }
+        .dial-btn .arrow { font-size: 9px; opacity: 0.45; }
+        /* Dropdown lista */
+        .dial-dropdown {
+            display: none; position: fixed; z-index: 99999;
+            background: #fff; border: 1.5px solid #e0e0e0;
+            border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.22);
+            width: 250px; overflow: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        .dial-dropdown.open { display: block; }
+        .dial-search {
+            display: block; width: 100%; box-sizing: border-box;
+            padding: 11px 14px; border: none; border-bottom: 1.5px solid #e5e7eb;
+            font-size: 14px; font-family: 'Outfit', sans-serif; outline: none;
+            background: #f9fafb; color: #111827;
+        }
+        .dial-list { max-height: 230px; overflow-y: auto; }
+        .dial-option {
+            padding: 11px 14px; cursor: pointer; font-size: 14px;
+            font-family: 'Outfit', sans-serif; display: flex; align-items: center;
+            gap: 10px; color: #111827;
+        }
+        .dial-option:hover, .dial-option.active { background: #eef2ff; color: #1e4d8c; }
+        .dial-code-num { color: #9ca3af; font-size: 12px; margin-left: auto; font-weight: 600; }
+        .dial-sep { padding: 5px 14px; font-size: 10px; color: #9ca3af; background: #f9fafb; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; border-top: 1px solid #f3f4f6; }
+        /* Dark mode */
+        body.dark-mode .phone-row { background: #1f2937; border-color: #374151; }
+        body.dark-mode .phone-row:focus-within { border-color: #3b82f6; background: #111827; }
+        body.dark-mode .phone-row > input[type="tel"],
+        body.dark-mode .phone-row > input[type="text"] { color: #f1f5f9 !important; }
+        body.dark-mode .dial-btn { color: #d1d5db; border-right-color: #374151; }
+        body.dark-mode .dial-dropdown { background: #1f2937; border-color: #374151; }
+        body.dark-mode .dial-search { background: #111827; color: #f1f5f9; border-bottom-color: #374151; }
+        body.dark-mode .dial-option { color: #f1f5f9; }
+        body.dark-mode .dial-option:hover, body.dark-mode .dial-option.active { background: #374151; color: #93c5fd; }
+        body.dark-mode .dial-code-num { color: #6b7280; }
+        body.dark-mode .dial-sep { background: #111827; color: #6b7280; border-color: #374151; }
     </style>
 </head>
 <body onload="iniciarSeguridad()">
@@ -522,7 +592,22 @@
         <h2>Mi Taller Web</h2>
         <p>Inicia sesión para continuar</p>
         
-        <input type="text" id="userIn" placeholder="Usuario / WhatsApp" autocomplete="off">
+        <div class="phone-row" id="phoneRowLogin">
+            <div class="dial-btn" id="dialBtnLogin" onclick="toggleDial('dropLogin',this)">
+                <span id="dialFlagLogin">🇦🇷</span>
+                <span id="dialCodeLogin">+54</span>
+                <span class="arrow">▼</span>
+            </div>
+            <div class="dial-dropdown" id="dropLogin"></div>
+            <input type="text" id="userIn" placeholder="Número de WhatsApp" autocomplete="off" inputmode="text"
+                oninput="
+                    var v=this.value.trim().toLowerCase();
+                    var row=document.getElementById('phoneRowLogin');
+                    var btn=document.getElementById('dialBtnLogin');
+                    if(v.startsWith('adm')||v.includes('@')){btn.style.display='none';}
+                    else{btn.style.display='';}
+                ">
+        </div>
         
         <div style="position: relative; width: 100%; margin: 8px 0;">
             <input type="password" id="passIn" placeholder="Contraseña" style="margin: 0; padding-right: 45px;">
@@ -552,7 +637,15 @@
         <h2>Crear Cuenta</h2>
         <p style="margin-bottom:18px;">30 días gratis · Sin tarjeta de crédito</p>
 
-        <input type="text" id="regWa" placeholder="WhatsApp con código de país (Ej: 5491112345678)" autocomplete="off" style="margin:6px 0;">
+        <div class="phone-row">
+            <div class="dial-btn" id="dialBtnReg" onclick="toggleDial('dropReg',this)">
+                <span id="dialFlagReg">🇦🇷</span>
+                <span id="dialCodeReg">+54</span>
+                <span class="arrow">▼</span>
+            </div>
+            <div class="dial-dropdown" id="dropReg"></div>
+            <input type="tel" inputmode="numeric" id="regWa" placeholder="Número sin código de país" autocomplete="off">
+        </div>
         <input type="email" id="regEmail" placeholder="Tu email (para recuperar tu clave)" autocomplete="off" style="margin:6px 0;">
 
         <div style="position:relative; width:100%; margin:6px 0;">
@@ -581,7 +674,15 @@
         <h2>Olvidé mi Clave</h2>
         <p>Ingresá tu WhatsApp y te enviamos un enlace de recuperación a tu email registrado.</p>
 
-        <input type="text" id="recoveryWa" placeholder="Tu WhatsApp (Ej: 5491112345678)" autocomplete="off" style="margin:8px 0;">
+        <div class="phone-row">
+            <div class="dial-btn" id="dialBtnRecovery" onclick="toggleDial('dropRecovery',this)">
+                <span id="dialFlagRecovery">🇦🇷</span>
+                <span id="dialCodeRecovery">+54</span>
+                <span class="arrow">▼</span>
+            </div>
+            <div class="dial-dropdown" id="dropRecovery"></div>
+            <input type="tel" inputmode="numeric" id="recoveryWa" placeholder="Tu número de WhatsApp" autocomplete="off">
+        </div>
 
         <button class="btn-login" style="background:linear-gradient(135deg,#8e44ad,#6c3483);" onclick="enviarRecuperacionClave()">📧 ENVIAR ENLACE DE RECUPERACIÓN</button>
         <p id="recoveryMsg" style="font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
@@ -2217,8 +2318,16 @@
         let isEmail = rawU.includes('@');
         let u = rawU;
         
-        if (!isEmail && u !== 'admin') {
-            u = u.replace(/\D/g, ''); 
+        if (u === 'admin') {
+            // admin no usa selector de país
+        } else if (!isEmail) {
+            if (window.getFullPhone) {
+                const fullNum = getFullPhone('dialBtnLogin', 'userIn');
+                u = fullNum.replace(/\D/g, '');
+                rawU = u;
+            } else {
+                u = u.replace(/\D/g, '');
+            }
         }
 
         const doLogin = (emailFinal) => {
@@ -2315,7 +2424,7 @@
 
     // ====== REGISTRO AUTOMÁTICO OPTIMIZADO ======
     function registrarUsuario() {
-        const wa      = document.getElementById('regWa').value.replace(/\D/g, '').trim();
+        let wa = (window.getFullPhone ? getFullPhone('dialBtnReg','regWa') : document.getElementById('regWa').value).replace(/\D/g,'').trim();
         const email   = document.getElementById('regEmail').value.trim().toLowerCase();
         const pass    = document.getElementById('regPass').value.trim();
         const pass2   = document.getElementById('regPass2').value.trim();
@@ -2380,7 +2489,7 @@
 
     // ====== RECUPERACIÓN DE CLAVE ======
     function enviarRecuperacionClave() {
-        const wa    = document.getElementById('recoveryWa').value.replace(/\D/g, '').trim();
+        let wa = (window.getFullPhone ? getFullPhone('dialBtnRecovery','recoveryWa') : document.getElementById('recoveryWa').value).replace(/\D/g,'').trim();
         const msgEl = document.getElementById('recoveryMsg');
         msgEl.style.display = 'none';
 
@@ -5396,5 +5505,131 @@
         </div>
     </div>
 </div>
+<!-- SELECTOR CÓDIGO DE PAÍS PERSONALIZADO -->
+<script>
+(function() {
+    const COUNTRIES = [
+        {f:'🇦🇷',c:'54',n:'Argentina'},{f:'🇧🇷',c:'55',n:'Brasil'},{f:'🇲🇽',c:'52',n:'México'},
+        {f:'🇨🇱',c:'56',n:'Chile'},{f:'🇨🇴',c:'57',n:'Colombia'},{f:'🇺🇾',c:'598',n:'Uruguay'},
+        {f:'🇵🇾',c:'595',n:'Paraguay'},{f:'🇻🇪',c:'58',n:'Venezuela'},{f:'🇵🇪',c:'51',n:'Perú'},
+        {f:'🇧🇴',c:'591',n:'Bolivia'},{f:'🇪🇨',c:'593',n:'Ecuador'},{f:'🇸🇻',c:'503',n:'El Salvador'},
+        {f:'🇬🇹',c:'502',n:'Guatemala'},{f:'🇭🇳',c:'504',n:'Honduras'},{f:'🇳🇮',c:'505',n:'Nicaragua'},
+        {f:'🇨🇷',c:'506',n:'Costa Rica'},{f:'🇵🇦',c:'507',n:'Panamá'},{f:'🇩🇴',c:'1809',n:'R. Dominicana'},
+        {f:'🇨🇺',c:'53',n:'Cuba'},{f:'🇵🇷',c:'1787',n:'Puerto Rico'},
+        null, // separador
+        {f:'🇺🇸',c:'1',n:'Estados Unidos'},{f:'🇨🇦',c:'1',n:'Canadá'},{f:'🇪🇸',c:'34',n:'España'},
+        {f:'🇵🇹',c:'351',n:'Portugal'},{f:'🇬🇧',c:'44',n:'Reino Unido'},{f:'🇩🇪',c:'49',n:'Alemania'},
+        {f:'🇫🇷',c:'33',n:'Francia'},{f:'🇮🇹',c:'39',n:'Italia'},{f:'🇨🇳',c:'86',n:'China'},
+        {f:'🇯🇵',c:'81',n:'Japón'},{f:'🇰🇷',c:'82',n:'Corea del Sur'},{f:'🇮🇳',c:'91',n:'India'},
+        {f:'🇷🇺',c:'7',n:'Rusia'},{f:'🇦🇺',c:'61',n:'Australia'},{f:'🇿🇦',c:'27',n:'Sudáfrica'},
+        {f:'🇳🇬',c:'234',n:'Nigeria'},{f:'🇲🇦',c:'212',n:'Marruecos'},{f:'🇸🇦',c:'966',n:'Arabia Saudita'},
+        {f:'🇦🇪',c:'971',n:'Emiratos Árabes'},{f:'🇮🇱',c:'972',n:'Israel'},{f:'🇹🇷',c:'90',n:'Turquía'},
+        {f:'🇵🇱',c:'48',n:'Polonia'},{f:'🇳🇱',c:'31',n:'Países Bajos'},{f:'🇧🇪',c:'32',n:'Bélgica'},
+        {f:'🇨🇭',c:'41',n:'Suiza'},{f:'🇸🇪',c:'46',n:'Suecia'},{f:'🇳🇴',c:'47',n:'Noruega'},
+    ];
+
+    // Estado por dropdown: { flagId, codeId, dropId }
+    const DIALS = [
+        { flagId:'dialFlagLogin',    codeId:'dialCodeLogin',    dropId:'dropLogin',    btnId:'dialBtnLogin' },
+        { flagId:'dialFlagReg',      codeId:'dialCodeReg',      dropId:'dropReg',      btnId:'dialBtnReg' },
+        { flagId:'dialFlagRecovery', codeId:'dialCodeRecovery', dropId:'dropRecovery', btnId:'dialBtnRecovery' },
+    ];
+    // Mapa código -> dial config (para getFullPhone)
+    const dialCodeMap = {}; // dropId -> current dial code
+
+    function buildDropdown(dropEl, flagId, codeId, dropId) {
+        // Campo búsqueda
+        const search = document.createElement('input');
+        search.type = 'text';
+        search.placeholder = '🔍 Buscar país...';
+        search.className = 'dial-search';
+        search.onclick = function(e){ e.stopPropagation(); };
+        search.oninput = function(){ renderList(search.value.toLowerCase()); };
+        dropEl.appendChild(search);
+
+        const list = document.createElement('div');
+        list.className = 'dial-list';
+        dropEl.appendChild(list);
+
+        function renderList(filter) {
+            list.innerHTML = '';
+            let shownSep = false;
+            COUNTRIES.forEach(function(c) {
+                if (!c) { // separador
+                    if (!filter) {
+                        const sep = document.createElement('div');
+                        sep.className = 'dial-sep';
+                        sep.textContent = 'Resto del mundo';
+                        list.appendChild(sep);
+                        shownSep = true;
+                    }
+                    return;
+                }
+                if (filter && !c.n.toLowerCase().includes(filter) && !c.c.includes(filter)) return;
+                const opt = document.createElement('div');
+                opt.className = 'dial-option';
+                opt.innerHTML = '<span>' + c.f + '</span><span>' + c.n + '</span><span class="dial-code-num">+' + c.c + '</span>';
+                opt.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    document.getElementById(flagId).textContent = c.f;
+                    document.getElementById(codeId).textContent = '+' + c.c;
+                    dialCodeMap[dropId] = c.c;
+                    closeAllDropdowns();
+                });
+                list.appendChild(opt);
+            });
+        }
+
+        dialCodeMap[dropId] = '54'; // default Argentina
+        renderList('');
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dial-dropdown.open').forEach(function(el){ el.classList.remove('open'); });
+    }
+
+    window.toggleDial = function(dropId, btn) {
+        const drop = document.getElementById(dropId);
+        const isOpen = drop.classList.contains('open');
+        closeAllDropdowns();
+        if (!isOpen) {
+            // Posicionar el dropdown relativo al botón
+            const rect = btn.getBoundingClientRect();
+            drop.style.top = (rect.bottom + 6) + 'px';
+            drop.style.left = rect.left + 'px';
+            drop.classList.add('open');
+            // Focus en búsqueda
+            setTimeout(function(){ const s = drop.querySelector('.dial-search'); if(s) s.focus(); }, 50);
+        }
+    };
+
+    // Cerrar al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dial-dropdown') && !e.target.closest('.dial-btn')) {
+            closeAllDropdowns();
+        }
+    });
+
+    // Obtener número completo con código país
+    window.getFullPhone = function(btnId, inputId) {
+        // btnId aquí es el dialBtnXxx, del cual derivamos el dropId
+        const btn = document.getElementById(btnId);
+        if (!btn) return document.getElementById(inputId).value.replace(/\D/g,'');
+        // Leer el código del span dentro del botón
+        const codeSpan = btn.querySelector('[id^="dialCode"]');
+        const code = codeSpan ? codeSpan.textContent.replace('+','') : '54';
+        const num = document.getElementById(inputId).value.replace(/\D/g,'');
+        return code + num;
+    };
+
+    // Init
+    document.addEventListener('DOMContentLoaded', function() {
+        DIALS.forEach(function(d) {
+            const dropEl = document.getElementById(d.dropId);
+            if (dropEl) buildDropdown(dropEl, d.flagId, d.codeId, d.dropId);
+        });
+    });
+})();
+</script>
 </body>
 </html>
