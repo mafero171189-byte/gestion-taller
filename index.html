@@ -2440,7 +2440,7 @@
 
         mostrarLoader('Creando cuenta y abriendo el taller...');
 
-        const expiracion = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        const expiracion = Date.now() + 15 * 24 * 60 * 60 * 1000;
 
         localStorage.setItem('st_login_wa', wa);
         appIniciada = false; 
@@ -2604,7 +2604,7 @@
             if (inputActivar) inputActivar.value = '';
             db.ref('usuarios_registrados/' + numeroWa).update({
                 tipoLicencia: 'permanente',
-                fechaExpiracion: null
+                fechaExpiracion: Date.now() + 30 * 24 * 60 * 60 * 1000
             })
             .then(() => {
                 showToast("✅ ¡Licencia permanente activada para " + numeroWa + "!", "#059669");
@@ -2694,7 +2694,7 @@
                 if (!snapCheck.exists()) {
                     db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
                         const solData = snapSol.val() || {};
-                        const expiracion = solData.fechaExpiracion || (Date.now() + 30 * 24 * 60 * 60 * 1000);
+                        const expiracion = solData.fechaExpiracion || (Date.now() + 15 * 24 * 60 * 60 * 1000);
                         db.ref('usuarios_registrados/' + u).set({
                             whatsapp: u,
                             fechaAlta: solData.fecha || new Date().toLocaleString('es-AR'),
@@ -2715,13 +2715,16 @@
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
                 else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de prueba de 30 días ha vencido.\n\nContactá al administrador para activar tu licencia permanente y continuar usando Mi Taller Web.");
+                    mostrarExpulsion("⏳ Tu licencia de prueba de 15 días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
+                }
+                else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
+                    mostrarExpulsion("⏳ Tu licencia de 30 días ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
                 }
                 else if (dataUser.tokenSesion && dataUser.tokenSesion !== (() => { try { const t = JSON.parse(localStorage.getItem('st_matias_token')); return (t && t.expira > Date.now()) ? t.valor : null; } catch(e) { return localStorage.getItem('st_matias_token'); } })()) {
                     mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
                 }
 
-                if (dataUser && dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
+                if (dataUser && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
                     const diasRestantes = Math.ceil((dataUser.fechaExpiracion - Date.now()) / (1000 * 60 * 60 * 24));
                     if (diasRestantes > 0) {
                         const banner = document.getElementById('trial-banner');
@@ -4767,7 +4770,7 @@
             mostrarLoader("Creando licencia...");
             const pwd = Math.random().toString(36).slice(-8);
             const emailFalso = wa + '@mitallerweb.com';
-            const expiracion = tipoLicencia === 'prueba' ? Date.now() + 30 * 24 * 60 * 60 * 1000 : null;
+            const expiracion = tipoLicencia === 'prueba' ? Date.now() + 15 * 24 * 60 * 60 * 1000 : Date.now() + 30 * 24 * 60 * 60 * 1000;
 
             secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, pwd)
             .then(() => {
@@ -4869,22 +4872,22 @@
                 const tipoLic = u.tipoLicencia || 'permanente';
                 const expiracion = u.fechaExpiracion || null;
                 const diasRestantes = expiracion ? Math.ceil((expiracion - AHORA) / (1000*60*60*24)) : null;
-                const estaExpirada = tipoLic === 'prueba' && diasRestantes !== null && diasRestantes <= 0;
+                const estaExpirada = diasRestantes !== null && diasRestantes <= 0;
                 const estaSuspendida = u.estado === 'suspendido';
 
                 let badgeHtml = '';
                 if (estaSuspendida) {
                     badgeHtml = `<span class="badge-licencia lic-suspendida">⏸️ SUSPENDIDA</span>`;
-                } else if (tipoLic === 'permanente') {
-                    badgeHtml = `<span class="badge-licencia lic-permanente">♾️ PERMANENTE</span>`;
                 } else if (estaExpirada) {
                     badgeHtml = `<span class="badge-licencia lic-expirada">❌ VENCIDA</span>`;
+                } else if (tipoLic === 'permanente') {
+                    badgeHtml = `<span class="badge-licencia lic-permanente">♾️ PERMANENTE</span>`;
                 } else {
                     badgeHtml = `<span class="badge-licencia lic-prueba">🧪 PRUEBA</span>`;
                 }
 
                 let venceHtml = '';
-                if (tipoLic === 'prueba' && expiracion) {
+                if (expiracion) {
                     const fechaExp = new Date(expiracion).toLocaleDateString('es-AR');
                     if (estaExpirada) {
                         venceHtml = `<div style="font-size:11px; color:#dc2626; font-weight:700;">Venció el ${fechaExp}</div>`;
@@ -4892,9 +4895,6 @@
                         const claseD = diasRestantes <= 5 ? 'dias-criticos' : 'dias-restantes';
                         venceHtml = `<div style="font-size:11px;">${fechaExp}</div><div class="${claseD}">${diasRestantes} día${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}</div>`;
                     }
-                } else if (tipoLic === 'permanente') {
-                    venceHtml = `<div style="font-size:11px; color:#065f46; font-weight:600;">Sin vencimiento</div>`;
-                    if (u.fechaAlta) venceHtml += `<div style="font-size:10px; color:#9ca3af;">Alta: ${u.fechaAlta.split(',')[0]}</div>`;
                 } else {
                     venceHtml = u.fechaAlta ? `<div style="font-size:11px; color:#6b7280;">${u.fechaAlta.split(',')[0]}</div>` : '-';
                 }
@@ -4972,12 +4972,22 @@
             btnPerm.style.borderColor = '#e2e8f0';
             btnPerm.style.boxShadow   = 'none';
             fechaCont.style.display   = 'block';
+            // Default: 15 días desde hoy si el campo está vacío
+            if (!document.getElementById('licFechaExp').value) {
+                const d15 = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+                document.getElementById('licFechaExp').value = d15.toISOString().split('T')[0];
+            }
         } else {
             btnPerm.style.borderColor = '#10b981';
             btnPerm.style.boxShadow   = '0 0 0 3px rgba(16,185,129,0.2)';
             btnP.style.borderColor    = '#e2e8f0';
             btnP.style.boxShadow      = 'none';
-            fechaCont.style.display   = 'none';
+            fechaCont.style.display   = 'block';
+            // Default: 30 días desde hoy si el campo está vacío
+            if (!document.getElementById('licFechaExp').value) {
+                const d30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                document.getElementById('licFechaExp').value = d30.toISOString().split('T')[0];
+            }
         }
     }
 
@@ -4999,7 +5009,9 @@
             if (!fechaStr) { ocultarLoader(); showToast('Elegí una fecha de vencimiento', '#f59e0b'); return; }
             updates.fechaExpiracion = new Date(fechaStr + 'T23:59:59').getTime();
         } else {
-            updates.fechaExpiracion = null;
+            const fechaStr = document.getElementById('licFechaExp').value;
+            if (!fechaStr) { ocultarLoader(); showToast('Elegí una fecha de vencimiento', '#f59e0b'); return; }
+            updates.fechaExpiracion = new Date(fechaStr + 'T23:59:59').getTime();
         }
 
         db.ref('usuarios_registrados/' + _licWaActual).update(updates)
