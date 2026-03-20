@@ -6,7 +6,7 @@
     <title>Mi Taller Web - Sistema Integral</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#06122a">
     <link rel="apple-touch-icon" href="icon.png">
 
     <script>
@@ -18,8 +18,10 @@
         })();
     </script>
     <style>
-        html.dark-mode-early body { background-color: #0b0f19 !important; }
+        html.dark-mode-early body { background-color: #080c18 !important; }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -29,38 +31,39 @@
         /* ESTILOS DEL LOGIN MODERNIZADO */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, #06122a 0%, #111a35 40%, #0a0f1e 100%);
             z-index: 10000; display: flex; align-items: center; justify-content: center;
         }
         .login-card {
-            background: rgba(255, 255, 255, 0.98);
-            padding: 40px 30px; 
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
-            width: 85%; max-width: 360px; text-align: center;
+            background: #ffffff;
+            padding: 44px 34px; 
+            border-radius: 20px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 30px 60px rgba(0,0,0,0.7), 0 0 80px rgba(45,58,140,0.12); 
+            width: 85%; max-width: 370px; text-align: center;
             transition: all 0.3s;
         }
-        .login-card h2 { color: #1e293b; margin: 15px 0 5px; font-size: 24px; font-weight: 800; }
-        .login-card p { color: #64748b; font-size: 14px; margin-bottom: 25px; margin-top: 0; }
+        .login-card h2 { color: #0f1117; margin: 15px 0 5px; font-size: 26px; font-weight: 900; font-family: 'Outfit', sans-serif; letter-spacing: -0.5px; }
+        .login-card p { color: #6b7280; font-size: 14px; margin-bottom: 25px; margin-top: 0; }
         
         .login-card input[type="text"], .login-card input[type="password"], .login-card input[type="email"] {
-            width: 100%; padding: 15px; margin: 8px 0;
-            border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; 
-            box-sizing: border-box; background: #f8fafc; transition: all 0.3s ease;
-            outline: none; color: #1e293b; font-weight: 500;
+            width: 100%; padding: 14px 16px; margin: 7px 0;
+            border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 15px; 
+            box-sizing: border-box; background: #f9fafb; transition: all 0.25s ease;
+            outline: none; color: #111827; font-weight: 500; font-family: 'Outfit', sans-serif;
         }
         .login-card input:focus {
-            border-color: #3498db; background: #ffffff; box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+            border-color: #1e4d8c; background: #ffffff; box-shadow: 0 0 0 4px rgba(45,58,140,0.12);
         }
         .btn-login {
             width: 100%; padding: 16px; 
-            background: linear-gradient(135deg, #3498db, #2980b9); 
-            color: white; border: none; border-radius: 12px; 
-            font-size: 16px; font-weight: bold; cursor: pointer; 
+            background: linear-gradient(135deg, #1e4d8c, #0e2a5e); 
+            color: white; border: none; border-radius: 11px; 
+            font-size: 16px; font-weight: 800; cursor: pointer; 
             margin-top: 20px; transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 4px 20px rgba(45,58,140,0.4);
+            font-family: 'Outfit', sans-serif; letter-spacing: 0.3px;
         }
-        .btn-login:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3); }
+        .btn-login:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(45,58,140,0.3); }
         
         .toggle-pass-icon { 
             position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
@@ -69,15 +72,15 @@
         .toggle-pass-icon:hover { opacity: 1; }
         
         .remember-group { text-align: left; margin: 10px 0 5px 5px; display: flex; align-items: center; gap: 8px; }
-        .remember-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #3498db; }
-        .remember-group label { font-size: 14px; color: #475569; margin: 0; cursor: pointer; text-transform: none; font-weight: 500;}
+        .remember-group input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #1e4d8c; }
+        .remember-group label { font-size: 14px; color: #6b7280; margin: 0; cursor: pointer; text-transform: none; font-weight: 500;}
 
         /* BADGE DE LICENCIA */
         .badge-licencia { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:800; letter-spacing:0.5px; white-space:nowrap; }
         .lic-prueba { background:#fef3c7; color:#92400e; border:1.5px solid #fcd34d; }
         .lic-permanente { background:#d1fae5; color:#065f46; border:1.5px solid #6ee7b7; }
         .lic-expirada { background:#fee2e2; color:#991b1b; border:1.5px solid #fca5a5; }
-        .lic-suspendida { background:#f1f5f9; color:#475569; border:1.5px solid #cbd5e0; }
+        .lic-suspendida { background:#f3f4f6; color:#6b7280; border:1.5px solid #e5e7eb; }
         .dias-restantes { font-size:11px; color:#92400e; font-weight:600; }
         .dias-criticos { color:#dc2626; font-weight:800; animation: pulseAlerta 1.5s infinite; }
 
@@ -116,71 +119,75 @@
         #app-content { display: none; }
 
         /* PANTALLA DE CARGA */
-        #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; backdrop-filter: blur(3px); }
-        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.2); border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(8,12,24,0.9); z-index: 11000; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; backdrop-filter: blur(4px); }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(45,58,140,0.15); border-top: 4px solid #1e4d8c; border-radius: 50%; animation: spin 0.85s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* ESTILOS ORIGINALES */
-        :root { --primary: #1a2a3a; --secondary: #3498db; --success: #2ecc71; --danger: #e53e3e; --wapp: #25d366; --warning: #f1c40f; }
-        html, body { overflow-x: hidden; width: 100%; background: #f0f2f5; margin: 0; padding: 0; color: #333; font-family: 'Segoe UI', sans-serif; touch-action: pan-y; transition: background-color 0.3s ease; }
+        :root { --primary: #06122a; --secondary: #1e4d8c; --success: #059669; --danger: #dc2626; --wapp: #25d366; --warning: #d97706; }
+        html, body { overflow-x: hidden; width: 100%; background: #f4f5fb; margin: 0; padding: 0; color: #1a1a2e; font-family: 'Outfit', 'Segoe UI', sans-serif; touch-action: pan-y; transition: background-color 0.3s ease; }
         
-        nav { background: var(--primary); padding: 10px 15px; display: flex; gap: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
+        nav { background: linear-gradient(90deg, #0a0e20 0%, #111630 100%); padding: 10px 15px; display: flex; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4), 0 1px 0 rgba(45,58,140,0.3); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
         nav::-webkit-scrollbar { display: none; }
-        nav button { background: none; border: none; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.3s; flex-shrink: 0; }
-        nav button.active { color: white; background: rgba(255,255,255,0.1); }
-        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e2e8f0; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
+        nav button { background: none; border: none; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: 9px 18px; border-radius: 8px; transition: 0.25s; flex-shrink: 0; font-family: 'Outfit', sans-serif; font-size: 13px; letter-spacing: 0.2px; }
+        nav button.active { color: white; background: rgba(45,58,140,0.18); border: 1px solid rgba(45,58,140,0.35); }
+        #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e8eaf5; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
         
-        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; }
+        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; border-top: 3px solid #1e4d8c; }
         
-        #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; color: white; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; }
+        #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 28px; border-radius: 50px; color: white; font-weight: 700; z-index: 9999; display: none; box-shadow: 0 6px 24px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; font-family: 'Outfit', sans-serif; letter-spacing: 0.2px; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(2px); }
-        .modal-box { background: white; padding: 25px; border-radius: 15px; width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: background-color 0.3s, border-color 0.3s; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(8,12,24,0.75); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
+        .modal-box { background: white; padding: 28px; border-radius: 18px; width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); transition: background-color 0.3s, border-color 0.3s; }
         
-        .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
+        .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e5e7eb; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
         .opt-pendiente { background: #fff9c4; color: #856404; }
         .opt-reparado { background: #c8e6c9; color: #1b5e20; }
         .opt-no-reparado { background: #fed7d7; color: #9b2c2c; }
-        .opt-entregado { background: #e2e8f0; color: #475569; }
+        .opt-entregado { background: #f3f4f6; color: #6b7280; }
         .opt-garantia { background: #e0e7ff; color: #1e40af; border-color:#bfdbfe; }
 
         .history-item { text-align: left; border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 15px; position: relative; }
-        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #64748b; text-transform: uppercase; display: block; transition: color 0.3s; }
-        .history-item b { font-size: 11px; color: #64748b; text-transform: uppercase; display: block; transition: color 0.3s; }
+        .history-item::before { content: ''; position: absolute; font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; transition: color 0.3s; }
+        .history-item b { font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; transition: color 0.3s; }
         .history-item span { font-size: 14px; display: block; margin-top: 2px; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #fdfdfd; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 25px; transition: background-color 0.3s, border-color 0.3s; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #f7f8fc; padding: 20px; border-radius: 12px; border: 1px solid #e8eaf5; margin-bottom: 25px; transition: background-color 0.3s, border-color 0.3s; }
         .full { grid-column: 1 / -1; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; text-transform: uppercase; transition: color 0.3s; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: inherit; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; transition: color 0.3s; letter-spacing: 0.4px; font-family: 'Outfit', sans-serif; }
+        input, textarea, select { width: 100%; padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-size: 15px; font-family: 'Outfit', sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        input:focus, textarea:focus, select:focus { border-color: #1e4d8c; outline: none; box-shadow: 0 0 0 3px rgba(45,58,140,0.1); }
         
-        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #cbd5e0; border-radius: 8px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); margin-top: 2px; transition: background-color 0.3s, border-color 0.3s; }
-        .autocomplete-list div { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 15px; color: #1e293b; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1.5px solid #e5e7eb; border-radius: 10px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 12px 28px rgba(0,0,0,0.15); margin-top: 2px; transition: background-color 0.3s, border-color 0.3s; }
+        .autocomplete-list div { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; cursor: pointer; font-size: 15px; color: #111827; transition: background-color 0.2s, color 0.2s; font-family: 'Outfit', sans-serif; }
         .autocomplete-list div:last-child { border-bottom: none; }
-        .autocomplete-list div:active, .autocomplete-list div:hover { background: #f8fafc; color: var(--secondary); font-weight: bold; }
+        .autocomplete-list div:active, .autocomplete-list div:hover { background: #f5f6fc; color: #1e4d8c; font-weight: bold; }
 
-        .badge-status { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; transition: background-color 0.3s, color 0.3s; }
-        .st-pendiente { background: #fff9c4; color: #856404; }
-        .st-reparado { background: #c8e6c9; color: #1b5e20; }
-        .st-no-reparado { background: #fed7d7; color: #9b2c2c; }
-        .st-entregado { background: #e2e8f0; color: #475569; }
-        .st-garantia { background: #e0e7ff; color: #1e40af; }
+        .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-block; transition: background-color 0.3s, color 0.3s; font-family: 'Outfit', sans-serif; letter-spacing: 0.2px; }
+        .st-pendiente { background: #fef9c3; color: #92400e; }
+        .st-reparado { background: #d1fae5; color: #065f46; }
+        .st-no-reparado { background: #fee2e2; color: #991b1b; }
+        .st-entregado { background: #f3f4f6; color: #6b7280; }
+        .st-garantia { background: #ede9fe; color: #5b21b6; }
 
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.3s; }
+        .btn { padding: 12px; border: none; border-radius: 9px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s, transform 0.1s; font-family: 'Outfit', sans-serif; }
+        .btn:active { transform: scale(0.97); }
         .btn-main { background: var(--primary); color: white; width: 100%; }
-        .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer;}
-        #status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-        .online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
-        .offline { background: #95a5a6; }
+        .btn-wapp { background: var(--wapp); color: white; font-size: 11px; padding: 6px 10px; border-radius: 6px; border:none; cursor:pointer; font-family: 'Outfit', sans-serif; font-weight: 700; }
+        #status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+        .offline { background: #9ca3af; }
         table { width: 100%; border-collapse: collapse; min-width: 900px; transition: background 0.3s; }
-        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 11px; color: #475569; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        th { background: #f9fafb; text-align: left; padding: 12px 14px; font-size: 11px; color: #6b7280; transition: background-color 0.3s, color 0.3s, border-color 0.3s; font-family: 'Outfit', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #f3f4f6; }
+        td { padding: 12px 14px; border-bottom: 1px solid #f9fafb; font-size: 14px; transition: background-color 0.3s, color 0.3s, border-color 0.3s; font-family: 'Outfit', sans-serif; }
+        tr:hover td { background: #f5f6fc; }
         .action-btns { display: flex; gap: 4px; }
-        .action-btns button { border: 1px solid #e2e8f0; background: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        .action-btns button { border: 1px solid #e5e7eb; background: white; padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s, color 0.2s; }
+        .action-btns button:hover { background: #f5f6fc; border-color: #1e4d8c; }
         
-        .modo-archivo-activo { background: #f1f5f9 !important; }
-        .btn-active-filter { border: 2px solid #3498db !important; box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); }
+        .modo-archivo-activo { background: #f7f8fc !important; }
+        .btn-active-filter { border: 2px solid #1e4d8c !important; box-shadow: 0 0 12px rgba(45,58,140,0.35); }
 
         .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
@@ -197,29 +204,29 @@
         .tabla-olvidados th, .tabla-olvidados td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
         .btn-whatsapp-alerta { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 5px; }
         .btn-whatsapp-alerta.activo { background-color: #25D366; color: white; }
-        .btn-whatsapp-alerta.notificado { background-color: #94a3b8; color: white; }
+        .btn-whatsapp-alerta.notificado { background-color: #9ca3af; color: white; }
 
         /* --- ESTILOS PARA LA CONTABILIDAD MEJORADA --- */
-        .card-stats { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; border: 1px solid #f1f5f9; transition: transform 0.3s, background-color 0.3s, border-color 0.3s; }
-        .card-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card-stats b { font-size: 13px; color: #64748b; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.5px; transition: color 0.3s;}
-        .card-stats p { font-size: 30px; font-weight: 800; margin: 0; transition: color 0.3s; }
-        .stat-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.1; }
+        .card-stats { background: white; padding: 22px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: left; position: relative; overflow: hidden; border: 1.5px solid #f3f0eb; transition: transform 0.3s, background-color 0.3s, border-color 0.3s; }
+        .card-stats:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.1); }
+        .card-stats b { font-size: 11px; color: #9ca3af; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.6px; transition: color 0.3s; font-family: 'Outfit', sans-serif; }
+        .card-stats p { font-size: 32px; font-weight: 900; margin: 0; transition: color 0.3s; font-family: 'Outfit', sans-serif; }
+        .stat-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.08; }
         
-        .caja-success { border-bottom: 5px solid var(--success); }
-        .caja-warning { border-bottom: 5px solid var(--warning); }
-        .caja-danger { border-bottom: 5px solid var(--danger); }
-        .caja-primary { border-bottom: 5px solid var(--primary); }
+        .caja-success { border-bottom: 4px solid #10b981; }
+        .caja-warning { border-bottom: 4px solid #f59e0b; }
+        .caja-danger { border-bottom: 4px solid #ef4444; }
+        .caja-primary { border-bottom: 4px solid #1e4d8c; }
 
-        .badge-metodo { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap; transition: background-color 0.3s, color 0.3s; }
-        .bm-efectivo { background: #dcfce7; color: #166534; }
-        .bm-transferencia { background: #dbeafe; color: #1e40af; }
-        .bm-tarjeta { background: #fef08a; color: #854d0e; }
+        .badge-metodo { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; transition: background-color 0.3s, color 0.3s; font-family: 'Outfit', sans-serif; letter-spacing: 0.2px; }
+        .bm-efectivo { background: #d1fae5; color: #065f46; }
+        .bm-transferencia { background: #dbeafe; color: #1e3a8a; }
+        .bm-tarjeta { background: #fef3c7; color: #92400e; }
         .tabla-contabilidad-row { background: white; transition: background-color 0.2s; }
-        .tabla-contabilidad-row:hover { background: #f8fafc; }
+        .tabla-contabilidad-row:hover { background: #f5f6fc; }
 
         /* --- MODO OSCURO DEFINITIVO Y BLINDADO (OVERRIDE TOTAL) --- */
-        body.dark-mode { background-color: #0b0f19 !important; color: #f1f5f9 !important; }
+        body.dark-mode { background-color: #080c18 !important; color: #f1f5f9 !important; }
         
         body.dark-mode .container,
         body.dark-mode #gesture-zone-top,
@@ -231,71 +238,82 @@
         body.dark-mode .autocomplete-list,
         body.dark-mode [style*="background: white"],
         body.dark-mode [style*="background:white"],
-        body.dark-mode [style*="background: #f8fafc"],
-        body.dark-mode [style*="background:#f8fafc"],
+        body.dark-mode [style*="background: #f9fafb"],
+        body.dark-mode [style*="background:#f9fafb"],
         body.dark-mode [style*="background: #fdfdfd"],
         body.dark-mode [style*="background:#fdfdfd"],
         body.dark-mode [style*="background:#fff5f5"] {
-            background-color: #1e293b !important;
-            border-color: #334155 !important;
+            background-color: #0d1220 !important;
+            border-color: #1a2040 !important;
         }
 
         body.dark-mode input[type="text"], body.dark-mode input[type="number"], body.dark-mode input[type="password"], body.dark-mode input[type="date"], body.dark-mode input[type="email"], body.dark-mode select, body.dark-mode textarea {
-            background-color: #0f172a !important;
+            background-color: #080c18 !important;
             color: #f8fafc !important;
-            border-color: #475569 !important;
+            border-color: #1e2848 !important;
         }
         
-        body.dark-mode th { background-color: #0f172a !important; color: #94a3b8 !important; border-bottom: 1px solid #334155 !important; }
-        body.dark-mode td { border-bottom: 1px solid #334155 !important; color: #f1f5f9 !important; }
+        body.dark-mode th { background-color: #080c18 !important; color: #6b7280 !important; border-bottom: 2px solid #1a1a28 !important; }
+        body.dark-mode td { border-bottom: 1px solid #111118 !important; color: #e5e7eb !important; }
+        body.dark-mode tr:hover td { background: #12121a !important; }
         
-        body.dark-mode .action-btns button { background-color: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-        body.dark-mode .action-btns button:hover { background-color: #334155 !important; }
+        body.dark-mode .action-btns button { background-color: #080c18 !important; border-color: #1a2040 !important; color: #e5e7eb !important; }
+        body.dark-mode .action-btns button:hover { background-color: #111830 !important; border-color: #1e4d8c !important; }
         
-        body.dark-mode .tabla-contabilidad-row { background-color: #1e293b !important; }
-        body.dark-mode .tabla-contabilidad-row:hover { background-color: #334155 !important; }
-        body.dark-mode .autocomplete-list div { border-bottom-color: #334155 !important; color: #f1f5f9 !important; }
-        body.dark-mode .autocomplete-list div:hover { background-color: #334155 !important; color: #3b82f6 !important; }
-        body.dark-mode #btn-top-ayuda { background-color: #334155 !important; color: #f8fafc !important; }
+        body.dark-mode .tabla-contabilidad-row { background-color: #0d1220 !important; }
+        body.dark-mode .tabla-contabilidad-row:hover { background-color: #0d1228 !important; }
+        body.dark-mode .autocomplete-list div { border-bottom-color: #1e1e2e !important; color: #e5e7eb !important; }
+        body.dark-mode .autocomplete-list div:hover { background-color: #111830 !important; color: #1e4d8c !important; }
+        body.dark-mode #btn-top-ayuda { background-color: #1e1e2e !important; color: #f8fafc !important; }
         
         /* Text Colors Fixes para sobreescribir estilos en línea */
         body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode label { color: #f8fafc !important; }
-        body.dark-mode .history-item::before, body.dark-mode .history-item b { color: #94a3b8 !important; }
+        body.dark-mode .history-item::before, body.dark-mode .history-item b { color: #6b7280 !important; }
         
-        body.dark-mode [style*="color:#1e293b"], body.dark-mode [style*="color: #1e293b"], body.dark-mode [style*="color: #333"] { color: #f1f5f9 !important; }
-        body.dark-mode [style*="color:#475569"], body.dark-mode [style*="color: #475569"], body.dark-mode [style*="color:#64748b"], body.dark-mode [style*="color: #64748b"] { color: #94a3b8 !important; }
+        body.dark-mode [style*="color:#111827"], body.dark-mode [style*="color: #111827"], body.dark-mode [style*="color: #333"] { color: #f1f5f9 !important; }
+        body.dark-mode [style*="color:#6b7280"], body.dark-mode [style*="color: #6b7280"], body.dark-mode [style*="color:#6b7280"], body.dark-mode [style*="color: #6b7280"] { color: #9ca3af !important; }
 
         /* Badges y Botones de colores fijos */
-        body.dark-mode .badge-status.st-pendiente { background-color: #78350f !important; color: #fde68a !important; }
-        body.dark-mode .badge-status.st-reparado { background-color: #14532d !important; color: #86efac !important; }
-        body.dark-mode .badge-status.st-no-reparado { background-color: #7f1d1d !important; color: #fca5a5 !important; }
-        body.dark-mode .badge-status.st-entregado { background-color: #334155 !important; color: #e2e8f0 !important; }
+        body.dark-mode .badge-status.st-pendiente { background-color: #451a03 !important; color: #fed7aa !important; }
+        body.dark-mode .badge-status.st-reparado { background-color: #052e16 !important; color: #86efac !important; }
+        body.dark-mode .badge-status.st-no-reparado { background-color: #450a0a !important; color: #fca5a5 !important; }
+        body.dark-mode .badge-status.st-entregado { background-color: #111830 !important; color: #9ca3af !important; }
         
-        body.dark-mode .badge-metodo.bm-efectivo { background-color: #14532d !important; color: #86efac !important; }
-        body.dark-mode .badge-metodo.bm-transferencia { background-color: #1e3a8a !important; color: #93c5fd !important; }
-        body.dark-mode .badge-metodo.bm-tarjeta { background-color: #713f12 !important; color: #fde047 !important; }
+        body.dark-mode .badge-metodo.bm-efectivo { background-color: #052e16 !important; color: #86efac !important; }
+        body.dark-mode .badge-metodo.bm-transferencia { background-color: #0c1a4d !important; color: #93c5fd !important; }
+        body.dark-mode .badge-metodo.bm-tarjeta { background-color: #431407 !important; color: #fdba74 !important; }
         
-        body.dark-mode .modo-archivo-activo { background-color: #111827 !important; }
+        body.dark-mode .modo-archivo-activo { background-color: #080c18 !important; }
+
+        /* Nav dark mode */
+        body.dark-mode nav { background: linear-gradient(90deg, #080c1a 0%, #0d1128 100%) !important; box-shadow: 0 2px 20px rgba(0,0,0,0.6), 0 1px 0 rgba(45,58,140,0.2) !important; }
 
         /* ESTILOS DEL MENÚ DE AYUDA Y FAQ */
-        .faq-accordion { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: white; transition: 0.3s; }
+        .faq-accordion { border: 1.5px solid #e8eaf5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; background: white; transition: 0.3s; }
         .faq-accordion details summary { outline: none; user-select: none; }
-        .faq-summary { background: #f8fafc; padding: 15px; font-weight: bold; color: #1e293b; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; list-style: none; }
+        .faq-summary { background: #f7f8fc; padding: 15px 18px; font-weight: 700; color: #111827; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; list-style: none; font-family: 'Outfit', sans-serif; }
         .faq-summary::-webkit-details-marker { display: none; }
-        .faq-summary:hover { background: #f1f5f9; }
-        .faq-content { padding: 15px 20px; background: white; color: #475569; font-size: 14px; line-height: 1.6; border-top: 1px solid #e2e8f0; }
+        .faq-summary:hover { background: #f5f6fc; }
+        .faq-content { padding: 15px 20px; background: white; color: #6b7280; font-size: 14px; line-height: 1.7; border-top: 1px solid #e8eaf5; font-family: 'Outfit', sans-serif; }
         .faq-content p { margin-top: 0; margin-bottom: 15px; }
         .faq-content ul { margin-top: 0; padding-left: 20px; margin-bottom: 15px; }
         .faq-content li { margin-bottom: 8px; }
         .faq-content p:last-child, .faq-content ul:last-child { margin-bottom: 0; }
-        .faq-content b { color: #1e293b; display: inline-block; font-size: 14.5px;}
+        .faq-content b { color: #111827; display: inline-block; font-size: 14.5px; }
         
         /* Ajustes Modo Oscuro FAQ */
-        body.dark-mode .faq-accordion { background-color: #0f172a !important; border-color: #334155 !important; }
-        body.dark-mode .faq-summary { background-color: #0f172a !important; color: #f8fafc !important; }
-        body.dark-mode .faq-summary:hover { background-color: #1e293b !important; }
-        body.dark-mode .faq-content { background-color: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
+        body.dark-mode .faq-accordion { background-color: #080c18 !important; border-color: #1a2040 !important; }
+        body.dark-mode .faq-summary { background-color: #080c18 !important; color: #f8fafc !important; }
+        body.dark-mode .faq-summary:hover { background-color: #0d1220 !important; }
+        body.dark-mode .faq-content { background-color: #0d1220 !important; border-color: #1a2040 !important; color: #9ca3af !important; }
         body.dark-mode .faq-content b { color: #f8fafc !important; }
+
+        /* Alerta amarilla */
+        .btn-alerta-amarilla { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: 800; animation: pulseAlerta 2s infinite; border: none; border-radius: 9px; font-family: 'Outfit', sans-serif; }
+        @keyframes pulseAlerta { 0% { transform: scale(1); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(45,58,140,0.5); } 100% { transform: scale(1); } }
+
+        /* Historia item */
+        .history-item { text-align: left; border-left: 3px solid #1e4d8c; padding-left: 15px; margin-bottom: 15px; position: relative; }
     </style>
 </head>
 <body onload="iniciarSeguridad()">
@@ -309,15 +327,15 @@
     <div class="modal-box" style="width: 90%; max-width: 400px; overflow: visible;">
         <div style="font-size: 40px; margin-bottom: 10px;">🛒</div>
         <p style="color: #8e44ad; font-weight: bold; font-size: 18px; margin-top: 0;">Venta Rápida de Mostrador</p>
-        <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">Ideal para vender cables, fundas o repuestos sin crear orden.</p>
+        <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">Ideal para vender cables, fundas o repuestos sin crear orden.</p>
         
         <div style="position: relative; text-align: left;">
             <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
             <div id="vrAutocomplete" class="autocomplete-list" style="width: 100%;"></div>
         </div>
         
-        <div id="vrDetalle" style="display:none; text-align:left; margin-top:15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <b id="vrNombre" style="color:#1e293b; font-size: 15px;"></b>
+        <div id="vrDetalle" style="display:none; text-align:left; margin-top:15px; background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <b id="vrNombre" style="color:#111827; font-size: 15px;"></b>
             <input type="hidden" id="vrStockId">
             <input type="hidden" id="vrCostoUni">
             <input type="hidden" id="vrMaxCant">
@@ -325,21 +343,21 @@
             <div style="display:flex; gap:5px; margin-top:15px;">
                 <div style="flex:1;">
                     <label style="font-size:11px;">Precio Un. $</label>
-                    <input type="number" id="vrPrecioUni" oninput="calcVrTotal()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e0;">
+                    <input type="number" id="vrPrecioUni" oninput="calcVrTotal()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #e5e7eb;">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:11px;">Cantidad</label>
-                    <input type="number" id="vrCant" value="1" min="1" oninput="calcVrTotal()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #cbd5e0;">
+                    <input type="number" id="vrCant" value="1" min="1" oninput="calcVrTotal()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #e5e7eb;">
                 </div>
                 <div style="flex:1;">
                     <label style="font-size:11px;">Total $</label>
-                    <input type="text" id="vrTotal" readonly style="width:100%; background:#e2e8f0; font-weight:bold; padding:8px; border-radius:6px; border:none;">
+                    <input type="text" id="vrTotal" readonly style="width:100%; background:#f3f4f6; font-weight:bold; padding:8px; border-radius:6px; border:none;">
                 </div>
             </div>
             
             <div style="margin-top:15px;">
                 <label>Método de Pago</label>
-                <select id="vrMetodo" style="width:100%; padding:8px; border-radius:8px; border:1px solid #cbd5e0; cursor:pointer;">
+                <select id="vrMetodo" style="width:100%; padding:8px; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer;">
                     <option value="Efectivo">💵 Efectivo</option>
                     <option value="Transferencia">📲 Transferencia</option>
                     <option value="Tarjeta">💳 Tarjeta</option>
@@ -348,7 +366,7 @@
         </div>
         
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="document.getElementById('modalVentaRapida').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 12px;">CANCELAR</button>
+            <button onclick="document.getElementById('modalVentaRapida').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 12px;">CANCELAR</button>
             <button onclick="procesarVentaRapida()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#8e44ad; color:white; font-weight:bold; cursor:pointer; font-size: 12px;">REGISTRAR VENTA</button>
         </div>
     </div>
@@ -358,7 +376,7 @@
     <div class="modal-box" style="border: 2px solid var(--danger);">
         <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
         <h3 style="color: var(--danger); margin-top: 0; font-size: 20px;">Acceso Denegado</h3>
-        <p id="expulsionMensaje" style="color: #475569; font-size: 15px; line-height: 1.5; margin-bottom: 20px;"></p>
+        <p id="expulsionMensaje" style="color: #6b7280; font-size: 15px; line-height: 1.5; margin-bottom: 20px;"></p>
         <button onclick="forzarSalida()" class="btn btn-main" style="background: var(--danger);">ENTENDIDO</button>
     </div>
 </div>
@@ -382,13 +400,13 @@
         </div>
         
         <button class="btn-login" onclick="checkAccess()">INGRESAR AL SISTEMA</button>
-        <p id="loginError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:15px; display:none;"></p>
+        <p id="loginError" style="color:#dc2626; font-size:13px; font-weight:bold; margin-top:15px; display:none;"></p>
 
         <div style="margin-top: 18px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
-            <button onclick="mostrarPanelRegistro()" style="background:none; border:none; color:#3498db; font-size:13px; font-weight:700; cursor:pointer; text-decoration:underline; padding:0;">
+            <button onclick="mostrarPanelRegistro()" style="background:none; border:none; color:#1e4d8c; font-size:13px; font-weight:700; cursor:pointer; text-decoration:underline; padding:0;">
                 ✨ Registrarme gratis (30 días)
             </button>
-            <button onclick="mostrarPanelOlvideClave()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; text-decoration:underline; padding:0;">
+            <button onclick="mostrarPanelOlvideClave()" style="background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; text-decoration:underline; padding:0;">
                 🔑 Olvidé mi clave
             </button>
         </div>
@@ -418,9 +436,9 @@
             ✔ 30 días sin costo · Sin tarjeta
         </div>
 
-        <button class="btn-login" style="background:linear-gradient(135deg,#2ecc71,#27ae60);" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
-        <p id="regError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
-        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
+        <button class="btn-login" style="background:linear-gradient(135deg,#059669,#047857);" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
+        <p id="regError" style="color:#dc2626; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
+        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
     </div>
 
     <div class="login-card" id="panelOlvideClave" style="display:none;">
@@ -432,7 +450,7 @@
 
         <button class="btn-login" style="background:linear-gradient(135deg,#8e44ad,#6c3483);" onclick="enviarRecuperacionClave()">📧 ENVIAR ENLACE DE RECUPERACIÓN</button>
         <p id="recoveryMsg" style="font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
-        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
+        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
     </div>
 
     <div class="login-card" id="panelNuevaClave" style="display:none;">
@@ -447,9 +465,9 @@
             <input type="password" id="resetPass2" placeholder="Confirmar nueva contraseña" style="margin:0; padding-right:45px;">
             <span class="toggle-pass-icon" onclick="toggleResetPass(2)">👁️</span>
         </div>
-        <button class="btn-login" style="background:linear-gradient(135deg,#3498db,#2980b9);" onclick="guardarNuevaClave()">💾 ACTUALIZAR CONTRASEÑA</button>
-        <p id="resetError" style="color:#e53e3e; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
-        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#94a3b8; font-size:13px; cursor:pointer; margin-top:10px;">Cancelar y volver</button>
+        <button class="btn-login" style="background:linear-gradient(135deg,#1e4d8c,#0e2a5e);" onclick="guardarNuevaClave()">💾 ACTUALIZAR CONTRASEÑA</button>
+        <p id="resetError" style="color:#dc2626; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
+        <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; margin-top:10px;">Cancelar y volver</button>
     </div>
 
     <a href="https://wa.me/5491135654094?text=Hola,%20necesito%20soporte%20con%20el%20acceso%20a%20Mi%20Taller%20Web" target="_blank" class="btn-soporte-wapp">
@@ -469,20 +487,20 @@
         <div class="modal-box" style="overflow: visible; width: 340px;">
             <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
             <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;">¡Equipo Reparado!</p>
-            <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">¿Usaste repuestos del stock? Buscalos y agregalos a la lista:</p>
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">¿Usaste repuestos del stock? Buscalos y agregalos a la lista:</p>
             
             <div style="position: relative; text-align: left;">
-                <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" oninput="filtrarStockModal()" onfocus="filtrarStockModal()" onblur="hideAutocomplete('repuestoModalUsado')" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; box-sizing: border-box; font-size:14px;">
+                <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" oninput="filtrarStockModal()" onfocus="filtrarStockModal()" onblur="hideAutocomplete('repuestoModalUsado')" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #1e4d8c; border-radius: 8px; box-sizing: border-box; font-size:14px;">
                 <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
             </div>
             
             <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
             
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="procesarReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ / AVISAR</button>
+                <button onclick="procesarReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ / AVISAR</button>
                 <button onclick="procesarReparado(true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR Y AVISAR</button>
             </div>
-            <button onclick="cerrarModalStock()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
+            <button onclick="cerrarModalStock()" style="margin-top:15px; border:none; background:none; color:#6b7280; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
         </div>
     </div>
 
@@ -490,13 +508,13 @@
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">❌</div>
             <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">Equipo No Reparado</p>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">¿Querés avisarle al cliente por WhatsApp que no se pudo reparar?</p>
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">¿Querés avisarle al cliente por WhatsApp que no se pudo reparar?</p>
             
             <div style="display:flex; gap:10px;">
-                <button onclick="procesarNoReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer; font-size: 11px;">SOLO CAMBIAR</button>
+                <button onclick="procesarNoReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">SOLO CAMBIAR</button>
                 <button onclick="procesarNoReparado(true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">AVISAR POR WHATSAPP</button>
             </div>
-            <button onclick="cerrarModalNoReparado()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
+            <button onclick="cerrarModalNoReparado()" style="margin-top:15px; border:none; background:none; color:#6b7280; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
         </div>
     </div>
 
@@ -506,26 +524,26 @@
             <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;" id="tituloCobroEntregado">Cobrar Saldo Pendiente</p>
             
             <div id="cobroSaldoContainer">
-                <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
+                <p style="font-size: 14px; color: #6b7280; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
             </div>
 
             <div id="cobroCotizarContainer" style="display:none; text-align: left; margin-bottom: 15px;">
-                <label id="cobroAvisoCotizar" style="font-size: 13px; color: #475569; font-weight:bold;"></label>
+                <label id="cobroAvisoCotizar" style="font-size: 13px; color: #6b7280; font-weight:bold;"></label>
                 <input type="text" id="cobroPrecioFinal" placeholder="0" oninput="formatInput(this)" style="width: 100%; padding: 10px; border: 2px solid var(--success); border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 5px; text-align:center;">
             </div>
             
             <div style="text-align: left; margin-bottom: 20px;">
-                <label style="font-size: 12px; font-weight: bold; color: #64748b;">¿Cómo paga este saldo restante?</label>
-                <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #3498db; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;">
+                <label style="font-size: 12px; font-weight: bold; color: #6b7280;">¿Cómo paga este saldo restante?</label>
+                <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #1e4d8c; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;">
                     <option value="Efectivo">💵 Efectivo</option>
                     <option value="Transferencia">📲 Transferencia</option>
                     <option value="Tarjeta">💳 Tarjeta</option>
                 </select>
-                <p id="cobroAvisoSaldo" style="font-size: 11px; color:#94a3b8; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
+                <p id="cobroAvisoSaldo" style="font-size: 11px; color:#9ca3af; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
             </div>
             
             <div style="display:flex; gap:10px;">
-                <button onclick="document.getElementById('modalCobroEntregado').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="document.getElementById('modalCobroEntregado').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
                 <button onclick="procesarCobroEntregado()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">COBRAR Y ENTREGAR</button>
             </div>
         </div>
@@ -555,12 +573,12 @@
 
     <div id="patternModal" class="modal-overlay" style="z-index: 6000;">
         <div class="modal-box" style="width: 320px;">
-            <p style="margin-top:0; color:#1e293b; font-size:16px;"><b>✍️ Dibujar Patrón</b></p>
+            <p style="margin-top:0; color:#111827; font-size:16px;"><b>✍️ Dibujar Patrón</b></p>
             <div style="display:flex; justify-content:center; margin-top:15px; margin-bottom:15px;">
-                <canvas id="patternCanvas" width="240" height="240" style="background:#f8fafc; border-radius:12px; border: 2px solid #cbd5e0; touch-action:none;"></canvas>
+                <canvas id="patternCanvas" width="240" height="240" style="background:#f9fafb; border-radius:12px; border: 2px solid #e5e7eb; touch-action:none;"></canvas>
             </div>
             <div style="display:flex; gap:10px;">
-                <button type="button" onclick="cerrarPatternModal()" style="flex:1; padding:10px; border-radius:8px; border:none; font-weight:bold; color:#475569; background:#e2e8f0; cursor:pointer;">CANCELAR</button>
+                <button type="button" onclick="cerrarPatternModal()" style="flex:1; padding:10px; border-radius:8px; border:none; font-weight:bold; color:#6b7280; background:#f3f4f6; cursor:pointer;">CANCELAR</button>
                 <button type="button" onclick="limpiarPattern()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#94a3b8; color:white; font-weight:bold; cursor:pointer;">BORRAR</button>
                 <button type="button" onclick="guardarPattern()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">GUARDAR</button>
             </div>
@@ -572,10 +590,10 @@
             <p><b>👤 Mi Perfil - Configuración</b></p>
             <div style="text-align:left; margin-top:10px;">
                 <label>Logo del Local</label>
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e0;">
-                    <img id="logoPreview" src="" style="width:50px; height:50px; object-fit:contain; border:1px solid #e2e8f0; display:none; border-radius:5px; background:white;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <img id="logoPreview" src="" style="width:50px; height:50px; object-fit:contain; border:1px solid #e5e7eb; display:none; border-radius:5px; background:white;">
                     <input type="file" id="logoUpload" accept="image/*" style="display:none;" onchange="procesarLogoUpload(this)">
-                    <button id="btnCargarLogo" onclick="document.getElementById('logoUpload').click()" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:12px; cursor:pointer; flex:1; font-weight:bold;">📷 CARGAR LOGO</button>
+                    <button id="btnCargarLogo" onclick="document.getElementById('logoUpload').click()" style="background:#1e4d8c; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:12px; cursor:pointer; flex:1; font-weight:bold;">📷 CARGAR LOGO</button>
                     <button onclick="borrarLogoUpload()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold;">X</button>
                 </div>
                 <label>Nombre del Taller</label>
@@ -611,7 +629,7 @@
             <button class="status-option opt-no-reparado" onclick="confirmarEstado('No reparado')">❌ No reparado</button>
             <button class="status-option opt-entregado" onclick="confirmarEstado('Entregado')">📦 Entregado</button>
             <button class="status-option opt-garantia" onclick="confirmarEstado('Garantía')">🔄 Reingreso (Garantía)</button>
-            <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#64748b; cursor:pointer;">Cerrar</button>
+            <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#6b7280; cursor:pointer;">Cerrar</button>
         </div>
     </div>
 
@@ -638,9 +656,9 @@
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">🗑️</div>
             <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">¿Eliminar Orden?</p>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">Esta acción borrará la reparación y sus fotos de forma permanente.</p>
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">Esta acción borrará la reparación y sus fotos de forma permanente.</p>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="closeDeleteModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
                 <button id="confirmDeleteBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer;">SÍ, BORRAR</button>
             </div>
         </div>
@@ -649,14 +667,14 @@
     <div id="suspendModal" class="modal-overlay">
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">⏸️</div>
-            <p style="color: #e53e3e; font-weight: bold; font-size: 18px; margin-top: 0;">¿Suspender Licencia?</p>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">
+            <p style="color: #dc2626; font-weight: bold; font-size: 18px; margin-top: 0;">¿Suspender Licencia?</p>
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
                 El usuario será <b>expulsado inmediatamente</b>.<br><br>
                 Sus datos quedarán en la papelera por <b>7 días</b> y luego se borrarán de forma automática.
             </p>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="closeSuspendModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
-                <button id="confirmSuspendBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:#e53e3e; color:white; font-weight:bold; cursor:pointer;">SÍ, SUSPENDER</button>
+                <button onclick="closeSuspendModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button id="confirmSuspendBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:#dc2626; color:white; font-weight:bold; cursor:pointer;">SÍ, SUSPENDER</button>
             </div>
         </div>
     </div>
@@ -665,11 +683,11 @@
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
             <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">¿Eliminar Todo AHORA?</p>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
                 Se borrará el acceso y <b>absolutamente todas las órdenes</b> de este número al instante.<br><br>Esta acción NO se puede deshacer.
             </p>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="closeDeleteLicenseModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="closeDeleteLicenseModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
                 <button id="confirmDeleteLicenseBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer;">SÍ, BORRAR TODO</button>
             </div>
         </div>
@@ -679,30 +697,30 @@
         <div class="modal-box" style="width:340px; max-height:90vh; overflow-y:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
                 <h3 style="margin:0; font-size:16px;">🔑 Gestión de Licencia</h3>
-                <button onclick="cerrarLicenciaModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;">✕</button>
+                <button onclick="cerrarLicenciaModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af;">✕</button>
             </div>
-            <p id="licModalWa" style="font-size:13px; color:#64748b; margin:0 0 16px; font-weight:600; background:#f8fafc; padding:8px 12px; border-radius:8px;"></p>
+            <p id="licModalWa" style="font-size:13px; color:#6b7280; margin:0 0 16px; font-weight:600; background:#f9fafb; padding:8px 12px; border-radius:8px;"></p>
 
-            <label style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">Tipo de Licencia</label>
+            <label style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; display:block; margin-bottom:6px;">Tipo de Licencia</label>
             <div style="display:flex; gap:8px; margin-bottom:16px;">
-                <button id="btnLicPrueba" onclick="seleccionarTipoLic('prueba')" style="flex:1; padding:10px; border-radius:10px; border:2px solid #e2e8f0; background:#fef3c7; color:#92400e; font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">🧪 PRUEBA</button>
-                <button id="btnLicPermanente" onclick="seleccionarTipoLic('permanente')" style="flex:1; padding:10px; border-radius:10px; border:2px solid #e2e8f0; background:#d1fae5; color:#065f46; font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">♾️ PERMANENTE</button>
+                <button id="btnLicPrueba" onclick="seleccionarTipoLic('prueba')" style="flex:1; padding:10px; border-radius:10px; border:2px solid #fde68a; background:#fef3c7; color:#92400e; font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">🧪 PRUEBA</button>
+                <button id="btnLicPermanente" onclick="seleccionarTipoLic('permanente')" style="flex:1; padding:10px; border-radius:10px; border:2px solid #e5e7eb; background:#d1fae5; color:#065f46; font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">♾️ PERMANENTE</button>
             </div>
 
             <div id="licFechaContainer" style="margin-bottom:16px;">
-                <label style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:6px;">Fecha de Vencimiento</label>
-                <input type="date" id="licFechaExp" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+                <label style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; display:block; margin-bottom:6px;">Fecha de Vencimiento</label>
+                <input type="date" id="licFechaExp" style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; box-sizing:border-box;">
                 <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-                    <button onclick="sumarDiasLic(7)"  style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+7 días</button>
-                    <button onclick="sumarDiasLic(15)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+15 días</button>
-                    <button onclick="sumarDiasLic(30)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+30 días</button>
-                    <button onclick="sumarDiasLic(90)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e2e8f0; background:#f8fafc; font-size:12px; font-weight:700; cursor:pointer; color:#475569;">+90 días</button>
+                    <button onclick="sumarDiasLic(7)"  style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+7 días</button>
+                    <button onclick="sumarDiasLic(15)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+15 días</button>
+                    <button onclick="sumarDiasLic(30)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+30 días</button>
+                    <button onclick="sumarDiasLic(90)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+90 días</button>
                 </div>
             </div>
 
             <div style="display:flex; gap:10px; margin-top:8px;">
-                <button onclick="cerrarLicenciaModal()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
-                <button onclick="guardarLicencia()" style="flex:1; padding:12px; border-radius:8px; border:none; background:linear-gradient(135deg,#3498db,#2980b9); color:white; font-weight:bold; cursor:pointer;">💾 GUARDAR</button>
+                <button onclick="cerrarLicenciaModal()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="guardarLicencia()" style="flex:1; padding:12px; border-radius:8px; border:none; background:linear-gradient(135deg,#1e4d8c,#0e2a5e); color:white; font-weight:bold; cursor:pointer;">💾 GUARDAR</button>
             </div>
         </div>
     </div>
@@ -713,10 +731,10 @@
             <div id="photoGallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin:15px 0; max-height:400px; overflow-y:auto;"></div>
             
             <div id="photoFooterAction" style="display:flex; justify-content: space-between; align-items: center; gap:10px;">
-                <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#64748b; color:white; flex:1;">CERRAR</button>
+                <button onclick="document.getElementById('photoModal').style.display='none'" class="btn" style="background:#6b7280; color:white; flex:1;">CERRAR</button>
                 <div style="display:flex; gap:5px;">
                     <button onclick="document.getElementById('inputFotoAccionCam').click()" style="background:var(--success); color:white; border:none; width:45px; height:45px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">📷</button>
-                    <button onclick="document.getElementById('inputFotoAccionGal').click()" style="background:#3498db; color:white; border:none; width:45px; height:45px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">🖼️</button>
+                    <button onclick="document.getElementById('inputFotoAccionGal').click()" style="background:#1e4d8c; color:white; border:none; width:45px; height:45px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">🖼️</button>
                 </div>
             </div>
             
@@ -731,8 +749,8 @@
                 <h3 style="margin: 0; color: var(--secondary); font-size:18px;">👤 Historial del Cliente</h3>
                 <button onclick="document.getElementById('modalHistorialCliente').style.display='none'" style="background: none; border: none; font-size: 18px; cursor: pointer; color: inherit;">❌</button>
             </div>
-            <h4 id="hcNombre" style="margin-top:0; margin-bottom: 5px; color: #1e293b; text-align: left;"></h4>
-            <p id="hcTel" style="margin-top:0; font-size:13px; color: #64748b; margin-bottom: 15px; text-align: left;"></p>
+            <h4 id="hcNombre" style="margin-top:0; margin-bottom: 5px; color: #111827; text-align: left;"></h4>
+            <p id="hcTel" style="margin-top:0; font-size:13px; color: #6b7280; margin-bottom: 15px; text-align: left;"></p>
             
             <div style="overflow-x: auto; max-height: 350px;">
                 <table class="tabla-olvidados" style="width: 100%;">
@@ -756,9 +774,9 @@
         <div class="modal-box">
             <div style="font-size: 40px; margin-bottom: 10px;">🗑️</div>
             <p style="color: var(--danger); font-weight: bold; font-size: 18px; margin-top: 0;">¿Eliminar Artículo?</p>
-            <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">Este artículo se borrará de tu inventario. Esta acción no se puede deshacer.</p>
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">Este artículo se borrará de tu inventario. Esta acción no se puede deshacer.</p>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="document.getElementById('deleteStockModal').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f1f5f9; color:#475569; font-weight:bold; cursor:pointer;">CANCELAR</button>
+                <button onclick="document.getElementById('deleteStockModal').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
                 <button onclick="ejecutarBorradoStock()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer;">SÍ, BORRAR</button>
             </div>
         </div>
@@ -768,7 +786,7 @@
         <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
         <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
         <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
-        <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: #f1c40f;">👤 MI PERFIL</button>
+        <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: #f59e0b;">👤 MI PERFIL</button>
         
         <button onclick="toggleDarkMode()" id="btn-dark-mode" style="margin-left: auto; font-size: 16px; background: none; border: none; cursor: pointer;">🌙</button>
         <button onclick="logout()" style="color: #ff7675; font-size: 12px; font-weight: bold; background: none; border: none; cursor: pointer;">✖ SALIR</button>
@@ -778,11 +796,11 @@
         <div style="display:flex; justify-content: space-between; align-items: center;">
             <h2 style="margin:0;">📱 Mi Taller Web</h2>
             <div style="display:flex; align-items:center; gap: 12px;">
-                <button id="btn-top-ayuda" onclick="showPage('ayuda')" style="display:none; background: #e2e8f0; border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; color: #475569; font-weight: bold; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;">
+                <button id="btn-top-ayuda" onclick="showPage('ayuda')" style="display:none; background: #f3f4f6; border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; color: #6b7280; font-weight: bold; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;">
                     <span style="font-size: 14px;">❓</span> AYUDA
                 </button>
                 <div style="display:flex; align-items:center;">
-                    <span id="sync-msg" style="display:none; font-size:8px; color:#64748b; margin-right:8px;">⏳ Esperando conexión...</span>
+                    <span id="sync-msg" style="display:none; font-size:8px; color:#6b7280; margin-right:8px;">⏳ Esperando conexión...</span>
                     <div id="status-dot" class="online"></div>
                 </div>
             </div>
@@ -799,7 +817,7 @@
                     
                     <div>
                         <label>Equipo</label>
-                        <select id="equipo" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+                        <select id="equipo" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;">
                             <option value="Smartphone">📱 Smartphone</option>
                             <option value="Tablet">📳 Tablet</option>
                             <option value="PC/Notebook">💻 PC/Notebook</option>
@@ -810,7 +828,7 @@
                     
                     <div>
                         <label>Marca</label>
-                        <select id="marca" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #cbd5e0;">
+                        <select id="marca" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;">
                             <option value="Samsung">Samsung</option>
                             <option value="Apple">Apple</option>
                             <option value="Motorola">Motorola</option>
@@ -834,13 +852,13 @@
                             <label>Clave/PIN 🔒</label>
                             <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
                         </div>
-                        <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #cbd5e0; background:#f1f5f9; cursor:pointer; height:43px; margin-top:19px;" title="Dibujar Patrón">✍️</button>
+                        <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px; margin-top:19px;" title="Dibujar Patrón">✍️</button>
                     </div>
                     
                     <div><label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()"></div>
                     <div>
                         <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
-                        <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#475569;">
+                        <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#6b7280;">
                             <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
                         </div>
                     </div>
@@ -867,7 +885,7 @@
                     </div>
 
                     <div class="full" style="position: relative;">
-                        <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#3498db;">(Agregá " + " para sumar varias fallas)</span></label>
+                        <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#1e4d8c;">(Agregá " + " para sumar varias fallas)</span></label>
                         <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
                         <div id="autocomplete-falla" class="autocomplete-list"></div>
                     </div>
@@ -875,7 +893,7 @@
                     <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                     
                     <div class="full" style="display:flex; flex-direction: column; gap:5px;">
-                        <label>Agregar Fotos</label>
+                        <label>Agregar Fotos <span id="fotoContador" style="font-weight:700; color:#2d3a8c; text-transform:none; font-size:11px;">(0 / 5)</span></label>
                         <div style="display:flex; gap:10px;">
                             <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
                             <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
@@ -894,10 +912,10 @@
             </form>
 
             <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-                <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid #cbd5e0; min-width: 200px;">
+                <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid #e5e7eb; min-width: 200px;">
                 <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
-                <button class="btn" style="background:#f1c40f; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
-                <button class="btn" style="background:#64748b; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 HISTORIAL DE REPARACIONES Y VENTAS</button>
+                <button class="btn" style="background:#f59e0b; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
+                <button class="btn" style="background:#6b7280; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 HISTORIAL DE REPARACIONES Y VENTAS</button>
                 <button class="btn btn-alerta-amarilla" id="btnAlertaAmarilla" onclick="abrirModalOlvidados()" style="display: none;">⚠️ 0 Equipos Olvidados</button>
             </div>
 
@@ -911,19 +929,19 @@
             </div>
             
             <div style="text-align:center; padding: 20px 0;">
-                <button id="btnCargarMas" onclick="cargarMasOrdenes()" style="display:none; background:#3498db; color:white; border:none; padding:10px 25px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);">⬇️ Cargar más órdenes...</button>
+                <button id="btnCargarMas" onclick="cargarMasOrdenes()" style="display:none; background:#1e4d8c; color:white; border:none; padding:10px 25px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);">⬇️ Cargar más órdenes...</button>
             </div>
         </div>
 
         <div id="page-contabilidad" class="page" style="display:none;">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
-                <h2 style="margin:0; color:#1e293b; font-size:24px;">💰 Resumen Financiero</h2>
-                <div style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; background: #f8fafc; padding: 10px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                    <label style="margin:0; font-size:13px; font-weight:bold; color:#64748b;">Mes:</label>
-                    <select id="selectMes" onchange="limpiarFiltroDia(); cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0; outline:none; font-weight:bold; color:#1e293b;"></select>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 15px;">
+                <h2 style="margin:0; color:#111827; font-size:24px;">💰 Resumen Financiero</h2>
+                <div style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; background: #f9fafb; padding: 10px 15px; border-radius: 12px; border: 1px solid #e5e7eb;">
+                    <label style="margin:0; font-size:13px; font-weight:bold; color:#6b7280;">Mes:</label>
+                    <select id="selectMes" onchange="limpiarFiltroDia(); cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #e5e7eb; outline:none; font-weight:bold; color:#111827;"></select>
                     
-                    <label style="margin:0; font-size:13px; margin-left:10px; font-weight:bold; color:#64748b;">Día Específico:</label>
-                    <input type="date" id="inputDia" onchange="cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #cbd5e0; outline:none; font-weight:bold; color:#1e293b;">
+                    <label style="margin:0; font-size:13px; margin-left:10px; font-weight:bold; color:#6b7280;">Día Específico:</label>
+                    <input type="date" id="inputDia" onchange="cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid #e5e7eb; outline:none; font-weight:bold; color:#111827;">
                     
                     <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px; margin-left: 5px; box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);" onclick="exportarExcel()">📊 DESCARGAR EXCEL</button>
                 </div>
@@ -932,7 +950,7 @@
             <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 20px;"></div>
             
             <div style="margin-bottom: 15px;">
-                <input type="text" id="search-conta" placeholder="🔎 Buscar movimiento por Orden, Cliente, Concepto o Método..." oninput="renderTablaContabilidad()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box; font-size:15px;">
+                <input type="text" id="search-conta" placeholder="🔎 Buscar movimiento por Orden, Cliente, Concepto o Método..." oninput="renderTablaContabilidad()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
             </div>
 
             <div id="contabilidad-diaria"></div>
@@ -942,7 +960,7 @@
             <h2 style="margin-top:0;">📦 Control de Stock</h2>
             
             <div style="margin-bottom: 15px; margin-top: 10px;">
-                <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box; font-size:15px;">
+                <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
             </div>
 
             <div class="form-grid">
@@ -969,7 +987,7 @@
                 <h2 style="margin:0;">🔑 Licencias y Mantenimiento</h2>
             </div>
             
-            <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
                 
                 <button id="btnBackupGlobal" onclick="ejecutarBackup(true)" class="btn" style="background:#27ae60; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">
                     💾 BACKUP TOTAL (Recomendado para PC)
@@ -979,13 +997,13 @@
                     📱 BACKUP LIGERO (Sin fotos - Ideal Celular)
                 </button>
                 
-                <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#475569; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">
+                <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#6b7280; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">
                     🧹 LIMPIEZA GLOBAL DE FOTOS Viejas (+45 días)
                 </button>
 
-                <div style="border-top:1px dashed #cbd5e0; padding-top:15px; margin-top:5px;">
-                    <p style="font-size:12px; color:#64748b; margin:0 0 10px 0; text-align:center;">⚠️ <b>Restaurar Backup</b> — sobrescribe TODOS los datos actuales</p>
-                    <label for="inputRestoreBackup" style="display:block; width:100%; padding:15px; background:#e53e3e; color:white; border-radius:8px; text-align:center; font-weight:bold; font-size:13px; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 10px rgba(229,62,62,0.3);">
+                <div style="border-top:1px dashed #e5e7eb; padding-top:15px; margin-top:5px;">
+                    <p style="font-size:12px; color:#6b7280; margin:0 0 10px 0; text-align:center;">⚠️ <b>Restaurar Backup</b> — sobrescribe TODOS los datos actuales</p>
+                    <label for="inputRestoreBackup" style="display:block; width:100%; padding:15px; background:#dc2626; color:white; border-radius:8px; text-align:center; font-weight:bold; font-size:13px; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 10px rgba(229,62,62,0.3);">
                         📂 RESTAURAR DESDE BACKUP (.json)
                     </label>
                     <input type="file" id="inputRestoreBackup" accept=".json" style="display:none;" onchange="restaurarBackup(this)">
@@ -993,7 +1011,7 @@
 
             </div>
 
-            <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+            <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
                 <label>Nuevo Usuario (WhatsApp)</label>
                 <div style="display:flex; gap:10px; margin-top:5px;">
                     <input type="text" id="new-user-wa" placeholder="Ej: 54911..." style="flex:1;">
@@ -1001,7 +1019,7 @@
                 </div>
             </div>
 
-            <div id="resetRequestsPanel" style="display:none; background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:18px; margin-bottom:20px;">
+            <div id="resetRequestsPanel" style="display:none; background:#f5f6fc; border:1.5px solid #fed7aa; border-radius:12px; padding:18px; margin-bottom:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h3 style="margin:0; color:#c2410c; font-size:15px;">🔐 Solicitudes de Nueva Clave</h3>
                     <span id="resetBadge" style="background:#ef4444; color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold;">0</span>
@@ -1010,10 +1028,10 @@
             </div>
 
             <div style="margin-bottom: 15px;">
-                <input type="text" id="search-user" placeholder="🔎 Buscar Usuario por WhatsApp..." onkeyup="listarUsuarios()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e0; box-sizing: border-box;">
+                <input type="text" id="search-user" placeholder="🔎 Buscar Usuario por WhatsApp..." onkeyup="listarUsuarios()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box;">
             </div>
 
-            <div class="table-wrapper" style="overflow-x:auto; background:white; border-radius:12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+            <div class="table-wrapper" style="overflow-x:auto; background:white; border-radius:12px; border: 1px solid #e5e7eb; margin-bottom: 25px;">
                 <table style="min-width: 100%;">
                     <thead>
                         <tr>
@@ -1029,144 +1047,356 @@
         </div>
 
         <div id="page-ayuda" class="page" style="display:none;">
-            
-            <h2 style="margin-top:0; color:#1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">📘 La Guía de Mi Taller Web</h2>
-            
+
+            <!-- HEADER GUÍA -->
+            <div style="background: linear-gradient(135deg, #06122a 0%, #1e4d8c 100%); border-radius: 16px; padding: 28px 30px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;">
+                <div style="position:absolute; right:-20px; top:-20px; font-size:120px; opacity:0.06; line-height:1;">📘</div>
+                <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 8px;">DOCUMENTACIÓN OFICIAL</div>
+                <h2 style="margin: 0 0 8px; font-size: 26px; font-weight: 900; color: white; letter-spacing: -0.5px;">Guía de Mi Taller Web</h2>
+                <p style="margin: 0; font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.5;">Todo lo que necesitás saber para sacarle el máximo provecho al sistema. Hacé clic en cada sección para expandirla.</p>
+            </div>
+
+            <!-- SECCIÓN 1: GESTIÓN -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">🛠️ Sección 1: Gestión (El Corazón del Taller) <span>+</span></summary>
+                    <summary class="faq-summary">🛠️ Sección 1: Gestión — El Corazón del Taller <span>+</span></summary>
                     <div class="faq-content">
-                        <p>Es la pantalla principal donde ocurre la magia. Aquí registrás los equipos y controlás el flujo de trabajo.</p>
-                        
-                        <b>A. Formulario de Ingreso</b>
+                        <p>La pestaña <b>Gestión</b> es donde ocurre todo. Desde acá ingresás equipos, seguís el estado de cada reparación y comunicás novedades al cliente.</p>
+
+                        <b>A. Formulario de Ingreso de Equipo</b>
                         <ul>
-                            <li><b>Datos del Equipo:</b> Completás cliente, WhatsApp (549...), equipo, marca, modelo, IMEI y el PIN/Patrón de desbloqueo.</li>
-                            <li><b>Finanzas Iniciales:</b> Cargás el Precio Final y la Seña (si dejó dinero). Podés tildar "Pago Total" para automatizar el cobro.</li>
-                            <li><b>Costo de Repuesto (🔒):</b> Clic en el candado para anotar cuánto te costó la pieza sin que el cliente lo vea.</li>
-                            <li><b>Falla y Fotos:</b> Usá el autocompletado para las fallas (ej: Pantalla + Pin). Sacá fotos directamente con la cámara para tener un respaldo del estado físico del equipo.</li>
+                            <li><b>Cliente y WhatsApp:</b> Escribí el nombre del cliente. El número de WhatsApp debe incluir el código de país sin el "+", por ejemplo: <b>5491145678900</b>. El sistema usa ese número para enviar mensajes automáticos.</li>
+                            <li><b>Equipo, Marca y Modelo:</b> Completá estos tres campos para identificar claramente el dispositivo. El autocompletado aprende de los equipos que ya ingresaste.</li>
+                            <li><b>IMEI:</b> Opcional pero recomendado. Te protege ante cualquier reclamo legal o confusión de equipos.</li>
+                            <li><b>PIN / Patrón de desbloqueo:</b> Guardalo acá para no perderlo. Usá el ícono del candado 🔒 para registrar también el <b>Costo del Repuesto</b> que solo verás vos, sin que aparezca en el ticket del cliente.</li>
+                            <li><b>Precio Final y Seña:</b> Si el cliente dejó una seña, cargala. El sistema calculará automáticamente el saldo pendiente. Tildá <b>"Pago Total"</b> si ya abonó todo al traer el equipo.</li>
+                            <li><b>Falla:</b> Usá el autocompletado para fallas frecuentes (ej: "No carga", "Pantalla rota"). Podés escribir algo personalizado si la falla no está en la lista.</li>
+                            <li><b>Fotos:</b> Sacá fotos del equipo al momento del ingreso. Esto es clave como prueba del estado físico antes de cualquier intervención. Se comprimen automáticamente para no ocupar espacio.</li>
                         </ul>
 
                         <b>B. Estados de Reparación</b>
-                        <p>Al hacer clic en el botón de estado (ej: "Pendiente"), podés cambiarlo a:</p>
+                        <p>Cada orden tiene un estado visible. Tocando el badge de estado se abre el menú de cambio:</p>
                         <ul>
-                            <li><b>Reparado:</b> Te pregunta si usaste repuestos del stock para descontarlos.</li>
-                            <li><b>No reparado:</b> Te permite avisar por WhatsApp que no hubo solución.</li>
-                            <li><b>Entregado:</b> Si el cliente debía dinero, se abre una ventana para cobrar el saldo y elegir el método de pago final.</li>
-                            <li><b>Garantía:</b> Reingresa un equipo entregado a la lista de trabajo actual.</li>
+                            <li><b>⏳ Pendiente:</b> Estado inicial. El equipo está esperando diagnóstico o reparación.</li>
+                            <li><b>✅ Reparado:</b> La reparación fue exitosa. El sistema te pregunta si usaste repuestos del stock para descontarlos automáticamente del inventario. Se puede notificar al cliente por WhatsApp con un solo toque.</li>
+                            <li><b>❌ No Reparado:</b> No fue posible arreglarlo. Podés enviarle un mensaje automático al cliente avisándole que puede retirar su equipo.</li>
+                            <li><b>📦 Entregado:</b> El equipo fue devuelto al cliente. Si había saldo pendiente, el sistema abre la ventana de cobro para registrar el método de pago (Efectivo, Transferencia o Tarjeta) antes de marcar como entregado.</li>
+                            <li><b>🔄 Garantía (Reingreso):</b> El cliente trajo el equipo de vuelta por un problema relacionado. Lo reingresa automáticamente a la lista activa sin generar un nuevo número de orden.</li>
+                        </ul>
+
+                        <b>C. Acciones por Orden</b>
+                        <ul>
+                            <li><b>📄 PDF / Ticket:</b> Genera un recibo profesional con el logo de tu taller, datos del equipo, precios y tus términos y condiciones.</li>
+                            <li><b>💬 WhatsApp:</b> Abre un mensaje prediseñado con el estado actual del equipo y un link para que el cliente vea su estado online.</li>
+                            <li><b>🕒 Historial:</b> Muestra todos los cambios de estado de esa orden con fecha y hora.</li>
+                            <li><b>✏️ Editar precio:</b> Actualizá el precio final si el presupuesto cambió durante la reparación.</li>
+                            <li><b>🗑️ Eliminar:</b> Borra la orden de forma permanente. Pedirá confirmación antes de proceder.</li>
+                        </ul>
+
+                        <b>D. Buscador y Filtros</b>
+                        <ul>
+                            <li>Usá la <b>barra de búsqueda</b> para encontrar órdenes por nombre de cliente, modelo de equipo o número de orden.</li>
+                            <li>El botón <b>📁 Archivo</b> muestra las órdenes históricas (entregadas hace más de 24hs) sin mezclarlas con el trabajo del día.</li>
+                            <li>Podés filtrar por estado (Pendiente, Reparado, etc.) para ver solo lo que necesitás.</li>
                         </ul>
                     </div>
                 </details>
             </div>
 
+            <!-- SECCIÓN 2: CONTABILIDAD -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">💰 Sección 2: Contabilidad (Tus Números Claros) <span>+</span></summary>
+                    <summary class="faq-summary">💰 Sección 2: Contabilidad — Tus Números Claros <span>+</span></summary>
                     <div class="faq-content">
-                        <p>Acá dejás de "contar billetes" para analizar tu negocio.</p>
+                        <p>La pestaña <b>Contabilidad</b> te da una radiografía financiera de tu taller. Dejás de "contar de cabeza" y pasás a tener datos reales.</p>
+
+                        <b>Tarjetas de Resumen (parte superior)</b>
                         <ul>
-                            <li><b>Tarjetas de Resumen:</b> Mirás de un vistazo tus Ingresos Totales, Saldos por Cobrar, Gastos y la Ganancia Neta.</li>
-                            <li><b>Filtros:</b> Podés ver las finanzas de todo el mes o de un día específico usando el calendario.</li>
-                            <li><b>Exportación:</b> Botón "Descargar Excel" para tener todos los movimientos en un archivo CSV listo para el contador.</li>
+                            <li><b>💵 Ingresos Totales:</b> Suma de todo lo cobrado en el período seleccionado (reparaciones + ventas de mostrador).</li>
+                            <li><b>⏳ Saldos por Cobrar:</b> Lo que los clientes todavía te deben de órdenes activas.</li>
+                            <li><b>📉 Gastos (Costos):</b> Total de lo que invertiste en repuestos según el costo privado que cargaste en cada orden.</li>
+                            <li><b>📈 Ganancia Neta:</b> Ingresos menos Gastos. Tu ganancia real.</li>
+                        </ul>
+
+                        <b>Filtros de Período</b>
+                        <ul>
+                            <li>Seleccioná <b>el mes actual</b> para ver el resumen mensual.</li>
+                            <li>Usá el <b>selector de fecha</b> para analizar un día específico.</li>
+                            <li>El filtro <b>"Todo"</b> muestra el histórico completo desde que empezaste a usar el sistema.</li>
+                        </ul>
+
+                        <b>Tabla de Movimientos</b>
+                        <ul>
+                            <li>Cada fila es un ingreso: muestra fecha, cliente, equipo, método de pago y monto.</li>
+                            <li>Los métodos se distinguen visualmente: 💵 Efectivo, 📲 Transferencia, 💳 Tarjeta.</li>
+                            <li>Las ventas rápidas de mostrador también aparecen acá, identificadas como "Venta de Stock".</li>
+                        </ul>
+
+                        <b>Exportación</b>
+                        <ul>
+                            <li>El botón <b>Descargar Excel</b> exporta todos los movimientos del período a un archivo CSV compatible con Excel, Google Sheets y cualquier software contable.</li>
                         </ul>
                     </div>
                 </details>
             </div>
 
+            <!-- SECCIÓN 3: STOCK -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">📦 Sección 3: Stock (Control de Inventario) <span>+</span></summary>
+                    <summary class="faq-summary">📦 Sección 3: Stock — Control de Inventario <span>+</span></summary>
                     <div class="faq-content">
-                        <p>Evitá el "me olvidé de comprar el módulo".</p>
+                        <p>Desde la pestaña <b>Stock</b> controlás todo tu inventario: repuestos técnicos y accesorios de venta.</p>
+
+                        <b>Agregar Artículos al Inventario</b>
                         <ul>
-                            <li><b>Inventario:</b> Cargás repuestos o accesorios (fundas, cables) con su costo y precio de venta.</li>
-                            <li><b>Venta Rápida:</b> En la pestaña Gestión, tenés el botón 🛒 para vender algo del mostrador sin crear una orden técnica.</li>
-                            <li><b>Alerta de Stock:</b> Los artículos con poco inventario resaltan para que sepas qué reponer.</li>
+                            <li>Completá el <b>nombre del artículo</b> (ej: "Módulo iPhone 13", "Funda Samsung A54"), el <b>costo de compra</b> y el <b>precio de venta al público</b>.</li>
+                            <li>Cargá la <b>cantidad disponible</b> actual. Podés actualizarla manualmente cuando recibís nueva mercadería.</li>
+
+                        </ul>
+
+                        <b>Descuento Automático de Stock</b>
+                        <ul>
+                            <li>Cuando marcás una orden como <b>Reparado</b>, el sistema te pregunta si usaste repuestos del inventario.</li>
+                            <li>Seleccionás el artículo y la cantidad usada, y el stock se descuenta solo.</li>
+                            <li>Si luego cancelás la reparación (cambiás a "No reparado" o "Pendiente"), el sistema <b>devuelve el repuesto automáticamente</b> al inventario.</li>
+                        </ul>
+
+                        <b>Venta Rápida de Mostrador 🛒</b>
+                        <ul>
+                            <li>Desde la pestaña Gestión, el botón 🛒 abre la <b>Venta Rápida</b>.</li>
+                            <li>Ideal para vender cables, fundas, auriculares o cualquier accesorio sin necesitar crear una orden técnica.</li>
+                            <li>Buscás el artículo, ingresás cantidad y precio, elegís el método de pago y listo: el movimiento queda registrado en Contabilidad y el stock se descuenta.</li>
+                        </ul>
+
+                        <b>Alertas de Stock Bajo</b>
+                        <ul>
+                            <li>Los artículos que llegaron al mínimo definido se resaltan visualmente en rojo/naranja para que los veas de un vistazo.</li>
                         </ul>
                     </div>
                 </details>
             </div>
 
+            <!-- SECCIÓN 4: PERFIL -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">👤 Sección 4: Mi Perfil (Tu Marca) <span>+</span></summary>
+                    <summary class="faq-summary">👤 Sección 4: Mi Perfil — Tu Marca y Configuración <span>+</span></summary>
                     <div class="faq-content">
-                        <p>Donde el sistema deja de ser genérico y se vuelve tuyo.</p>
+                        <p>Desde <b>Mi Perfil</b> personalizás el sistema para que refleje la identidad de tu taller.</p>
+
+                        <b>Identidad Visual</b>
                         <ul>
-                            <li><b>Identidad:</b> Cargás tu Logo, el nombre de tu taller y un subtítulo (ej: "Especialistas en Microelectrónica").</li>
-                            <li><b>Garantía:</b> Escribís tus términos legales que aparecerán al pie de cada ticket PDF.</li>
-                            <li><b>Seguridad:</b> Cambiás tu contraseña de acceso cuando quieras.</li>
+                            <li><b>Logo:</b> Subí la imagen de tu logo. Aparecerá en todos los tickets PDF que generes. Formatos recomendados: PNG con fondo transparente o JPG.</li>
+                            <li><b>Nombre del Taller:</b> El nombre que aparece en el encabezado de los tickets y en la vista de seguimiento del cliente.</li>
+                            <li><b>Descripción / Subtítulo:</b> Un texto corto debajo del nombre, por ejemplo: "Reparación de celulares y tablets" o "Especialistas en microelectrónica".</li>
+                            <li><b>WhatsApp en Ticket:</b> El número de contacto de tu taller que figura al pie del ticket PDF para que el cliente te contacte.</li>
+                        </ul>
+
+                        <b>Términos y Condiciones</b>
+                        <ul>
+                            <li>Escribí tu texto de garantía o condiciones generales. Aparece al pie de cada ticket PDF.</li>
+                            <li>Ejemplo: <i>"Garantía de 30 días sobre la mano de obra. Pasados los 90 días desde el ingreso, no nos hacemos responsables del equipo."</i></li>
+                        </ul>
+
+                        <b>Seguridad</b>
+                        <ul>
+                            <li>Podés cambiar tu contraseña de acceso en cualquier momento desde este panel.</li>
+                            <li>Dejá el campo "Nueva Clave" vacío si no querés cambiarla al actualizar el resto de los datos.</li>
+
                         </ul>
                     </div>
                 </details>
             </div>
 
+            <!-- SECCIÓN 5: HERRAMIENTAS ESPECIALES -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">🚀 Herramientas Especiales <span>+</span></summary>
+                    <summary class="faq-summary">🚀 Sección 5: Herramientas Especiales y Funciones Avanzadas <span>+</span></summary>
                     <div class="faq-content">
+
+                        <b>⚠️ Alerta de Equipos Olvidados</b>
                         <ul>
-                            <li><b>Alerta Amarilla (⚠️):</b> Un botón que aparece solo si tenés equipos reparados hace más de 15 días. Te permite presionar un botón para enviarle un recordatorio al cliente por WhatsApp.</li>
-                            <li><b>Vista del Cliente:</b> Cuando le mandás el WhatsApp al cliente, él recibe un link donde ve una pantalla azul profesional con el estado de su equipo y un botón para bajar su propio PDF.</li>
-                            <li><b>Buscador Inteligente:</b> Buscá por nombre, modelo o número de orden.</li>
-                            <li><b>Limpieza de Fotos:</b> Los administradores pueden borrar fotos viejas (+45 días) para que la base de datos no se sature.</li>
+                            <li>Un botón amarillo parpadeante aparece automáticamente en la barra superior cuando tenés equipos con estado "Reparado" que llevan más de <b>15 días sin ser retirados</b>.</li>
+                            <li>Al hacer clic, se abre una tabla con todos esos equipos. Desde ahí podés enviar un <b>recordatorio por WhatsApp</b> a cada cliente con un solo toque.</li>
+                            <li>Una vez enviado el mensaje, el botón del cliente cambia a "Notificado" para que no lo dupliques.</li>
                         </ul>
+
+                        <b>🔗 Vista de Seguimiento del Cliente</b>
+                        <ul>
+                            <li>Cuando le mandás el WhatsApp al cliente, recibe un link personalizado donde puede ver en tiempo real el estado de su equipo.</li>
+                            <li>La vista del cliente es profesional, muestra tu logo, nombre del taller, estado de la reparación y un botón para descargarse su propio ticket PDF.</li>
+                            <li>No requiere que el cliente tenga cuenta ni contraseña.</li>
+                        </ul>
+
+                        <b>📲 Modo Oscuro</b>
+                        <ul>
+                            <li>Activalo desde el botón en la barra superior. El sistema recuerda tu preferencia para la próxima vez que entres.</li>
+                            <li>Ideal para trabajar en ambientes con poca luz o simplemente si preferís el estilo oscuro.</li>
+                        </ul>
+
+                        <b>📁 Historial y Archivo</b>
+                        <ul>
+                            <li>Las órdenes entregadas se archivan automáticamente para mantener limpia tu vista de trabajo pendiente.</li>
+                            <li>Podés ver el historial completo de cualquier cliente haciendo clic en su nombre: verás todas sus reparaciones anteriores y el total invertido.</li>
+                        </ul>
+
+
                     </div>
                 </details>
             </div>
 
-            <h2 style="margin-top:40px; color:#1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;">❓ Preguntas Frecuentes</h2>
+            <!-- SEPARADOR FAQ -->
+            <div style="background: linear-gradient(135deg, #06122a 0%, #0e2a5e 100%); border-radius: 16px; padding: 22px 30px; margin: 32px 0 24px; color: white; position: relative; overflow: hidden;">
+                <div style="position:absolute; right:-10px; top:-10px; font-size:100px; opacity:0.06; line-height:1;">❓</div>
+                <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 6px;">SOPORTE</div>
+                <h2 style="margin: 0; font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.3px;">Preguntas Frecuentes</h2>
+            </div>
 
+            <!-- FAQ 1: ACCESO Y SEGURIDAD -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">1. Acceso y Seguridad <span>+</span></summary>
+                    <summary class="faq-summary">🔐 Acceso y Seguridad <span>+</span></summary>
                     <div class="faq-content">
-                        <p><b>Me olvidé mi contraseña, ¿qué hago?</b>
-                        Por seguridad, el sistema no tiene un botón de "recuperar" automático para usuarios finales. Deben contactarte directamente a través del botón de Soporte por WhatsApp en la pantalla de inicio para que vos reinicies su clave desde tu panel.</p>
-                        
-                        <p><b>¿Cómo cambio mi contraseña actual?</b>
-                        Ingresá a '👤 MI PERFIL', escribí la nueva clave en el campo 'Nueva Clave' y presioná 'ACTUALIZAR'.</p>
-                        
-                        <p><b>Me aparece un cartel de "Acceso Denegado".</b>
-                        Esto sucede si tu sesión fue iniciada en otro dispositivo o si tu licencia fue suspendida. Si fue por sesión duplicada, simplemente volvé a ingresar tus datos para recuperar el acceso en el dispositivo actual.</p>
+                        <p><b>Me olvidé mi contraseña, ¿qué hago?</b><br>
+                        Desde la pantalla de inicio de sesión, usá el enlace <b>"¿Olvidaste tu contraseña?"</b>. El sistema enviará un link de recuperación a tu correo electrónico registrado. Si no lo encontrás, revisá la carpeta de spam.</p>
+
+                        <p><b>¿Cómo cambio mi contraseña actual?</b><br>
+                        Ingresá a <b>👤 Mi Perfil</b>, escribí la nueva clave en el campo "Nueva Clave" y presioná "ACTUALIZAR". La nueva contraseña estará activa de inmediato.</p>
+
+                        <p><b>Me aparece el mensaje "Acceso Denegado".</b><br>
+                        Esto ocurre en dos situaciones: (1) tu cuenta fue iniciada en otro dispositivo al mismo tiempo — el sistema solo permite una sesión activa por usuario, simplemente volvé a iniciar sesión y recuperarás el acceso; (2) tu licencia fue suspendida por el administrador — en ese caso contactá al soporte.</p>
+
+                        <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br>
+                        No. Por seguridad, el sistema permite solo una sesión activa por cuenta. Si iniciás sesión en un segundo dispositivo, el primero quedará desconectado automáticamente.</p>
+
+
                     </div>
                 </details>
             </div>
 
+            <!-- FAQ 2: TICKETS Y PDF -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">2. Impresión y Tickets <span>+</span></summary>
+                    <summary class="faq-summary">🖨️ Impresión y Tickets PDF <span>+</span></summary>
                     <div class="faq-content">
-                        <p><b>¿Cómo imprimo el ticket desde mi celular?</b>
-                        Al presionar el botón de la hoja (📄), el sistema genera un documento PDF. Este archivo se abrirá automáticamente en una pestaña nueva de tu navegador móvil, desde donde podrás enviarlo por WhatsApp al cliente o mandarlo a una impresora térmica vinculada por Bluetooth/Wi-Fi.</p>
-                        
-                        <p><b>Mi logo no aparece en el PDF.</b>
-                        Verificá en '👤 MI PERFIL' que hayas cargado una imagen en el botón '📷 CARGAR LOGO' y que hayas presionado 'ACTUALIZAR' al finalizar.</p>
+                        <p><b>¿Cómo genero e imprimo el ticket?</b><br>
+                        Presioná el botón 📄 en la fila de la orden. Se genera un PDF automáticamente y se abre en una pestaña nueva del navegador. Desde ahí podés imprimirlo, guardarlo o enviarlo por WhatsApp.</p>
+
+                        <p><b>¿Cómo lo imprimo desde el celular?</b><br>
+                        Con el PDF abierto en el navegador móvil, tocá el ícono de compartir y seleccioná tu impresora. Si tenés una impresora térmica conectada por Bluetooth o Wi-Fi, también aparecerá como opción. También podés enviarlo directamente por WhatsApp al cliente.</p>
+
+                        <p><b>Mi logo no aparece en el PDF.</b><br>
+                        Verificá en <b>👤 Mi Perfil</b> que hayas cargado una imagen con el botón "📷 CARGAR LOGO" y que hayas presionado "ACTUALIZAR". El logo debe ser una imagen válida (JPG o PNG). Si el archivo pesa demasiado, intentá con una versión más liviana.</p>
+
+                        <p><b>¿Puedo personalizar el texto del ticket?</b><br>
+                        Sí. El nombre del taller, subtítulo, número de WhatsApp y los términos y condiciones que configurés en Mi Perfil aparecerán en todos los tickets. El cuerpo del ticket (datos del equipo, precios) se genera automáticamente.</p>
+
+                        <p><b>¿El cliente puede descargar su propio ticket?</b><br>
+                        Sí. La vista de seguimiento que el cliente recibe por WhatsApp incluye un botón para que descargue su propio PDF con los datos de su reparación.</p>
                     </div>
                 </details>
             </div>
 
+            <!-- FAQ 3: FOTOS -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">3. Fotos y Archivos <span>+</span></summary>
+                    <summary class="faq-summary">📷 Fotos y Archivos <span>+</span></summary>
                     <div class="faq-content">
-                        <p><b>¿Por qué no puedo subir una foto?</b>
-                        El sistema intenta comprimir las fotos automáticamente para ahorrar espacio. Si falla, asegurate de tener una conexión a internet estable; verás un mensaje de "Sincronizando..." en la parte superior si la conexión es débil.</p>
-                        
-                        <p><b>¿Se borran mis fotos con el tiempo?</b>
-                        Sí, para mantener la velocidad del sistema, las fotos de equipos que ingresaron hace más de 45 días pueden ser eliminadas en las limpiezas de mantenimiento. Los datos de la orden (cliente, falla, precio) permanecen siempre; solo se eliminan las imágenes antiguas.</p>
+                        <p><b>¿Por qué no puedo subir una foto?</b><br>
+                        El sistema comprime las fotos automáticamente. Si la subida falla, verificá que tengas conexión a internet estable. Un indicador "Sincronizando..." aparece en la parte superior cuando la conexión es débil. Intentá con una foto de menor resolución si el problema persiste.</p>
+
+                        <p><b>¿Cuántas fotos puedo subir por orden?</b><br>
+                        El límite es de <b>5 fotos por orden</b>. Al intentar agregar una sexta, el sistema te avisará con un mensaje de error. El contador visible junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: <i>2 / 5</i>). Priorizá las que muestren el estado físico del equipo: pantalla rota, golpes, estado de los puertos.</p>
+
+                        <p><b>¿Se borran mis fotos con el tiempo?</b><br>
+                        Sí. Para mantener la velocidad del sistema, las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan en las limpiezas automáticas. Los datos de la orden (cliente, falla, precio, estado) se conservan siempre. Solo desaparecen las imágenes.</p>
+
+                        <p><b>¿Cómo veo las fotos de una orden?</b><br>
+                        Desde la tabla de órdenes, hacé clic sobre cualquier miniatura de foto. Se abre el visor a pantalla completa donde podés hacer zoom con pellizco (pinch) en el celular o con la rueda del mouse en la PC.</p>
                     </div>
                 </details>
             </div>
 
+            <!-- FAQ 4: ESTADOS -->
             <div class="faq-accordion">
                 <details>
-                    <summary class="faq-summary">4. Estados y Gestión <span>+</span></summary>
+                    <summary class="faq-summary">🔄 Estados y Flujo de Reparación <span>+</span></summary>
                     <div class="faq-content">
-                        <p><b>Cambié un equipo a "Entregado" y desapareció de la lista.</b>
-                        El sistema está diseñado para mantener tu mesa de trabajo limpia. Las órdenes entregadas se mueven automáticamente a la pestaña '📁 HISTORIAL DE REPARACIONES Y VENTAS' después de 24 horas para que no te molesten en el día a día.</p>
-                        
-                        <p><b>¿Cómo devuelvo un repuesto al stock si la reparación se canceló?</b>
-                        Si marcaste un equipo como "Reparado" (descontando stock) pero luego el cliente se arrepiente, simplemente cambiá el estado a "Pendiente" o "No reparado". El sistema detectará que habías usado un repuesto y lo devolverá automáticamente a tu inventario.</p>
+                        <p><b>Cambié un equipo a "Entregado" y desapareció de la lista principal.</b><br>
+                        Es por diseño: el sistema mantiene tu mesa de trabajo limpia. Las órdenes entregadas se mueven a la pestaña <b>📁 Historial</b> automáticamente cuando se entrega el equipo. Podés seguir viéndolas y buscándolas desde ahí.</p>
+
+                        <p><b>¿Puedo revertir un cambio de estado?</b><br>
+                        Sí, podés cambiar el estado libremente mientras la orden esté activa. La excepción es "Entregado": una vez entregado y archivado, no se puede volver a activo fácilmente. Usá el estado con cuidado.</p>
+
+                        <p><b>¿Cómo devuelvo un repuesto al stock si la reparación se canceló?</b><br>
+                        Si marcaste un equipo como "Reparado" descontando stock y luego el cliente se arrepiente, cambiá el estado a "Pendiente" o "No reparado". El sistema detecta que habías descontado un repuesto y lo <b>devuelve automáticamente</b> al inventario.</p>
+
+                        <p><b>¿Qué pasa con el cobro si cambio a "Entregado"?</b><br>
+                        Si la orden tiene saldo pendiente (el precio final es mayor que la seña), se abre automáticamente la ventana de cobro al marcar como Entregado. Elegís el método de pago y el movimiento queda registrado en Contabilidad.</p>
+
+                        <p><b>¿Para qué sirve el estado "Garantía"?</b><br>
+                        Si un cliente vuelve con un equipo ya entregado por un problema relacionado con la reparación original, usás este estado para reingresar el equipo al flujo de trabajo sin crear una nueva orden, manteniendo el historial unificado.</p>
+                    </div>
+                </details>
+            </div>
+
+            <!-- FAQ 5: CONTABILIDAD -->
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">💳 Contabilidad y Pagos <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>¿La seña que cargué al ingreso queda registrada?</b><br>
+                        Sí. La seña se registra como un ingreso parcial en la fecha en que fue cargada. Cuando el cliente retira y abona el saldo, ese segundo movimiento también queda registrado con su propio método de pago.</p>
+
+                        <p><b>¿Puedo registrar diferentes métodos de pago para la seña y el saldo?</b><br>
+                        Sí. Al ingresar el equipo elegís el método de la seña (Efectivo, Transferencia o Tarjeta), y al momento de la entrega elegís el método del saldo restante. Ambos quedan detallados en Contabilidad.</p>
+
+                        <p><b>¿Las ventas rápidas de mostrador aparecen en la contabilidad?</b><br>
+                        Sí. Toda venta realizada desde el botón 🛒 se registra automáticamente en Contabilidad como "Venta de Stock" con el monto, método de pago y fecha.</p>
+
+                        <p><b>¿Qué significa la "Ganancia Neta"?</b><br>
+                        Es el resultado de restar tus costos (los repuestos que cargaste de forma privada en cada orden) a tus ingresos totales del período. Es tu ganancia real.</p>
+
+                        <p><b>El Excel que descargué tiene caracteres extraños.</b><br>
+                        Al abrir el CSV en Excel, asegurate de seleccionar codificación <b>UTF-8</b> en el asistente de importación para que los acentos y caracteres especiales se vean correctamente.</p>
+                    </div>
+                </details>
+            </div>
+
+            <!-- FAQ 6: STOCK -->
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">📦 Stock e Inventario <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>¿Puedo agregar el mismo producto varias veces?</b><br>
+                        Podés, pero es mejor tener un único registro por artículo y actualizar su cantidad. Así los descuentos automáticos funcionan correctamente y no se genera confusión en el inventario.</p>
+
+                        <p><b>El stock de un artículo quedó en negativo, ¿qué hago?</b><br>
+                        Actualizá la cantidad manualmente desde la sección Stock ingresando el número correcto. Esto puede pasar si ingresaste repuestos manualmente y el sistema los descontó además.</p>
+
+
+                    </div>
+                </details>
+            </div>
+
+            <!-- FAQ 7: TÉCNICOS -->
+            <div class="faq-accordion">
+                <details>
+                    <summary class="faq-summary">⚙️ Técnico y Rendimiento <span>+</span></summary>
+                    <div class="faq-content">
+                        <p><b>¿El sistema funciona sin internet?</b><br>
+                        No. Mi Taller Web es una aplicación en la nube y requiere conexión a internet para funcionar. Sin conexión, verás un indicador rojo en la barra superior y no podrás guardar cambios.</p>
+
+                        <p><b>¿Mis datos están respaldados?</b><br>
+                        Sí. Todos los datos se guardan en tiempo real en Firebase (infraestructura de Google). No necesitás hacer backups manuales; la sincronización es automática y continua.</p>
+
+                        <p><b>El sistema se pone lento. ¿Qué puedo hacer?</b><br>
+                        Probá cerrar otras pestañas del navegador y limpiar el caché. Si el problema persiste en una conexión de datos móviles, verificá la señal. La aplicación también funciona más fluido en redes WiFi estables.</p>
+
+                        <p><b>¿Puedo instalarla como app en mi celular?</b><br>
+                        Sí. Al abrir el sistema en tu navegador móvil (Chrome recomendado), el navegador te ofrecerá la opción de "Agregar a pantalla de inicio". Esto crea un ícono en tu celular que abre la app en modo pantalla completa, similar a una app nativa.</p>
+
+                        <p><b>¿Desde qué dispositivos puedo usar el sistema?</b><br>
+                        Desde cualquier dispositivo con navegador web moderno: celulares Android e iPhone, tablets, computadoras de escritorio y notebooks. La interfaz es responsive y se adapta a cualquier tamaño de pantalla.</p>
                     </div>
                 </details>
             </div>
@@ -1286,7 +1516,7 @@
         ctxPattern.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
         
         ctxPattern.lineWidth = 4;
-        ctxPattern.strokeStyle = '#3498db';
+        ctxPattern.strokeStyle = '#1e4d8c';
         ctxPattern.lineCap = 'round';
         ctxPattern.lineJoin = 'round';
         
@@ -1309,7 +1539,7 @@
         for(let node of patternNodes) {
             ctxPattern.beginPath();
             ctxPattern.arc(node.x, node.y, 8, 0, Math.PI * 2);
-            ctxPattern.fillStyle = patternPath.includes(node.id) ? '#3498db' : '#cbd5e0';
+            ctxPattern.fillStyle = patternPath.includes(node.id) ? '#1e4d8c' : '#e5e7eb';
             ctxPattern.fill();
         }
     }
@@ -1331,7 +1561,7 @@
 
     function guardarPattern() {
         if(patternPath.length === 0) {
-            showToast("Dibujá un patrón primero", "#f1c40f");
+            showToast("Dibujá un patrón primero", "#f59e0b");
             return;
         }
         document.getElementById('pin').value = "Patrón: " + patternPath.join('-');
@@ -1404,7 +1634,7 @@
                 : `<button class="btn-whatsapp-alerta activo" onclick="enviarWhatsAppOlvidado('${r.id}')">💬 Avisar</button>`;
 
             let opacidad = r.recordatorioEnviado ? 'opacity: 0.6;' : '';
-            let colorDias = r.recordatorioEnviado ? '#64748b' : 'red';
+            let colorDias = r.recordatorioEnviado ? '#6b7280' : 'red';
             
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
 
@@ -1566,7 +1796,7 @@
             document.getElementById('gesture-zone-top').style.display = 'none';
             
             const container = document.querySelector('.container');
-            container.innerHTML = '<div style="color: #94a3b8; text-align: center; margin-top: 50px;">Cargando estado de su equipo...</div>';
+            container.innerHTML = '<div style="color: #9ca3af; text-align: center; margin-top: 50px;">Cargando estado de su equipo...</div>';
 
             container.style.display = 'block';
             container.style.background = 'transparent';
@@ -1575,7 +1805,7 @@
             container.style.width = '100%';
             container.style.marginTop = '0';
 
-            document.body.style.backgroundColor = '#0f172a';
+            document.body.style.backgroundColor = '#070709';
             document.body.style.display = 'flex';
             document.body.style.alignItems = 'center';
             document.body.style.justifyContent = 'center';
@@ -1601,11 +1831,11 @@
             })
             .catch(error => {
                 container.innerHTML = `
-                    <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                    <div style="background: #111118; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); width: 85%; max-width: 350px; color: white; border: 1px solid #1e1e2e; margin: auto;">
                         <div style="font-size: 45px; margin-bottom: 10px;">🔍</div>
-                        <h2 style="color: #f1c40f; margin-top:0; margin-bottom: 15px;">Orden no disponible</h2>
-                        <p style="color: #94a3b8; font-size: 14px; line-height: 1.5;">El ticket que intentas buscar no existe, el enlace ha expirado o el equipo ya fue entregado.</p>
-                        <p style="font-size: 12px; color: #475569; margin-top: 25px;">Por favor, comunícate con el taller para más información.</p>
+                        <h2 style="color: #f59e0b; margin-top:0; margin-bottom: 15px;">Orden no disponible</h2>
+                        <p style="color: #9ca3af; font-size: 14px; line-height: 1.5;">El ticket que intentas buscar no existe, el enlace ha expirado o el equipo ya fue entregado.</p>
+                        <p style="font-size: 12px; color: #6b7280; margin-top: 25px;">Por favor, comunícate con el taller para más información.</p>
                     </div>`;
             });
             return; 
@@ -1619,9 +1849,9 @@
     function renderVistaCliente(regEncontrado, container) {
         if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
             container.innerHTML = `
-                <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+                <div style="background: #111118; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); width: 85%; max-width: 350px; color: white; border: 1px solid #1e1e2e; margin: auto;">
                     <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
-                    <p style="color: #94a3b8; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
+                    <p style="color: #9ca3af; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
                 </div>`;
             return;
         }
@@ -1642,20 +1872,20 @@
         const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
         const logoHtml = conf.logo ? `<img src="${conf.logo}" style="max-height: 60px; max-width: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px;">` : '';
 
-        let colorEstado = '#f1c40f'; 
-        if (regEncontrado.estado === 'Reparado') colorEstado = '#2ecc71';
-        if (regEncontrado.estado === 'No reparado') colorEstado = '#e53e3e';
-        if (regEncontrado.estado === 'Entregado') colorEstado = '#94a3b8';
+        let colorEstado = '#f59e0b'; 
+        if (regEncontrado.estado === 'Reparado') colorEstado = '#059669';
+        if (regEncontrado.estado === 'No reparado') colorEstado = '#dc2626';
+        if (regEncontrado.estado === 'Entregado') colorEstado = '#9ca3af';
 
         registros = [regEncontrado]; 
 
         container.innerHTML = `
-            <div style="background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 85%; max-width: 350px; color: white; border: 1px solid #334155; margin: auto;">
+            <div style="background: #111118; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); width: 85%; max-width: 350px; color: white; border: 1px solid #1e1e2e; margin: auto;">
                 ${logoHtml}
-                <h1 style="font-size: 22px; margin-bottom: 5px; margin-top:0; color: #3498db;">${nombreTaller}</h1>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
+                <h1 style="font-size: 22px; margin-bottom: 5px; margin-top:0; color: #1e4d8c;">${nombreTaller}</h1>
+                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
                 
-                <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
+                <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
                 <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
                 
                 <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
@@ -1667,7 +1897,7 @@
                     <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
                 </div>
 
-                <div style="margin-top:25px; font-size:12px; color:#64748b; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
+                <div style="margin-top:25px; font-size:12px; color:#6b7280; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
             </div>`;
     }
 
@@ -1985,7 +2215,7 @@
                 ocultarLoader();
                 document.getElementById('panelRegistro').style.display = 'none';
                 
-                showToast('🎉 ¡Bienvenido! Tu cuenta fue creada con éxito.', '#2ecc71');
+                showToast('🎉 ¡Bienvenido! Tu cuenta fue creada con éxito.', '#059669');
             })
             .catch((err) => {
                 ocultarLoader();
@@ -2011,7 +2241,7 @@
         msgEl.style.display = 'none';
 
         if (wa.length < 10) {
-            msgEl.style.color = '#e53e3e';
+            msgEl.style.color = '#dc2626';
             msgEl.innerText   = '⚠️ Ingresá tu WhatsApp con código de país (Ej: 5491112345678).';
             msgEl.style.display = 'block';
             return;
@@ -2025,14 +2255,14 @@
                     const authEmail = snap.val();
                     if (!authEmail) {
                         ocultarLoader();
-                        msgEl.style.color   = '#e53e3e';
+                        msgEl.style.color   = '#dc2626';
                         msgEl.innerText     = '⚠️ No encontramos una cuenta con ese WhatsApp. Verificá el número o registrate.';
                         msgEl.style.display = 'block';
                         return;
                     }
                     return firebase.auth().sendPasswordResetEmail(authEmail).then(() => {
                         ocultarLoader();
-                        msgEl.style.color   = '#2ecc71';
+                        msgEl.style.color   = '#059669';
                         const emailMask = authEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3');
                         msgEl.innerText     = '✅ Enlace enviado a ' + emailMask + '. Revisá tu bandeja de entrada (también spam).';
                         msgEl.style.display = 'block';
@@ -2041,7 +2271,7 @@
                 })
                 .catch((err) => {
                     ocultarLoader();
-                    msgEl.style.color   = '#e53e3e';
+                    msgEl.style.color   = '#dc2626';
                     if (err.code === 'auth/user-not-found') {
                         msgEl.innerText = '⚠️ No existe una cuenta con ese email. Registrate.';
                     } else if (err.code === 'auth/network-request-failed') {
@@ -2053,7 +2283,7 @@
                 });
         } catch(e) {
             ocultarLoader();
-            msgEl.style.color   = '#e53e3e';
+            msgEl.style.color   = '#dc2626';
             msgEl.innerText     = '❌ Número inválido o error de sistema.';
             msgEl.style.display = 'block';
         }
@@ -2128,7 +2358,7 @@
             const conf = snap.val() || {};
             if (!conf.nombreTaller) {
                 setTimeout(() => {
-                    showToast("⚠️ Completá los datos de tu taller para los PDF", "#f1c40f");
+                    showToast("⚠️ Completá los datos de tu taller para los PDF", "#f59e0b");
                     openPassModal();
                 }, 1500);
             }
@@ -2148,13 +2378,13 @@
                 }
 
             } catch (error) {
-                showToast("Error interno al cargar la tabla", "#e53e3e");
+                showToast("Error interno al cargar la tabla", "#dc2626");
             } finally {
                 ocultarLoader();
             }
         }, errorDeFirebase => {
             ocultarLoader();
-            showToast("Problema de conexión con la base de datos", "#e53e3e");
+            showToast("Problema de conexión con la base de datos", "#dc2626");
         });
 
         const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
@@ -2268,9 +2498,9 @@
         
         if(newP) {
             firebase.auth().currentUser.updatePassword(newP).then(() => {
-                showToast("CLAVE SEGURA ACTUALIZADA ✅", "#2ecc71");
+                showToast("CLAVE SEGURA ACTUALIZADA ✅", "#059669");
             }).catch(e => {
-                showToast("Vuelve a iniciar sesión para cambiar la clave", "#e53e3e");
+                showToast("Vuelve a iniciar sesión para cambiar la clave", "#dc2626");
             });
         }
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64; 
@@ -2279,7 +2509,7 @@
         
         db.ref(path).update(updates).then(() => {
             ocultarLoader();
-            showToast("PERFIL ACTUALIZADO ✅", "#2ecc71");
+            showToast("PERFIL ACTUALIZADO ✅", "#059669");
             closePassModal();
         }).catch(err => {
             ocultarLoader();
@@ -2328,7 +2558,7 @@
             const index = safeItem.toLowerCase().indexOf(val);
             
             if(index >= 0 && val !== '') {
-                div.innerHTML = safeItem.substring(0, index) + "<b style='color:#3498db;'>" + safeItem.substring(index, index+val.length) + "</b>" + safeItem.substring(index + val.length);
+                div.innerHTML = safeItem.substring(0, index) + "<b style='color:#1e4d8c;'>" + safeItem.substring(index, index+val.length) + "</b>" + safeItem.substring(index + val.length);
             } else {
                 div.innerText = item;
             }
@@ -2381,7 +2611,7 @@
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
-            div.innerHTML = `<b>${item.nombre}</b> <span style="color:#2ecc71; float:right; font-weight:bold;">Disp: ${item.cantidad} | ${fmt.format(item.precioVenta)}</span>`;
+            div.innerHTML = `<b>${item.nombre}</b> <span style="color:#059669; float:right; font-weight:bold;">Disp: ${item.cantidad} | ${fmt.format(item.precioVenta)}</span>`;
             
             div.onmousedown = function(e) { 
                 input.value = "";
@@ -2407,7 +2637,7 @@
         let cant = parseInt(cantInput.value) || 1;
         
         if (cant > max) {
-            showToast("Supera el stock disponible", "#f1c40f");
+            showToast("Supera el stock disponible", "#f59e0b");
             cant = max;
             cantInput.value = cant;
         }
@@ -2458,7 +2688,7 @@
             
             document.getElementById('modalVentaRapida').style.display = 'none';
             ocultarLoader();
-            showToast("VENTA REGISTRADA ✅", "#2ecc71");
+            showToast("VENTA REGISTRADA ✅", "#059669");
             setTimeout(cargarDatosContabilidad, 1000); 
         });
     }
@@ -2478,13 +2708,13 @@
         
         filtrados.forEach(item => {
             const div = document.createElement('div');
-            div.innerHTML = `<b>${item.nombre}</b> <span style="color:#2ecc71; float:right; font-weight:bold;">Disp: ${item.cantidad}</span>`;
+            div.innerHTML = `<b>${item.nombre}</b> <span style="color:#059669; float:right; font-weight:bold;">Disp: ${item.cantidad}</span>`;
             
             div.onmousedown = function(e) { 
                 let existe = repuestosSeleccionadosModal.find(r => r.id === item.id);
                 if(existe) {
                     if(existe.cant < item.cantidad) existe.cant++;
-                    else showToast("No hay más stock disponible", "#f1c40f");
+                    else showToast("No hay más stock disponible", "#f59e0b");
                 } else {
                     repuestosSeleccionadosModal.push({ id: item.id, nombre: item.nombre, cant: 1, max: item.cantidad });
                 }
@@ -2503,11 +2733,11 @@
         container.innerHTML = "";
         repuestosSeleccionadosModal.forEach((r, idx) => {
             container.innerHTML += `
-                <div style="display:flex; justify-content: space-between; align-items: center; background: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 13px;">
-                    <span style="font-weight:bold; color:#1e293b;">📦 ${r.nombre} (x${r.cant})</span>
+                <div style="display:flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 6px 10px; border-radius: 6px; font-size: 13px;">
+                    <span style="font-weight:bold; color:#111827;">📦 ${r.nombre} (x${r.cant})</span>
                     <div style="display:flex; gap: 5px;">
-                        <button onclick="modificarRepuestoModal(${idx}, 1)" style="border:none; background:#3498db; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">+</button>
-                        <button onclick="modificarRepuestoModal(${idx}, -1)" style="border:none; background:#e53e3e; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">-</button>
+                        <button onclick="modificarRepuestoModal(${idx}, 1)" style="border:none; background:#1e4d8c; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">+</button>
+                        <button onclick="modificarRepuestoModal(${idx}, -1)" style="border:none; background:#dc2626; color:white; border-radius:4px; cursor:pointer; width:22px; height:22px; font-weight:bold;">-</button>
                     </div>
                 </div>
             `;
@@ -2518,7 +2748,7 @@
         let r = repuestosSeleccionadosModal[idx];
         if(sum > 0) {
             if(r.cant < r.max) r.cant++;
-            else showToast("Stock máximo alcanzado", "#f1c40f");
+            else showToast("Stock máximo alcanzado", "#f59e0b");
         } else {
             r.cant--;
             if(r.cant <= 0) repuestosSeleccionadosModal.splice(idx, 1);
@@ -2542,7 +2772,7 @@
             });
             repuestosParaGuardar = repuestosSeleccionadosModal;
         } else if (descontar && repuestosSeleccionadosModal.length === 0) {
-            showToast("⚠️ Agregá un repuesto o tocá 'NO USÉ'", "#f1c40f");
+            showToast("⚠️ Agregá un repuesto o tocá 'NO USÉ'", "#f59e0b");
             return;
         }
 
@@ -2609,12 +2839,12 @@
         if (precioActual === 0) {
             let nuevoPrecio = parseMoney(document.getElementById('cobroPrecioFinal').value);
             if (nuevoPrecio <= 0) {
-                showToast("⚠️ Ingresá un precio válido mayor a 0", "#f1c40f");
+                showToast("⚠️ Ingresá un precio válido mayor a 0", "#f59e0b");
                 return;
             }
             let saldoFinal = nuevoPrecio - senaPrevia;
             if(saldoFinal < 0) {
-                showToast("⚠️ El precio no puede ser menor a la seña previa", "#e53e3e");
+                showToast("⚠️ El precio no puede ser menor a la seña previa", "#dc2626");
                 return;
             }
             updates.precio = nuevoPrecio;
@@ -2762,11 +2992,11 @@
             });
             updates.repuestosDescontados = null; 
             delete r.repuestosDescontados; 
-            setTimeout(() => showToast("📦 Stock devuelto al inventario", "#3498db"), 1000);
+            setTimeout(() => showToast("📦 Stock devuelto al inventario", "#1e4d8c"), 1000);
         }
 
         const fechaActual = new Date().toLocaleString('es-AR');
-        const coloresEstado = { 'Pendiente': '#f1c40f', 'Reparado': '#2ecc71', 'Entregado': '#475569', 'No reparado': '#e53e3e', 'Garantía': '#1e40af' };
+        const coloresEstado = { 'Pendiente': '#f59e0b', 'Reparado': '#059669', 'Entregado': '#6b7280', 'No reparado': '#dc2626', 'Garantía': '#1e40af' };
         let historialActual = r.historialEstados || [];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
         
@@ -2790,7 +3020,7 @@
                 registros.push(copia);
                 renderTable();
                 document.getElementById('statusModal').style.display = 'none';
-                showToast(`REINGRESO A GARANTÍA 🔄`, "#3498db");
+                showToast(`REINGRESO A GARANTÍA 🔄`, "#1e4d8c");
             });
         } else if (nuevo === 'Entregado' && !r.archivado) {
             updates.archivado = true;
@@ -2805,7 +3035,7 @@
                 registros = registros.filter(x => x.id !== idParaEstado);
                 renderTable();
                 document.getElementById('statusModal').style.display = 'none';
-                showToast(`ENTREGADO ✅ — GUARDADO EN HISTORIAL 🗄️`, '#64748b');
+                showToast(`ENTREGADO ✅ — GUARDADO EN HISTORIAL 🗄️`, '#6b7280');
             });
         } else {
             db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
@@ -2813,7 +3043,7 @@
                 r.historialEstados = historialActual;
                 renderTable();
                 document.getElementById('statusModal').style.display = 'none';
-                showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#3498db");
+                showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#1e4d8c");
             });
         }
     }
@@ -2848,7 +3078,7 @@
             r.historialPrecios = historialPrecios;
             renderTable();
             closePriceModal();
-            showToast("PRECIO ACTUALIZADO ✅", "#2ecc71");
+            showToast("PRECIO ACTUALIZADO ✅", "#059669");
         });
     };
 
@@ -2856,23 +3086,23 @@
         const r = getRegistro(id);
         if(!r) return;
         
-        let fallaHtml = r.falla ? `<div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e2e8f0; text-align:left;">
-            <div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
-            <div style="font-size:14px; font-weight:bold; color:#1e293b; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla.replace(/\s*\+\s*$/, ''))}</div>
-            ${r.pin ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/PIN</div>
-            <div style="font-size:14px; font-weight:bold; color:#e53e3e; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
-            ${r.obs ? `<div style="font-size:11px; color:#64748b; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
-            <div style="font-size:13px; color:#475569; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
+        let fallaHtml = r.falla ? `<div style="background:#f9fafb; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e5e7eb; text-align:left;">
+            <div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
+            <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla.replace(/\s*\+\s*$/, ''))}</div>
+            ${r.pin ? `<div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/PIN</div>
+            <div style="font-size:14px; font-weight:bold; color:#dc2626; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
+            ${r.obs ? `<div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
+            <div style="font-size:13px; color:#6b7280; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
         </div>` : '';
 
         let h = fallaHtml;
         h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
         if(r.historialPrecios && r.historialPrecios.length > 0) {
-            h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e2e8f0;"><div style="font-size:11px; font-weight:bold; color:#64748b; text-transform:uppercase; margin-bottom:8px;">💲 Cambios de Precio</div>`;
+            h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e5e7eb;"><div style="font-size:11px; font-weight:bold; color:#6b7280; text-transform:uppercase; margin-bottom:8px;">💲 Cambios de Precio</div>`;
             r.historialPrecios.forEach(p => {
                 const fmt2 = new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', minimumFractionDigits:0});
-                h += `<div class="history-item" style="border-left-color:#f1c40f;"><b>${p.fecha}</b><span>${fmt2.format(p.precioAnterior)} → <b style="color:var(--success);">${fmt2.format(p.precioNuevo)}</b></span></div>`;
+                h += `<div class="history-item" style="border-left-color:#f59e0b;"><b>${p.fecha}</b><span>${fmt2.format(p.precioAnterior)} → <b style="color:var(--success);">${fmt2.format(p.precioNuevo)}</b></span></div>`;
             });
             h += `</div>`;
         }
@@ -2994,7 +3224,7 @@
                 if (senaActual > 0) {
                     estadoPagoHTML = `<b style="color:green;">A Favor: ${fmt.format(senaActual)}</b>`;
                 } else {
-                    estadoPagoHTML = `<span style="color:#f1c40f; font-weight:bold;">A COTIZAR</span>`; 
+                    estadoPagoHTML = `<span style="color:#f59e0b; font-weight:bold;">A COTIZAR</span>`; 
                 }
             } else if (saldo > 0) {
                 estadoPagoHTML = `<span style="color:red;">${fmt.format(saldo)}</span>`;
@@ -3003,18 +3233,18 @@
             }
 
             let badgeVentaRapida = r.esVentaRapida ? `<br><span style="background:#8e44ad; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:3px;">🛒 VENTA DIRECTA</span>` : '';
-            let badgeHistorial = (r.archivado && !modoArchivo && bus.length > 0) ? `<br><span style="background:#64748b; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:2px;">📁 HISTORIAL</span>` : '';
+            let badgeHistorial = (r.archivado && !modoArchivo && bus.length > 0) ? `<br><span style="background:#6b7280; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:2px;">📁 HISTORIAL</span>` : '';
 
             body.innerHTML += `<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
-                <span style="font-size:10px; color:#64748b;"><b>${r.fecha || ''}</b></span></td>
+                <span style="font-size:10px; color:#6b7280;"><b>${r.fecha || ''}</b></span></td>
                 <td>
-                    <b style="cursor:pointer; color:#3498db; text-decoration:underline;" onclick="abrirHistorialCliente('${escaparHTML(r.cliente)}', '${r.tel}')" title="Ver Historial">${escaparHTML(r.cliente)}</b><br>
+                    <b style="cursor:pointer; color:#1e4d8c; text-decoration:underline;" onclick="abrirHistorialCliente('${escaparHTML(r.cliente)}', '${r.tel}')" title="Ver Historial">${escaparHTML(r.cliente)}</b><br>
                     ${!r.esVentaRapida ? `<button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button>` : ''}
                 </td>
                 <td>
                     ${escaparHTML(equipoCompleto)} ${badgeVentaRapida}${badgeHistorial}<br>
-                    <span style="font-size:11px; color:#64748b; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
+                    <span style="font-size:11px; color:#6b7280; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
                 </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" ${!r.esVentaRapida ? `onclick="openStatusModal('${r.id}')"` : ''}>${r.estado || 'Pendiente'}</span></td>
                 <td ${!r.esVentaRapida ? `onclick="openPriceModal('${r.id}')" style="cursor: pointer;"` : ''}>
@@ -3081,8 +3311,8 @@
     function togglePendientes() {
         modoPendientes = !modoPendientes;
         limiteTabla = 50; 
-        if(modoPendientes) { modoArchivo = false; showToast("FILTRANDO PENDIENTES ⏳", "#f1c40f"); }
-        else { showToast("MOSTRANDO TODOS 👀", "#3498db"); }
+        if(modoPendientes) { modoArchivo = false; showToast("FILTRANDO PENDIENTES ⏳", "#f59e0b"); }
+        else { showToast("MOSTRANDO TODOS 👀", "#1e4d8c"); }
         renderTable();
     }
 
@@ -3093,7 +3323,7 @@
             modoPendientes = false; 
             
             if (historialDescargado) {
-                showToast("MOSTRANDO HISTORIAL 📁", "#64748b");
+                showToast("MOSTRANDO HISTORIAL 📁", "#6b7280");
                 renderTable();
                 return; 
             }
@@ -3106,12 +3336,12 @@
                 historialDescargado = true; 
                 actualizarListasAutocompletado();
                 ocultarLoader();
-                showToast("HISTORIAL CARGADO 📁", "#64748b");
+                showToast("HISTORIAL CARGADO 📁", "#6b7280");
                 renderTable(); 
             });
         }
         else { 
-            showToast("MOSTRANDO ACTIVOS 🔙", "#3498db"); 
+            showToast("MOSTRANDO ACTIVOS 🔙", "#1e4d8c"); 
             renderTable(); 
         }
     }
@@ -3130,7 +3360,7 @@
                 db.ref(pathArchivado).child(id).remove();
                 registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
                 renderTable();
-                showToast("RESTAURADO ✅", "#3498db");
+                showToast("RESTAURADO ✅", "#1e4d8c");
             });
         } else {
             r.archivado = true;
@@ -3140,7 +3370,7 @@
                 db.ref(pathActivo).child(id).remove();
                 if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
                 renderTable();
-                showToast("ENVIADO AL HISTORIAL 🗄️", "#64748b");
+                showToast("ENVIADO AL HISTORIAL 🗄️", "#6b7280");
             });
         }
     }
@@ -3164,13 +3394,13 @@
         actualizarListasAutocompletado();
         
         closeDeleteModal(); 
-        showToast("BORRADO DEFINITIVO ❌", "#e53e3e"); 
+        showToast("BORRADO DEFINITIVO ❌", "#dc2626"); 
     };
 
     function clickLimpiar(skipToast = false) {
         idEditando = null;
         const btnL = document.getElementById('btnLimpiar');
-        if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#94a3b8"; }
+        if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#9ca3af"; }
         document.getElementById('repairForm').reset();
         
         const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs'];
@@ -3194,7 +3424,7 @@
         
         if(typeof limpiarPattern === 'function') limpiarPattern();
         
-        if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#64748b");
+        if (!skipToast) showToast("FORMULARIO LIMPIO 🧹", "#6b7280");
     }
 
     function saveDraft() {
@@ -3246,7 +3476,7 @@
         let costoRep = parseMoney(document.getElementById('costoRepuesto').value);
 
         if (senaActual > precioActual && precioActual > 0) { 
-            showToast("⚠️ La seña no puede ser mayor al precio final", "#f1c40f"); 
+            showToast("⚠️ La seña no puede ser mayor al precio final", "#f59e0b"); 
             return; 
         }
 
@@ -3290,12 +3520,12 @@
 
         if (idEditando) {
             db.ref(pathActivo).child(idEditando).update(data).then(() => { 
-                subirFotosYFinalizar(idEditando, "ACTUALIZADO ✅", "#2ecc71");
+                subirFotosYFinalizar(idEditando, "ACTUALIZADO ✅", "#059669");
             });
         } else {
             const nuevaRef = db.ref(pathActivo).push();
             nuevaRef.set(data).then(() => { 
-                subirFotosYFinalizar(nuevaRef.key, "REGISTRADO ✅", "#2ecc71");
+                subirFotosYFinalizar(nuevaRef.key, "REGISTRADO ✅", "#059669");
             });
         }
     };
@@ -3352,14 +3582,14 @@
         
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR DATOS";
         document.getElementById('btnLimpiar').innerText = "✖ CANCELAR";
-        document.getElementById('btnLimpiar').style.background = "#e53e3e";
+        document.getElementById('btnLimpiar').style.background = "#dc2626";
         document.getElementById('costo-inner').style.display = "none"; 
         
         fotosTemporales = [];
         document.getElementById('formThumbnails').innerHTML = "";
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast("MODO EDICIÓN ✏️", "#f1c40f");
+        showToast("MODO EDICIÓN ✏️", "#f59e0b");
     }
 
     function enviarWhatsApp(id) {
@@ -3400,6 +3630,11 @@
 
     function agregarFotoTemporal(input) {
         if(input.files && input.files[0]) {
+            if(fotosTemporales.length >= 5) {
+                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+                input.value = "";
+                return;
+            }
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
                 const id = Date.now();
                 fotosTemporales.push({id: id, b64: base64});
@@ -3419,6 +3654,11 @@
                 </div>
             `;
         });
+        const contador = document.getElementById('fotoContador');
+        if(contador) {
+            contador.innerText = `(${fotosTemporales.length} / 5)`;
+            contador.style.color = fotosTemporales.length >= 5 ? '#dc2626' : '#2d3a8c';
+        }
     }
     function eliminarFotoTemporal(id) { fotosTemporales = fotosTemporales.filter(f => f.id !== id); renderThumbnails(); }
 
@@ -3434,13 +3674,13 @@
         const c = document.getElementById('photoGallery');
         c.innerHTML = "";
         if(fotosArray.length === 0) {
-            c.innerHTML = "<p style='grid-column: 1 / -1; color:#94a3b8;'>No hay fotos para esta orden.</p>";
+            c.innerHTML = "<p style='grid-column: 1 / -1; color:#9ca3af;'>No hay fotos para esta orden.</p>";
             return;
         }
         fotosArray.forEach((b64, index) => {
             c.innerHTML += `
                 <div style="position:relative;">
-                    <img src="${b64}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e0; cursor:pointer;" onclick="openViewer('${b64}')">
+                    <img src="${b64}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer;" onclick="openViewer('${b64}')">
                     <button onclick="eliminarFotoExistente(${index})" style="position:absolute; top:5px; right:5px; background:var(--danger); color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer;">🗑️</button>
                 </div>
             `;
@@ -3450,12 +3690,17 @@
     function subirFotoDirecta(input) {
         if(!idParaFotos) return;
         if(input.files && input.files[0]) {
+            const r = getRegistro(idParaFotos);
+            let fotosActuales = r.fotos || [];
+            if(fotosActuales.length >= 5) {
+                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+                input.value = "";
+                return;
+            }
             document.getElementById('loader-text').innerText = "Subiendo foto...";
             document.getElementById('global-loader').style.display = 'flex';
             
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
-                const r = getRegistro(idParaFotos);
-                let fotosActuales = r.fotos || [];
                 fotosActuales.push(base64);
                 
                 const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -3548,16 +3793,16 @@
         const costo = parseMoney(document.getElementById('stockCosto').value);
         const precio = parseMoney(document.getElementById('stockPrecio').value);
 
-        if(!n || isNaN(c)) { showToast("Nombre y cantidad requeridos", "#e53e3e"); return; }
+        if(!n || isNaN(c)) { showToast("Nombre y cantidad requeridos", "#dc2626"); return; }
 
         const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio };
         const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
         
         mostrarLoader("Guardando stock...");
         if(id) {
-            db.ref(pathStock).child(id).update(data).then(() => { limpiarStock(); ocultarLoader(); showToast("STOCK ACTUALIZADO", "#2ecc71"); });
+            db.ref(pathStock).child(id).update(data).then(() => { limpiarStock(); ocultarLoader(); showToast("STOCK ACTUALIZADO", "#059669"); });
         } else {
-            db.ref(pathStock).push(data).then(() => { limpiarStock(); ocultarLoader(); showToast("ARTÍCULO CREADO", "#2ecc71"); });
+            db.ref(pathStock).push(data).then(() => { limpiarStock(); ocultarLoader(); showToast("ARTÍCULO CREADO", "#059669"); });
         }
     }
 
@@ -3595,7 +3840,7 @@
             idStockParaBorrar = null;
             document.getElementById('deleteStockModal').style.display = 'none';
             ocultarLoader();
-            showToast("ARTÍCULO ELIMINADO", "#e53e3e");
+            showToast("ARTÍCULO ELIMINADO", "#dc2626");
         });
     }
 
@@ -3617,8 +3862,8 @@
                     <td>${fmt.format(i.costo || 0)}</td>
                     <td><b>${fmt.format(i.precioVenta || 0)}</b></td>
                     <td class="action-btns">
-                        <button onclick="editarStock('${i.id}')" style="color:#3498db;">✏️</button>
-                        <button onclick="confirmarBorrarStock('${i.id}')" style="color:#e53e3e;">❌</button>
+                        <button onclick="editarStock('${i.id}')" style="color:#1e4d8c;">✏️</button>
+                        <button onclick="confirmarBorrarStock('${i.id}')" style="color:#dc2626;">❌</button>
                     </td>
                 </tr>
             `;
@@ -3797,7 +4042,7 @@
 
         document.getElementById('stats-container').innerHTML = `
             <div class="card-stats caja-success"><b>💵 INGRESOS COBRADOS</b><p style="color:var(--success);">${fmt.format(ingresosTotales)}</p><span class="stat-icon">💰</span>
-                <div style="font-size:11px; margin-top:10px; color:#64748b; border-top:1px solid #e2e8f0; padding-top:5px;">
+                <div style="font-size:11px; margin-top:10px; color:#6b7280; border-top:1px solid #e2e8f0; padding-top:5px;">
                     EF: <b>${fmt.format(ingresoEfectivo)}</b> | TR: <b>${fmt.format(ingresoTransf)}</b><br>TJ: <b>${fmt.format(ingresoTarjeta)}</b>
                 </div>
             </div>
@@ -3863,10 +4108,10 @@
             return 0;
         });
 
-        let listHtml = `<h3 style="margin-top:0px; border-bottom:2px solid #e2e8f0; padding-bottom:10px;">📋 Detalle de Movimientos Financieros</h3>`;
+        let listHtml = `<h3 style="margin-top:0px; border-bottom:2px solid #e5e7eb; padding-bottom:10px;">📋 Detalle de Movimientos Financieros</h3>`;
         
         if(arr.length === 0) {
-            listHtml += `<p style="color:#64748b; font-style:italic;">No se encontraron movimientos.</p>`;
+            listHtml += `<p style="color:#6b7280; font-style:italic;">No se encontraron movimientos.</p>`;
         } else {
             listHtml += `<div class="table-wrapper" style="overflow-x:auto;"><table style="width:100%; min-width:750px;">
                 <thead>
@@ -3883,19 +4128,19 @@
                 </thead><tbody>`;
             
             arr.forEach(v => {
-                let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#94a3b8; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase()}">${v.metodoStr}</span>`;
+                let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#9ca3af; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase()}">${v.metodoStr}</span>`;
                 let ordenTxt = v.esVentaRapida ? `<span style="color:#8e44ad; font-weight:bold;">${v.orden}</span>` : v.orden;
                 
                 let fechaDisplay = v.fechaRaw ? v.fechaRaw : '-';
                 
                 listHtml += `<tr class="tabla-contabilidad-row">
-                    <td style="color:#64748b; font-size:12px;">${fechaDisplay}</td>
+                    <td style="color:#6b7280; font-size:12px;">${fechaDisplay}</td>
                     <td><b>${ordenTxt}</b></td>
                     <td>${escaparHTML(v.cliente)}</td>
-                    <td style="color:#475569; font-size:13px;">${v.descStr}</td>
+                    <td style="color:#6b7280; font-size:13px;">${v.descStr}</td>
                     <td>${badgeMetodo}</td>
-                    <td>${v.ingreso > 0 ? `<b style="color:var(--success);">+${fmt.format(v.ingreso)}</b>` : '<span style="color:#cbd5e0;">-</span>'}</td>
-                    <td>${v.egreso > 0 ? `<b style="color:var(--danger);">-${fmt.format(v.egreso)}</b>` : '<span style="color:#cbd5e0;">-</span>'}</td>
+                    <td>${v.ingreso > 0 ? `<b style="color:var(--success);">+${fmt.format(v.ingreso)}</b>` : '<span style="color:#e5e7eb;">-</span>'}</td>
+                    <td>${v.egreso > 0 ? `<b style="color:var(--danger);">-${fmt.format(v.egreso)}</b>` : '<span style="color:#e5e7eb;">-</span>'}</td>
                     <td class="action-btns"><button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button></td>
                 </tr>`;
             });
@@ -3928,7 +4173,7 @@
                     registros = registros.filter(x => x.id !== idOrden);
                     registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
                     ocultarLoader();
-                    showToast("Venta Anulada (Stock repuesto)", "#e53e3e");
+                    showToast("Venta Anulada (Stock repuesto)", "#dc2626");
                     cargarDatosContabilidad();
                 });
             });
@@ -3953,7 +4198,7 @@
         db.ref(nodoActualizar).child(idOrden).update(updates).then(() => {
             Object.assign(r, updates);
             ocultarLoader();
-            showToast("Movimientos Financieros Anulados", "#e53e3e");
+            showToast("Movimientos Financieros Anulados", "#dc2626");
             cargarDatosContabilidad();
         });
     }
@@ -4061,7 +4306,7 @@
         });
 
         if (Object.keys(mapaOrdenes).length === 0) {
-            showToast("No hay movimientos para exportar", "#f1c40f");
+            showToast("No hay movimientos para exportar", "#f59e0b");
             return;
         }
 
@@ -4099,7 +4344,7 @@
         document.body.appendChild(a);
         a.click();
         setTimeout(() => { try { a.remove(); URL.revokeObjectURL(url); } catch(e) {} }, 2000);
-        showToast("✅ EXCEL DESCARGADO", "#2ecc71");
+        showToast("✅ EXCEL DESCARGADO", "#059669");
     }
 
     // ====== PANEL DE ADMIN: USUARIOS, LICENCIAS Y BACKUP ======
@@ -4107,7 +4352,7 @@
     
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.replace(/\D/g, '');
-        if(wa.length < 10) { showToast("Número inválido", "#e53e3e"); return; }
+        if(wa.length < 10) { showToast("Número inválido", "#dc2626"); return; }
         
         mostrarLoader("Creando licencia...");
         
@@ -4134,7 +4379,7 @@
             });
         }).catch(err => {
             ocultarLoader();
-            showToast("Error: El número ya tiene licencia o hubo un fallo.", "#e53e3e");
+            showToast("Error: El número ya tiene licencia o hubo un fallo.", "#dc2626");
         });
     }
 
@@ -4159,11 +4404,11 @@
                     <div style="display:flex; align-items:center; justify-content:space-between; background:white; border-radius:8px; padding:10px 14px; margin-bottom:8px; border:1px solid #fed7aa; gap:10px; flex-wrap:wrap;">
                         <div>
                             <b style="font-size:14px;">📱 ${wa}</b>
-                            <div style="font-size:11px; color:#94a3b8;">${sol.fecha || ''}</div>
+                            <div style="font-size:11px; color:#9ca3af;">${sol.fecha || ''}</div>
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <button onclick="resetearClaveUsuario('${wa}')" style="background:#3498db; color:white; border:none; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:bold; cursor:pointer;">🔑 Enviar Clave Temporal</button>
-                            <button onclick="descartarSolicitudReset('${wa}')" style="background:#f1f5f9; color:#64748b; border:none; padding:7px 12px; border-radius:7px; font-size:12px; cursor:pointer;">✖ Descartar</button>
+                            <button onclick="resetearClaveUsuario('${wa}')" style="background:#1e4d8c; color:white; border:none; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:bold; cursor:pointer;">🔑 Enviar Clave Temporal</button>
+                            <button onclick="descartarSolicitudReset('${wa}')" style="background:#f3f4f6; color:#6b7280; border:none; padding:7px 12px; border-radius:7px; font-size:12px; cursor:pointer;">✖ Descartar</button>
                         </div>
                     </div>`;
             });
@@ -4182,14 +4427,14 @@
                 db.ref('solicitudes_reset/' + wa).update({ estado: 'atendido', claveEnviada: true }).then(() => {
                     ocultarLoader();
                     window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
-                    showToast(`✅ Abrí WhatsApp para enviarle la clave a ${wa}`, "#2ecc71");
+                    showToast(`✅ Abrí WhatsApp para enviarle la clave a ${wa}`, "#059669");
                 });
             });
     }
 
     function descartarSolicitudReset(wa) {
         db.ref('solicitudes_reset/' + wa).update({ estado: 'descartado' }).then(() => {
-            showToast("Solicitud descartada", "#64748b");
+            showToast("Solicitud descartada", "#6b7280");
         });
     }
 
@@ -4236,14 +4481,14 @@
                     }
                 } else if (tipoLic === 'permanente') {
                     venceHtml = `<div style="font-size:11px; color:#065f46; font-weight:600;">Sin vencimiento</div>`;
-                    if (u.fechaAlta) venceHtml += `<div style="font-size:10px; color:#94a3b8;">Alta: ${u.fechaAlta.split(',')[0]}</div>`;
+                    if (u.fechaAlta) venceHtml += `<div style="font-size:10px; color:#9ca3af;">Alta: ${u.fechaAlta.split(',')[0]}</div>`;
                 } else {
-                    venceHtml = u.fechaAlta ? `<div style="font-size:11px; color:#64748b;">${u.fechaAlta.split(',')[0]}</div>` : '-';
+                    venceHtml = u.fechaAlta ? `<div style="font-size:11px; color:#6b7280;">${u.fechaAlta.split(',')[0]}</div>` : '-';
                 }
 
                 const btnSuspender = u.estado !== 'suspendido'
-                    ? `<button onclick="openSuspendModal('${u.id}')" style="background:#f1c40f; color:#856404; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">⏸️ Suspender</button>`
-                    : `<button onclick="reactivarLicencia('${u.id}')" style="background:#2ecc71; color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">▶️ Reactivar</button>`;
+                    ? `<button onclick="openSuspendModal('${u.id}')" style="background:#f59e0b; color:#856404; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">⏸️ Suspender</button>`
+                    : `<button onclick="reactivarLicencia('${u.id}')" style="background:#059669; color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">▶️ Reactivar</button>`;
 
                 const btnPermanente = (!estaSuspendida)
                     ? `<button onclick="abrirLicenciaModal('${u.id}')" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">🔑 Licencia</button>`
@@ -4251,7 +4496,7 @@
 
                 body.innerHTML += `
                     <tr>
-                        <td><b>${u.whatsapp || u.id}</b>${u.authEmail ? `<div style="font-size:10px;color:#94a3b8;">${u.authEmail}</div>` : ''}</td>
+                        <td><b>${u.whatsapp || u.id}</b>${u.authEmail ? `<div style="font-size:10px;color:#9ca3af;">${u.authEmail}</div>` : ''}</td>
                         <td>${badgeHtml}</td>
                         <td>${venceHtml}</td>
                         <td class="action-btns" style="flex-wrap:wrap; gap:4px;">
@@ -4264,7 +4509,7 @@
             });
 
             if (listadoUsuarios.length === 0) {
-                body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No hay usuarios registrados.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9ca3af; padding:20px;">No hay usuarios registrados.</td></tr>`;
             }
         });
     }
@@ -4338,7 +4583,7 @@
 
         if (_licTipoActual === 'prueba') {
             const fechaStr = document.getElementById('licFechaExp').value;
-            if (!fechaStr) { ocultarLoader(); showToast('Elegí una fecha de vencimiento', '#f1c40f'); return; }
+            if (!fechaStr) { ocultarLoader(); showToast('Elegí una fecha de vencimiento', '#f59e0b'); return; }
             updates.fechaExpiracion = new Date(fechaStr + 'T23:59:59').getTime();
         } else {
             updates.fechaExpiracion = null;
@@ -4349,16 +4594,16 @@
                 ocultarLoader();
                 cerrarLicenciaModal();
                 const label = _licTipoActual === 'permanente' ? '♾️ PERMANENTE' : '🧪 PRUEBA';
-                showToast('✅ Licencia actualizada: ' + label, '#2ecc71');
+                showToast('✅ Licencia actualizada: ' + label, '#059669');
             })
             .catch(err => {
                 ocultarLoader();
-                showToast('❌ Error: ' + err.message, '#e53e3e');
+                showToast('❌ Error: ' + err.message, '#dc2626');
             });
     }
 
     function reactivarLicencia(wa) {
-        db.ref('usuarios_registrados/' + wa).update({ estado: 'activo' }).then(() => { showToast("Licencia reactivada", "#2ecc71"); });
+        db.ref('usuarios_registrados/' + wa).update({ estado: 'activo' }).then(() => { showToast("Licencia reactivada", "#059669"); });
     }
 
     function openSuspendModal(wa) { idParaSuspender = wa; document.getElementById('suspendModal').style.display='flex'; }
@@ -4374,7 +4619,7 @@
         }).then(() => {
             closeSuspendModal();
             ocultarLoader();
-            showToast("Licencia Suspendida", "#e53e3e");
+            showToast("Licencia Suspendida", "#dc2626");
         });
     };
 
@@ -4398,7 +4643,7 @@
         ]).then(() => {
             closeDeleteLicenseModal();
             ocultarLoader();
-            showToast("BASE DE DATOS BORRADA ❌", "#e53e3e");
+            showToast("BASE DE DATOS BORRADA ❌", "#dc2626");
         }).catch(err => {
             ocultarLoader();
             alert("Error al borrar: " + err.message);
@@ -4433,7 +4678,7 @@
         const fbUser = firebase.auth().currentUser;
         if (!fbUser || !fbUser.email || fbUser.email.split('@')[0].toLowerCase() !== 'admin') {
             alert("❌ Tu sesión de Admin expiró o no está activa.\nCerrá sesión, volvé a ingresar con Admin y probá de nuevo.");
-            showToast("Sesión inválida — volvé a loguearte", "#e53e3e");
+            showToast("Sesión inválida — volvé a loguearte", "#dc2626");
             return;
         }
 
@@ -4476,7 +4721,7 @@
 
                 if (Object.keys(backupData).length === 0) {
                     ocultarLoader();
-                    showToast("⚠️ Base de datos vacía, no hay nada que respaldar", "#e53e3e");
+                    showToast("⚠️ Base de datos vacía, no hay nada que respaldar", "#dc2626");
                     return;
                 }
 
@@ -4510,13 +4755,13 @@
                 }, 2000);
 
                 ocultarLoader();
-                showToast("¡BACKUP DESCARGADO! 💾", "#2ecc71");
+                showToast("¡BACKUP DESCARGADO! 💾", "#059669");
 
             } catch(errInterno) {
                 ocultarLoader();
                 console.error("Error interno backup:", errInterno);
                 alert("❌ Error al generar el archivo:\n" + (errInterno.message || errInterno) + "\n\nSi el problema persiste, intentá con el Backup LIGERO (sin fotos).");
-                showToast("Error al generar el backup", "#e53e3e");
+                showToast("Error al generar el backup", "#dc2626");
             }
         }).catch(err => {
             ocultarLoader();
@@ -4529,7 +4774,7 @@
             } else {
                 alert("❌ Error al leer la base de datos:\n" + msg);
             }
-            showToast("Error en la descarga", "#e53e3e");
+            showToast("Error en la descarga", "#dc2626");
         });
     }
 
@@ -4619,7 +4864,7 @@
         let filtradas = todasLasOrdenes.filter(r => (r.cliente === nombre || r.tel === tel) && !r.esVentaRapida);
         
         if(filtradas.length === 0) {
-            body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">No hay historial para este cliente.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#9ca3af;">No hay historial para este cliente.</td></tr>`;
             document.getElementById('hcTotalDiv').innerText = '';
             document.getElementById('modalHistorialCliente').style.display = 'flex';
             return;
@@ -4700,7 +4945,7 @@
                     db.ref(pathUltima).set(HOY_MS);
                     if (forzar) {
                         ocultarLoader();
-                        showToast("LIMPIEZA DE FOTOS FINALIZADA", "#2ecc71");
+                        showToast("LIMPIEZA DE FOTOS FINALIZADA", "#059669");
                     }
                 });
             }
@@ -4741,7 +4986,7 @@
             firebase.auth().verifyPasswordResetCode(actionCode)
                 .then((email) => {
                     ocultarLoader();
-                    showToast("Enlace verificado para: " + email, "#3498db");
+                    showToast("Enlace verificado para: " + email, "#1e4d8c");
                 })
                 .catch((error) => {
                     ocultarLoader();
@@ -4770,7 +5015,7 @@
         firebase.auth().confirmPasswordReset(actionCode, p1)
             .then(() => {
                 ocultarLoader();
-                showToast("✅ ¡Contraseña actualizada! Ya podés ingresar.", "#2ecc71");
+                showToast("✅ ¡Contraseña actualizada! Ya podés ingresar.", "#059669");
                 window.history.replaceState({}, document.title, window.location.pathname);
                 mostrarPanelLogin();
             })
