@@ -358,13 +358,14 @@
         .mp-step-text b { color: #111827; font-weight: 700; }
         .mp-modal-footer { padding: 4px 22px 22px; display: flex; flex-direction: column; gap: 10px; }
         .mp-btn-pagar {
-            width: 100%; padding: 16px;
+            width: 100%; padding: 14px 10px;
             background: linear-gradient(135deg, #009ee3, #0070b0);
             color: white; border: none; border-radius: 12px;
-            font-size: 15px; font-weight: 800; cursor: pointer;
+            font-size: 13px; font-weight: 800; cursor: pointer;
             font-family: 'Outfit', sans-serif; letter-spacing: 0.2px;
             box-shadow: 0 4px 18px rgba(0,112,176,0.4); transition: all 0.2s ease;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            white-space: nowrap;
         }
         .mp-btn-pagar:active { transform: scale(0.97); }
         .mp-btn-cancelar {
@@ -624,7 +625,7 @@
 
         <div style="margin-top: 18px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
             <button onclick="mostrarPanelRegistro()" style="background:none; border:none; color:#1e4d8c; font-size:13px; font-weight:700; cursor:pointer; text-decoration:underline; padding:0;">
-                ✨ Registrarme gratis (15 días)
+                ✨ Registrarme gratis (30 días)
             </button>
             <button onclick="mostrarPanelOlvideClave()" style="background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; text-decoration:underline; padding:0;">
                 🔑 Olvidé mi clave
@@ -635,7 +636,7 @@
     <div class="login-card" id="panelRegistro" style="display:none; max-width: 400px;">
         <div style="font-size: 40px; margin-bottom: -5px;">✨</div>
         <h2>Crear Cuenta</h2>
-        <p style="margin-bottom:18px;">15 días gratis · Sin tarjeta de crédito</p>
+        <p style="margin-bottom:18px;">30 días gratis · Sin tarjeta de crédito</p>
 
         <div class="phone-row">
             <div class="dial-btn" id="dialBtnReg" onclick="toggleDial('dropReg',this)">
@@ -661,7 +662,7 @@
             🎁 <b>Tu prueba gratuita incluye:</b><br>
             ✔ Gestión ilimitada de órdenes<br>
             ✔ Contabilidad y stock · PDF de tickets<br>
-            ✔ 15 días sin costo · Sin tarjeta
+            ✔ 30 días sin costo · Sin tarjeta
         </div>
 
         <button class="btn-login" style="background:linear-gradient(135deg,#059669,#047857);" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
@@ -715,7 +716,7 @@
 </div>
 <div id="app-content">
     <div id="trial-banner" onclick="mostrarPanelContactoAdmin()">
-        ⏳ Tu licencia de prueba vence en <span id="trial-dias-texto">...</span> · Contactá al admin para activar permanente
+        ⏳ Tu licencia de prueba vence en <span id="trial-dias-texto">...</span> · Contactá al admin para activar haciendo click aquí!
     </div>
     <div id="toast-alert"></div>
 
@@ -1262,6 +1263,20 @@
                     <input type="text" id="activar-pago-wa" placeholder="Número WhatsApp del cliente (Ej: 54911...)" style="flex:1;">
                     <button onclick="activarLicenciaManual()" class="btn" style="background:#059669; color:white; padding:0 20px; white-space:nowrap;">✅ ACTIVAR</button>
                 </div>
+            </div>
+
+            <!-- CONFIG PRECIO MERCADO PAGO -->
+            <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #6ee7b7; margin-bottom: 20px;">
+                <label style="color:#065f46; font-weight:800;">💳 Precio de Licencia en Mercado Pago (ARS)</label>
+                <p style="font-size:12px; color:#6b7280; margin:6px 0 12px 0;">Este monto se muestra en el botón de pago de Mercado Pago. Guardalo en Firebase sin tocar el código.</p>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="position:relative; flex:1;">
+                        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:#065f46; font-size:16px;">AR$</span>
+                        <input type="number" id="inputPrecioMP" min="1" step="1" placeholder="5000" style="width:100%; padding:10px 12px 10px 52px; border:2px solid #6ee7b7; border-radius:8px; font-size:18px; font-weight:800; color:#065f46; box-sizing:border-box; background:white;">
+                    </div>
+                    <button onclick="guardarPrecioMP()" class="btn" style="background: linear-gradient(135deg,#00b1ea,#009ee3); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
+                </div>
+                <div id="mpPrecioStatus" style="margin-top:10px; font-size:13px; color:#6b7280; display:none;"></div>
             </div>
 
             <!-- CONFIG PRECIO PAYPAL -->
@@ -2562,17 +2577,22 @@
             return;
         }
         const linkMercadoPago = 'https://mpago.li/1Tfz184';
-        const mensaje = `Hola! Ya pagué la licencia de Mi Taller Web. \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
-        const urlWhatsapp = `https://wa.me/5491135654094?text=${encodeURIComponent(mensaje)}`;
 
         const modal = document.getElementById('modalPagoMP');
         modal.style.display = 'flex';
         cargarPrecioPaypalAdmin();
+        cargarPrecioMPAdmin();
 
         document.getElementById('mpBtnIrAPagar').onclick = function() {
-            cerrarModalPagoMP();
-            window.open(linkMercadoPago, '_blank');
-            setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
+            db.ref('configuracion/mp_precio').once('value', snap => {
+                const precio = snap.val() || '';
+                const precioTexto = precio ? ` (AR$ ${precio})` : '';
+                const mensaje = `Hola! Ya pagué la licencia de Mi Taller Web por Mercado Pago${precioTexto}. \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
+                const urlWhatsapp = `https://wa.me/5491135654094?text=${encodeURIComponent(mensaje)}`;
+                cerrarModalPagoMP();
+                window.open(linkMercadoPago, '_blank');
+                setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
+            });
         };
     }
 
@@ -2635,6 +2655,63 @@
                 }
             }
             actualizarLabelPaypal(precio || 15);
+        });
+    }
+
+    function guardarPrecioMP() {
+        const val = parseFloat(document.getElementById('inputPrecioMP').value);
+        if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
+
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser) { showToast('Error: sesión no activa.', '#dc2626'); return; }
+
+        mostrarLoader('Guardando precio...');
+        fbUser.getIdToken(true).then(() => {
+            return db.ref('configuracion/mp_precio').set(val);
+        }).then(() => {
+            ocultarLoader();
+            const status = document.getElementById('mpPrecioStatus');
+            status.style.display = 'block';
+            status.innerHTML = `✅ Precio guardado: <b>AR$ ${val}</b> · El botón de Mercado Pago ya se actualizó para todos los usuarios.`;
+            status.style.color = '#059669';
+            actualizarLabelMP(val);
+            showToast(`✅ Precio MP actualizado: AR$ ${val}`, '#059669');
+        }).catch(err => {
+            ocultarLoader();
+            const msg = err.message || String(err);
+            if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+                showToast('Sin permiso. Verificá las reglas de Firebase.', '#dc2626');
+            } else {
+                showToast('Error: ' + msg, '#dc2626');
+            }
+        });
+    }
+
+    function actualizarLabelMP(precio) {
+        const label = document.getElementById('mpPrecioLabel');
+        if (!label) return;
+        if (precio && precio !== '...') {
+            const formateado = Number(precio).toLocaleString('es-AR');
+            label.textContent = `AR$ ${formateado}`;
+        } else {
+            label.textContent = `AR$ ...`;
+        }
+    }
+
+    function cargarPrecioMPAdmin() {
+        db.ref('configuracion/mp_precio').once('value', snap => {
+            const precio = snap.val();
+            if (precio) {
+                const input = document.getElementById('inputPrecioMP');
+                if (input) input.value = precio;
+                const status = document.getElementById('mpPrecioStatus');
+                if (status) {
+                    status.style.display = 'block';
+                    status.innerHTML = `Precio actual en Firebase: <b>AR$ ${precio}</b>`;
+                    status.style.color = '#6b7280';
+                }
+            }
+            actualizarLabelMP(precio || '...');
         });
     }
 
@@ -5534,7 +5611,7 @@
         </div>
         <div class="mp-modal-footer">
             <button class="mp-btn-pagar" id="mpBtnIrAPagar">
-                <span>💳</span> IR A MERCADO PAGO (AR$)
+                <span>💳</span> IR A MERCADO PAGO — <span id="mpPrecioLabel">AR$ ...</span>
             </button>
             
             <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde); margin-top: 5px;">
