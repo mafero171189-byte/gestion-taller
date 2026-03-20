@@ -624,7 +624,7 @@
 
         <div style="margin-top: 18px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
             <button onclick="mostrarPanelRegistro()" style="background:none; border:none; color:#1e4d8c; font-size:13px; font-weight:700; cursor:pointer; text-decoration:underline; padding:0;">
-                ✨ Registrarme gratis (30 días)
+                ✨ Registrarme gratis (15 días)
             </button>
             <button onclick="mostrarPanelOlvideClave()" style="background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; text-decoration:underline; padding:0;">
                 🔑 Olvidé mi clave
@@ -635,7 +635,7 @@
     <div class="login-card" id="panelRegistro" style="display:none; max-width: 400px;">
         <div style="font-size: 40px; margin-bottom: -5px;">✨</div>
         <h2>Crear Cuenta</h2>
-        <p style="margin-bottom:18px;">30 días gratis · Sin tarjeta de crédito</p>
+        <p style="margin-bottom:18px;">15 días gratis · Sin tarjeta de crédito</p>
 
         <div class="phone-row">
             <div class="dial-btn" id="dialBtnReg" onclick="toggleDial('dropReg',this)">
@@ -661,7 +661,7 @@
             🎁 <b>Tu prueba gratuita incluye:</b><br>
             ✔ Gestión ilimitada de órdenes<br>
             ✔ Contabilidad y stock · PDF de tickets<br>
-            ✔ 30 días sin costo · Sin tarjeta
+            ✔ 15 días sin costo · Sin tarjeta
         </div>
 
         <button class="btn-login" style="background:linear-gradient(135deg,#059669,#047857);" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
@@ -1262,6 +1262,20 @@
                     <input type="text" id="activar-pago-wa" placeholder="Número WhatsApp del cliente (Ej: 54911...)" style="flex:1;">
                     <button onclick="activarLicenciaManual()" class="btn" style="background:#059669; color:white; padding:0 20px; white-space:nowrap;">✅ ACTIVAR</button>
                 </div>
+            </div>
+
+            <!-- CONFIG PRECIO PAYPAL -->
+            <div class="card-form" style="background: #eff6ff; padding: 20px; border-radius: 12px; border: 1.5px solid #93c5fd; margin-bottom: 20px;">
+                <label style="color:#1e40af; font-weight:800;">🌍 Precio de Licencia en PayPal (USD)</label>
+                <p style="font-size:12px; color:#6b7280; margin:6px 0 12px 0;">Este monto se usa en el link de pago que se le muestra al cliente. Guardalo en Firebase sin tocar el código.</p>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="position:relative; flex:1;">
+                        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:#1e40af; font-size:16px;">USD</span>
+                        <input type="number" id="inputPrecioPaypal" min="1" step="0.01" placeholder="15" style="width:100%; padding:10px 12px 10px 52px; border:2px solid #93c5fd; border-radius:8px; font-size:18px; font-weight:800; color:#1e40af; box-sizing:border-box; background:white;">
+                    </div>
+                    <button onclick="guardarPrecioPaypal()" class="btn" style="background: linear-gradient(135deg,#003087,#009cde); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
+                </div>
+                <div id="paypalPrecioStatus" style="margin-top:10px; font-size:13px; color:#6b7280; display:none;"></div>
             </div>
 
             <div id="resetRequestsPanel" style="display:none; background:#f5f6fc; border:1.5px solid #fed7aa; border-radius:12px; padding:18px; margin-bottom:20px;">
@@ -2553,6 +2567,7 @@
 
         const modal = document.getElementById('modalPagoMP');
         modal.style.display = 'flex';
+        cargarPrecioPaypalAdmin();
 
         document.getElementById('mpBtnIrAPagar').onclick = function() {
             cerrarModalPagoMP();
@@ -2570,21 +2585,57 @@
             alert("Error: No se identificó el usuario.");
             return;
         }
-        
-        // REEMPLAZÁ ESTO con tu link real de PayPal
-        // Puede ser paypal.me/TuUsuario/MontoUSD o un link de botón de pago generado en PayPal
-        const linkPayPal = 'https://paypal.me/MatiasRodriguez1789/15USD';
-        
-        const mensaje = `Hola! Ya pagué la licencia internacional de Mi Taller Web por PayPal. \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
-        const urlWhatsapp = `https://wa.me/5491135654094?text=${encodeURIComponent(mensaje)}`;
 
-        cerrarModalPagoMP();
-        
-        // Abre PayPal
-        window.open(linkPayPal, '_blank');
-        
-        // Abre WhatsApp después de 2 segundos para que te envíen el comprobante
-        setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
+        db.ref('configuracion/paypal_precio').once('value', snap => {
+            const precio = snap.val() || 15;
+            const linkPayPal = `https://paypal.me/MatiasRodriguez1789/${precio}USD`;
+            const mensaje = `Hola! Ya pagué la licencia internacional de Mi Taller Web por PayPal (USD ${precio}). \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
+            const urlWhatsapp = `https://wa.me/5491135654094?text=${encodeURIComponent(mensaje)}`;
+
+            cerrarModalPagoMP();
+            window.open(linkPayPal, '_blank');
+            setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
+        });
+    }
+
+    function guardarPrecioPaypal() {
+        const val = parseFloat(document.getElementById('inputPrecioPaypal').value);
+        if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
+        mostrarLoader('Guardando precio...');
+        db.ref('configuracion/paypal_precio').set(val).then(() => {
+            ocultarLoader();
+            const status = document.getElementById('paypalPrecioStatus');
+            status.style.display = 'block';
+            status.innerHTML = `✅ Precio guardado: <b>USD ${val}</b> · El link de PayPal ya se actualizó para todos los usuarios.`;
+            status.style.color = '#059669';
+            actualizarLabelPaypal(val);
+            showToast(`✅ Precio PayPal actualizado: USD ${val}`, '#059669');
+        }).catch(err => {
+            ocultarLoader();
+            showToast('Error: ' + err.message, '#dc2626');
+        });
+    }
+
+    function actualizarLabelPaypal(precio) {
+        const label = document.getElementById('paypalPrecioLabel');
+        if (label) label.textContent = `USD ${precio}`;
+    }
+
+    function cargarPrecioPaypalAdmin() {
+        db.ref('configuracion/paypal_precio').once('value', snap => {
+            const precio = snap.val();
+            if (precio) {
+                const input = document.getElementById('inputPrecioPaypal');
+                if (input) input.value = precio;
+                const status = document.getElementById('paypalPrecioStatus');
+                if (status) {
+                    status.style.display = 'block';
+                    status.innerHTML = `Precio actual en Firebase: <b>USD ${precio}</b>`;
+                    status.style.color = '#6b7280';
+                }
+            }
+            actualizarLabelPaypal(precio || 15);
+        });
     }
 
     function activarLicenciaManual(numeroWa) {
@@ -2794,6 +2845,7 @@
             limpiarFotosAntiguas(false); 
             limpiarLicenciasExpiradas();
             cargarSolicitudesReset();
+            cargarPrecioPaypalAdmin();
         }
     }
 
@@ -5486,7 +5538,7 @@
             </button>
             
             <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde); margin-top: 5px;">
-                <span>🌍</span> PAGAR CON PAYPAL (USD)
+                <span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span>
             </button>
             
             <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
