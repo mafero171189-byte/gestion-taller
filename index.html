@@ -314,6 +314,141 @@
 
         /* Historia item */
         .history-item { text-align: left; border-left: 3px solid #1e4d8c; padding-left: 15px; margin-bottom: 15px; position: relative; }
+
+        /* MODAL MERCADO PAGO */
+        #modalPagoMP {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8,12,24,0.82); z-index: 12000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .mp-modal-box {
+            background: #ffffff; border-radius: 22px;
+            width: 88%; max-width: 360px; overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
+            animation: mpModalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes mpModalIn {
+            from { opacity:0; transform: scale(0.88) translateY(20px); }
+            to   { opacity:1; transform: scale(1)    translateY(0); }
+        }
+        .mp-modal-header {
+            background: linear-gradient(135deg, #009ee3 0%, #0070b0 100%);
+            padding: 28px 24px 22px; text-align: center;
+        }
+        .mp-logo-wrap {
+            width: 58px; height: 58px; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; box-shadow: 0 4px 18px rgba(0,112,176,0.35); font-size: 30px;
+        }
+        .mp-modal-header h3 { color: white; margin: 0 0 6px; font-size: 18px; font-weight: 900; font-family: 'Outfit', sans-serif; letter-spacing: -0.3px; }
+        .mp-modal-header p  { color: rgba(255,255,255,0.85); margin: 0; font-size: 13px; font-weight: 500; font-family: 'Outfit', sans-serif; }
+        .mp-modal-body { padding: 22px 22px 10px; }
+        .mp-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+        .mp-step-num {
+            min-width: 26px; height: 26px;
+            background: linear-gradient(135deg, #009ee3, #0070b0);
+            color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 800; font-family: 'Outfit', sans-serif;
+            box-shadow: 0 2px 8px rgba(0,112,176,0.3);
+        }
+        .mp-step-text { font-size: 13px; color: #374151; font-weight: 500; line-height: 1.4; font-family: 'Outfit', sans-serif; }
+        .mp-step-text b { color: #111827; font-weight: 700; }
+        .mp-modal-footer { padding: 4px 22px 22px; display: flex; flex-direction: column; gap: 10px; }
+        .mp-btn-pagar {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, #009ee3, #0070b0);
+            color: white; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 800; cursor: pointer;
+            font-family: 'Outfit', sans-serif; letter-spacing: 0.2px;
+            box-shadow: 0 4px 18px rgba(0,112,176,0.4); transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .mp-btn-pagar:active { transform: scale(0.97); }
+        .mp-btn-cancelar {
+            width: 100%; padding: 12px; background: transparent; color: #9ca3af;
+            border: none; border-radius: 10px; font-size: 13px; font-weight: 600;
+            cursor: pointer; font-family: 'Outfit', sans-serif; transition: color 0.2s;
+        }
+        .mp-btn-cancelar:hover { color: #6b7280; }
+        body.dark-mode .mp-modal-box { background: #111827; }
+        body.dark-mode .mp-step-text { color: #d1d5db; }
+        body.dark-mode .mp-step-text b { color: #f9fafb; }
+        /* MODALES CONFIRMAR ACTIVAR / TIPO LICENCIA */
+        #modalConfirmarActivar, #modalTipoLicencia {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8,12,24,0.82); z-index: 12500;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .confirm-modal-box {
+            background: #ffffff; border-radius: 22px;
+            width: 88%; max-width: 340px; overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+            animation: mpModalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .confirm-modal-header { padding: 26px 24px 18px; text-align: center; }
+        .confirm-modal-icon {
+            width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; font-size: 28px;
+        }
+        .confirm-modal-icon.verde { background: #d1fae5; box-shadow: 0 4px 18px rgba(5,150,105,0.25); }
+        .confirm-modal-icon.azul  { background: #dbeafe; box-shadow: 0 4px 18px rgba(30,77,140,0.25); }
+        .confirm-modal-header h3 { margin: 0 0 6px; font-size: 17px; font-weight: 900; font-family: 'Outfit', sans-serif; color: #111827; }
+        .confirm-modal-header p  { margin: 0; font-size: 13px; font-weight: 500; color: #6b7280; font-family: 'Outfit', sans-serif; line-height: 1.5; }
+        .confirm-modal-header p b { color: #111827; }
+        .confirm-modal-divider { height: 1px; background: #f3f4f6; margin: 0 22px; }
+        .confirm-modal-footer { padding: 16px 22px 20px; display: flex; flex-direction: column; gap: 9px; }
+        .confirm-modal-footer button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.18s; }
+        .btn-confirmar-verde  { background: linear-gradient(135deg,#059669,#047857); color:white; box-shadow:0 4px 14px rgba(5,150,105,0.35); }
+        .btn-confirmar-verde:active { transform: scale(0.97); }
+        .btn-tipo-permanente  { background: linear-gradient(135deg,#059669,#047857); color:white; box-shadow:0 4px 14px rgba(5,150,105,0.3); }
+        .btn-tipo-prueba      { background: linear-gradient(135deg,#f59e0b,#d97706); color:white; box-shadow:0 4px 14px rgba(217,119,6,0.3); }
+        .btn-tipo-permanente:active, .btn-tipo-prueba:active { transform: scale(0.97); }
+        .btn-confirm-cancelar { background: transparent; color: #9ca3af; box-shadow: none; font-size: 13px; padding: 10px; }
+        body.dark-mode .confirm-modal-box   { background: #111827; }
+        body.dark-mode .confirm-modal-header h3 { color: #f9fafb; }
+        body.dark-mode .confirm-modal-header p  { color: #9ca3af; }
+        body.dark-mode .confirm-modal-header p b { color: #f3f4f6; }
+        body.dark-mode .confirm-modal-divider   { background: #1f2937; }
+
+
+        /* MODAL REVERTIR MOVIMIENTOS */
+        #modalRevertirMov {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8,12,24,0.82); z-index: 12500;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .revertir-modal-box {
+            background: #ffffff; border-radius: 22px;
+            width: 88%; max-width: 340px; overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+            animation: mpModalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .revertir-modal-header { padding: 26px 24px 18px; text-align: center; }
+        .revertir-icon-wrap {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #fee2e2; box-shadow: 0 4px 18px rgba(220,38,38,0.2);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; font-size: 26px;
+        }
+        .revertir-modal-header h3 { margin: 0 0 6px; font-size: 17px; font-weight: 900; font-family: 'Outfit', sans-serif; color: #111827; }
+        .revertir-modal-header p  { margin: 0; font-size: 13px; font-weight: 500; color: #6b7280; font-family: 'Outfit', sans-serif; line-height: 1.5; }
+        .revertir-modal-desc { margin: 10px 0 0; font-size: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; color: #374151; font-family: 'Outfit', sans-serif; font-weight: 600; }
+        .revertir-divider { height: 1px; background: #f3f4f6; margin: 0 22px; }
+        .revertir-modal-footer { padding: 16px 22px 20px; display: flex; flex-direction: column; gap: 9px; }
+        .revertir-modal-footer button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.18s; }
+        .btn-revertir-confirmar { background: linear-gradient(135deg,#dc2626,#b91c1c); color:white; box-shadow:0 4px 14px rgba(220,38,38,0.35); }
+        .btn-revertir-confirmar:active { transform: scale(0.97); }
+        .btn-revertir-cancelar { background: transparent; color: #9ca3af; box-shadow: none; font-size: 13px; padding: 10px; }
+        body.dark-mode .revertir-modal-box   { background: #111827; }
+        body.dark-mode .revertir-modal-header h3 { color: #f9fafb; }
+        body.dark-mode .revertir-modal-header p  { color: #9ca3af; }
+        body.dark-mode .revertir-modal-desc  { background: #1f2937; border-color: #374151; color: #d1d5db; }
+        body.dark-mode .revertir-divider     { background: #1f2937; }
     </style>
 </head>
 <body onload="iniciarSeguridad()">
@@ -893,7 +1028,7 @@
                     <div class="full"><label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()"></div>
                     
                     <div class="full" style="display:flex; flex-direction: column; gap:5px;">
-                        <label>Agregar Fotos</label>
+                        <label>Agregar Fotos <span id="fotoContador" style="font-weight:700; color:#2d3a8c; text-transform:none; font-size:11px;">(0 / 5)</span></label>
                         <div style="display:flex; gap:10px;">
                             <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
                             <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
@@ -1016,6 +1151,15 @@
                 <div style="display:flex; gap:10px; margin-top:5px;">
                     <input type="text" id="new-user-wa" placeholder="Ej: 54911..." style="flex:1;">
                     <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:0 20px;">ACTIVAR</button>
+                </div>
+            </div>
+
+            <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #6ee7b7; margin-bottom: 20px;">
+                <label style="color:#065f46; font-weight:800;">⭐ Activar Licencia Permanente (tras pago)</label>
+                <p style="font-size:12px; color:#6b7280; margin:6px 0 10px 0;">Usá este botón cuando un cliente te envíe el comprobante de pago de Mercado Pago.</p>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <input type="text" id="activar-pago-wa" placeholder="Número WhatsApp del cliente (Ej: 54911...)" style="flex:1;">
+                    <button onclick="activarLicenciaManual()" class="btn" style="background:#059669; color:white; padding:0 20px; white-space:nowrap;">✅ ACTIVAR</button>
                 </div>
             </div>
 
@@ -1151,7 +1295,7 @@
                         <ul>
                             <li>Completá el <b>nombre del artículo</b> (ej: "Módulo iPhone 13", "Funda Samsung A54"), el <b>costo de compra</b> y el <b>precio de venta al público</b>.</li>
                             <li>Cargá la <b>cantidad disponible</b> actual. Podés actualizarla manualmente cuando recibís nueva mercadería.</li>
-                            <li>El campo <b>stock mínimo</b> define a partir de qué cantidad el artículo se resalta como "bajo stock" para que no te olvides de reponerlo.</li>
+
                         </ul>
 
                         <b>Descuento Automático de Stock</b>
@@ -1201,7 +1345,7 @@
                         <ul>
                             <li>Podés cambiar tu contraseña de acceso en cualquier momento desde este panel.</li>
                             <li>Dejá el campo "Nueva Clave" vacío si no querés cambiarla al actualizar el resto de los datos.</li>
-                            <li>También podés configurar un <b>patrón de desbloqueo</b> como método de acceso rápido desde dispositivos de confianza.</li>
+
                         </ul>
                     </div>
                 </details>
@@ -1235,22 +1379,11 @@
 
                         <b>📁 Historial y Archivo</b>
                         <ul>
-                            <li>Las órdenes entregadas se archivan automáticamente después de 24 horas para mantener limpia tu vista de trabajo.</li>
+                            <li>Las órdenes entregadas se archivan automáticamente para mantener limpia tu vista de trabajo pendiente.</li>
                             <li>Podés ver el historial completo de cualquier cliente haciendo clic en su nombre: verás todas sus reparaciones anteriores y el total invertido.</li>
                         </ul>
 
-                        <b>🧹 Limpieza de Fotos (Solo Administradores)</b>
-                        <ul>
-                            <li>Desde el panel de administración, podés ejecutar una limpieza manual que elimina las fotos de órdenes con más de 45 días de antigüedad.</li>
-                            <li>Los datos de las órdenes (cliente, equipo, precio, estado) nunca se borran, solo las imágenes.</li>
-                            <li>El sistema también ejecuta esta limpieza automáticamente cada 7 días para mantener la base de datos liviana.</li>
-                        </ul>
 
-                        <b>📊 Panel de Administración (Solo para el dueño del sistema)</b>
-                        <ul>
-                            <li>Desde el panel admin podés ver todos los usuarios activos, gestionar licencias (prueba / permanente), definir fechas de vencimiento y suspender o eliminar accesos.</li>
-                            <li>Las licencias en prueba tienen un contador de días visible para el usuario en la barra superior.</li>
-                        </ul>
                     </div>
                 </details>
             </div>
@@ -1279,8 +1412,7 @@
                         <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br>
                         No. Por seguridad, el sistema permite solo una sesión activa por cuenta. Si iniciás sesión en un segundo dispositivo, el primero quedará desconectado automáticamente.</p>
 
-                        <p><b>¿Para qué sirve el patrón de desbloqueo?</b><br>
-                        Es un método de acceso rápido alternativo a la contraseña. Podés configurarlo desde Mi Perfil. Es útil si usás el sistema principalmente desde un dispositivo fijo (tu celular de taller, por ejemplo).</p>
+
                     </div>
                 </details>
             </div>
@@ -1317,7 +1449,7 @@
                         El sistema comprime las fotos automáticamente. Si la subida falla, verificá que tengas conexión a internet estable. Un indicador "Sincronizando..." aparece en la parte superior cuando la conexión es débil. Intentá con una foto de menor resolución si el problema persiste.</p>
 
                         <p><b>¿Cuántas fotos puedo subir por orden?</b><br>
-                        El sistema no tiene un límite fijo, pero por rendimiento se recomienda no superar las 5 fotos por orden. Priorizá las que muestren el estado físico del equipo (pantalla rota, golpes, estado de los puertos).</p>
+                        El límite es de <b>5 fotos por orden</b>. Al intentar agregar una sexta, el sistema te avisará con un mensaje de error. El contador visible junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: <i>2 / 5</i>). Priorizá las que muestren el estado físico del equipo: pantalla rota, golpes, estado de los puertos.</p>
 
                         <p><b>¿Se borran mis fotos con el tiempo?</b><br>
                         Sí. Para mantener la velocidad del sistema, las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan en las limpiezas automáticas. Los datos de la orden (cliente, falla, precio, estado) se conservan siempre. Solo desaparecen las imágenes.</p>
@@ -1334,7 +1466,7 @@
                     <summary class="faq-summary">🔄 Estados y Flujo de Reparación <span>+</span></summary>
                     <div class="faq-content">
                         <p><b>Cambié un equipo a "Entregado" y desapareció de la lista principal.</b><br>
-                        Es por diseño: el sistema mantiene tu mesa de trabajo limpia. Las órdenes entregadas se mueven a la pestaña <b>📁 Historial</b> luego de 24 horas. Podés seguir viéndolas y buscándolas desde ahí.</p>
+                        Es por diseño: el sistema mantiene tu mesa de trabajo limpia. Las órdenes entregadas se mueven a la pestaña <b>📁 Historial</b> automáticamente cuando se entrega el equipo. Podés seguir viéndolas y buscándolas desde ahí.</p>
 
                         <p><b>¿Puedo revertir un cambio de estado?</b><br>
                         Sí, podés cambiar el estado libremente mientras la orden esté activa. La excepción es "Entregado": una vez entregado y archivado, no se puede volver a activo fácilmente. Usá el estado con cuidado.</p>
@@ -1385,11 +1517,7 @@
                         <p><b>El stock de un artículo quedó en negativo, ¿qué hago?</b><br>
                         Actualizá la cantidad manualmente desde la sección Stock ingresando el número correcto. Esto puede pasar si ingresaste repuestos manualmente y el sistema los descontó además.</p>
 
-                        <p><b>¿Puedo vender desde stock sin descontar cantidad?</b><br>
-                        No directamente, ya que el sistema siempre descuenta al vender. Si necesitás registrar una venta sin afectar el stock, podés hacerlo como una entrada manual en Contabilidad (función disponible para administradores).</p>
 
-                        <p><b>¿Cómo configuro el stock mínimo para las alertas?</b><br>
-                        Al crear o editar un artículo en la sección Stock, completá el campo <b>"Stock mínimo"</b>. Cuando la cantidad disponible llegue a ese número o menos, el artículo se resaltará visualmente como alerta de reposición.</p>
                     </div>
                 </details>
             </div>
@@ -2306,7 +2434,115 @@
     }
 
     function mostrarPanelContactoAdmin() {
-        window.open('https://wa.me/5491135654094?text=Hola,%20quiero%20activar%20mi%20licencia%20permanente%20de%20Mi%20Taller%20Web', '_blank');
+        if (!currentUser) {
+            alert("Error: No se identificó el usuario.");
+            return;
+        }
+        const linkMercadoPago = 'https://mpago.li/1Tfz184';
+        const mensaje = `Hola! Ya pagué la licencia de Mi Taller Web. \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
+        const urlWhatsapp = `https://wa.me/5491135654094?text=${encodeURIComponent(mensaje)}`;
+
+        const modal = document.getElementById('modalPagoMP');
+        modal.style.display = 'flex';
+
+        document.getElementById('mpBtnIrAPagar').onclick = function() {
+            cerrarModalPagoMP();
+            window.open(linkMercadoPago, '_blank');
+            setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
+        };
+    }
+
+    function cerrarModalPagoMP() {
+        document.getElementById('modalPagoMP').style.display = 'none';
+    }
+
+    function activarLicenciaManual(numeroWa) {
+        if (!numeroWa) {
+            numeroWa = document.getElementById('activar-pago-wa') ? document.getElementById('activar-pago-wa').value.trim() : '';
+        }
+        if (!numeroWa || numeroWa.length < 10) { showToast("Número inválido", "#dc2626"); return; }
+        numeroWa = numeroWa.replace(/\D/g, '');
+
+        document.getElementById('confirmarActivarNumero').innerText = numeroWa;
+        const modal = document.getElementById('modalConfirmarActivar');
+        modal.style.display = 'flex';
+
+        document.getElementById('btnConfirmarActivarSi').onclick = function() {
+            modal.style.display = 'none';
+            const inputActivar = document.getElementById('activar-pago-wa');
+            if (inputActivar) inputActivar.value = '';
+            db.ref('usuarios_registrados/' + numeroWa).update({
+                tipoLicencia: 'permanente',
+                fechaExpiracion: null
+            })
+            .then(() => {
+                showToast("✅ ¡Licencia permanente activada para " + numeroWa + "!", "#059669");
+                setTimeout(() => listarUsuarios(), 1000);
+            })
+            .catch((err) => {
+                showToast("Error: " + err.message, "#dc2626");
+            });
+        };
+    }
+
+
+        function generarSVGPatron(pinStr) {
+        // Acepta "Patrón: 1-3-5-9", "Patron: 1-3-5-9", o directo "1-3-5-9"
+        var seq = null;
+        var m = pinStr.match(/[Pp]atr.n\s*[:\-]?\s*([1-9][1-9\-]*)/i);
+        if (m) {
+            seq = m[1];
+        } else if (/^[1-9](\-[1-9]){1,8}$/.test(pinStr.trim())) {
+            seq = pinStr.trim();
+        }
+        if (!seq) return null;
+        var path = seq.split('-').map(Number).filter(function(n){ return n >= 1 && n <= 9; });
+        if (path.length < 2) return null;
+
+        var S = 26, P = 18, SIZE = P * 2 + S * 2; // 88px
+
+        function pos(n) {
+            return { x: P + ((n - 1) % 3) * S, y: P + Math.floor((n - 1) / 3) * S };
+        }
+
+        var lines = '';
+        for (var i = 0; i < path.length - 1; i++) {
+            var a = pos(path[i]), b = pos(path[i + 1]);
+            lines += '<line x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y +
+                     '" stroke="#1e4d8c" stroke-width="3" stroke-linecap="round" stroke-opacity="0.6"/>';
+        }
+
+        var dots = '';
+        for (var n = 1; n <= 9; n++) {
+            var p = pos(n);
+            var active = path.indexOf(n) !== -1;
+            var first  = path[0] === n;
+            if (active) {
+                dots += '<circle cx="' + p.x + '" cy="' + p.y + '" r="8" fill="none" stroke="#1e4d8c" stroke-width="1.5" stroke-opacity="0.25"/>';
+                dots += '<circle cx="' + p.x + '" cy="' + p.y + '" r="5.5" fill="' + (first ? '#0e2a5e' : '#1e4d8c') + '"/>';
+                dots += '<circle cx="' + p.x + '" cy="' + p.y + '" r="2" fill="white"/>';
+            } else {
+                dots += '<circle cx="' + p.x + '" cy="' + p.y + '" r="4" fill="#e8ecf5" stroke="#c7d4f0" stroke-width="1.5"/>';
+            }
+        }
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="' + SIZE + '" height="' + SIZE +
+               '" viewBox="0 0 ' + SIZE + ' ' + SIZE + '" style="display:block;">' +
+               lines + dots + '</svg>';
+    }
+
+    function renderPinDisplay(pinStr) {
+        if (!pinStr) return '';
+        var svg = generarSVGPatron(pinStr);
+        if (svg) {
+            return '<div style="display:inline-flex;align-items:center;gap:10px;' +
+                   'background:#f0f4ff;border:1.5px solid #c7d4f0;border-radius:12px;padding:8px 14px;">' +
+                   svg +
+                   '<span style="font-size:11px;color:#1e4d8c;font-weight:800;' +
+                   'font-family:Outfit,sans-serif;letter-spacing:0.5px;">PATRÓN</span></div>';
+        }
+        return '<span style="font-size:15px;font-weight:bold;color:#dc2626;' +
+               'letter-spacing:3px;font-family:monospace;">' + escaparHTML(pinStr) + '</span>';
     }
 
     function grantAccess(u, isAdmin, isStored = false) {
@@ -3105,8 +3341,8 @@
         let fallaHtml = r.falla ? `<div style="background:#f9fafb; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #e5e7eb; text-align:left;">
             <div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-bottom:3px;">🛠️ Falla Reportada</div>
             <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:8px; line-height:1.3;">${escaparHTML(r.falla.replace(/\s*\+\s*$/, ''))}</div>
-            ${r.pin ? `<div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/PIN</div>
-            <div style="font-size:14px; font-weight:bold; color:#dc2626; margin-bottom:8px;">${escaparHTML(r.pin)}</div>` : ''}
+            ${r.pin ? `<div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-top:5px; margin-bottom:2px;">🔒 Clave/Patrón</div>
+            <div style="margin-bottom:8px;">${renderPinDisplay(r.pin)}</div>` : ''}
             ${r.obs ? `<div style="font-size:11px; color:#6b7280; font-weight:bold; text-transform:uppercase; margin-bottom:2px;">📝 Observaciones</div>
             <div style="font-size:13px; color:#6b7280; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
         </div>` : '';
@@ -3535,14 +3771,18 @@
         mostrarLoader(idEditando ? "Actualizando..." : "Registrando...");
 
         if (idEditando) {
-            db.ref(pathActivo).child(idEditando).update(data).then(() => { 
+            db.ref(pathActivo).child(idEditando).update(data)
+            .then(() => { 
                 subirFotosYFinalizar(idEditando, "ACTUALIZADO ✅", "#059669");
-            });
+            })
+            .catch(err => { ocultarLoader(); showToast("Error al actualizar: " + err.message, "#dc2626"); });
         } else {
             const nuevaRef = db.ref(pathActivo).push();
-            nuevaRef.set(data).then(() => { 
+            nuevaRef.set(data)
+            .then(() => { 
                 subirFotosYFinalizar(nuevaRef.key, "REGISTRADO ✅", "#059669");
-            });
+            })
+            .catch(err => { ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
         }
     };
 
@@ -3558,16 +3798,23 @@
         ref.once('value').then(snap => {
             let registroData = snap.val() || {};
             let fotosActuales = registroData.fotos || [];
-            
             let nuevasFotosStr = fotosTemporales.map(f => f.b64);
             let todasLasFotos = fotosActuales.concat(nuevasFotosStr);
             
-            ref.update({fotos: todasLasFotos}).then(() => {
+            ref.update({fotos: todasLasFotos})
+            .then(() => {
                 clickLimpiar(true);
                 ocultarLoader();
                 showToast(msg + " (CON FOTOS)", color);
+            })
+            .catch(err => {
+                // Las fotos fallaron pero la orden ya se guardó
+                clickLimpiar(true);
+                ocultarLoader();
+                showToast(msg + " ⚠️ (fotos no subidas)", "#f59e0b");
             });
-        });
+        })
+        .catch(err => { ocultarLoader(); showToast("Error al subir fotos: " + err.message, "#dc2626"); });
     }
 
     function editar(id) {
@@ -3646,6 +3893,11 @@
 
     function agregarFotoTemporal(input) {
         if(input.files && input.files[0]) {
+            if(fotosTemporales.length >= 5) {
+                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+                input.value = "";
+                return;
+            }
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
                 const id = Date.now();
                 fotosTemporales.push({id: id, b64: base64});
@@ -3665,6 +3917,11 @@
                 </div>
             `;
         });
+        const contador = document.getElementById('fotoContador');
+        if(contador) {
+            contador.innerText = `(${fotosTemporales.length} / 5)`;
+            contador.style.color = fotosTemporales.length >= 5 ? '#dc2626' : '#2d3a8c';
+        }
     }
     function eliminarFotoTemporal(id) { fotosTemporales = fotosTemporales.filter(f => f.id !== id); renderThumbnails(); }
 
@@ -3696,12 +3953,17 @@
     function subirFotoDirecta(input) {
         if(!idParaFotos) return;
         if(input.files && input.files[0]) {
+            const r = getRegistro(idParaFotos);
+            let fotosActuales = r.fotos || [];
+            if(fotosActuales.length >= 5) {
+                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+                input.value = "";
+                return;
+            }
             document.getElementById('loader-text').innerText = "Subiendo foto...";
             document.getElementById('global-loader').style.display = 'flex';
             
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
-                const r = getRegistro(idParaFotos);
-                let fotosActuales = r.fotos || [];
                 fotosActuales.push(base64);
                 
                 const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -4151,7 +4413,17 @@
     }
 
     function eliminarMovimiento(idOrden, descAgrupada) {
-        if(!confirm(`¿Estás seguro de REVERTIR los movimientos de este renglón?\n(${descAgrupada})`)) return;
+        // Mostrar modal de confirmación visual
+        document.getElementById('revertirDescTexto').innerText = descAgrupada;
+        const modal = document.getElementById('modalRevertirMov');
+        modal.style.display = 'flex';
+        document.getElementById('btnRevertirConfirmar').onclick = function() {
+            modal.style.display = 'none';
+            _ejecutarEliminarMovimiento(idOrden, descAgrupada);
+        };
+    }
+
+    function _ejecutarEliminarMovimiento(idOrden, descAgrupada) {
         const r = getRegistro(idOrden);
         if(!r) return;
 
@@ -4354,34 +4626,43 @@
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.replace(/\D/g, '');
         if(wa.length < 10) { showToast("Número inválido", "#dc2626"); return; }
-        
-        mostrarLoader("Creando licencia...");
-        
-        const pwd = Math.random().toString(36).slice(-8);
-        const emailFalso = wa + '@mitallerweb.com';
-        
-        secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, pwd)
-        .then(() => {
-            const pathUsuario = 'usuarios_registrados/' + wa;
-            db.ref(pathUsuario).set({
-                whatsapp: wa,
-                fechaAlta: new Date().toLocaleString('es-AR'),
-                estado: "activo",
-                tipoLicencia: "permanente",
-                tokenSesion: ""
-            }).then(() => {
-                secondaryApp.auth().signOut();
-                
-                let msj = `¡Hola! Tu sistema de gestión Mi Taller Web ya está activado.\n\n🌐 *Enlace:* ${window.location.href}\n👤 *Usuario:* ${wa}\n🔑 *Clave:* ${pwd}\n\nIngresá ahora para cambiar tu clave y cargar tu logo.`;
-                window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
-                
-                document.getElementById('new-user-wa').value = "";
+
+        document.getElementById('tipoLicenciaNumero').innerText = wa;
+        const modalTipo = document.getElementById('modalTipoLicencia');
+        modalTipo.style.display = 'flex';
+
+        function ejecutarCreacion(tipoLicencia) {
+            modalTipo.style.display = 'none';
+            mostrarLoader("Creando licencia...");
+            const pwd = Math.random().toString(36).slice(-8);
+            const emailFalso = wa + '@mitallerweb.com';
+            const expiracion = tipoLicencia === 'prueba' ? Date.now() + 30 * 24 * 60 * 60 * 1000 : null;
+
+            secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, pwd)
+            .then(() => {
+                const pathUsuario = 'usuarios_registrados/' + wa;
+                db.ref(pathUsuario).set({
+                    whatsapp: wa,
+                    fechaAlta: new Date().toLocaleString('es-AR'),
+                    estado: "activo",
+                    tipoLicencia: tipoLicencia,
+                    fechaExpiracion: expiracion,
+                    tokenSesion: ""
+                }).then(() => {
+                    secondaryApp.auth().signOut();
+                    let msj = `¡Hola! Tu sistema de gestión Mi Taller Web ya está activado.\n\n🌐 *Enlace:* ${window.location.href}\n👤 *Usuario:* ${wa}\n🔑 *Clave:* ${pwd}\n\nIngresá ahora para cambiar tu clave y cargar tu logo.`;
+                    window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
+                    document.getElementById('new-user-wa').value = "";
+                    ocultarLoader();
+                });
+            }).catch(err => {
                 ocultarLoader();
+                showToast("Error: El número ya tiene licencia o hubo un fallo.", "#dc2626");
             });
-        }).catch(err => {
-            ocultarLoader();
-            showToast("Error: El número ya tiene licencia o hubo un fallo.", "#dc2626");
-        });
+        }
+
+        document.getElementById('btnLicenciaPermanente').onclick = () => ejecutarCreacion('permanente');
+        document.getElementById('btnLicenciaPrueba').onclick     = () => ejecutarCreacion('prueba');
     }
 
     // ====== PANEL ADMIN: SOLICITUDES DE RESET DE CLAVE ======
@@ -5033,5 +5314,87 @@
     }
 
 </script>
+
+<!-- MODAL PAGO MERCADO PAGO -->
+<div id="modalPagoMP">
+    <div class="mp-modal-box">
+        <div class="mp-modal-header">
+            <div class="mp-logo-wrap">💳</div>
+            <h3>Activar Licencia Permanente</h3>
+            <p>Pago seguro a través de Mercado Pago</p>
+        </div>
+        <div class="mp-modal-body">
+            <div class="mp-step">
+                <div class="mp-step-num">1</div>
+                <div class="mp-step-text">Te abrimos <b>Mercado Pago</b> para completar el pago de tu licencia.</div>
+            </div>
+            <div class="mp-step">
+                <div class="mp-step-num">2</div>
+                <div class="mp-step-text">Una vez pagado, abrimos <b>WhatsApp</b> automáticamente con el mensaje listo.</div>
+            </div>
+            <div class="mp-step">
+                <div class="mp-step-num">3</div>
+                <div class="mp-step-text">Enviá el <b>comprobante</b> y activamos tu cuenta en minutos. ✅</div>
+            </div>
+        </div>
+        <div class="mp-modal-footer">
+            <button class="mp-btn-pagar" id="mpBtnIrAPagar">
+                <span>💳</span> IR A MERCADO PAGO
+            </button>
+            <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR ACTIVAR LICENCIA PERMANENTE -->
+<div id="modalConfirmarActivar">
+    <div class="confirm-modal-box">
+        <div class="confirm-modal-header">
+            <div class="confirm-modal-icon verde">⭐</div>
+            <h3>Activar Licencia Permanente</h3>
+            <p>¿Activar licencia permanente para el número<br><b id="confirmarActivarNumero">—</b>?</p>
+        </div>
+        <div class="confirm-modal-divider"></div>
+        <div class="confirm-modal-footer">
+            <button class="btn-confirmar-verde" id="btnConfirmarActivarSi">✅ Sí, activar ahora</button>
+            <button class="btn-confirm-cancelar" onclick="document.getElementById('modalConfirmarActivar').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ELEGIR TIPO DE LICENCIA -->
+<div id="modalTipoLicencia">
+    <div class="confirm-modal-box">
+        <div class="confirm-modal-header">
+            <div class="confirm-modal-icon azul">🔑</div>
+            <h3>Tipo de Licencia</h3>
+            <p>¿Qué tipo de licencia querés asignarle al número<br><b id="tipoLicenciaNumero">—</b>?</p>
+        </div>
+        <div class="confirm-modal-divider"></div>
+        <div class="confirm-modal-footer">
+            <button class="btn-tipo-permanente" id="btnLicenciaPermanente">⭐ Permanente</button>
+            <button class="btn-tipo-prueba"     id="btnLicenciaPrueba">🧪 Prueba (30 días)</button>
+            <button class="btn-confirm-cancelar" onclick="document.getElementById('modalTipoLicencia').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL REVERTIR MOVIMIENTOS FINANCIEROS -->
+<div id="modalRevertirMov" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.82);z-index:12500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div class="revertir-modal-box">
+        <div class="revertir-modal-header">
+            <div class="revertir-icon-wrap">↩️</div>
+            <h3>Revertir Movimientos</h3>
+            <p>Esta acción anula los registros financieros del renglón:</p>
+            <div class="revertir-modal-desc" id="revertirDescTexto">—</div>
+        </div>
+        <div class="revertir-divider"></div>
+        <div class="revertir-modal-footer">
+            <button class="btn-revertir-confirmar" id="btnRevertirConfirmar">↩️ Sí, revertir movimientos</button>
+            <button class="btn-revertir-cancelar" onclick="document.getElementById('modalRevertirMov').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
