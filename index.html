@@ -3736,6 +3736,10 @@
             renderTable();
             closePriceModal();
             showToast("PRECIO ACTUALIZADO ✅", "#059669");
+            // Si la orden está archivada/entregada, refrescar contabilidad
+            if (r.archivado && document.getElementById("page-contabilidad").style.display === "block") {
+                cargarDatosContabilidad();
+            }
         });
     };
 
@@ -3877,7 +3881,9 @@
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
             
             let estadoPagoHTML = "";
-            if (precioActual === 0) {
+            if (r.archivado && r.estado === 'Entregado') {
+                estadoPagoHTML = `<b style="color:#6b7280;">📦 ENTREGADO</b>`;
+            } else if (precioActual === 0) {
                 if (senaActual > 0) {
                     estadoPagoHTML = `<b style="color:green;">A Favor: ${fmt.format(senaActual)}</b>`;
                 } else {
@@ -3904,7 +3910,7 @@
                     <span style="font-size:11px; color:#6b7280; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
                 </td>
                 <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" ${!r.esVentaRapida ? `onclick="openStatusModal('${r.id}')"` : ''}>${r.estado || 'Pendiente'}</span></td>
-                <td ${!r.esVentaRapida ? `onclick="openPriceModal('${r.id}')" style="cursor: pointer;"` : ''}>
+                <td ${(!r.esVentaRapida && !r.archivado) ? `onclick="openPriceModal('${r.id}')" style="cursor: pointer;"` : (r.archivado ? 'title="Usá el lápiz ✏️ para editar"' : '')}>
                     ${estadoPagoHTML}
                 </td>
                 <td class="action-btns">
@@ -4158,9 +4164,37 @@
         if (idEditando) {
             const r = getRegistro(idEditando);
             if (r) {
-                data.saldoCobrado = r.saldoCobrado || 0;
-                data.metodoPagoSaldo = r.metodoPagoSaldo || "";
-                data.senaOriginal = r.senaOriginal !== undefined ? r.senaOriginal : senaActual;
+                // --- Campos del formulario que SÍ se actualizan ---
+                // precio, sena, costoRepuesto, cliente, tel, equipo, marca, modelo,
+                // color, imei, pin, metodoPagoSena, falla, obs, orden
+
+                // --- Campos críticos que SIEMPRE se preservan del registro original ---
+                data.estado           = r.estado;
+                data.archivado        = r.archivado;
+                data.fecha            = r.fecha;
+                data.historialEstados = r.historialEstados || [];
+                data.esVentaRapida    = r.esVentaRapida || false;
+                data.metodoPagoSaldo  = r.metodoPagoSaldo || "";
+                // senaOriginal: es la seña histórica del ingreso, nunca cambia
+                data.senaOriginal     = r.senaOriginal !== undefined ? r.senaOriginal : (parseFloat(r.sena) || 0);
+
+                // --- Historial de precios si cambió ---
+                const precioAnterior = parseFloat(r.precio) || 0;
+                if (precioActual !== precioAnterior && precioActual > 0) {
+                    const hist = r.historialPrecios ? [...r.historialPrecios] : [];
+                    hist.push({ precioAnterior, precioNuevo: precioActual, fecha: new Date().toLocaleString('es-AR'), usuario: currentUser });
+                    data.historialPrecios = hist;
+                } else {
+                    data.historialPrecios = r.historialPrecios || [];
+                }
+
+                // --- saldoCobrado: para ordenes Entregadas+Archivadas, reflejar nuevo precio ---
+                if (r.archivado && r.estado === 'Entregado') {
+                    // saldoCobrado = lo que pagó al retirar = precio total - seña original
+                    data.saldoCobrado = Math.max(0, precioActual - data.senaOriginal);
+                } else {
+                    data.saldoCobrado = r.saldoCobrado || 0;
+                }
             }
         } else {
             data.senaOriginal = senaActual;
@@ -4176,29 +4210,55 @@
         mostrarLoader(idEditando ? "Actualizando..." : "Registrando...");
 
         if (idEditando) {
-            db.ref(pathActivo).child(idEditando).update(data)
-            .then(() => { 
-                subirFotosYFinalizar(idEditando, "ACTUALIZADO ✅", "#059669");
+            const rEdit = getRegistro(idEditando);
+            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const pathParaUpdate = (rEdit && rEdit.archivado) ? pathArchivado : pathActivo;
+            const esOrdenArchivada = !!(rEdit && rEdit.archivado);
+
+            // Construir objeto completo: base del registro original + campos del formulario
+            // Así nunca perdemos fotos, historialEstados, ni ningún campo
+            const dataCompleto = Object.assign({}, rEdit, data);
+            delete dataCompleto.id; // el id no va en el nodo de Firebase
+
+            db.ref(pathParaUpdate).child(idEditando).set(dataCompleto)
+            .then(() => {
+                // Actualizar array local con el objeto completo
+                if (esOrdenArchivada) {
+                    const idx = registrosArchivados.findIndex(x => x.id === idEditando);
+                    if (idx !== -1) { registrosArchivados[idx] = { id: idEditando, ...dataCompleto }; }
+                } else {
+                    const idx = registros.findIndex(x => x.id === idEditando);
+                    if (idx !== -1) { registros[idx] = { id: idEditando, ...dataCompleto }; }
+                }
+                subirFotosYFinalizar(idEditando, pathParaUpdate, esOrdenArchivada, "ACTUALIZADO ✅", "#059669");
             })
             .catch(err => { ocultarLoader(); showToast("Error al actualizar: " + err.message, "#dc2626"); });
         } else {
             const nuevaRef = db.ref(pathActivo).push();
             nuevaRef.set(data)
             .then(() => { 
-                subirFotosYFinalizar(nuevaRef.key, "REGISTRADO ✅", "#059669");
+                subirFotosYFinalizar(nuevaRef.key, pathActivo, false, "REGISTRADO ✅", "#059669");
             })
             .catch(err => { ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
         }
     };
 
-    function subirFotosYFinalizar(idRef, msg, color) {
+    function subirFotosYFinalizar(idRef, pathRef, esArchivado, msg, color) {
+        function postGuardado() {
+            clickLimpiar(true);
+            ocultarLoader();
+            showToast(msg, color);
+            if (esArchivado) {
+                renderTable();
+                cargarDatosContabilidad();
+            }
+        }
         if (fotosTemporales.length === 0) {
-            clickLimpiar(true); ocultarLoader(); showToast(msg, color);
+            postGuardado();
             return;
         }
         
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const ref = db.ref(pathActivo).child(idRef);
+        const ref = db.ref(pathRef).child(idRef);
         
         ref.once('value').then(snap => {
             let registroData = snap.val() || {};
@@ -4208,15 +4268,12 @@
             
             ref.update({fotos: todasLasFotos})
             .then(() => {
-                clickLimpiar(true);
-                ocultarLoader();
                 showToast(msg + " (CON FOTOS)", color);
+                postGuardado();
             })
             .catch(err => {
-                // Las fotos fallaron pero la orden ya se guardó
-                clickLimpiar(true);
-                ocultarLoader();
                 showToast(msg + " ⚠️ (fotos no subidas)", "#f59e0b");
+                postGuardado();
             });
         })
         .catch(err => { ocultarLoader(); showToast("Error al subir fotos: " + err.message, "#dc2626"); });
