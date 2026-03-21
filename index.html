@@ -1787,6 +1787,7 @@
     }
 
     function drawPattern(currentPos = null) {
+        if (!ctxPattern || !patternCanvas) return;
         ctxPattern.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
         
         ctxPattern.lineWidth = 4;
