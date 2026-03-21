@@ -86,8 +86,11 @@
         .dias-criticos { color:#dc2626; font-weight:800; animation: pulseAlerta 1.5s infinite; }
 
         /* Aviso trial en app */
-        #trial-banner { background: linear-gradient(135deg,#f59e0b,#d97706); color:white; text-align:center; padding:8px 15px; font-size:13px; font-weight:700; display:none; cursor:pointer; border-radius:0; }
+        #trial-banner { background: linear-gradient(135deg,#f59e0b,#d97706); color:white; font-size:13px; font-weight:700; display:none; border-radius:0; position:relative; }
+        #trial-banner-inner { padding: 8px 40px 8px 15px; cursor:pointer; text-align:center; }
         #trial-banner span { background:white; color:#d97706; padding:2px 8px; border-radius:10px; font-size:11px; margin-left:8px; }
+        #trial-banner-close { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.15); border:none; color:white; font-size:15px; font-weight:bold; cursor:pointer; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:1; transition:background 0.2s; padding:0; }
+        #trial-banner-close:hover { background:rgba(0,0,0,0.3); }
 
         body.dark-mode .badge-licencia { filter: brightness(0.85); }
 
@@ -288,6 +291,9 @@
 
         /* Nav dark mode */
         body.dark-mode nav { background: linear-gradient(90deg, #080c1a 0%, #0d1128 100%) !important; box-shadow: 0 2px 20px rgba(0,0,0,0.6), 0 1px 0 rgba(45,58,140,0.2) !important; }
+
+        /* Dark mode: bloque de licencia en perfil */
+        body.dark-mode #perfilLicenciaBox { background-color: #0d1220 !important; border-color: #1a2040 !important; }
 
         /* ESTILOS DEL MENÚ DE AYUDA Y FAQ */
         .faq-accordion { border: 1.5px solid #e8eaf5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; background: white; transition: 0.3s; }
@@ -715,8 +721,13 @@
     </a>
 </div>
 <div id="app-content">
-    <div id="trial-banner" onclick="mostrarPanelContactoAdmin()">
-        ⏳ Tu licencia de prueba vence en <span id="trial-dias-texto">...</span> · Contactá al admin para activar haciendo click aquí!
+    <div id="trial-banner">
+        <div id="trial-banner-inner" onclick="mostrarPanelContactoAdmin()">
+            ⏳ <b id="trial-banner-text">Tu licencia de prueba vence en</b>
+            <span id="trial-dias-texto">...</span>
+            · ¡Tocá aquí para renovar!
+        </div>
+        <button id="trial-banner-close" onclick="cerrarBannerLicencia(event)" title="Cerrar">✕</button>
     </div>
     <div id="toast-alert"></div>
 
@@ -824,7 +835,29 @@
 
     <div id="passModal" class="modal-overlay">
         <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
-            <p><b>👤 Mi Perfil - Configuración</b></p>
+            <!-- ENCABEZADO CON BOTÓN CERRAR -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                <p style="margin:0;"><b>👤 Mi Perfil - Configuración</b></p>
+                <button onclick="closePassModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af;">✕</button>
+            </div>
+
+            <!-- BLOQUE DE LICENCIA -->
+            <div id="perfilLicenciaBox" style="display:none; background:#f9fafb; border-radius:12px; border:1.5px solid #e5e7eb; padding:16px 18px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div style="font-size:10px; font-weight:800; color:#9ca3af; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Estado de Licencia</div>
+                        <div id="perfilLicBadge"></div>
+                    </div>
+                    <div id="perfilDiasBox" style="text-align:right;"></div>
+                </div>
+                <div id="perfilBtnRenovar" style="margin-top:12px; display:none;">
+                    <button onclick="closePassModal(); mostrarPanelContactoAdmin();" style="width:100%; padding:12px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(245,158,11,0.35);">
+                        🔑 Renovar Licencia
+                    </button>
+                </div>
+            </div>
+            <!-- FIN BLOQUE DE LICENCIA -->
+
             <div style="text-align:left; margin-top:10px;">
                 <label>Logo del Local</label>
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;">
@@ -2572,6 +2605,12 @@
         }
     }
 
+    function cerrarBannerLicencia(event) {
+        event.stopPropagation(); // evita abrir el modal de pago al tocar la X
+        document.getElementById('trial-banner').style.display = 'none';
+        sessionStorage.setItem('banner_cerrado', '1'); // se borra al cerrar la pestaña/sesión
+    }
+
     function mostrarPanelContactoAdmin() {
         if (!currentUser) {
             alert("Error: No se identificó el usuario.");
@@ -2716,7 +2755,7 @@
         });
     }
 
-    function activarLicenciaManual(numeroWa) {
+            function activarLicenciaManual(numeroWa) {
         if (!numeroWa) {
             numeroWa = document.getElementById('activar-pago-wa') ? document.getElementById('activar-pago-wa').value.trim() : '';
         }
@@ -2731,16 +2770,36 @@
             modal.style.display = 'none';
             const inputActivar = document.getElementById('activar-pago-wa');
             if (inputActivar) inputActivar.value = '';
-            db.ref('usuarios_registrados/' + numeroWa).update({
-                tipoLicencia: 'permanente',
-                fechaExpiracion: Date.now() + 30 * 24 * 60 * 60 * 1000
-            })
-            .then(() => {
-                showToast("✅ ¡Licencia permanente activada para " + numeroWa + "!", "#059669");
-                setTimeout(() => listarUsuarios(), 1000);
-            })
-            .catch((err) => {
-                showToast("Error: " + err.message, "#dc2626");
+            
+            mostrarLoader("Activando y sumando días...");
+
+            db.ref('usuarios_registrados/' + numeroWa).once('value', snap => {
+                const data = snap.val() || {};
+                const ahora = Date.now();
+                let baseFecha;
+
+                if (data.fechaExpiracion && data.fechaExpiracion > ahora) {
+                    baseFecha = data.fechaExpiracion;
+                } else {
+                    baseFecha = ahora;
+                }
+
+                const nuevaExpiracion = baseFecha + (30 * 24 * 60 * 60 * 1000);
+
+                db.ref('usuarios_registrados/' + numeroWa).update({
+                    tipoLicencia: 'permanente',
+                    fechaExpiracion: nuevaExpiracion,
+                    estado: 'activo'
+                })
+                .then(() => {
+                    ocultarLoader();
+                    showToast("✅ ¡Licencia extendida 30 días para " + numeroWa + "!", "#059669");
+                    setTimeout(() => listarUsuarios(), 1000);
+                })
+                .catch((err) => {
+                    ocultarLoader();
+                    showToast("Error: " + err.message, "#dc2626");
+                });
             });
         };
     }
@@ -2855,13 +2914,24 @@
 
                 if (dataUser && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
                     const diasRestantes = Math.ceil((dataUser.fechaExpiracion - Date.now()) / (1000 * 60 * 60 * 24));
-                    if (diasRestantes > 0) {
+                    const tipoLic = dataUser.tipoLicencia || 'prueba';
+                    // Solo mostrar si no fue cerrado en esta sesión
+                    if (diasRestantes > 0 && sessionStorage.getItem('banner_cerrado') !== '1') {
                         const banner = document.getElementById('trial-banner');
                         const diasEl = document.getElementById('trial-dias-texto');
+                        const textoEl = document.getElementById('trial-banner-text');
                         if (banner && diasEl) {
                             diasEl.innerText = diasRestantes + ' día' + (diasRestantes !== 1 ? 's' : '');
-                            banner.style.display = 'block';
-                            if (diasRestantes <= 5) banner.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+                            if (textoEl) {
+                                if (tipoLic === 'permanente') textoEl.innerText = 'Tu licencia vence en';
+                                else textoEl.innerText = 'Tu licencia de PRUEBA vence en';
+                            }
+                            // Solo mostrar banner para prueba siempre, o permanente con ≤7 días
+                            if (tipoLic === 'prueba' || diasRestantes <= 7) {
+                                banner.style.display = 'block';
+                                if (diasRestantes <= 5) banner.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+                                else banner.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+                            }
                         }
                     }
                 }
@@ -2996,6 +3066,77 @@
                 prev.style.display = 'none';
             }
         });
+
+        // ===== CARGAR INFO DE LICENCIA (solo usuarios no-admin) =====
+        const licBox = document.getElementById('perfilLicenciaBox');
+        const licBadge = document.getElementById('perfilLicBadge');
+        const diasBox = document.getElementById('perfilDiasBox');
+        const btnRenovar = document.getElementById('perfilBtnRenovar');
+
+        if (!isUserAdmin && currentUser) {
+            db.ref('usuarios_registrados/' + currentUser).once('value', snap => {
+                const u = snap.val();
+                if (!u) { licBox.style.display = 'none'; return; }
+
+                const tipo = u.tipoLicencia || 'prueba';
+                const exp = u.fechaExpiracion || null;
+                const AHORA = Date.now();
+                const diasRestantes = exp ? Math.ceil((exp - AHORA) / (1000 * 60 * 60 * 24)) : null;
+                const vencida = diasRestantes !== null && diasRestantes <= 0;
+                const suspendida = u.estado === 'suspendido';
+
+                // Badge tipo de licencia
+                if (suspendida) {
+                    licBadge.innerHTML = '<span class="badge-licencia lic-suspendida">⏸️ SUSPENDIDA</span>';
+                } else if (vencida) {
+                    licBadge.innerHTML = '<span class="badge-licencia lic-expirada">❌ VENCIDA</span>';
+                } else if (tipo === 'permanente') {
+                    licBadge.innerHTML = '<span class="badge-licencia lic-permanente">♾️ PERMANENTE</span>';
+                } else {
+                    licBadge.innerHTML = '<span class="badge-licencia lic-prueba">🧪 PRUEBA</span>';
+                }
+
+                // Días restantes y fecha de vencimiento
+                if (exp && !suspendida) {
+                    const fechaStr = new Date(exp).toLocaleDateString('es-AR');
+                    if (vencida) {
+                        diasBox.innerHTML = '<div style="font-size:12px;color:#dc2626;font-weight:800;">Venció el ' + fechaStr + '</div>';
+                    } else {
+                        const urgente = diasRestantes <= 5;
+                        const advertencia = diasRestantes <= 15;
+                        const color = urgente ? '#dc2626' : advertencia ? '#d97706' : '#059669';
+                        diasBox.innerHTML =
+                            '<div style="font-size:28px;font-weight:900;color:' + color + ';line-height:1;font-family:\'Outfit\',sans-serif;">' + diasRestantes + '</div>' +
+                            '<div style="font-size:11px;color:#9ca3af;font-weight:700;">día' + (diasRestantes !== 1 ? 's' : '') + ' restante' + (diasRestantes !== 1 ? 's' : '') + '</div>' +
+                            '<div style="font-size:10px;color:#c4c4c4;margin-top:2px;">Vence: ' + fechaStr + '</div>';
+                    }
+                } else if (!exp) {
+                    diasBox.innerHTML = '<div style="font-size:12px;color:#6b7280;">Sin fecha configurada</div>';
+                }
+
+                // Botón renovar — siempre visible para usuarios no-admin
+                btnRenovar.style.display = 'block';
+                const btnEl = btnRenovar.querySelector('button');
+                if (vencida || suspendida) {
+                    btnEl.style.background = 'linear-gradient(135deg,#dc2626,#b91c1c)';
+                    btnEl.style.boxShadow = '0 4px 14px rgba(220,38,38,0.35)';
+                    btnEl.innerText = '🆘 Activar Licencia';
+                } else if (diasRestantes !== null && diasRestantes <= 10) {
+                    btnEl.style.background = 'linear-gradient(135deg,#dc2626,#b91c1c)';
+                    btnEl.style.boxShadow = '0 4px 14px rgba(220,38,38,0.35)';
+                    btnEl.innerText = '⚠️ Renovar Ahora';
+                } else {
+                    btnEl.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+                    btnEl.style.boxShadow = '0 4px 14px rgba(245,158,11,0.35)';
+                    btnEl.innerText = '🔑 Renovar Licencia';
+                }
+
+                licBox.style.display = 'block';
+            });
+        } else {
+            licBox.style.display = 'none';
+        }
+
         document.getElementById('passModal').style.display = 'flex'; 
     }
     
