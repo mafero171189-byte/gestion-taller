@@ -3346,7 +3346,7 @@
             document.getElementById('modalVentaRapida').style.display = 'none';
             ocultarLoader();
             showToast("VENTA REGISTRADA ✅", "#059669");
-            setTimeout(cargarDatosContabilidad, 1000); 
+            cargarDatosContabilidad();
         });
     }
 
@@ -4236,7 +4236,7 @@
         } else {
             const nuevaRef = db.ref(pathActivo).push();
             nuevaRef.set(data)
-            .then(() => { 
+            .then(() => {
                 subirFotosYFinalizar(nuevaRef.key, pathActivo, false, "REGISTRADO ✅", "#059669");
             })
             .catch(err => { ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
@@ -4248,10 +4248,9 @@
             clickLimpiar(true);
             ocultarLoader();
             showToast(msg, color);
-            if (esArchivado) {
-                renderTable();
-                cargarDatosContabilidad();
-            }
+            // Siempre renderizar y actualizar contabilidad al guardar
+            renderTable();
+            cargarDatosContabilidad();
         }
         if (fotosTemporales.length === 0) {
             postGuardado();
