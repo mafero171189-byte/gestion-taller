@@ -1549,14 +1549,21 @@ function showApp() {
             </div>
             <div class="plan-card featured reveal reveal-d1">
                 <div class="plan-popular">⭐ Más elegido</div>
-                <div class="plan-name">Permanente</div>
-                <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Para talleres activos</p>
-                <div class="plan-price" style="color:#60a5fa;">Único pago</div>
-                <div class="plan-period">sin mensualidades, para siempre</div>
+                <div class="plan-name">Mensual</div>
+<p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Para talleres activos</p>
+<div class="plan-price" style="color:#60a5fa; font-size:36px; display:flex; align-items:baseline; gap:6px;">
+    <small style="font-size:18px; font-weight:600; color:var(--white-dim);">AR$</small>
+    <span id="landing-precio-mp" style="transition: opacity 0.4s;">…</span>
+    <small style="font-size:18px; font-weight:600; color:var(--white-dim);">/mes</small>
+</div>
+<div class="plan-period">pago mensual · cancelás cuando quieras</div>
+                <div style="margin-top:8px; padding:7px 12px; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.18); border-radius:8px; font-size:12px; color:var(--accent); display:flex; align-items:center; gap:6px;">
+                    🌍 Internacional: <b>USD <span id="landing-precio-usd">…</span></b> vía PayPal
+                </div>
                 <div class="plan-divider"></div>
                 <ul class="plan-features">
                     <li>Todo lo del plan Prueba</li>
-                    <li>Sin límite de tiempo</li>
+                    <li>Acceso total todo el mes</li>
                     <li>Acceso a nuevas funciones</li>
                     <li>Soporte prioritario</li>
                     <li>Actualizaciones incluidas</li>
@@ -2445,7 +2452,7 @@ function showApp() {
             </div>
 
             <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #6ee7b7; margin-bottom: 20px;">
-                <label style="color:#065f46; font-weight:800;">⭐ Activar Licencia Permanente (tras pago)</label>
+                <label style="color:#065f46; font-weight:800;">⭐ Activar Licencia Mensual (tras pago)</label>
                 <p style="font-size:12px; color:#6b7280; margin:6px 0 10px 0;">Usá este botón cuando un cliente te envíe el comprobante de pago de Mercado Pago.</p>
                 <div style="display:flex; gap:10px; margin-top:5px;">
                     <input type="text" id="activar-pago-wa" placeholder="Número WhatsApp del cliente (Ej: 54911...)" style="flex:1;">
@@ -2882,6 +2889,33 @@ function showApp() {
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
     
     const db = firebase.database();
+
+    // ── PRECIOS EN TIEMPO REAL PARA LA LANDING PAGE ──────────────────────────
+    // Escucha cambios instantáneos en Firebase y los refleja en la prepagina
+    // sin necesidad de recargar la página.
+    db.ref('configuracion/mp_precio').on('value', snap => {
+        const precio = snap.val();
+        const el = document.getElementById('landing-precio-mp');
+        if (el) {
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.textContent = precio ? Number(precio).toLocaleString('es-AR') : '—';
+                el.style.opacity = '1';
+            }, 200);
+        }
+    });
+    db.ref('configuracion/paypal_precio').on('value', snap => {
+        const precio = snap.val();
+        const el = document.getElementById('landing-precio-usd');
+        if (el) {
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.textContent = precio || '—';
+                el.style.opacity = '1';
+            }, 200);
+        }
+    });
+    // ─────────────────────────────────────────────────────────────────────────
     let dbRef; 
     let currentUser = null;
     let isUserAdmin = false;
@@ -3834,6 +3868,9 @@ function showApp() {
     function actualizarLabelPaypal(precio) {
         const label = document.getElementById('paypalPrecioLabel');
         if (label) label.textContent = `USD ${precio}`;
+        // Actualizar también la landing page al instante
+        const landingEl = document.getElementById('landing-precio-usd');
+        if (landingEl) landingEl.textContent = precio || '—';
     }
 
     function cargarPrecioPaypalAdmin() {
@@ -3884,12 +3921,18 @@ function showApp() {
 
     function actualizarLabelMP(precio) {
         const label = document.getElementById('mpPrecioLabel');
-        if (!label) return;
-        if (precio && precio !== '...') {
-            const formateado = Number(precio).toLocaleString('es-AR');
-            label.textContent = `AR$ ${formateado}`;
-        } else {
-            label.textContent = `AR$ ...`;
+        if (label) {
+            if (precio && precio !== '...') {
+                label.textContent = `AR$ ${Number(precio).toLocaleString('es-AR')}`;
+            } else {
+                label.textContent = `AR$ ...`;
+            }
+        }
+        // Actualizar también la landing page al instante
+        const landingEl = document.getElementById('landing-precio-mp');
+        if (landingEl) {
+            landingEl.textContent = (precio && precio !== '...')
+                ? Number(precio).toLocaleString('es-AR') : '—';
         }
     }
 
@@ -6959,7 +7002,7 @@ function showApp() {
     <div class="mp-modal-box">
         <div class="mp-modal-header">
             <div class="mp-logo-wrap">💳</div>
-            <h3>Activar Licencia Permanente</h3>
+            <h3>Activar Licencia Mensual</h3>
             <p>Pago seguro a través de Mercado Pago</p>
         </div>
         <div class="mp-modal-body">
@@ -6996,7 +7039,8 @@ function showApp() {
         <div class="confirm-modal-header">
             <div class="confirm-modal-icon verde">⭐</div>
             <h3>Activar Licencia Permanente</h3>
-            <p>¿Activar licencia permanente para el número<br><b id="confirmarActivarNumero">—</b>?</p>
+            <h3>Activar Licencia Mensual</h3>
+<p>¿Activar licencia mensual para el número<br><b id="confirmarActivarNumero">—</b>?</p>
         </div>
         <div class="confirm-modal-divider"></div>
         <div class="confirm-modal-footer">
@@ -7016,7 +7060,7 @@ function showApp() {
         </div>
         <div class="confirm-modal-divider"></div>
         <div class="confirm-modal-footer">
-            <button class="btn-tipo-permanente" id="btnLicenciaPermanente">⭐ Permanente</button>
+            <button class="btn-tipo-permanente" id="btnLicenciaPermanente">⭐ Mensual</button>
             <button class="btn-tipo-prueba"     id="btnLicenciaPrueba">🧪 Prueba (30 días)</button>
             <button class="btn-confirm-cancelar" onclick="document.getElementById('modalTipoLicencia').style.display='none'">Cancelar</button>
         </div>
