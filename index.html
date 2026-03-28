@@ -5295,7 +5295,7 @@ function showApp() {
         }
         
         // Guardamos directamente en la carpeta separada
-        const refFotos = db.ref('fotos_ordenes').child(idRef);
+        const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idRef);
         
         refFotos.once('value').then(snap => {
             let registroData = snap.val() || {};
@@ -5430,7 +5430,8 @@ function showApp() {
         document.getElementById('photoModal').style.display = 'flex';
         document.getElementById('photoGallery').innerHTML = "<p style='color:#9ca3af;'>Cargando fotos...</p>";
         // Buscamos las fotos bajo demanda en el nuevo nodo
-        db.ref('fotos_ordenes').child(id).once('value').then(snap => {
+        
+        db.ref('fotos_ordenes/' + currentUser).child(id).once('value').then(snap => {
             const data = snap.val() || {};
             // Compatible con fotos viejas que hayan quedado en el registro original
             const r = getRegistro(id);
@@ -5472,7 +5473,7 @@ function showApp() {
             document.getElementById('global-loader').style.display = 'flex';
             
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
-                const refFotos = db.ref('fotos_ordenes').child(idParaFotos);
+               const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
                 refFotos.once('value').then(snap => {
                     let fotosActuales = (snap.val() || {}).fotos || [];
                     fotosActuales.push(base64);
@@ -5489,7 +5490,7 @@ function showApp() {
         if(!idParaFotos) return;
         if(!confirm("¿Seguro que querés eliminar esta foto?")) return;
         
-        const refFotos = db.ref('fotos_ordenes').child(idParaFotos);
+        const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
         refFotos.once('value').then(snap => {
             let fotosActuales = (snap.val() || {}).fotos || [];
             fotosActuales.splice(index, 1);
