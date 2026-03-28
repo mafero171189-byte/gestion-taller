@@ -2390,7 +2390,7 @@ function showApp() {
      <div class="card-form" style="background: #fff5f5; padding: 20px; border-radius: 12px; border: 2px solid #ef4444; margin-bottom: 20px;">
       <label style="color:#b91c1c; font-weight:900; font-size:16px;">🚨 MODO MANTENIMIENTO ESTRICTO</label>
       <p style="font-size:13px; color:#7f1d1d; margin:8px 0 15px 0;">Al activar el Bloqueo Total, todos los usuarios activos serán expulsados instantáneamente y nadie podrá iniciar sesión (excepto vos). Ideal para restaurar backups de forma segura.</p>
-      <button id="btnToggleBloqueo" onclick="toggleBloqueoTotal()" class="btn" style="background:#ef4444; color:white; width:100%; font-weight:bold; padding:15px; border-radius:8px; border:none; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">ACTIVAR BLOQUEO TOTAL</button>
+<button id="btnToggleBloqueo" onclick="toggleBloqueoTotal()" class="btn" style="background:#ef4444; color:white; width:100%; font-weight:bold; padding:15px; border-radius:8px; border:none; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">ACTIVAR BLOQUEO TOTAL</button>
      </div>
 
      <div class="card-form" style="background: #fefce8; padding: 20px; border-radius: 12px; border: 1.5px solid #fde047; margin-bottom: 25px;">
@@ -3956,9 +3956,12 @@ function showApp() {
                 ann.style.display = 'none';
             }
 
-            // Aplicar Bloqueo Total (expulsa en tiempo real a los no admin)
+// Aplicar Bloqueo Total (expulsa en tiempo real a los no admin)
             if (sys.bloqueoTotal && !isAdmin) {
-                mostrarExpulsion("🛠️ EL SISTEMA ESTÁ EN MANTENIMIENTO PROGRAMADO.\n\nNadie puede ingresar temporalmente mientras el Administrador realiza tareas en la base de datos.\n\nIntentá ingresar en un rato.");
+                document.getElementById('mantenimiento-overlay').style.display = 'flex';
+            } else {
+                const mant = document.getElementById('mantenimiento-overlay');
+                if(mant) mant.style.display = 'none';
             }
 
             // Actualizar botones del Admin
@@ -6945,22 +6948,28 @@ function showApp() {
         el.type = el.type === 'password' ? 'text' : 'password';
     }
     
-// ====== LÓGICA DE MANTENIMIENTO Y BLOQUEO GLOBAL ======
+    // ====== LÓGICA DE MANTENIMIENTO Y BLOQUEO GLOBAL ======
     function toggleBloqueoTotal() {
         const btn = document.getElementById('btnToggleBloqueo');
-        const activando = btn.innerText.includes("ACTIVAR");
+        const estaActivado = btn.innerText.includes("DESACTIVAR");
         
-        if (activando) {
-            if (confirm("⚠️ ¿Estás completamente seguro?\n\nAl activar esto, TODOS los usuarios serán expulsados de inmediato y no podrán volver a iniciar sesión hasta que lo desactives.\n\nSolo vos (Admin) podrás usar el sistema.")) {
-                db.ref('configuracion/sistema/bloqueoTotal').set(true).then(() => {
-                    showToast("🚨 BLOQUEO TOTAL ACTIVADO", "#dc2626");
-                });
-            }
+        if (!estaActivado) {
+            // Si NO está activado, abre el modal hermoso de confirmación
+            document.getElementById('modalConfirmarBloqueo').style.display = 'flex';
         } else {
+            // ACÁ ESTÁ LA DESACTIVACIÓN: Si ya está activado, lo desactiva directo
             db.ref('configuracion/sistema/bloqueoTotal').set(false).then(() => {
                 showToast("✅ BLOQUEO TOTAL DESACTIVADO", "#059669");
             });
         }
+    }
+
+    function ejecutarBloqueoTotal() {
+        // Esta función solo se llama cuando le das "ACTIVAR" adentro del modal
+        document.getElementById('modalConfirmarBloqueo').style.display = 'none';
+        db.ref('configuracion/sistema/bloqueoTotal').set(true).then(() => {
+            showToast("🚨 BLOQUEO TOTAL ACTIVADO", "#dc2626");
+        });
     }
 
     function guardarMensajeGlobal() {
@@ -7076,6 +7085,35 @@ function showApp() {
      <button class="btn-revertir-cancelar" onclick="document.getElementById('modalRevertirMov').style.display='none'">Cancelar</button>
     </div>
    </div>
+  </div>
+  <!-- PANTALLA COMPLETA DE MANTENIMIENTO (PARA LOS USUARIOS BLOQUEADOS) -->
+  <div id="mantenimiento-overlay" style="position: fixed; inset: 0; background: #06122a; z-index: 30000; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 30px;">
+    <div style="font-size: 80px; margin-bottom: 20px; animation: pulseAlerta 2s infinite;">🛠️</div>
+    <h1 style="color: #f8fafc; font-family: 'Outfit', sans-serif; font-size: 32px; margin-top: 0; margin-bottom: 10px;">Sistema en Mantenimiento</h1>
+    <p style="color: #9ca3af; font-size: 16px; max-width: 400px; line-height: 1.6; font-family: 'Outfit', sans-serif;">
+        Estamos realizando tareas de actualización y respaldo en la base de datos para mejorar el servicio.
+    </p>
+    <div style="margin-top: 25px; padding: 15px 25px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; color: #38bdf8; font-weight: 600; font-family: 'Outfit', sans-serif;">
+        Nadie puede ingresar temporalmente. Vuelve a intentar en unos minutos.
+    </div>
+    <button onclick="window.location.reload()" style="margin-top: 35px; background: #1e4d8c; color: white; padding: 14px 35px; border-radius: 50px; border: none; font-weight: bold; font-family: 'Outfit', sans-serif; font-size: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(30,77,140,0.4);">
+        🔄 Recargar página
+    </button>
+  </div>
+
+  <!-- MODAL ESTÉTICO DE CONFIRMACIÓN PARA EL ADMIN -->
+  <div id="modalConfirmarBloqueo" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.85);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+    <div class="modal-box" style="border: 2px solid #ef4444; width: 90%; max-width: 350px;">
+     <div style="font-size: 50px; margin-bottom: 10px;">🚨</div>
+     <h3 style="color: #ef4444; margin-top: 0; font-size: 20px;">¿Activar Bloqueo Total?</h3>
+     <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">
+         TODOS los usuarios serán expulsados de inmediato y no podrán volver a iniciar sesión hasta que lo desactives.<br><br><b>Solo vos (Admin) podrás usar el sistema.</b>
+     </p>
+     <div style="display:flex; gap:10px;">
+         <button onclick="document.getElementById('modalConfirmarBloqueo').style.display='none'" style="flex:1; padding:12px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">Cancelar</button>
+         <button onclick="ejecutarBloqueoTotal()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#ef4444; color:white; font-weight:bold; cursor:pointer; box-shadow: 0 4px 15px rgba(239,68,68,0.4);">ACTIVAR</button>
+     </div>
+    </div>
   </div>
   <!-- SELECTOR CÓDIGO DE PAÍS PERSONALIZADO -->
   <script>
