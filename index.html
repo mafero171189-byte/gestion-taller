@@ -8,15 +8,24 @@
   <meta name="theme-color" content="#06122a">
   <link rel="apple-touch-icon" href="icon.png">
   <script>
-        // Aplicar modo oscuro ANTES de renderizar para evitar parpadeo
+        // Aplicar modo oscuro ANTES de renderizar y saltar Landing si corresponde
         (function() {
             if (localStorage.getItem('st_matias_darkmode') === 'on') {
                 document.documentElement.classList.add('dark-mode-early');
+            }
+            
+            var isLogged = localStorage.getItem('st_login_wa');
+            var isClient = window.location.search.includes('id=') && window.location.search.includes('u=');
+            var isSkipped = sessionStorage.getItem('st_landing_skipped');
+            
+            if (isLogged || isClient || isSkipped) {
+                document.documentElement.classList.add('skip-landing-early');
             }
         })();
     </script>
   <style>
         html.dark-mode-early body { background-color: #080c18 !important; }
+        html.skip-landing-early #landing-page { display: none !important; }
     </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
@@ -1307,14 +1316,16 @@
             #landing-page footer{ flex-direction: column; align-items: flex-start; }
 }
     </style>
-  <script>
+   <script>
 function showApp() {
-    // Fade out landing, then REMOVE it from DOM entirely
     var overlay = document.getElementById('landing-transition');
     overlay.classList.add('active');
+    
+    sessionStorage.setItem('st_landing_skipped', 'true');
+    
     setTimeout(function() {
         var lp = document.getElementById('landing-page');
-        if (lp) lp.parentNode.removeChild(lp);
+        if (lp) lp.style.display = 'none';
         overlay.classList.remove('active');
     }, 450);
 }
@@ -2053,11 +2064,11 @@ function showApp() {
      </div>
      <div id="licFechaContainer" style="margin-bottom:16px;">
       <label style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; display:block; margin-bottom:6px;">Fecha de Vencimiento</label> <input type="date" id="licFechaExp" style="width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; box-sizing:border-box;">
-      <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-       <button onclick="sumarDiasLic(7)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+7 días</button>
-       <button onclick="sumarDiasLic(15)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+15 días</button>
-       <button onclick="sumarDiasLic(30)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+30 días</button>
-       <button onclick="sumarDiasLic(90)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280;">+90 días</button>
+            <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+       <button id="btn-dias-7" onclick="sumarDiasLic(7, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280; transition:0.2s;">+7 días</button>
+       <button id="btn-dias-15" onclick="sumarDiasLic(15, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280; transition:0.2s;">+15 días</button>
+       <button id="btn-dias-30" onclick="sumarDiasLic(30, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280; transition:0.2s;">+30 días</button>
+       <button id="btn-dias-90" onclick="sumarDiasLic(90, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; font-weight:700; cursor:pointer; color:#6b7280; transition:0.2s;">+90 días</button>
       </div>
      </div>
      <div style="display:flex; gap:10px; margin-top:8px;">
@@ -3110,7 +3121,7 @@ function showApp() {
             document.querySelector('nav').style.display = 'none';
             document.getElementById('gesture-zone-top').style.display = 'none';
             
-            const container = document.querySelector('.container');
+                        const container = document.querySelector('#app-content .container');
             container.innerHTML = '<div style="color: #9ca3af; text-align: center; margin-top: 50px;">Cargando estado de su equipo...</div>';
 
             container.style.display = 'block';
@@ -3889,7 +3900,7 @@ function showApp() {
         
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
-        document.querySelector('.container').style.display = 'block'; 
+                document.querySelector('#app-content .container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
 
@@ -4013,13 +4024,14 @@ function showApp() {
         }
     }
 
-    function logout() { 
+        function logout() { 
         firebase.auth().signOut().then(() => {
             localStorage.removeItem('st_matias_token');
             localStorage.removeItem('st_login_intentos');
             localStorage.removeItem('st_login_bloqueado');
             localStorage.removeItem('st_login_wa');
             sessionStorage.removeItem('st_matias_session');
+            sessionStorage.removeItem('st_landing_skipped');
             window.location.href = window.location.origin + window.location.pathname; 
         });
     }
@@ -6315,6 +6327,21 @@ function showApp() {
     function cerrarLicenciaModal() {
         document.getElementById('licenciaModal').style.display = 'none';
         _licWaActual = null;
+        
+        // Limpiar la fecha base guardada
+        const input = document.getElementById('licFechaExp');
+        if (input) input.removeAttribute('data-fecha-base');
+        
+        // Limpiar la selección de los botones de días para la próxima vez
+        const botonesDias = ['btn-dias-7', 'btn-dias-15', 'btn-dias-30', 'btn-dias-90'];
+        botonesDias.forEach(id => {
+            let b = document.getElementById(id);
+            if(b) {
+                b.style.background = '#f9fafb';
+                b.style.color = '#6b7280';
+                b.style.borderColor = '#e5e7eb';
+            }
+        });
     }
 
     function seleccionarTipoLic(tipo) {
@@ -6348,11 +6375,36 @@ function showApp() {
         }
     }
 
-    function sumarDiasLic(dias) {
+    function sumarDiasLic(dias, btnElement) {
         const input = document.getElementById('licFechaExp');
-        const base  = input.value ? new Date(input.value + 'T12:00:00') : new Date();
+        
+        // Guardar la fecha original (solo la primera vez) para no sumar sobre la suma
+        if (!input.hasAttribute('data-fecha-base')) {
+            input.setAttribute('data-fecha-base', input.value || new Date().toISOString().split('T')[0]);
+        }
+        
+        // Partir siempre de esa fecha original guardada
+        const base = new Date(input.getAttribute('data-fecha-base') + 'T12:00:00');
         base.setDate(base.getDate() + dias);
         input.value = base.toISOString().split('T')[0];
+        
+        // Resetear visualmente todos los botones
+        const botonesDias = ['btn-dias-7', 'btn-dias-15', 'btn-dias-30', 'btn-dias-90'];
+        botonesDias.forEach(id => {
+            let b = document.getElementById(id);
+            if(b) {
+                b.style.background = '#f9fafb';
+                b.style.color = '#6b7280';
+                b.style.borderColor = '#e5e7eb';
+            }
+        });
+        
+        // Pintar de azul el botón que se acaba de clickear
+        if(btnElement) {
+            btnElement.style.background = '#1e4d8c';
+            btnElement.style.color = 'white';
+            btnElement.style.borderColor = '#1e4d8c';
+        }
     }
 
     function guardarLicencia() {
@@ -7021,15 +7073,29 @@ function showApp() {
         }
     });
 
-    // Obtener número completo con código país
+         // Obtener número completo con código país
     window.getFullPhone = function(btnId, inputId) {
-        // btnId aquí es el dialBtnXxx, del cual derivamos el dropId
         const btn = document.getElementById(btnId);
         if (!btn) return document.getElementById(inputId).value.replace(/\D/g,'');
-        // Leer el código del span dentro del botón
+        
         const codeSpan = btn.querySelector('[id^="dialCode"]');
         const code = codeSpan ? codeSpan.textContent.replace('+','') : '54';
         const num = document.getElementById(inputId).value.replace(/\D/g,'');
+        
+        // Evitar duplicar el código de país si el usuario ya lo pegó completo
+        if (num.startsWith(code)) {
+            // Si es Argentina (54) y lo escribieron sin el 9 (ej: 5411...), se lo agregamos
+            if (code === '54' && !num.startsWith('549')) {
+                return num.replace(/^54/, '549');
+            }
+            return num;
+        }
+        
+        // Si el código es 54 (Argentina) y el usuario no puso el 9, se lo agregamos automáticamente
+        if (code === '54' && !num.startsWith('9')) {
+            return '549' + num;
+        }
+        
         return code + num;
     };
 
