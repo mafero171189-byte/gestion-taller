@@ -1851,11 +1851,16 @@ function showApp() {
    </a>
   </div>
   <div id="app-content">
-   <div id="trial-banner">
+<div id="trial-banner">
     <div id="trial-banner-inner" onclick="mostrarPanelContactoAdmin()">
      ⏳ <b id="trial-banner-text">Tu licencia de prueba vence en</b> <span id="trial-dias-texto">...</span> · ¡Tocá aquí para renovar!
     </div>
     <button id="trial-banner-close" onclick="cerrarBannerLicencia(event)" title="Cerrar">✕</button>
+   </div>
+
+   <!-- NUEVO BANNER DE ANUNCIO GLOBAL -->
+   <div id="global-announcement" style="display:none; background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 12px 15px; text-align: center; font-size: 14px; border-bottom: 2px solid #f59e0b; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 90;">
+    📢 <b id="global-announcement-text" style="font-family: 'Outfit', sans-serif;"></b>
    </div>
    <div id="toast-alert"></div>
    <div id="modalUsoStock" class="modal-overlay" style="z-index: 4500;">
@@ -2127,11 +2132,12 @@ function showApp() {
      </div>
     </div>
    </div>
-   <nav>
+<nav>
     <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
     <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
     <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
     <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
+    <button onclick="showPage('mantenimiento')" id="btn-nav-mantenimiento" style="display:none;">⚙️ MANTENIMIENTO</button>
     <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: #f59e0b;">👤 MI PERFIL</button>
     <button onclick="toggleDarkMode()" id="btn-dark-mode" style="margin-left: auto; font-size: 16px; background: none; border: none; cursor: pointer;">🌙</button>
     <button onclick="logout()" style="color: #ff7675; font-size: 12px; font-weight: bold; background: none; border: none; cursor: pointer;">✖ SALIR</button>
@@ -2303,19 +2309,12 @@ function showApp() {
       </table>
      </div>
     </div>
+    <!-- PÁGINA 1: LICENCIAS -->
     <div id="page-usuarios" class="page" style="display:none;">
      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin:0;">🔑 Licencias y Mantenimiento</h2>
+      <h2 style="margin:0;">🔑 Gestión de Licencias</h2>
      </div>
-     <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
-      <button id="btnBackupGlobal" onclick="ejecutarBackup(true)" class="btn" style="background:#27ae60; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">💾 BACKUP TOTAL (Recomendado para PC)</button>
-      <button id="btnBackupLigero" onclick="ejecutarBackup(false)" class="btn btn-alerta-amarilla" style="font-size:13px; padding:15px; border-radius:8px; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #856404; background: #FFD700; border: none; font-weight: bold; width: 100%;">📱 BACKUP LIGERO (Sin fotos - Ideal Celular)</button>
-      <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#6b7280; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">🧹 LIMPIEZA GLOBAL DE FOTOS Viejas (+45 días)</button>
-      <div style="border-top:1px dashed #e5e7eb; padding-top:15px; margin-top:5px;">
-       <p style="font-size:12px; color:#6b7280; margin:0 0 10px 0; text-align:center;">⚠️ <b>Restaurar Backup</b> — sobrescribe TODOS los datos actuales</p>
-       <label for="inputRestoreBackup" style="display:block; width:100%; padding:15px; background:#dc2626; color:white; border-radius:8px; text-align:center; font-weight:bold; font-size:13px; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 10px rgba(229,62,62,0.3);"> 📂 RESTAURAR DESDE BACKUP (.json) </label> <input type="file" id="inputRestoreBackup" accept=".json" style="display:none;" onchange="restaurarBackup(this)">
-      </div>
-     </div>
+     
      <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
       <label>Nuevo Usuario (WhatsApp)</label>
       <div style="display:flex; gap:10px; margin-top:5px;">
@@ -2331,11 +2330,12 @@ function showApp() {
        <button onclick="activarLicenciaManual()" class="btn" style="background:#059669; color:white; padding:0 20px; white-space:nowrap;">✅ ACTIVAR</button>
       </div>
      </div>
-     <!-- CONFIG PRECIO MERCADO PAGO -->
+     
+          <!-- CONFIGURACIÓN DE PRECIOS -->
+     <h3 style="margin:0 0 15px 0; font-size:16px; color:#111827;">💳 Configuración de Precios Públicos</h3>
      <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #6ee7b7; margin-bottom: 20px;">
-      <label style="color:#065f46; font-weight:800;">💳 Precio de Licencia en Mercado Pago (ARS)</label>
-      <p style="font-size:12px; color:#6b7280; margin:6px 0 12px 0;">Este monto se muestra en el botón de pago de Mercado Pago. Guardalo en Firebase sin tocar el código.</p>
-      <div style="display:flex; gap:10px; align-items:center;">
+      <label style="color:#065f46; font-weight:800;">💳 Precio en Mercado Pago (ARS)</label>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
        <div style="position:relative; flex:1;">
         <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:#065f46; font-size:16px;">AR$</span> <input type="number" id="inputPrecioMP" min="1" step="1" placeholder="5000" style="width:100%; padding:10px 12px 10px 52px; border:2px solid #6ee7b7; border-radius:8px; font-size:18px; font-weight:800; color:#065f46; box-sizing:border-box; background:white;">
        </div>
@@ -2343,11 +2343,10 @@ function showApp() {
       </div>
       <div id="mpPrecioStatus" style="margin-top:10px; font-size:13px; color:#6b7280; display:none;"></div>
      </div>
-     <!-- CONFIG PRECIO PAYPAL -->
+     
      <div class="card-form" style="background: #eff6ff; padding: 20px; border-radius: 12px; border: 1.5px solid #93c5fd; margin-bottom: 20px;">
-      <label style="color:#1e40af; font-weight:800;">🌍 Precio de Licencia en PayPal (USD)</label>
-      <p style="font-size:12px; color:#6b7280; margin:6px 0 12px 0;">Este monto se usa en el link de pago que se le muestra al cliente. Guardalo en Firebase sin tocar el código.</p>
-      <div style="display:flex; gap:10px; align-items:center;">
+      <label style="color:#1e40af; font-weight:800;">🌍 Precio en PayPal (USD)</label>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
        <div style="position:relative; flex:1;">
         <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:#1e40af; font-size:16px;">USD</span> <input type="number" id="inputPrecioPaypal" min="1" step="0.01" placeholder="15" style="width:100%; padding:10px 12px 10px 52px; border:2px solid #93c5fd; border-radius:8px; font-size:18px; font-weight:800; color:#1e40af; box-sizing:border-box; background:white;">
        </div>
@@ -2355,6 +2354,7 @@ function showApp() {
       </div>
       <div id="paypalPrecioStatus" style="margin-top:10px; font-size:13px; color:#6b7280; display:none;"></div>
      </div>
+     
      <div id="resetRequestsPanel" style="display:none; background:#f5f6fc; border:1.5px solid #fed7aa; border-radius:12px; padding:18px; margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
        <h3 style="margin:0; color:#c2410c; font-size:15px;">🔐 Solicitudes de Nueva Clave</h3>
@@ -2378,6 +2378,44 @@ function showApp() {
        <tbody id="userTableBody"></tbody>
       </table>
      </div>
+    </div>
+
+    <!-- PÁGINA 2: MANTENIMIENTO Y SISTEMA -->
+    <div id="page-mantenimiento" class="page" style="display:none;">
+     <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin:0;">⚙️ Mantenimiento del Sistema</h2>
+     </div>
+
+     <!-- BLOQUEO Y MENSAJES GLOBAL -->
+     <div class="card-form" style="background: #fff5f5; padding: 20px; border-radius: 12px; border: 2px solid #ef4444; margin-bottom: 20px;">
+      <label style="color:#b91c1c; font-weight:900; font-size:16px;">🚨 MODO MANTENIMIENTO ESTRICTO</label>
+      <p style="font-size:13px; color:#7f1d1d; margin:8px 0 15px 0;">Al activar el Bloqueo Total, todos los usuarios activos serán expulsados instantáneamente y nadie podrá iniciar sesión (excepto vos). Ideal para restaurar backups de forma segura.</p>
+      <button id="btnToggleBloqueo" onclick="toggleBloqueoTotal()" class="btn" style="background:#ef4444; color:white; width:100%; font-weight:bold; padding:15px; border-radius:8px; border:none; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">ACTIVAR BLOQUEO TOTAL</button>
+     </div>
+
+     <div class="card-form" style="background: #fefce8; padding: 20px; border-radius: 12px; border: 1.5px solid #fde047; margin-bottom: 25px;">
+      <label style="color:#a16207; font-weight:800;">📢 Avisos a Usuarios (Mensaje Global)</label>
+      <p style="font-size:12px; color:#854d0e; margin:6px 0 10px 0;">Este mensaje aparecerá en la parte superior del sistema de todos los usuarios. Dejalo vacío para ocultarlo.</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+       <textarea id="inputMensajeGlobal" rows="2" placeholder="Ej: Este domingo a las 22:00hs realizaremos mantenimiento programado..." style="width:100%; padding:12px; border:1.5px solid #fde047; border-radius:8px; font-family:'Outfit',sans-serif; resize:none;"></textarea>
+       <button onclick="guardarMensajeGlobal()" class="btn" style="background:#eab308; color:white; padding:12px; font-weight:bold; border:none;">PUBLICAR MENSAJE</button>
+      </div>
+     </div>
+
+     <!-- BACKUPS -->
+     <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
+      <h3 style="margin:0 0 10px 0; font-size:16px; color:#111827;">💾 Copias de Seguridad</h3>
+      <button id="btnBackupGlobal" onclick="ejecutarBackup(true)" class="btn" style="background:#27ae60; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">💾 BACKUP TOTAL (Recomendado para PC)</button>
+      <button id="btnBackupLigero" onclick="ejecutarBackup(false)" class="btn btn-alerta-amarilla" style="font-size:13px; padding:15px; border-radius:8px; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #856404; background: #FFD700; border: none; font-weight: bold; width: 100%;">📱 BACKUP LIGERO (Sin fotos - Ideal Celular)</button>
+      <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#6b7280; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">🧹 LIMPIEZA GLOBAL DE FOTOS Viejas (+45 días)</button>
+      
+      <div style="border-top:1px dashed #e5e7eb; padding-top:15px; margin-top:5px;">
+       <p style="font-size:12px; color:#6b7280; margin:0 0 10px 0; text-align:center;">⚠️ <b>Restaurar Backup</b> — sobrescribe TODOS los datos actuales</p>
+       <label for="inputRestoreBackup" style="display:block; width:100%; padding:15px; background:#dc2626; color:white; border-radius:8px; text-align:center; font-weight:bold; font-size:13px; cursor:pointer; box-sizing:border-box; box-shadow: 0 4px 10px rgba(229,62,62,0.3);"> 📂 RESTAURAR DESDE BACKUP (.json) </label> <input type="file" id="inputRestoreBackup" accept=".json" style="display:none;" onchange="restaurarBackup(this)">
+      </div>
+     </div>
+
+
     </div>
     <div id="page-ayuda" class="page" style="display:none;">
      <!-- HEADER GUÍA -->
@@ -3904,6 +3942,46 @@ function showApp() {
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
 
+        // Lógica de Sistema (Bloqueo y Anuncios)
+        db.ref('configuracion/sistema').on('value', snap => {
+            const sys = snap.val() || {};
+            
+            // Renderizar Mensaje Global
+            const ann = document.getElementById('global-announcement');
+            const annTxt = document.getElementById('global-announcement-text');
+            if (sys.mensajeGlobal && sys.mensajeGlobal.trim() !== "") {
+                annTxt.innerText = sys.mensajeGlobal;
+                ann.style.display = 'block';
+            } else {
+                ann.style.display = 'none';
+            }
+
+            // Aplicar Bloqueo Total (expulsa en tiempo real a los no admin)
+            if (sys.bloqueoTotal && !isAdmin) {
+                mostrarExpulsion("🛠️ EL SISTEMA ESTÁ EN MANTENIMIENTO PROGRAMADO.\n\nNadie puede ingresar temporalmente mientras el Administrador realiza tareas en la base de datos.\n\nIntentá ingresar en un rato.");
+            }
+
+            // Actualizar botones del Admin
+            if (isAdmin) {
+                const btnBloq = document.getElementById('btnToggleBloqueo');
+                if (btnBloq) {
+                    if (sys.bloqueoTotal) {
+                        btnBloq.innerText = "DESACTIVAR BLOQUEO TOTAL";
+                        btnBloq.style.background = "#059669";
+                        btnBloq.style.boxShadow = "0 4px 15px rgba(5, 150, 105, 0.4)";
+                    } else {
+                        btnBloq.innerText = "ACTIVAR BLOQUEO TOTAL";
+                        btnBloq.style.background = "#ef4444";
+                        btnBloq.style.boxShadow = "0 4px 15px rgba(239, 68, 68, 0.4)";
+                    }
+                }
+                const inputMsg = document.getElementById('inputMensajeGlobal');
+                if (inputMsg && document.activeElement !== inputMsg) {
+                    inputMsg.value = sys.mensajeGlobal || "";
+                }
+            }
+        });
+
         if (!isAdmin) {
             db.ref('usuarios_registrados/' + u).once('value').then(snapCheck => {
                 if (!snapCheck.exists()) {
@@ -4016,6 +4094,7 @@ function showApp() {
         
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
+            document.getElementById('btn-nav-mantenimiento').style.display = 'inline-block'; // NUEVO BOTON
             listarUsuarios();
             limpiarFotosAntiguas(false); 
             limpiarLicenciasExpiradas();
@@ -4024,7 +4103,7 @@ function showApp() {
         }
     }
 
-        function logout() { 
+    function logout() { 
         firebase.auth().signOut().then(() => {
             localStorage.removeItem('st_matias_token');
             localStorage.removeItem('st_login_intentos');
@@ -6864,6 +6943,35 @@ function showApp() {
     function toggleResetPass(n) {
         const el = document.getElementById('resetPass' + n);
         el.type = el.type === 'password' ? 'text' : 'password';
+    }
+    
+// ====== LÓGICA DE MANTENIMIENTO Y BLOQUEO GLOBAL ======
+    function toggleBloqueoTotal() {
+        const btn = document.getElementById('btnToggleBloqueo');
+        const activando = btn.innerText.includes("ACTIVAR");
+        
+        if (activando) {
+            if (confirm("⚠️ ¿Estás completamente seguro?\n\nAl activar esto, TODOS los usuarios serán expulsados de inmediato y no podrán volver a iniciar sesión hasta que lo desactives.\n\nSolo vos (Admin) podrás usar el sistema.")) {
+                db.ref('configuracion/sistema/bloqueoTotal').set(true).then(() => {
+                    showToast("🚨 BLOQUEO TOTAL ACTIVADO", "#dc2626");
+                });
+            }
+        } else {
+            db.ref('configuracion/sistema/bloqueoTotal').set(false).then(() => {
+                showToast("✅ BLOQUEO TOTAL DESACTIVADO", "#059669");
+            });
+        }
+    }
+
+    function guardarMensajeGlobal() {
+        const msg = document.getElementById('inputMensajeGlobal').value.trim();
+        db.ref('configuracion/sistema/mensajeGlobal').set(msg).then(() => {
+            if(msg) {
+                showToast("📢 MENSAJE ENVIADO A TODOS", "#d97706");
+            } else {
+                showToast("Mensaje ocultado", "#6b7280");
+            }
+        });
     }
 
 </script>
