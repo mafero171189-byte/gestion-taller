@@ -178,7 +178,7 @@
         .st-reparado { background: #d1fae5; color: #065f46; }
         .st-no-reparado { background: #fee2e2; color: #991b1b; }
         .st-entregado { background: #f3f4f6; color: #6b7280; }
-        .st-garantia { background: #ede9fe; color: #5b21b6; }
+        .st-garantia, .st-garantía { background: #ede9fe; color: #5b21b6; }
 
         .btn { padding: 12px; border: none; border-radius: 9px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s, transform 0.1s; font-family: 'Outfit', sans-serif; }
         .btn:active { transform: scale(0.97); }
@@ -4779,8 +4779,9 @@ function showApp() {
                 db.ref(pathArchivado).child(idParaEstado).remove();
                 
                 // CORRECCIÓN: Quitar de la lista local de archivados para que vuelva a Activos
-                registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
-                renderTable();
+registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
+registros.push(copia); // <-- Inyectamos la orden a los activos al instante
+renderTable();
 
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#1e4d8c");
