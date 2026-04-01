@@ -1898,19 +1898,34 @@ function showApp() {
     <div class="modal-box">
      <div style="font-size: 40px; margin-bottom: 10px;">💳</div>
      <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;" id="tituloCobroEntregado">Cobrar Saldo Pendiente</p>
+     
      <div id="cobroSaldoContainer">
       <p style="font-size: 14px; color: #6b7280; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
      </div>
+     
      <div id="cobroCotizarContainer" style="display:none; text-align: left; margin-bottom: 15px;">
       <label id="cobroAvisoCotizar" style="font-size: 13px; color: #6b7280; font-weight:bold;"></label> <input type="text" id="cobroPrecioFinal" placeholder="0" oninput="formatInput(this)" style="width: 100%; padding: 10px; border: 2px solid var(--success); border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 5px; text-align:center;">
      </div>
-     <div style="text-align: left; margin-bottom: 20px;">
+     
+     <div id="metodoCobroContainer" style="text-align: left; margin-bottom: 15px;">
       <label style="font-size: 12px; font-weight: bold; color: #6b7280;">¿Cómo paga este saldo restante?</label> <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #1e4d8c; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;"> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
       <p id="cobroAvisoSaldo" style="font-size: 11px; color:#9ca3af; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
      </div>
+
+     <div style="text-align: left; margin-bottom: 20px;">
+      <label style="font-size: 12px; font-weight: bold; color: #1e40af;">🛡️ Tiempo de Garantía</label>
+      <select id="selectGarantia" style="width: 100%; padding: 10px; border: 2px solid #bfdbfe; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px; background: #eff6ff; color: #1e40af; font-weight: bold;">
+       <option value="0">Sin garantía</option>
+       <option value="30">30 Días (1 Mes)</option>
+       <option value="60">60 Días (2 Meses)</option>
+       <option value="90">90 Días (3 Meses)</option>
+       <option value="180">180 Días (6 Meses)</option>
+      </select>
+     </div>
+     
      <div style="display:flex; gap:10px;">
       <button onclick="document.getElementById('modalCobroEntregado').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
-      <button onclick="procesarCobroEntregado()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">COBRAR Y ENTREGAR</button>
+      <button id="btnConfirmarEntrega" onclick="procesarCobroEntregado()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">COBRAR Y ENTREGAR</button>
      </div>
     </div>
    </div>
@@ -4709,6 +4724,8 @@ db.ref(pathArchivado).on('value', snap => {
 
     function procesarCobroEntregado() {
         const metodo = document.getElementById('metodoCobroFinal').value;
+        const selGar = document.getElementById('selectGarantia');
+        const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
         const r = getRegistro(idParaEstado);
         
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -4738,12 +4755,23 @@ db.ref(pathArchivado).on('value', snap => {
             let saldoFinal = precioActual - senaPrevia;
             updates.sena = precioActual; 
             updates.saldoCobrado = saldoFinal;
-            updates.metodoPagoSaldo = metodo;
+            // Solo registrar método si realmente quedó saldo por cobrar
+            updates.metodoPagoSaldo = saldoFinal > 0 ? metodo : (r.metodoPagoSaldo || '');
         }
 
         if (r.senaOriginal === undefined) updates.senaOriginal = senaPrevia;
 
-        mostrarLoader("Registrando cobro...");
+        // --- NUEVO: GUARDAR FECHA DE VENCIMIENTO DE GARANTÍA ---
+        if (diasGarantia > 0) {
+            let hoy = new Date();
+            hoy.setDate(hoy.getDate() + diasGarantia);
+            updates.vencimientoGarantia = hoy.toLocaleDateString('es-AR');
+        } else {
+            updates.vencimientoGarantia = "";
+        }
+        // -------------------------------------------------------
+
+        mostrarLoader("Registrando entrega...");
         db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
             Object.assign(r, updates);
             document.getElementById('modalCobroEntregado').style.display = 'none';
@@ -4820,29 +4848,49 @@ db.ref(pathArchivado).on('value', snap => {
             let yaCobrado = parseFloat(r.saldoCobrado) || 0;
             let saldo = precio - (sena + yaCobrado);
             
+            document.getElementById('statusModal').style.display = 'none';
+            
+            // Si el selector de garantía existe, lo reiniciamos a 0 por defecto
+            const selectGar = document.getElementById('selectGarantia');
+            if(selectGar) selectGar.value = "0"; 
+            
             if(precio === 0) {
-                document.getElementById('statusModal').style.display = 'none';
                 document.getElementById('tituloCobroEntregado').innerText = "Cobrar Equipo";
-                
                 let textoSena = sena > 0 ? `<br><span style="color:var(--success);">Seña a favor: ${fmt.format(sena)}</span>` : '';
                 document.getElementById('cobroAvisoCotizar').innerHTML = `Ingresá el <b>Precio Final</b> a cobrar:${textoSena}`;
                 
                 document.getElementById('cobroSaldoContainer').style.display = 'none';
                 document.getElementById('cobroCotizarContainer').style.display = 'block';
                 document.getElementById('cobroPrecioFinal').value = '';
+                
+                document.getElementById('metodoCobroContainer').style.display = 'block';
                 document.getElementById('cobroAvisoSaldo').style.display = 'none'; 
                 document.getElementById('metodoCobroFinal').selectedIndex = 0;
+                document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ENTREGAR";
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 setTimeout(() => document.getElementById('cobroPrecioFinal').focus(), 100);
                 return;
             } else if(saldo > 0) {
-                document.getElementById('statusModal').style.display = 'none';
                 document.getElementById('tituloCobroEntregado').innerText = "Cobrar Saldo Pendiente";
                 document.getElementById('cobroSaldoContainer').style.display = 'block';
                 document.getElementById('cobroCotizarContainer').style.display = 'none';
                 document.getElementById('cobroSaldoMonto').innerText = fmt.format(saldo);
+                
+                document.getElementById('metodoCobroContainer').style.display = 'block';
                 document.getElementById('cobroAvisoSaldo').style.display = 'block';
                 document.getElementById('metodoCobroFinal').selectedIndex = 0;
+                document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ENTREGAR";
+                document.getElementById('modalCobroEntregado').style.display = 'flex';
+                return;
+            } else {
+                // NUEVO: ESTÁ PAGADO COMPLETAMENTE, SOLO PREGUNTAR GARANTÍA
+                document.getElementById('tituloCobroEntregado').innerText = "Entregar Equipo (Ya Pagado)";
+                document.getElementById('cobroSaldoContainer').style.display = 'block';
+                document.getElementById('cobroSaldoMonto').innerText = "Todo pago ($0)";
+                document.getElementById('cobroCotizarContainer').style.display = 'none';
+                
+                document.getElementById('metodoCobroContainer').style.display = 'none';
+                document.getElementById('btnConfirmarEntrega').innerText = "ENTREGAR EQUIPO";
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             }
@@ -5004,7 +5052,11 @@ db.ref(pathArchivado).on('value', snap => {
             });
             h += `</div>`;
         }
-        // -----------------------------------------------------
+      
+            if(r.vencimientoGarantia) {
+            h += `<div class="history-item" style="border-left-color:#1e40af;"><b>Garantía Válida Hasta</b><span style="color:#1e40af; font-weight:bold; font-size:15px;">${r.vencimientoGarantia}</span></div>`;
+        }
+  // -----------------------------------------------------
 
         if(r.historialPrecios && r.historialPrecios.length > 0) {
             h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e5e7eb;"><div style="font-size:11px; font-weight:bold; color:#6b7280; text-transform:uppercase; margin-bottom:8px;">💲 Cambios de Precio</div>`;
