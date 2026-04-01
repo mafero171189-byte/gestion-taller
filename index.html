@@ -3,10 +3,11 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Mi Taller Web - Sistema Integral</title>
-  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#06122a">
-  <link rel="apple-touch-icon" href="icon.png">
   <script>
         // Aplicar modo oscuro ANTES de renderizar y saltar Landing si corresponde
         (function() {
@@ -7311,6 +7312,108 @@ function showApp() {
         });
     });
 })();
+
+    // ==========================================
+    // LÓGICA DE INSTALACIÓN PWA (MODO CELULAR - TODO EN UN ARCHIVO)
+    // ==========================================
+    // 1. Generar ícono PNG real con Canvas (Chrome exige PNG, no SVG)
+    function generarIconoPNG(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#06122a';
+        ctx.fillRect(0, 0, size, size);
+        const base = size / 100;
+        ctx.font = `${28 * base}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔧', size * 0.5, size * 0.35);
+        ctx.fillText('📱', size * 0.25, size * 0.72);
+        ctx.fillText('💻', size * 0.75, size * 0.72);
+        return canvas.toDataURL('image/png');
+    }
+    const iconoPNG192 = generarIconoPNG(192);
+    const iconoPNG512 = generarIconoPNG(512);
+    const manifestJSON = {
+        "name": "Mi Taller Web",
+        "short_name": "Mi Taller Web",
+        "start_url": location.href,
+        "display": "standalone",
+        "background_color": "#06122a",
+        "theme_color": "#06122a",
+        "icons": [
+            { "src": iconoPNG192, "sizes": "192x192", "type": "image/png" },
+            { "src": iconoPNG512, "sizes": "512x512", "type": "image/png" }
+        ]
+    };
+    const stringManifest = JSON.stringify(manifestJSON);
+    const blobManifest = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blobManifest);
+    document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestURL}">`);
+    // 2. Registrar Service Worker dinámicamente (Obligatorio para Chrome)
+    const swCode = "self.addEventListener('install', (e) => self.skipWaiting()); self.addEventListener('fetch', (e) => {});";
+    const blobSW = new Blob([swCode], {type: 'application/javascript'});
+    const swURL = URL.createObjectURL(blobSW);
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register(swURL).then(() => console.log('SW inyectado')).catch(console.error);
+    }
+    // 3. Crear el banner fijo arriba de todo
+    const bannerInstalar = document.createElement('div');
+    bannerInstalar.id = 'banner-instalar-app';
+    bannerInstalar.innerHTML = `
+        <span>📲 ¡Instalá la app Mi Taller Web en tu celular!</span>
+        <button id="btn-instalar-si">Instalar</button>
+        <button id="btn-instalar-no" title="Cerrar">✕</button>
+    `;
+    bannerInstalar.style.cssText = `
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 99999;
+        background: #166534;
+        color: #fff;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.4);
+        border-bottom: 2px solid #22c55e;
+    `;
+    document.body.prepend(bannerInstalar);
+
+    const btnSi = document.getElementById('btn-instalar-si');
+    const btnNo = document.getElementById('btn-instalar-no');
+    btnSi.style.cssText = 'background:#22c55e;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:800;cursor:pointer;font-size:0.85rem;white-space:nowrap;';
+    btnNo.style.cssText = 'background:transparent;color:#86efac;border:none;font-size:1.1rem;cursor:pointer;padding:2px 6px;line-height:1;';
+
+    // 3. Lógica del banner
+    let eventoInstalacion = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        eventoInstalacion = e;
+        if (!localStorage.getItem('pwa_descartado')) {
+            bannerInstalar.style.display = 'flex';
+        }
+    });
+    btnSi.addEventListener('click', async () => {
+        if (!eventoInstalacion) return;
+        eventoInstalacion.prompt();
+        const { outcome } = await eventoInstalacion.userChoice;
+        if (outcome === 'accepted') {
+            bannerInstalar.style.display = 'none';
+        }
+        eventoInstalacion = null;
+    });
+    btnNo.addEventListener('click', () => {
+        bannerInstalar.style.display = 'none';
+        localStorage.setItem('pwa_descartado', '1');
+    });
+    window.addEventListener('appinstalled', () => {
+        bannerInstalar.style.display = 'none';
+        if(window.showToast) window.showToast("¡App instalada con éxito! 🎉", "success");
+    });
 </script>
  </body>
 </html>
