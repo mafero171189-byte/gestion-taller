@@ -1334,6 +1334,16 @@ function showApp() {
 </script>
  </head>
  <body onload="iniciarSeguridad()">
+<script>
+    // Cuando el navegador restaura la página desde el bfcache (caché del navegador),
+    // el onload NO se vuelve a ejecutar y Firebase queda sin datos.
+    // Con pageshow + persisted forzamos un reload limpio para que cargue todo de nuevo.
+    window.addEventListener('pageshow', function(e) {
+        if (e.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
   <div id="landing-transition"></div>
   <!-- ═══════════════════════════════════════════════════
      LANDING / PRE-PAGE  (se oculta al ingresar al sistema)
@@ -4109,17 +4119,10 @@ function showApp() {
         if (isStored) mostrarLoader("Cargando sistema...");
 
         const iniciarListener = () => {
-            let _primeraCarga = true;
             dbRef.on('value', snap => {
                 try {
                     const v = snap.val(); 
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                    // En la primera carga, activar filtro de pendientes automáticamente
-                    if (_primeraCarga) {
-                        _primeraCarga = false;
-                        const hayPendientes = registros.some(r => !r.archivado && r.estado === 'Pendiente');
-                        if (hayPendientes) modoPendientes = true;
-                    }
                     renderTable(); 
                     actualizarListasAutocompletado();
                     
