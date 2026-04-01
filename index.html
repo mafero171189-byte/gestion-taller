@@ -4108,11 +4108,7 @@ function showApp() {
 
         if (isStored) mostrarLoader("Cargando sistema...");
 
-        const _grantAccessTime = Date.now();
-
-        window._iniciarListenerActivos = () => {
-            if (!dbRef) return;
-            dbRef.off('value'); // desconectar listener anterior si existe
+        const iniciarListener = () => {
             dbRef.on('value', snap => {
                 try {
                     const v = snap.val(); 
@@ -4131,6 +4127,7 @@ function showApp() {
                 }
             }, errorDeFirebase => {
                 ocultarLoader();
+                // Solo mostramos el error si ya pasó suficiente tiempo (no es el arranque de sesión guardada)
                 if (!isStored || Date.now() - _grantAccessTime > 5000) {
                     showToast("Problema de conexión con la base de datos", "#dc2626");
                 }
@@ -4138,12 +4135,22 @@ function showApp() {
         };
 
         // Si es sesión guardada, esperamos a que Firebase Auth termine de restaurar el token
+        const _grantAccessTime = Date.now();
         if (isStored) {
-            firebase.auth().currentUser
-                ? window._iniciarListenerActivos()
-                : firebase.auth().onAuthStateChanged(() => window._iniciarListenerActivos());
+            if (firebase.auth().currentUser) {
+                iniciarListener();
+            } else {
+                // onAuthStateChanged se dispara con null primero y luego con el usuario real.
+                // Esperamos a que llegue el usuario autenticado antes de arrancar el listener.
+                const unsubscribe = firebase.auth().onAuthStateChanged((authUser) => {
+                    if (authUser) {
+                        unsubscribe(); // nos desuscribimos para que no se llame de nuevo
+                        iniciarListener();
+                    }
+                });
+            }
         } else {
-            window._iniciarListenerActivos();
+            iniciarListener();
         }
 
         const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
@@ -5822,13 +5829,6 @@ db.ref(pathArchivado).on('value', snap => {
         const savedDark = localStorage.getItem('st_matias_darkmode');
         if (savedDark === 'on') { document.body.classList.add('dark-mode'); }
         document.documentElement.classList.remove('dark-mode-early');
-    });
-
-    // Al volver a la pestaña/app, reconectar el listener de Firebase
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && typeof window._iniciarListenerActivos === 'function' && currentUser) {
-            window._iniciarListenerActivos();
-        }
     });
 
     function formularioTieneDatos() {
