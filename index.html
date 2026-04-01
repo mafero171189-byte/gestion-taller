@@ -2934,9 +2934,51 @@ function showApp() {
     }
     // ====== FIN LÓGICA DEL PATRÓN ======
 
-    function escaparHTML(texto) {
+        function escaparHTML(texto) {
         if (!texto) return "";
         return texto.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // --- NUEVA FUNCIÓN PARA FORMATEAR ENLACES ---
+    function formatearEnlaces(texto) {
+        if (!texto) return "";
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        
+        let textoProcesado = texto.replace(urlRegex, function(url) {
+            let textoEnlace = "ABRIR ENLACE 🔗"; 
+            let colorEnlace = "#1e4d8c"; // Azul oscuro por defecto
+            
+            if (url.includes("wa.me") || url.includes("whatsapp.com")) {
+                textoEnlace = "WHATSAPP 💬";
+                colorEnlace = "#059669"; // Verde esmeralda para WhatsApp
+            } else if (url.includes("youtube.com") || url.includes("youtu.be")) {
+                textoEnlace = "VER VIDEO 📺";
+                colorEnlace = "#dc2626"; // Rojo para YouTube
+            } else if (url.includes("drive.google") || url.includes("mediafire") || url.includes("dropbox") || url.includes("mega.nz")) {
+                textoEnlace = "DESCARGAR ARCHIVO 📎";
+            }
+
+            const estiloBoton = `
+                display: inline-block; 
+                width: fit-content; 
+                margin: 8px 4px;
+                padding: 6px 14px; 
+                color: ${colorEnlace}; 
+                border: 2px solid ${colorEnlace}; 
+                border-radius: 8px; 
+                text-decoration: none; 
+                font-weight: 800; 
+                font-size: 12px; 
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                background: #ffffff;
+            `;
+
+            return `<br><a href="${url}" target="_blank" rel="noopener noreferrer" style="${estiloBoton}">${textoEnlace}</a>`;
+        });
+
+        // Convierte los "Enter" en saltos de línea HTML
+        return textoProcesado.replace(/\n/g, '<br>');
     }
 
     function parseFechaAR(fechaStr) {
@@ -3950,7 +3992,8 @@ function showApp() {
             const ann = document.getElementById('global-announcement');
             const annTxt = document.getElementById('global-announcement-text');
             if (sys.mensajeGlobal && sys.mensajeGlobal.trim() !== "") {
-                annTxt.innerText = sys.mensajeGlobal;
+                // AQUÍ USAMOS innerHTML y formatearEnlaces()
+                annTxt.innerHTML = formatearEnlaces(sys.mensajeGlobal);
                 ann.style.display = 'block';
             } else {
                 ann.style.display = 'none';
