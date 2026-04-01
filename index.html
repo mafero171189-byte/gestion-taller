@@ -1334,16 +1334,6 @@ function showApp() {
 </script>
  </head>
  <body onload="iniciarSeguridad()">
-<script>
-    // Cuando el navegador restaura la página desde el bfcache (caché del navegador),
-    // el onload NO se vuelve a ejecutar y Firebase queda sin datos.
-    // Con pageshow + persisted forzamos un reload limpio para que cargue todo de nuevo.
-    window.addEventListener('pageshow', function(e) {
-        if (e.persisted) {
-            window.location.reload();
-        }
-    });
-</script>
   <div id="landing-transition"></div>
   <!-- ═══════════════════════════════════════════════════
      LANDING / PRE-PAGE  (se oculta al ingresar al sistema)
@@ -2797,6 +2787,18 @@ function showApp() {
     // ─────────────────────────────────────────────────────────────────────────
     let dbRef; 
     let currentUser = null;
+
+    // Cuando el usuario vuelve al navegador (minimizó, cambió de app, etc.)
+    // Firebase puede haber desconectado el listener. Lo forzamos a re-fetchear.
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && dbRef && currentUser) {
+            dbRef.once('value', function(snap) {
+                var v = snap.val();
+                registros = v ? Object.keys(v).map(function(k){ return Object.assign({id:k}, v[k]); }) : [];
+                renderTable();
+            });
+        }
+    });
     let isUserAdmin = false;
     let isClientMode = false;
 
