@@ -4991,6 +4991,21 @@ db.ref(pathArchivado).on('value', snap => {
         let h = fallaHtml;
         h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
+        
+        // --- NUEVO: MOSTRAR REPUESTOS DESCONTADOS DE STOCK ---
+        if(r.repuestosDescontados && r.repuestosDescontados.length > 0) {
+            h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e5e7eb;">
+                    <div style="font-size:11px; font-weight:bold; color:#059669; text-transform:uppercase; margin-bottom:8px;">📦 Repuestos de Stock Usados</div>`;
+            r.repuestosDescontados.forEach(rep => {
+                h += `<div class="history-item" style="border-left-color:#059669;">
+                        <b>Descontado</b>
+                        <span>${rep.cant}x ${escaparHTML(rep.nombre)}</span>
+                      </div>`;
+            });
+            h += `</div>`;
+        }
+        // -----------------------------------------------------
+
         if(r.historialPrecios && r.historialPrecios.length > 0) {
             h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e5e7eb;"><div style="font-size:11px; font-weight:bold; color:#6b7280; text-transform:uppercase; margin-bottom:8px;">💲 Cambios de Precio</div>`;
             r.historialPrecios.forEach(p => {
