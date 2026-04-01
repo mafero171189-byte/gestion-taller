@@ -3569,7 +3569,7 @@ function showApp() {
                 return db.ref('solicitudes_registro/' + wa).set({
                     whatsapp:      wa,
                     authEmail:     email,
-                    fecha:         new Date().toLocaleString('es-AR'),
+                    fecha:         new Date().toLocaleString('es-AR', { hour12: false }),
                     timestamp:     Date.now(),
                     tipoLicencia:  'prueba',
                     fechaExpiracion: expiracion,
@@ -3993,7 +3993,7 @@ function showApp() {
                         const expiracion = solData.fechaExpiracion || (Date.now() + 15 * 24 * 60 * 60 * 1000);
                         db.ref('usuarios_registrados/' + u).set({
                             whatsapp: u,
-                            fechaAlta: solData.fecha || new Date().toLocaleString('es-AR'),
+                            fechaAlta: solData.fecha || new Date().toLocaleString('es-AR', { hour12: false }),
                             estado: 'activo',
                             tipoLicencia: 'prueba',
                             fechaExpiracion: expiracion,
@@ -4438,7 +4438,7 @@ function showApp() {
             estado: "Entregado",
             esVentaRapida: true,
             archivado: false, 
-            fecha: new Date().toLocaleString('es-AR')
+            fecha: new Date().toLocaleString('es-AR', { hour12: false })
         };
 
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -4697,7 +4697,8 @@ function showApp() {
             const r = getRegistro(idParaEstado);
             let precio = parseFloat(r.precio) || 0;
             let sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-            let saldo = precio - sena;
+            let yaCobrado = parseFloat(r.saldoCobrado) || 0;
+            let saldo = precio - (sena + yaCobrado);
             
             if(precio === 0) {
                 document.getElementById('statusModal').style.display = 'none';
@@ -4756,7 +4757,7 @@ function showApp() {
             setTimeout(() => showToast("📦 Stock devuelto al inventario", "#1e4d8c"), 1000);
         }
 
-        const fechaActual = new Date().toLocaleString('es-AR');
+        const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
         const coloresEstado = { 'Pendiente': '#f59e0b', 'Reparado': '#059669', 'Entregado': '#6b7280', 'No reparado': '#dc2626', 'Garantía': '#1e40af' };
         let historialActual = r.historialEstados || [];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
@@ -4773,19 +4774,19 @@ function showApp() {
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
         const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
 
-        if (nuevo === 'Garantía' && r.archivado) {
+                if (nuevo === 'Garantía' && r.archivado) {
             let copia = {...r, ...updates};
             db.ref(pathActivo).child(idParaEstado).set(copia).then(() => {
                 db.ref(pathArchivado).child(idParaEstado).remove();
                 
-                // CORRECCIÓN: Quitar de la lista local de archivados para que vuelva a Activos
-registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
-registros.push(copia); // <-- Inyectamos la orden a los activos al instante
-renderTable();
+                // Quitamos la orden de la lista local de archivados
+                registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
+                // ELIMINAMOS el push manual porque Firebase ya lo actualiza automáticamente en tiempo real
+                renderTable();
 
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#1e4d8c");
-            });
+            });    
         } else if (nuevo === 'Entregado' && !r.archivado) {
             updates.archivado = true;
             let copia = {...r, ...updates};
@@ -4837,7 +4838,7 @@ renderTable();
 
         const precioAnterior = parseFloat(r.precio) || 0;
         const historialPrecios = r.historialPrecios || [];
-        historialPrecios.push({ precioAnterior, precioNuevo: nuevo, fecha: new Date().toLocaleString('es-AR'), usuario: currentUser });
+        historialPrecios.push({ precioAnterior, precioNuevo: nuevo, fecha: new Date().toLocaleString('es-AR', { hour12: false }), usuario: currentUser });
 
         db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo, historialPrecios }).then(() => {
             r.precio = nuevo;
@@ -4985,6 +4986,15 @@ renderTable();
             const senaActual = parseFloat(r.sena) || 0;
             const saldo = precioActual - senaActual;
             
+            // Lógica para mostrar la última fecha de entrega si está en el historial
+            let fechaMostrar = r.fecha || '';
+            if (r.archivado && r.historialEstados) {
+                let ultimoEntregado = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
+                if (ultimoEntregado) {
+                    fechaMostrar = ultimoEntregado.fecha;
+                }
+            }
+            
             const nroLimpio = String(r.orden).replace('MAT-', '');
             const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
@@ -5009,7 +5019,7 @@ renderTable();
 
             body.innerHTML += `<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
-                <span style="font-size:10px; color:#6b7280;"><b>${r.fecha || ''}</b></span></td>
+                <span style="font-size:10px; color:#6b7280;"><b>${fechaMostrar}</b></span></td>
                 <td>
                     <b style="cursor:pointer; color:#1e4d8c; text-decoration:underline;" onclick="abrirHistorialCliente('${escaparHTML(r.cliente)}', '${r.tel}')" title="Ver Historial">${escaparHTML(r.cliente)}</b><br>
                     ${!r.esVentaRapida ? `<button class="btn-wapp" onclick="enviarWhatsApp('${r.id}')">📲 WhatsApp</button>` : ''}
@@ -5302,7 +5312,7 @@ renderTable();
                 const precioAnterior = parseFloat(r.precio) || 0;
                 if (precioActual !== precioAnterior && precioActual > 0) {
                     const hist = r.historialPrecios ? [...r.historialPrecios] : [];
-                    hist.push({ precioAnterior, precioNuevo: precioActual, fecha: new Date().toLocaleString('es-AR'), usuario: currentUser });
+                    hist.push({ precioAnterior, precioNuevo: precioActual, fecha: new Date().toLocaleString('es-AR', { hour12: false }), usuario: currentUser });
                     data.historialPrecios = hist;
                 } else {
                     data.historialPrecios = r.historialPrecios || [];
@@ -5323,7 +5333,7 @@ renderTable();
             data.estado = "Pendiente";
             data.esVentaRapida = false;
             data.archivado = false;
-            data.fecha = new Date().toLocaleString('es-AR');
+            data.fecha = new Date().toLocaleString('es-AR', { hour12: false });
             data.historialEstados = [{ estado: "Pendiente", fecha: data.fecha }];
         }
 
@@ -5809,7 +5819,7 @@ renderTable();
 
             let coincideSaldo = false;
             let estadoEntregado = null;
-            if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
+            if (!r.esVentaRapida && r.historialEstados && r.saldoCobrado > 0) {
                 estadoEntregado = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
                 if (estadoEntregado) {
                     let evPartes = estadoEntregado.fecha.split(/[, ]+/)[0].trim().split('/');
@@ -5865,7 +5875,8 @@ renderTable();
                         
                         let precioActual = parseFloat(r.precio) || 0;
                         if (precioActual > 0) {
-                            let s = precioActual - senaOrig;
+                            let cobroAnterior = parseFloat(r.saldoCobrado) || 0;
+                            let s = precioActual - (senaOrig + cobroAnterior);
                             if (s > 0 && r.estado !== 'Entregado') porCobrar += s;
                         }
                     }
@@ -6230,7 +6241,7 @@ renderTable();
                 const pathUsuario = 'usuarios_registrados/' + wa;
                 db.ref(pathUsuario).set({
                     whatsapp: wa,
-                    fechaAlta: new Date().toLocaleString('es-AR'),
+                    fechaAlta: new Date().toLocaleString('es-AR', { hour12: false }),
                     estado: "activo",
                     tipoLicencia: tipoLicencia,
                     fechaExpiracion: expiracion,
