@@ -2792,17 +2792,26 @@ function showApp() {
     // Firebase puede haber desconectado el listener. Lo forzamos a re-fetchear.
     // Reparación de reconexión al volver de segundo plano
         // Forzar reconexión y refresco al volver a la pestaña o desbloquear el celu
-    document.addEventListener('visibilitychange', function() {
+        document.addEventListener('visibilitychange', function() {
         if (!document.hidden && currentUser) {
-            firebase.database().goOnline(); // Despierta la conexión
+            firebase.database().goOnline(); // Forzamos reconexión
+            
+            // Si la tabla está vacía, intentamos rellenar con caché mientras carga
+            if (registros.length === 0) {
+                const cache = localStorage.getItem('st_cache_ordenes_' + currentUser);
+                if (cache) {
+                    registros = JSON.parse(cache);
+                    renderTable();
+                }
+            }
+
             if (dbRef) {
-                mostrarLoader("Sincronizando...");
                 dbRef.once('value').then(snap => {
                     const v = snap.val();
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
                     renderTable();
-                    ocultarLoader();
-                }).catch(() => ocultarLoader());
+                });
             }
         }
     });
@@ -3996,6 +4005,18 @@ function showApp() {
 
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
+        
+        // --- NUEVO: Cargar órdenes del caché para que aparezcan al INSTANTE ---
+        const cache = localStorage.getItem('st_cache_ordenes_' + u);
+        if (cache) {
+            try {
+                registros = JSON.parse(cache);
+                setTimeout(() => renderTable(), 100); // Dibujamos la tabla enseguida
+            } catch(e) { console.error("Error en caché"); }
+        }
+        // --------------------------------------------------------------------
+
+        isUserAdmin = isAdmin;
         isUserAdmin = isAdmin;
         isClientMode = false;
         const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
@@ -4128,10 +4149,14 @@ function showApp() {
         if (isStored) mostrarLoader("Cargando sistema...");
 
         const iniciarListener = () => {
-            dbRef.on('value', snap => {
+                        dbRef.on('value', snap => {
                 try {
                     const v = snap.val(); 
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    
+                    // --- NUEVO: Guardar en el caché para la próxima entrada ---
+                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
+                    
                     renderTable(); 
                     actualizarListasAutocompletado();
                     
