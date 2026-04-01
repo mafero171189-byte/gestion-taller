@@ -4109,10 +4109,17 @@ function showApp() {
         if (isStored) mostrarLoader("Cargando sistema...");
 
         const iniciarListener = () => {
+            let _primeraCarga = true;
             dbRef.on('value', snap => {
                 try {
                     const v = snap.val(); 
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    // En la primera carga, activar filtro de pendientes automáticamente
+                    if (_primeraCarga) {
+                        _primeraCarga = false;
+                        const hayPendientes = registros.some(r => !r.archivado && r.estado === 'Pendiente');
+                        if (hayPendientes) modoPendientes = true;
+                    }
                     renderTable(); 
                     actualizarListasAutocompletado();
                     
