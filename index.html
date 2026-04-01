@@ -2790,13 +2790,20 @@ function showApp() {
 
     // Cuando el usuario vuelve al navegador (minimizó, cambió de app, etc.)
     // Firebase puede haber desconectado el listener. Lo forzamos a re-fetchear.
+    // Reparación de reconexión al volver de segundo plano
+        // Forzar reconexión y refresco al volver a la pestaña o desbloquear el celu
     document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && dbRef && currentUser) {
-            dbRef.once('value', function(snap) {
-                var v = snap.val();
-                registros = v ? Object.keys(v).map(function(k){ return Object.assign({id:k}, v[k]); }) : [];
-                renderTable();
-            });
+        if (!document.hidden && currentUser) {
+            firebase.database().goOnline(); // Despierta la conexión
+            if (dbRef) {
+                mostrarLoader("Sincronizando...");
+                dbRef.once('value').then(snap => {
+                    const v = snap.val();
+                    registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    renderTable();
+                    ocultarLoader();
+                }).catch(() => ocultarLoader());
+            }
         }
     });
     let isUserAdmin = false;
@@ -4722,7 +4729,7 @@ db.ref(pathArchivado).on('value', snap => {
 
     let idEditando = null;
     let modoArchivo = false;
-    let modoPendientes = false;
+    let modoPendientes = true; // Iniciamos mostrando solo las pendientes
     let idParaEstado = null;
     let idParaPrecio = null;
     let idParaBorrar = null;
