@@ -2793,7 +2793,8 @@ function showApp() {
     let registros = [];
     let registrosArchivados = [];
     let stockData = []; 
-    let historialDescargado = false; 
+    let historialDescargado = false;
+    let ultimoNroGlobal = 100; // Valor inicial por defecto
 
     let limiteTabla = 50;
     let logoTemporalBase64 = null; 
@@ -4145,14 +4146,15 @@ function showApp() {
         }
 
         const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
-db.ref(pathArchivado).on('value', snap => {
-    const v = snap.val();
-    registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-    historialDescargado = true;
-    actualizarListasAutocompletado();
-    // Si el usuario está viendo el historial, que se refresque solo
-    if (modoArchivo) renderTable(); 
-});
+        // Pedimos solo el último registro para saber el número de orden
+        db.ref(pathArchivado).orderByChild('orden').limitToLast(1).on('value', snap => {
+            if (snap.exists()) {
+                const data = snap.val();
+                const ultimoId = Object.keys(data)[0];
+                const nro = String(data[ultimoId].orden).replace(/[^\d]/g, '');
+                ultimoNroGlobal = parseInt(nro) || 100;
+            }
+        });
 
         const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
         db.ref(pathStock).on('value', snap => {
@@ -5139,21 +5141,21 @@ db.ref(pathArchivado).on('value', snap => {
     }
     
     function autoOrden() { 
-    if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-        let prox = 100;
-        let todos = [...registros, ...registrosArchivados];
-        if (todos.length > 0) {
-            const nums = todos.map(r => { 
-                // Limpia cualquier letra o guion antes de buscar el número
-                const val = String(r.orden).replace(/[^\d]/g, '');
-                return val ? parseInt(val) : 0; 
-            });
-            const max = Math.max(...nums);
-            if (max >= 100) prox = max + 1;
-        }
-        document.getElementById('nroOrden').value = prox;
-    } 
-}
+        if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
+            // Comparamos el nro del historial con los que tenés cargados hoy en Activos
+            let maxActivo = 0;
+            if (registros.length > 0) {
+                const nums = registros.map(r => {
+                    const val = String(r.orden).replace(/[^\d]/g, '');
+                    return val ? parseInt(val) : 0;
+                });
+                maxActivo = Math.max(...nums);
+            }
+            // El número siguiente será el más alto entre el historial y los activos + 1
+            let finalNro = Math.max(ultimoNroGlobal, maxActivo, 99);
+            document.getElementById('nroOrden').value = finalNro + 1;
+        } 
+    }
 
     function revelarCosto() { 
         let c = document.getElementById('costo-inner');
