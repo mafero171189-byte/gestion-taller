@@ -4108,26 +4108,41 @@ function showApp() {
 
         if (isStored) mostrarLoader("Cargando sistema...");
 
-        dbRef.on('value', snap => {
-            try {
-                const v = snap.val(); 
-                registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                renderTable(); 
-                actualizarListasAutocompletado();
-                
-                if(document.getElementById('page-contabilidad').style.display === 'block') {
-                    cargarDatosContabilidad(); 
-                }
+        const iniciarListener = () => {
+            dbRef.on('value', snap => {
+                try {
+                    const v = snap.val(); 
+                    registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    renderTable(); 
+                    actualizarListasAutocompletado();
+                    
+                    if(document.getElementById('page-contabilidad').style.display === 'block') {
+                        cargarDatosContabilidad(); 
+                    }
 
-            } catch (error) {
-                showToast("Error interno al cargar la tabla", "#dc2626");
-            } finally {
+                } catch (error) {
+                    showToast("Error interno al cargar la tabla", "#dc2626");
+                } finally {
+                    ocultarLoader();
+                }
+            }, errorDeFirebase => {
                 ocultarLoader();
-            }
-        }, errorDeFirebase => {
-            ocultarLoader();
-            showToast("Problema de conexión con la base de datos", "#dc2626");
-        });
+                // Solo mostramos el error si ya pasó suficiente tiempo (no es el arranque de sesión guardada)
+                if (!isStored || Date.now() - _grantAccessTime > 5000) {
+                    showToast("Problema de conexión con la base de datos", "#dc2626");
+                }
+            });
+        };
+
+        // Si es sesión guardada, esperamos a que Firebase Auth termine de restaurar el token
+        const _grantAccessTime = Date.now();
+        if (isStored) {
+            firebase.auth().currentUser
+                ? iniciarListener()
+                : firebase.auth().onAuthStateChanged(() => iniciarListener());
+        } else {
+            iniciarListener();
+        }
 
         const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
         db.ref(pathArchivado).once('value').then(snap => {
