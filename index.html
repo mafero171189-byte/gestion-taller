@@ -5556,6 +5556,12 @@ db.ref(pathArchivado).on('value', snap => {
             const nuevaRef = db.ref(pathActivo).push();
             nuevaRef.set(data)
             .then(() => {
+                // Update optimista: agregar la orden a registros localmente de inmediato,
+                // sin esperar al listener on('value'). Así renderTable la muestra al instante.
+                // El listener la reemplazará con el snapshot oficial cuando llegue.
+                if (!registros.find(r => r.id === nuevaRef.key)) {
+                    registros.push({ id: nuevaRef.key, ...data });
+                }
                 subirFotosYFinalizar(nuevaRef.key, pathActivo, false, "REGISTRADO ✅", "#059669");
             })
             .catch(err => { ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
@@ -5567,6 +5573,7 @@ db.ref(pathArchivado).on('value', snap => {
     // Resetear filtros para ver la nueva orden de inmediato
     modoArchivo = false;
     modoPendientes = false;
+    limiteTabla = 50; // resetear paginación
     if (document.getElementById('search')) document.getElementById('search').value = "";
     
     clickLimpiar(true);
