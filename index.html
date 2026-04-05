@@ -5568,45 +5568,74 @@ db.ref(pathArchivado).on('value', snap => {
         }
     };
 
-    function subirFotosYFinalizar(idRef, pathRef, esArchivado, msg, color) {
+    // --- NUEVA FUNCIÓN PARA CLOUDINARY ---
+    async function subirACloudinary(base64Data) {
+        const cloudName = "dsbiva6k0"; 
+        const uploadPreset = "fotos_taller"; 
+        
+        const formData = new FormData();
+        formData.append("file", base64Data);
+        formData.append("upload_preset", uploadPreset);
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: "POST",
+                body: formData
+            });
+            const data = await response.json();
+            return data.secure_url; 
+        } catch (error) {
+            console.error("Error en Cloudinary:", error);
+            return null;
+        }
+    }
+
+    // --- FUNCIÓN ACTUALIZADA PARA GUARDAR LA ORDEN ---
+    async function subirFotosYFinalizar(idRef, pathRef, esArchivado, msg, color) {
         function postGuardado() {
-    // Resetear filtros para ver la nueva orden de inmediato
-    modoArchivo = false;
-    modoPendientes = false;
-    limiteTabla = 50; // resetear paginación
-    if (document.getElementById('search')) document.getElementById('search').value = "";
-    
-    clickLimpiar(true);
-    ocultarLoader();
-    showToast(msg, color);
-    renderTable();
-    cargarDatosContabilidad();
-}
+            modoArchivo = false;
+            modoPendientes = false;
+            limiteTabla = 50; 
+            if (document.getElementById('search')) document.getElementById('search').value = "";
+            
+            clickLimpiar(true);
+            ocultarLoader();
+            showToast(msg, color);
+            renderTable();
+            cargarDatosContabilidad();
+        }
+
         if (fotosTemporales.length === 0) {
             postGuardado();
             return;
         }
-        
-        // Guardamos directamente en la carpeta separada
-        const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idRef);
-        
-        refFotos.once('value').then(snap => {
+
+        mostrarLoader("Subiendo fotos a la nube...");
+
+        try {
+            // Subimos las fotos a Cloudinary en paralelo
+            const promesas = fotosTemporales.map(f => subirACloudinary(f.b64));
+            const linksSubidos = await Promise.all(promesas);
+            const linksFinales = linksSubidos.filter(link => link !== null);
+
+            // Guardamos solo los links en Firebase
+            const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idRef);
+            const snap = await refFotos.once('value');
             let registroData = snap.val() || {};
             let fotosActuales = registroData.fotos || [];
-            let nuevasFotosStr = fotosTemporales.map(f => f.b64);
-            let todasLasFotos = fotosActuales.concat(nuevasFotosStr);
             
-            refFotos.update({fotos: todasLasFotos})
-            .then(() => {
-                showToast(msg + " (CON FOTOS)", color);
-                postGuardado();
-            })
-            .catch(err => {
-                showToast(msg + " ⚠️ (fotos no subidas)", "#f59e0b");
-                postGuardado();
-            });
-        })
-        .catch(err => { ocultarLoader(); showToast("Error al subir fotos: " + err.message, "#dc2626"); });
+            // Unimos fotos viejas (si editó la orden) con los nuevos links
+            let todasLasFotos = fotosActuales.concat(linksFinales);
+            
+            await refFotos.update({fotos: todasLasFotos});
+            
+            showToast(msg + " (CON FOTOS ✅)", color);
+            postGuardado();
+        } catch (err) {
+            console.error(err);
+            showToast(msg + " ⚠️ (error al subir fotos)", "#f59e0b");
+            postGuardado();
+        }
     }
 
     function editar(id) {
