@@ -203,10 +203,20 @@
         .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
 
-        #viewerModal { background: rgba(0,0,0,0.95); z-index: 5000; overflow: hidden; touch-action: none; display: none; flex-direction: column; }
-        #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-        #imgFull { max-width: 95%; max-height: 90%; transition: transform 0.1s ease-out; transform-origin: center; border-radius: 4px; }
-        #btnCloseViewer { position: absolute; top: 20px; right: 20px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-weight: bold; cursor: pointer; z-index: 5001; }
+        #viewerModal { background: rgba(0,0,0,0.95); z-index: 5000; overflow: hidden; touch-action: none; display: none; flex-direction: column; position: fixed; top:0; left:0; width:100%; height:100%; }
+        #imgContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        #imgFull { max-width: 95%; max-height: 90%; transform-origin: center; border-radius: 4px; will-change: transform; cursor: grab; user-select: none; -webkit-user-drag: none; }
+        #imgFull.dragging { cursor: grabbing; }
+        #btnCloseViewer { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); color: white; border: 1.5px solid rgba(255,255,255,0.25); border-radius: 50%; width: 42px; height: 42px; font-size: 18px; font-weight: bold; cursor: pointer; z-index: 5001; display:flex; align-items:center; justify-content:center; transition: background 0.2s; }
+        #btnCloseViewer:hover { background: rgba(255,255,255,0.28); }
+        /* Botones flechas navegación visor */
+        .viewer-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.13); backdrop-filter: blur(6px); border: 1.5px solid rgba(255,255,255,0.22); color: white; border-radius: 50%; width: 46px; height: 46px; font-size: 22px; cursor: pointer; z-index: 5001; display: flex; align-items: center; justify-content: center; transition: background 0.2s; user-select: none; }
+        .viewer-arrow:hover { background: rgba(255,255,255,0.28); }
+        #viewerArrowLeft  { left: 14px; }
+        #viewerArrowRight { right: 14px; }
+        /* Indicador de zoom */
+        #viewerZoomHint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.75); font-size: 12px; padding: 5px 14px; border-radius: 20px; pointer-events: none; opacity: 0; transition: opacity 0.4s; font-family: 'Outfit', sans-serif; white-space: nowrap; }
+        #viewerZoomHint.visible { opacity: 1; }
 
         /* ESTILOS ALERTA AMARILLA */
         .btn-alerta-amarilla { background: #FFD700; color: #856404; font-weight: bold; animation: pulseAlerta 2s infinite; border: 1px solid #d4b106; }
@@ -1317,6 +1327,8 @@
 
             #landing-page footer{ flex-direction: column; align-items: flex-start; }
 }
+
+
     </style>
    <script>
 function showApp() {
@@ -2000,9 +2012,12 @@ function showApp() {
     </div>
    </div>
    <div id="viewerModal" class="modal-overlay">
-    <button id="btnCloseViewer" onclick="closeViewer()">X</button>
+    <button id="btnCloseViewer" onclick="closeViewer()">✕</button>
+    <button class="viewer-arrow" id="viewerArrowLeft">‹</button>
+    <button class="viewer-arrow" id="viewerArrowRight">›</button>
     <div id="imgContainer">
      <img id="imgFull" src="">
+     <div id="viewerZoomHint">Pellizco para zoom · Arrastrá para mover</div>
     </div>
    </div>
    <div id="statusModal" class="modal-overlay">
@@ -4212,16 +4227,6 @@ function showApp() {
             iniciarListener();
         }
 
-        const pathArchivado = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
-db.ref(pathArchivado).on('value', snap => {
-    const v = snap.val();
-    registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-    historialDescargado = true;
-    actualizarListasAutocompletado();
-    // Si el usuario está viendo el historial, que se refresque solo
-    if (modoArchivo) renderTable(); 
-});
-
         const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
         db.ref(pathStock).on('value', snap => {
             const v = snap.val();
@@ -5771,14 +5776,17 @@ db.ref(pathArchivado).on('value', snap => {
             c.innerHTML = "<p style='grid-column: 1 / -1; color:#9ca3af;'>No hay fotos para esta orden.</p>";
             return;
         }
+        // guardamos srcs para navegación con flechas
+        const srcs = fotosArray.slice();
         fotosArray.forEach((b64, index) => {
             c.innerHTML += `
                 <div style="position:relative;">
-                    <img src="${b64}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer;" onclick="openViewer('${b64}')">
+                    <img src="${b64}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer;" onclick="openViewer('${b64}', window._viewerSrcs, ${index})">
                     <button onclick="eliminarFotoExistente(${index})" style="position:absolute; top:5px; right:5px; background:var(--danger); color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer;">🗑️</button>
                 </div>
             `;
         });
+        window._viewerSrcs = srcs;
     }
 
     function subirFotoDirecta(input) {
@@ -5840,38 +5848,197 @@ db.ref(pathArchivado).on('value', snap => {
         };
     }
 
-    function openViewer(src) {
-        document.getElementById('imgFull').src = src;
-        document.getElementById('viewerModal').style.display = 'flex';
-    }
-    function closeViewer() { document.getElementById('viewerModal').style.display = 'none'; }
-    
-    let zoomScale = 1; let isDragging = false; let startX, startY; let translateX = 0; let translateY = 0;
-    const imgFull = document.getElementById('imgFull');
-    const viewer = document.getElementById('viewerModal');
+    // ====== VISOR DE FOTOS CON ZOOM (PINCH + RUEDA + ARRASTRE + FLECHAS) ======
+    (function() {
+        const MAX_ZOOM = 3;
+        const MIN_ZOOM = 1;
 
-    viewer.addEventListener('wheel', (e) => {
-        if(viewer.style.display !== 'flex') return;
-        e.preventDefault();
-        zoomScale += e.deltaY * -0.01;
-        zoomScale = Math.min(Math.max(.5, zoomScale), 4);
-        updateTransform();
-    }, {passive: false});
+        let scale = 1, posX = 0, posY = 0;
+        let isDragging = false, dragStartX = 0, dragStartY = 0;
+        let lastPinchDist = null;
+        let hintTimer = null;
+        let viewerSrcs = []; // lista de srcs para navegar con flechas
+        let viewerIdx  = 0;
 
-    viewer.addEventListener('mousedown', e => {
-        if(zoomScale > 1 && e.target === imgFull) { isDragging = true; startX = e.clientX - translateX; startY = e.clientY - translateY; }
-    });
-    viewer.addEventListener('mousemove', e => {
-        if(!isDragging) return;
-        translateX = e.clientX - startX; translateY = e.clientY - startY;
-        updateTransform();
-    });
-    viewer.addEventListener('mouseup', () => { isDragging = false; });
-    viewer.addEventListener('mouseleave', () => { isDragging = false; });
-    
-    function updateTransform() {
-        imgFull.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`;
-    }
+        const imgEl    = document.getElementById('imgFull');
+        const modal    = document.getElementById('viewerModal');
+        const hint     = document.getElementById('viewerZoomHint');
+        const btnLeft  = document.getElementById('viewerArrowLeft');
+        const btnRight = document.getElementById('viewerArrowRight');
+
+        function applyTransform(animated) {
+            imgEl.style.transition = animated ? 'transform 0.25s ease' : 'none';
+            imgEl.style.transform  = `translate(${posX}px, ${posY}px) scale(${scale})`;
+        }
+
+        function clampPos() {
+            if (scale <= 1) { posX = 0; posY = 0; return; }
+            const rect = imgEl.getBoundingClientRect();
+            const mw   = modal.clientWidth;
+            const mh   = modal.clientHeight;
+            const maxX = Math.max(0, (rect.width  - mw) / 2);
+            const maxY = Math.max(0, (rect.height - mh) / 2);
+            posX = Math.max(-maxX, Math.min(maxX, posX));
+            posY = Math.max(-maxY, Math.min(maxY, posY));
+        }
+
+        function resetZoom(animated) {
+            scale = 1; posX = 0; posY = 0;
+            applyTransform(animated);
+            updateArrows();
+        }
+
+        function showHint() {
+            hint.classList.add('visible');
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(() => hint.classList.remove('visible'), 2200);
+        }
+
+        function updateArrows() {
+            // Ocultar flechas si no hay lista o si hay zoom activo
+            const show = viewerSrcs.length > 1 && scale === 1;
+            btnLeft.style.display  = show ? 'flex' : 'none';
+            btnRight.style.display = show ? 'flex' : 'none';
+        }
+
+        // ─── RUEDA DEL MOUSE ───
+        modal.addEventListener('wheel', (e) => {
+            if (modal.style.display !== 'flex') return;
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.15 : -0.15;
+            scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale + delta));
+            clampPos();
+            applyTransform(false);
+            updateArrows();
+        }, { passive: false });
+
+        // ─── ARRASTRE CON MOUSE ───
+        modal.addEventListener('mousedown', (e) => {
+            if (scale <= 1) return;
+            isDragging = true;
+            dragStartX = e.clientX - posX;
+            dragStartY = e.clientY - posY;
+            imgEl.classList.add('dragging');
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            posX = e.clientX - dragStartX;
+            posY = e.clientY - dragStartY;
+            clampPos();
+            applyTransform(false);
+        });
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            imgEl.classList.remove('dragging');
+        });
+
+        // ─── TOUCH: PINCH + ARRASTRE ───
+        let touch1 = null, touch2 = null;
+        let touchStartX = 0, touchStartY = 0;
+        let touchPosX = 0, touchPosY = 0;
+        let tapTimer = null, lastTapTime = 0;
+
+        function getTouchDist(t1, t2) {
+            const dx = t1.clientX - t2.clientX;
+            const dy = t1.clientY - t2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        modal.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touch1 = e.touches[0];
+                touch2 = null;
+                lastPinchDist = null;
+                touchStartX = touch1.clientX - posX;
+                touchStartY = touch1.clientY - posY;
+                touchPosX = posX;
+                touchPosY = posY;
+            } else if (e.touches.length === 2) {
+                touch1 = e.touches[0];
+                touch2 = e.touches[1];
+                lastPinchDist = getTouchDist(touch1, touch2);
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        modal.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 2) {
+                // PINCH ZOOM
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const dist = getTouchDist(t1, t2);
+                if (lastPinchDist) {
+                    const ratio = dist / lastPinchDist;
+                    scale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale * ratio));
+                    clampPos();
+                    applyTransform(false);
+                    updateArrows();
+                }
+                lastPinchDist = dist;
+            } else if (e.touches.length === 1 && scale > 1) {
+                // ARRASTRE con 1 dedo cuando hay zoom
+                const t = e.touches[0];
+                posX = t.clientX - touchStartX;
+                posY = t.clientY - touchStartY;
+                clampPos();
+                applyTransform(false);
+            }
+        }, { passive: false });
+
+        modal.addEventListener('touchend', (e) => {
+            lastPinchDist = null;
+            if (e.changedTouches.length === 1 && scale <= 1) {
+                // Doble tap para hacer zoom x2 rápido
+                const now = Date.now();
+                if (now - lastTapTime < 300) {
+                    scale = scale > 1 ? 1 : 2;
+                    posX = 0; posY = 0;
+                    applyTransform(true);
+                    updateArrows();
+                }
+                lastTapTime = now;
+            }
+            if (e.touches.length < 2) { touch2 = null; lastPinchDist = null; }
+        });
+
+        // ─── FLECHAS DE NAVEGACIÓN ───
+        btnLeft.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (viewerSrcs.length < 2) return;
+            viewerIdx = (viewerIdx - 1 + viewerSrcs.length) % viewerSrcs.length;
+            resetZoom(false);
+            imgEl.src = viewerSrcs[viewerIdx];
+        });
+        btnRight.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (viewerSrcs.length < 2) return;
+            viewerIdx = (viewerIdx + 1) % viewerSrcs.length;
+            resetZoom(false);
+            imgEl.src = viewerSrcs[viewerIdx];
+        });
+
+        // ─── CERRAR AL CLICK EN FONDO ───
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeViewer();
+        });
+
+        // ─── API PÚBLICA ───
+        window.openViewer = function(src, srcs, idx) {
+            viewerSrcs = srcs  || [];
+            viewerIdx  = idx   !== undefined ? idx : 0;
+            resetZoom(false);
+            imgEl.src = src;
+            modal.style.display = 'flex';
+            updateArrows();
+            showHint();
+        };
+
+        window.closeViewer = function() {
+            modal.style.display = 'none';
+            resetZoom(false);
+            imgEl.src = '';
+        };
+    })();
     
     // ====== STOCK ======
     function guardarStock() {
