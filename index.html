@@ -4190,10 +4190,6 @@ function showApp() {
                     renderTable(); 
                     actualizarListasAutocompletado();
                     
-                    if(document.getElementById('page-contabilidad').style.display === 'block') {
-                        cargarDatosContabilidad(); 
-                    }
-
                 } catch (error) {
                     showToast("Error interno al cargar la tabla", "#dc2626");
                 } finally {
@@ -5088,6 +5084,10 @@ function showApp() {
 
     function busquedaGlobal() {
         const bus = document.getElementById('search').value.trim();
+        
+        // OPTIMIZACIÓN: Si hay algo escrito pero es menos de 3 letras, no hace nada.
+        // Si borra todo (length === 0), sí ejecuta para mostrar la tabla normal.
+        if (bus.length > 0 && bus.length < 3) return;
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             limiteTabla = 50;
@@ -6160,14 +6160,16 @@ function showApp() {
             }
             clickLimpiar(true); 
         }
-
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         
         document.getElementById('page-' + pageId).style.display = 'block';
         document.getElementById('btn-nav-' + pageId).classList.add('active');
         
-        if (pageId === 'contabilidad') cargarDatosContabilidad();
+        // OPTIMIZACIÓN: Solo carga datos si el usuario entra a la pestaña específica
+        if (pageId === 'contabilidad') {
+            cargarDatosContabilidad(); 
+        }
         if (pageId === 'stock') renderStock();
         if (pageId === 'usuarios') listarUsuarios();
     }
