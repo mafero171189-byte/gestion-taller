@@ -5275,18 +5275,47 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     
     function autoOrden() { 
     if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-        let prox = 100;
+        // Primero intentamos sacar el max de los registros en memoria
         let todos = [...registros, ...registrosArchivados];
+        let maxLocal = 0;
         if (todos.length > 0) {
             const nums = todos.map(r => { 
-                // Limpia cualquier letra o guion antes de buscar el número
                 const val = String(r.orden).replace(/[^\d]/g, '');
                 return val ? parseInt(val) : 0; 
             });
-            const max = Math.max(...nums);
-            if (max >= 100) prox = max + 1;
+            maxLocal = Math.max(...nums);
         }
-        document.getElementById('nroOrden').value = prox;
+
+        if (maxLocal >= 100) {
+            // Tenemos datos confiables en memoria
+            document.getElementById('nroOrden').value = maxLocal + 1;
+        } else {
+            // registros vacío o con pocos datos: consultar Firebase directamente
+            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const inputNro = document.getElementById('nroOrden');
+            inputNro.placeholder = '⏳ calculando...';
+
+            Promise.all([
+                db.ref(pathActivo).orderByChild('orden').limitToLast(1).once('value'),
+                db.ref(pathArchivado).orderByChild('orden').limitToLast(1).once('value')
+            ]).then(([snapActivo, snapArchivado]) => {
+                let maxFB = 0;
+                [snapActivo, snapArchivado].forEach(snap => {
+                    snap.forEach(child => {
+                        const val = String(child.val().orden || '').replace(/[^\d]/g, '');
+                        const n = val ? parseInt(val) : 0;
+                        if (n > maxFB) maxFB = n;
+                    });
+                });
+                const prox = maxFB >= 100 ? maxFB + 1 : 100;
+                if (!inputNro.value) inputNro.value = prox;
+                inputNro.placeholder = '';
+            }).catch(() => {
+                if (!inputNro.value) inputNro.value = 100;
+                inputNro.placeholder = '';
+            });
+        }
     } 
 }
 
