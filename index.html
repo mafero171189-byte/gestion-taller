@@ -1585,7 +1585,7 @@ function showApp() {
        <div class="plan-name">Prueba</div>
        <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Para conocer el sistema</p>
        <div class="plan-price">Gratis</div>
-       <div class="plan-period">15 días con acceso a todo</div>
+       <div class="plan-period" id="landing-plan-period">15 días con acceso a todo</div>
        <div class="plan-divider"></div>
        <ul class="plan-features">
         <li>Órdenes de reparación</li>
@@ -1658,7 +1658,7 @@ function showApp() {
        <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">¿Qué pasa cuando vence la prueba?</span>
          <div class="faq-arrow">▾</div></button>
-        <div class="faq-a">Al vencer los 15 días de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.</div>
+        <div class="faq-a" id="faq-texto-dias-prueba">Al vencer los 15 días de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.</div>
        </div>
        <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">¿Hay soporte técnico?</span>
@@ -1676,7 +1676,7 @@ function showApp() {
      <br>
      <span style="background:linear-gradient(135deg,#60a5fa,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Es gratis.</span>
     </div>
-    <p class="cta-sub reveal">Probá Mi Taller Web por 15 días sin ningún costo. Sin tarjeta. Sin compromiso.</p>
+    <p class="cta-sub reveal" id="landing-cta-sub">Probá Mi Taller Web por 15 días sin ningún costo. Sin tarjeta. Sin compromiso.</p>
     <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap; position:relative;">
      <a href="#" onclick="showApp(); return false;" class="btn-primary reveal">🚀 Crear mi cuenta gratis</a> <a href="https://wa.me/5491135654094" target="_blank" class="btn-ghost reveal reveal-d1">📲 Hablar con soporte</a>
     </div>
@@ -1823,7 +1823,7 @@ function showApp() {
      <br>
      ✔ Contabilidad y stock · PDF de tickets
      <br>
-     ✔ 15 días sin costo · Sin tarjeta
+     ✔ <span id="landing-reg-dias">15</span> días sin costo · Sin tarjeta
     </div>
     <button class="btn-login" style="background:linear-gradient(135deg,#059669,#047857);" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
     <p id="regError" style="color:#dc2626; font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
@@ -2431,6 +2431,17 @@ function showApp() {
       <div style="display:flex; flex-direction:column; gap:10px;">
        <textarea id="inputMensajeGlobal" rows="2" placeholder="Ej: Este domingo a las 22:00hs realizaremos mantenimiento programado..." style="width:100%; padding:12px; border:1.5px solid #fde047; border-radius:8px; font-family:'Outfit',sans-serif; resize:none;"></textarea>
        <button onclick="guardarMensajeGlobal()" class="btn" style="background:#eab308; color:white; padding:12px; font-weight:bold; border:none;">PUBLICAR MENSAJE</button>
+      </div>
+     </div>
+
+     <!-- CONFIGURACIÓN DÍAS DE PRUEBA -->
+     <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #86efac; margin-bottom: 20px;">
+      <label style="color:#065f46; font-weight:900; font-size:15px;">⏳ Días de Prueba al Registrarse</label>
+      <p style="font-size:12px; color:#166534; margin:6px 0 12px 0;">Cantidad de días que tiene un usuario nuevo antes de que venza su licencia de prueba. Por defecto: 15 días.</p>
+      <div style="display:flex; align-items:center; gap:10px;">
+       <input type="number" id="inputDiasPrueba" min="1" max="365" value="15" style="width:90px; padding:10px 12px; border:1.5px solid #86efac; border-radius:8px; font-size:16px; font-weight:800; text-align:center; font-family:'Outfit',sans-serif;">
+       <span style="font-size:13px; color:#166534; font-weight:600;">días</span>
+       <button id="btnGuardarDiasPrueba" onclick="guardarDiasPrueba()" class="btn" style="background:#059669; color:white; padding:10px 18px; font-weight:bold; border:none; border-radius:8px; flex:1;">💾 GUARDAR</button>
       </div>
      </div>
 
@@ -3673,9 +3684,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         mostrarLoader('Creando cuenta y abriendo el taller...');
 
-        const expiracion = Date.now() + 15 * 24 * 60 * 60 * 1000;
-
-        localStorage.setItem('st_login_wa', wa);
+        const expiracion = Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000;
         appIniciada = false; 
 
         firebase.auth().createUserWithEmailAndPassword(email, pass)
@@ -4073,8 +4082,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         // Lógica de Sistema (Bloqueo y Anuncios)
         db.ref('configuracion/sistema').on('value', snap => {
             const sys = snap.val() || {};
-            
-            // Renderizar Mensaje Global
+            window.DIAS_PRUEBA = sys.diasPrueba || 15;
+            // Actualizar TODOS los textos dinámicos con los días de prueba
+            const d = window.DIAS_PRUEBA;
+            const faqDias = document.getElementById('faq-texto-dias-prueba');
+            if (faqDias) faqDias.innerHTML = `Al vencer los <b>${d} días</b> de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.`;
+            const planPeriod = document.getElementById('landing-plan-period');
+            if (planPeriod) planPeriod.textContent = `${d} días con acceso a todo`;
+            const ctaSub = document.getElementById('landing-cta-sub');
+            if (ctaSub) ctaSub.textContent = `Probá Mi Taller Web por ${d} días sin ningún costo. Sin tarjeta. Sin compromiso.`;
+            const regDias = document.getElementById('landing-reg-dias');
+            if (regDias) regDias.textContent = d;
+            const inputDP = document.getElementById('inputDiasPrueba');
+            if (inputDP && document.activeElement !== inputDP) inputDP.value = d;
             const ann = document.getElementById('global-announcement');
             const annTxt = document.getElementById('global-announcement-text');
             if (sys.mensajeGlobal && sys.mensajeGlobal.trim() !== "") {
@@ -4119,7 +4139,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 if (!snapCheck.exists()) {
                     db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
                         const solData = snapSol.val() || {};
-                        const expiracion = solData.fechaExpiracion || (Date.now() + 15 * 24 * 60 * 60 * 1000);
+                        const expiracion = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
                         db.ref('usuarios_registrados/' + u).set({
                             whatsapp: u,
                             fechaAlta: solData.fecha || new Date().toLocaleString('es-AR', { hour12: false }),
@@ -4140,7 +4160,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
                 else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de prueba de 15 días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
+                    mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
                 }
                 else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
                     mostrarExpulsion("⏳ Tu licencia de 30 días ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
@@ -6690,7 +6710,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             mostrarLoader("Creando licencia...");
             const pwd = Math.random().toString(36).slice(-8);
             const emailFalso = wa + '@mitallerweb.com';
-            const expiracion = tipoLicencia === 'prueba' ? Date.now() + 15 * 24 * 60 * 60 * 1000 : Date.now() + 30 * 24 * 60 * 60 * 1000;
+            const expiracion = tipoLicencia === 'prueba' ? Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000 : Date.now() + 30 * 24 * 60 * 60 * 1000;
 
             secondaryApp.auth().createUserWithEmailAndPassword(emailFalso, pwd)
             .then(() => {
@@ -6909,7 +6929,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             fechaCont.style.display   = 'block';
             // Default: 15 días desde hoy si el campo está vacío
             if (!document.getElementById('licFechaExp').value) {
-                const d15 = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+                const d15 = new Date(Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
                 document.getElementById('licFechaExp').value = d15.toISOString().split('T')[0];
             }
         } else {
@@ -7442,6 +7462,32 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function guardarMensajeGlobal() {
         const msg = document.getElementById('inputMensajeGlobal').value.trim();
+        window.guardarDiasPrueba = function() {
+            const val = parseInt(document.getElementById('inputDiasPrueba').value, 10);
+            if (!val || val < 1 || val > 365) { showToast('Ingresá un número entre 1 y 365', '#f59e0b'); return; }
+            const btn = document.getElementById('btnGuardarDiasPrueba');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+            db.ref('configuracion/sistema/diasPrueba').set(val).then(() => {
+                window.DIAS_PRUEBA = val;
+                // Actualizar todos los textos
+                const d = val;
+                const faqDias = document.getElementById('faq-texto-dias-prueba');
+                if (faqDias) faqDias.innerHTML = `Al vencer los <b>${d} días</b> de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.`;
+                const planPeriod = document.getElementById('landing-plan-period');
+                if (planPeriod) planPeriod.textContent = `${d} días con acceso a todo`;
+                const ctaSub = document.getElementById('landing-cta-sub');
+                if (ctaSub) ctaSub.textContent = `Probá Mi Taller Web por ${d} días sin ningún costo. Sin tarjeta. Sin compromiso.`;
+                const regDias = document.getElementById('landing-reg-dias');
+                if (regDias) regDias.textContent = d;
+                if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; btn.style.background = '#059669'; }
+                showToast('✅ Días de prueba actualizados a ' + val + ' días', '#059669');
+                setTimeout(() => { if (btn) { btn.textContent = '💾 GUARDAR'; btn.style.background = '#059669'; } }, 3000);
+            }).catch(() => {
+                if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
+                showToast('Error al guardar', '#dc2626');
+            });
+        };
+
         db.ref('configuracion/sistema/mensajeGlobal').set(msg).then(() => {
             if(msg) {
                 showToast("📢 MENSAJE ENVIADO A TODOS", "#d97706");
