@@ -6216,6 +6216,25 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
 
     function cargarDatosContabilidad() {
+        // --- INICIO DEL FIX: Descargar historial si no existe ---
+        if (!historialDescargado) {
+            mostrarLoader("Calculando finanzas...");
+            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            
+            db.ref(pathArchivado).once('value').then(snap => {
+                const v = snap.val();
+                registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                historialDescargado = true;
+                ocultarLoader();
+                
+                // Una vez descargado, volvemos a llamar a la función para que ahora sí calcule todo
+                cargarDatosContabilidad();
+            });
+            
+            return; // Cortamos la ejecución acá para esperar a que Firebase traiga los datos
+        }
+        // --- FIN DEL FIX ---
+
         const mesObj = document.getElementById('selectMes');
         const diaObj = document.getElementById('inputDia');
         
