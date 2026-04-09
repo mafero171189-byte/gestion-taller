@@ -2363,6 +2363,17 @@ function showApp() {
       </div>
      </div>
      
+          <!-- CONFIGURACIÓN DÍAS DE PRUEBA -->
+     <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #86efac; margin-bottom: 20px;">
+      <label style="color:#065f46; font-weight:900; font-size:15px;">⏳ Días de Prueba al Registrarse</label>
+      <p style="font-size:12px; color:#166534; margin:6px 0 12px 0;">Cantidad de días que tiene un usuario nuevo antes de que venza su licencia de prueba. Por defecto: 15 días.</p>
+      <div style="display:flex; align-items:center; gap:10px;">
+       <input type="number" id="inputDiasPrueba" min="1" max="365" value="15" style="width:90px; padding:10px 12px; border:1.5px solid #86efac; border-radius:8px; font-size:16px; font-weight:800; text-align:center; font-family:'Outfit',sans-serif;">
+       <span style="font-size:13px; color:#166534; font-weight:600;">días</span>
+       <button id="btnGuardarDiasPrueba" onclick="guardarDiasPrueba()" class="btn" style="background:#059669; color:white; padding:10px 18px; font-weight:bold; border:none; border-radius:8px; flex:1;">💾 GUARDAR</button>
+      </div>
+     </div>
+
           <!-- CONFIGURACIÓN DE PRECIOS -->
      <h3 style="margin:0 0 15px 0; font-size:16px; color:#111827;">💳 Configuración de Precios Públicos</h3>
      <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #6ee7b7; margin-bottom: 20px;">
@@ -2431,17 +2442,6 @@ function showApp() {
       <div style="display:flex; flex-direction:column; gap:10px;">
        <textarea id="inputMensajeGlobal" rows="2" placeholder="Ej: Este domingo a las 22:00hs realizaremos mantenimiento programado..." style="width:100%; padding:12px; border:1.5px solid #fde047; border-radius:8px; font-family:'Outfit',sans-serif; resize:none;"></textarea>
        <button onclick="guardarMensajeGlobal()" class="btn" style="background:#eab308; color:white; padding:12px; font-weight:bold; border:none;">PUBLICAR MENSAJE</button>
-      </div>
-     </div>
-
-     <!-- CONFIGURACIÓN DÍAS DE PRUEBA -->
-     <div class="card-form" style="background: #f0fdf4; padding: 20px; border-radius: 12px; border: 1.5px solid #86efac; margin-bottom: 20px;">
-      <label style="color:#065f46; font-weight:900; font-size:15px;">⏳ Días de Prueba al Registrarse</label>
-      <p style="font-size:12px; color:#166534; margin:6px 0 12px 0;">Cantidad de días que tiene un usuario nuevo antes de que venza su licencia de prueba. Por defecto: 15 días.</p>
-      <div style="display:flex; align-items:center; gap:10px;">
-       <input type="number" id="inputDiasPrueba" min="1" max="365" value="15" style="width:90px; padding:10px 12px; border:1.5px solid #86efac; border-radius:8px; font-size:16px; font-weight:800; text-align:center; font-family:'Outfit',sans-serif;">
-       <span style="font-size:13px; color:#166534; font-weight:600;">días</span>
-       <button id="btnGuardarDiasPrueba" onclick="guardarDiasPrueba()" class="btn" style="background:#059669; color:white; padding:10px 18px; font-weight:bold; border:none; border-radius:8px; flex:1;">💾 GUARDAR</button>
       </div>
      </div>
 
@@ -2809,6 +2809,22 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
     
     const db = firebase.database();
+
+    // ── DÍAS DE PRUEBA EN TIEMPO REAL PARA LA LANDING PAGE ───────────────────
+    db.ref('configuracion/sistema/diasPrueba').on('value', snap => {
+        const d = snap.val() || 15;
+        window.DIAS_PRUEBA = d;
+        const planPeriod = document.getElementById('landing-plan-period');
+        if (planPeriod) planPeriod.textContent = `${d} días con acceso a todo`;
+        const ctaSub = document.getElementById('landing-cta-sub');
+        if (ctaSub) ctaSub.textContent = `Probá Mi Taller Web por ${d} días sin ningún costo. Sin tarjeta. Sin compromiso.`;
+        const regDias = document.getElementById('landing-reg-dias');
+        if (regDias) regDias.textContent = d;
+        const faqDias = document.getElementById('faq-texto-dias-prueba');
+        if (faqDias) faqDias.innerHTML = `Al vencer los <b>${d} días</b> de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.`;
+        const inputDP = document.getElementById('inputDiasPrueba');
+        if (inputDP && document.activeElement !== inputDP) inputDP.value = d;
+    });
 
     // ── PRECIOS EN TIEMPO REAL PARA LA LANDING PAGE ──────────────────────────
     // Escucha cambios instantáneos en Firebase y los refleja en la prepagina
@@ -7460,34 +7476,33 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         });
     }
 
+    function guardarDiasPrueba() {
+        const val = parseInt(document.getElementById('inputDiasPrueba').value, 10);
+        if (!val || val < 1 || val > 365) { showToast('Ingresá un número entre 1 y 365', '#f59e0b'); return; }
+        const btn = document.getElementById('btnGuardarDiasPrueba');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+        db.ref('configuracion/sistema/diasPrueba').set(val).then(() => {
+            window.DIAS_PRUEBA = val;
+            const d = val;
+            const faqDias = document.getElementById('faq-texto-dias-prueba');
+            if (faqDias) faqDias.innerHTML = `Al vencer los <b>${d} días</b> de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.`;
+            const planPeriod = document.getElementById('landing-plan-period');
+            if (planPeriod) planPeriod.textContent = `${d} días con acceso a todo`;
+            const ctaSub = document.getElementById('landing-cta-sub');
+            if (ctaSub) ctaSub.textContent = `Probá Mi Taller Web por ${d} días sin ningún costo. Sin tarjeta. Sin compromiso.`;
+            const regDias = document.getElementById('landing-reg-dias');
+            if (regDias) regDias.textContent = d;
+            if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
+            showToast('✅ Días de prueba actualizados a ' + val + ' días', '#059669');
+            setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR'; }, 3000);
+        }).catch(() => {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
+            showToast('Error al guardar', '#dc2626');
+        });
+    }
+
     function guardarMensajeGlobal() {
         const msg = document.getElementById('inputMensajeGlobal').value.trim();
-        window.guardarDiasPrueba = function() {
-            const val = parseInt(document.getElementById('inputDiasPrueba').value, 10);
-            if (!val || val < 1 || val > 365) { showToast('Ingresá un número entre 1 y 365', '#f59e0b'); return; }
-            const btn = document.getElementById('btnGuardarDiasPrueba');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
-            db.ref('configuracion/sistema/diasPrueba').set(val).then(() => {
-                window.DIAS_PRUEBA = val;
-                // Actualizar todos los textos
-                const d = val;
-                const faqDias = document.getElementById('faq-texto-dias-prueba');
-                if (faqDias) faqDias.innerHTML = `Al vencer los <b>${d} días</b> de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.`;
-                const planPeriod = document.getElementById('landing-plan-period');
-                if (planPeriod) planPeriod.textContent = `${d} días con acceso a todo`;
-                const ctaSub = document.getElementById('landing-cta-sub');
-                if (ctaSub) ctaSub.textContent = `Probá Mi Taller Web por ${d} días sin ningún costo. Sin tarjeta. Sin compromiso.`;
-                const regDias = document.getElementById('landing-reg-dias');
-                if (regDias) regDias.textContent = d;
-                if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; btn.style.background = '#059669'; }
-                showToast('✅ Días de prueba actualizados a ' + val + ' días', '#059669');
-                setTimeout(() => { if (btn) { btn.textContent = '💾 GUARDAR'; btn.style.background = '#059669'; } }, 3000);
-            }).catch(() => {
-                if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
-                showToast('Error al guardar', '#dc2626');
-            });
-        };
-
         db.ref('configuracion/sistema/mensajeGlobal').set(msg).then(() => {
             if(msg) {
                 showToast("📢 MENSAJE ENVIADO A TODOS", "#d97706");
