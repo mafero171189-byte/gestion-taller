@@ -7520,21 +7520,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
      <div class="mp-logo-wrap">💳</div>
      <h3>Activar Licencia Mensual</h3>
      <p>Pago seguro a través de Mercado Pago</p>
-     <a href="https://wa.me/5491135654094?text=Hola%2C%20acabo%20de%20pagar%20mi%20licencia%20de%20Mi%20Taller%20Web.%20Te%20env%C3%ADo%20el%20comprobante%20a%20continuaci%C3%B3n." target="_blank" style="
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 12px;
-    padding: 8px 14px;
-    border-radius: 999px;
-    background-color: #25d366;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-  "> <span style="font-size: 18px;">📎</span> <span>Enviar comprobante</span> </a>
-     <p></p>
     </div>
     <div class="mp-modal-body">
      <div class="mp-step">
@@ -7558,7 +7543,28 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     </div>
     <div class="mp-modal-footer">
      <button class="mp-btn-pagar" id="mpBtnIrAPagar"><span>💳</span> IR A MERCADO PAGO — <span id="mpPrecioLabel">AR$ ...</span></button>
-     <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde); margin-top: 5px;"><span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span></button>
+     <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde);"><span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span></button>
+     
+     <a href="https://wa.me/5491135654094?text=Hola%2C%20acabo%20de%20pagar%20mi%20licencia%20de%20Mi%20Taller%20Web.%20Te%20env%C3%ADo%20el%20comprobante%20a%20continuaci%C3%B3n." target="_blank" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px 10px;
+        border-radius: 12px;
+        background-color: #25d366;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+        font-family: 'Outfit', sans-serif;
+        text-decoration: none;
+        cursor: pointer;
+        box-shadow: 0 4px 18px rgba(37, 211, 102, 0.4);
+        width: 100%;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+      "> <span style="font-size: 18px;">📎</span> <span>ENVIAR COMPROBANTE</span> </a>
+
      <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
     </div>
    </div>
