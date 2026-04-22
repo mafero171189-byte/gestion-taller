@@ -5054,10 +5054,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             });
         } else {
             db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
-                if (r.archivado) {
-                    Object.assign(r, updates);
-                    renderTable();
-                }
+                // Actualizamos la memoria local y redibujamos la tabla SIEMPRE (Cero lecturas)
+                Object.assign(r, updates);
+                renderTable();
+                
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`ESTADO: ${nuevo.toUpperCase()} ✅`, coloresEstado[nuevo] || "#1e4d8c");
             });
@@ -6169,9 +6169,25 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         
         mostrarLoader("Guardando stock...");
         if(id) {
-            db.ref(pathStock).child(id).update(data).then(() => { limpiarStock(); ocultarLoader(); showToast("STOCK ACTUALIZADO", "#059669"); });
+            db.ref(pathStock).child(id).update(data).then(() => { 
+                const index = stockData.findIndex(x => x.id === id);
+                if(index !== -1) stockData[index] = { id: id, ...data };
+                
+                limpiarStock(); 
+                ocultarLoader(); 
+                showToast("STOCK ACTUALIZADO", "#059669"); 
+                renderStock();
+            });
         } else {
-            db.ref(pathStock).push(data).then(() => { limpiarStock(); ocultarLoader(); showToast("ARTÍCULO CREADO", "#059669"); });
+            const nuevaRef = db.ref(pathStock).push();
+            nuevaRef.set(data).then(() => { 
+                stockData.push({ id: nuevaRef.key, ...data });
+                
+                limpiarStock(); 
+                ocultarLoader(); 
+                showToast("ARTÍCULO CREADO", "#059669"); 
+                renderStock();
+            });
         }
     }
 
@@ -6206,10 +6222,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         
         mostrarLoader("Eliminando...");
         db.ref(pathStock).child(idStockParaBorrar).remove().then(() => {
+            // Actualización local sin gastar cuota
+            stockData = stockData.filter(item => item.id !== idStockParaBorrar);
+            
             idStockParaBorrar = null;
             document.getElementById('deleteStockModal').style.display = 'none';
             ocultarLoader();
             showToast("ARTÍCULO ELIMINADO", "#dc2626");
+            renderStock();
         });
     }
 
