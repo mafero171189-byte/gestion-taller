@@ -4096,11 +4096,31 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
 
-        // Lógica de Sistema (Bloqueo y Anuncios)
+        // Lógica de Sistema (Bloqueo y Anuncios) - EN VIVO
         db.ref('configuracion/sistema').on('value', snap => {
             const sys = snap.val() || {};
+            
+            // 1. Lógica de Bloqueo Instantáneo y Expulsión
+            if (sys.bloqueoTotal === true && !isAdmin) {
+                // Si el admin activa el bloqueo, limpiamos sesión y echamos a todos
+                localStorage.clear();
+                sessionStorage.clear();
+                document.getElementById('mantenimiento-overlay').style.display = 'flex';
+                // Recargamos a los 2 segundos para asegurar que el sistema quede en el login
+                setTimeout(() => { window.location.reload(); }, 2000);
+                return; 
+            }
+
+            // 2. Mensaje Instantáneo (Aparece aunque no refresquen)
+            if (sys.mensajeGlobal && sys.mensajeGlobal.trim() !== "" && sys.mensajeGlobal !== localStorage.getItem('st_ultimo_msj_visto')) {
+                alert("📢 MENSAJE DE ADMINISTRACIÓN:\n\n" + sys.mensajeGlobal);
+                // Guardamos que ya lo vio para que no le salte el cartel cada vez que navega
+                localStorage.setItem('st_ultimo_msj_visto', sys.mensajeGlobal);
+            }
+
             window.DIAS_PRUEBA = sys.diasPrueba || 15;
             // Actualizar TODOS los textos dinámicos con los días de prueba
+
             const d = window.DIAS_PRUEBA;
             const faqDias = document.getElementById('faq-texto-dias-prueba');
             if (faqDias) faqDias.innerHTML = `Al vencer los <b>${d} días</b> de prueba, el sistema se bloquea pero tus datos no se pierden. Podés activar la licencia permanente en cualquier momento y seguir desde donde dejaste.`;
@@ -5217,7 +5237,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }
 
         const filtrados = listaFinal.filter(r => {
-            const ordenLimpia = String(r.orden).replace('MAT-', '');
+            const ordenLimpia = String(r.orden).replace('ORD-', '');
             let equipoLimpio = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim().toLowerCase();
             const matchBusqueda = bus.length === 0 || (r.cliente||"").toLowerCase().includes(bus) || equipoLimpio.includes(bus) || ordenLimpia.toLowerCase().includes(bus) || (r.falla||"").toLowerCase().includes(bus) || (r.tel||"").toLowerCase().includes(bus);
             
