@@ -3431,7 +3431,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const subHeader = conf.subtitulo || "";
         const wappHeader = conf.wappTicket || "";
         const textGarantia = conf.garantia || "";
-        const nroLimpio = String(r.orden).replace('MAT-', '');
+        const nroLimpio = String(r.orden).replace('ORD-', '');
+        
         
         const { jsPDF } = window.jspdf;
         const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
@@ -4225,7 +4226,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (isStored) mostrarLoader("Cargando sistema...");
 
         const iniciarListener = () => {
-                        dbRef.on('value', snap => {
+                        dbRef.once('value', snap => {
                 try {
                     const v = snap.val(); 
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
@@ -4269,12 +4270,16 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             iniciarListener();
         }
 
-        const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
-        db.ref(pathStock).on('value', snap => {
-            const v = snap.val();
-            stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-            if(document.getElementById('page-stock').style.display === 'block') renderStock();
-        });
+        // CORRECCIÓN: Desconectamos el Stock del "tiempo real" global
+        window.cargarStockData = () => {
+            const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
+            db.ref(pathStock).once('value', snap => {
+                const v = snap.val();
+                stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                if(document.getElementById('page-stock').style.display === 'block') renderStock();
+            });
+        };
+        window.cargarStockData(); // Carga inicial
         
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
@@ -4751,8 +4756,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
             
-            const nroLimpio = String(r.orden).replace('MAT-', '');
+            const nroLimpio = String(r.orden).replace('ORD-', '');
             const baseUrl = window.location.origin + window.location.pathname; 
+            
             const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
             
             let msjPlano = "";
@@ -4822,7 +4828,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
             Object.assign(r, updates);
             document.getElementById('modalCobroEntregado').style.display = 'none';
-            ocultarLoader();
+            // Eliminamos ocultarLoader() de acá para que siga girando hasta que pase al historial
             ejecutarCambioEstado('Entregado');
         });
     }
@@ -4996,25 +5002,31 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             db.ref(pathActivo).child(idParaEstado).set(copia).then(() => {
                 db.ref(pathArchivado).child(idParaEstado).remove();
                 
-                // Quitamos la orden de la lista local de archivados
                 registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
-                // ELIMINAMOS el push manual porque Firebase ya lo actualiza automáticamente en tiempo real
+                registros.push({id: idParaEstado, ...copia}); // <--- CORRECCIÓN: Lo reinserta en pantalla
+                
                 renderTable();
-
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#1e4d8c");
             });    
         } else if (nuevo === 'Entregado' && !r.archivado) {
             updates.archivado = true;
-            let copia = {...r, ...updates};
+            Object.assign(r, updates); // Aplica estado y archivado localmente al instante
+
+            // Saca la orden de la lista de activos visualmente al instante
+            registros = registros.filter(x => x.id !== idParaEstado);
+
+            let copia = {...r};
             delete copia.id;
+            
             db.ref(pathArchivado).child(idParaEstado).set(copia).then(() => {
                 db.ref(pathActivo).child(idParaEstado).remove();
-                
-                // CORRECCIÓN: Agregar a la lista local de archivados para que aparezca al instante
+
                 if (historialDescargado) {
                     registrosArchivados.push({id: idParaEstado, ...copia});
                 }
+                
+                ocultarLoader(); // Ahora sí, ocultamos el loader al final
                 renderTable();
 
                 document.getElementById('statusModal').style.display = 'none';
@@ -5131,10 +5143,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     function busquedaGlobal() {
         const bus = document.getElementById('search').value.trim();
         
-        // OPTIMIZACIÓN: Si hay algo escrito pero es menos de 3 letras, no hace nada.
-        // Si borra todo (length === 0), sí ejecuta para mostrar la tabla normal.
-        if (bus.length > 0 && bus.length < 3) return;
+        // OPTIMIZACIÓN: Búsqueda instantánea fluida
         clearTimeout(debounceTimer);
+
         debounceTimer = setTimeout(() => {
             limiteTabla = 50;
             if (bus.length === 0) {
@@ -5235,13 +5246,18 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 }
             }
             
-            const nroLimpio = String(r.orden).replace('MAT-', '');
+            const nroLimpio = String(r.orden).replace('ORD-', '');
             const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
             
             let estadoPagoHTML = "";
             if (r.archivado && r.estado === 'Entregado') {
-                estadoPagoHTML = `<b style="color:#6b7280;">📦 ENTREGADO</b>`;
+                let sVal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+                let bVal = parseFloat(r.saldoCobrado) || 0;
+                let detalle = [];
+                if (sVal > 0) detalle.push(`S: $${sVal.toLocaleString()} (${r.metodoPagoSena || 'S/D'})`);
+                if (bVal > 0) detalle.push(`B: $${bVal.toLocaleString()} (${r.metodoPagoSaldo || 'S/D'})`);
+                estadoPagoHTML = `<div style="font-size:11px; color:#6b7280; line-height:1.2;"><b>📦 ENTREGADO</b><br>${detalle.join(' | ')}</div>`;
             } else if (precioActual === 0) {
                 if (senaActual > 0) {
                     estadoPagoHTML = `<b style="color:green;">A Favor: ${fmt.format(senaActual)}</b>`;
@@ -5421,6 +5437,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             db.ref(pathActivo).child(id).set(copia).then(() => {
                 db.ref(pathArchivado).child(id).remove();
                 registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
+                registros.push({id: id, ...copia}); // <--- CORRECCIÓN: Agrega a la vista activa
                 renderTable();
                 showToast("RESTAURADO ✅", "#1e4d8c");
             });
@@ -5430,6 +5447,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
             db.ref(pathArchivado).child(id).set(copia).then(() => {
                 db.ref(pathActivo).child(id).remove();
+                registros = registros.filter(x => x.id !== id); // <--- CORRECCIÓN: Saca de la vista activa
                 if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
                 renderTable();
                 showToast("ENVIADO AL HISTORIAL 🗄️", "#6b7280");
@@ -5767,7 +5785,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
             
-            const nroLimpio = String(r.orden).replace('MAT-', '');
+            const nroLimpio = String(r.orden).replace('ORD-', '');
             
             const baseUrl = window.location.origin + window.location.pathname; 
             const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
@@ -6245,7 +6263,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (pageId === 'contabilidad') {
             cargarDatosContabilidad(); 
         }
-        if (pageId === 'stock') renderStock();
+        if (pageId === 'stock') { window.cargarStockData(); } // Refresca fresco al entrar a la pestaña
         if (pageId === 'usuarios') listarUsuarios();
     }
 
@@ -6312,8 +6330,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let coincideSaldo = false;
             let estadoEntregado = null;
             if (!r.esVentaRapida && r.historialEstados && r.saldoCobrado > 0) {
-                estadoEntregado = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
+                // CORRECCIÓN CONTABILIDAD: Usamos el PRIMER 'Entregado' para que las garantías no muevan el ingreso de mes
+                estadoEntregado = r.historialEstados.find(e => e.estado === 'Entregado');
                 if (estadoEntregado) {
+
                     let evPartes = estadoEntregado.fecha.split(/[, ]+/)[0].trim().split('/');
                     if (evPartes.length === 3) {
                         if (diaFiltro) {
@@ -6405,10 +6425,22 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         `;
 
         movimientosActuales = Object.values(movsMap).filter(m => m.ingreso > 0 || m.egreso > 0).map(m => {
+            const r = getRegistro(m.id);
+            let metodoDetallado = m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo';
+            
+            if (r && !m.esVentaRapida) {
+                let senaVal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+                let saldoVal = parseFloat(r.saldoCobrado) || 0;
+                let partes = [];
+                if (senaVal > 0) partes.push(`Seña: $${senaVal.toLocaleString()} (${r.metodoPagoSena || 'S/D'})`);
+                if (saldoVal > 0) partes.push(`Saldo: $${saldoVal.toLocaleString()} (${r.metodoPagoSaldo || 'S/D'})`);
+                if (partes.length > 0) metodoDetallado = partes.join(' + ');
+            }
+
             return {
                 id: m.id, orden: m.orden, cliente: m.cliente, 
                 descStr: Array.from(m.desc).join(' + '),
-                metodoStr: m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo',
+                metodoStr: metodoDetallado,
                 ingreso: m.ingreso, egreso: m.egreso, fechaRaw: m.fechaRaw,
                 esVentaRapida: m.esVentaRapida, equipo: m.equipo
             };
@@ -6611,8 +6643,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
             let fechaEntrega = '', horaEntrega = '', cobroSaldo = 0, metodoSaldo = '';
             if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
-                let ent = [...r.historialEstados].reverse().find(e => e.estado === 'Entregado');
+                // CORRECCIÓN EXCEL: Usamos el PRIMER 'Entregado' para mantener la fecha original de cobro
+                let ent = r.historialEstados.find(e => e.estado === 'Entregado');
                 if (ent) {
+
                     fechaEntrega = ent.fecha.split(',')[0].trim();
                     horaEntrega = ent.fecha.split(',')[1] ? ent.fecha.split(',')[1].trim() : '';
                     cobroSaldo = parseFloat(r.saldoCobrado) || 0;
