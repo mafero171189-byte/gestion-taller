@@ -1727,13 +1727,14 @@ function showApp() {
    <div class="spinner"></div>
    <p id="loader-text" style="margin-top:20px; font-weight:bold; font-size:16px;">Cargando...</p>
   </div>
-  <div id="modalVentaRapida" class="modal-overlay" style="z-index: 4800;">
-   <div class="modal-box" style="width: 90%; max-width: 400px; overflow: visible;">
+  <div id="modalVentaRapida" class="modal-overlay" style="z-index: 4800;" onclick="if(event.target === this) cerrarVentaRapida()">
+   <div class="modal-box" style="width: 90%; max-width: 400px; overflow: visible; position: relative;">
+    <button onclick="cerrarVentaRapida()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af;">✕</button>
     <div style="font-size: 40px; margin-bottom: 10px;">🛒</div>
     <p style="color: #8e44ad; font-weight: bold; font-size: 18px; margin-top: 0;">Venta Rápida de Mostrador</p>
     <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">Ideal para vender cables, fundas o repuestos sin crear orden.</p>
     <div style="position: relative; text-align: left;">
-     <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
+     <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" onblur="hideVrAutocomplete()" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
      <div id="vrAutocomplete" class="autocomplete-list" style="width: 100%;"></div>
     </div>
     <div id="vrDetalle" style="display:none; text-align:left; margin-top:15px; background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
@@ -1754,7 +1755,7 @@ function showApp() {
      </div>
     </div>
     <div style="display:flex; gap:10px; margin-top:20px;">
-     <button onclick="document.getElementById('modalVentaRapida').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 12px;">CANCELAR</button>
+     <button onclick="cerrarVentaRapida()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 12px;">CANCELAR</button>
      <button onclick="procesarVentaRapida()" style="flex:1; padding:10px; border-radius:8px; border:none; background:#8e44ad; color:white; font-weight:bold; cursor:pointer; font-size: 12px;">REGISTRAR VENTA</button>
     </div>
    </div>
@@ -2322,8 +2323,8 @@ function showApp() {
        <label>Precio Venta $</label><input type="text" id="stockPrecio" placeholder="0" oninput="formatInput(this)">
       </div>
       <div class="full" style="display: flex; gap:10px;">
-       <button type="button" class="btn btn-main" onclick="guardarStock()">GUARDAR ARTÍCULO</button>
-       <button type="button" class="btn" onclick="limpiarStock()" style="background:#94a3b8; color:white;">LIMPIAR</button>
+       <button type="button" id="btnGuardarStock" class="btn btn-main" onclick="guardarStock()">GUARDAR ARTÍCULO</button>
+       <button type="button" id="btnLimpiarStock" class="btn" onclick="limpiarStock()" style="background:#94a3b8; color:white;">LIMPIAR</button>
       </div>
      </div>
      <div class="table-wrapper" style="overflow-x:auto;">
@@ -4570,6 +4571,18 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('vrAutocomplete').innerHTML = '';
     }
 
+    function hideVrAutocomplete() {
+        setTimeout(() => {
+            const listDiv = document.getElementById('vrAutocomplete');
+            if(listDiv) listDiv.style.display = 'none';
+        }, 200);
+    }
+    function cerrarVentaRapida() {
+        document.getElementById('modalVentaRapida').style.display = 'none';
+        document.getElementById('vrBusqueda').value = '';
+        document.getElementById('vrAutocomplete').style.display = 'none';
+    }
+
     function filtrarVentaRapida() {
         const input = document.getElementById('vrBusqueda');
         const val = input.value.toLowerCase();
@@ -6198,6 +6211,18 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('stockCosto').value = "";
         document.getElementById('stockPrecio').value = "";
         document.getElementById('search-stock').value = "";
+        
+        // Resetear botón de Guardar
+        const btnGuardar = document.getElementById('btnGuardarStock');
+        if (btnGuardar) {
+            btnGuardar.innerText = "GUARDAR ARTÍCULO";
+            btnGuardar.style.background = ""; 
+        }
+        // Resetear botón de Limpiar/Cancelar
+        const btnLimpiar = document.getElementById('btnLimpiarStock');
+        if (btnLimpiar) {
+            btnLimpiar.innerText = "LIMPIAR";
+        }
         document.getElementById('stockNombre').focus();
     }
 
@@ -6208,6 +6233,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('stockCantidad').value = item.cantidad;
         document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
         document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
+        
+        // Cambiar a modo Actualizar
+        const btnGuardar = document.getElementById('btnGuardarStock');
+        if (btnGuardar) {
+            btnGuardar.innerText = "ACTUALIZAR ARTÍCULO";
+            btnGuardar.style.background = "#f59e0b";
+        }
+        // Cambiar texto de Limpiar a Cancelar
+        const btnLimpiar = document.getElementById('btnLimpiarStock');
+        if (btnLimpiar) {
+            btnLimpiar.innerText = "CANCELAR";
+        }
+        
+        showToast("MODO EDICIÓN ✏️", "#f59e0b");
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
