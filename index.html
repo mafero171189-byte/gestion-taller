@@ -3702,8 +3702,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         mostrarLoader('Creando cuenta y abriendo el taller...');
 
-        const expiracion = Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000;
-        appIniciada = false; 
+        const expiracion = Date.now() + (window.DIAS_PRUEBA || 30) * 24 * 60 * 60 * 1000;
+        appIniciada = false;
+
+        // FIX: guardar wa ANTES de crear la cuenta en Firebase
+        // para que onAuthStateChanged lo encuentre y llame grantAccess correctamente
+        localStorage.setItem('st_login_wa', wa);
 
         firebase.auth().createUserWithEmailAndPassword(email, pass)
             .then(() => {
@@ -3719,15 +3723,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 });
             })
             .then(() => {
-                const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-                const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000 };
-                localStorage.setItem('st_matias_token', JSON.stringify(tokenData));
-                
-                db.ref('usuarios_registrados/' + wa).update({ tokenSesion: token }).catch(() => {});
-                
-                ocultarLoader();
-                document.getElementById('panelRegistro').style.display = 'none';
-                
+                // FIX: NO hacer update parcial de usuarios_registrados acá.
+                // grantAccess (disparado por onAuthStateChanged) leerá solicitudes_registro
+                // y creará el nodo completo con fechaExpiracion incluida.
                 showToast('🎉 ¡Bienvenido! Tu cuenta fue creada con éxito.', '#059669');
             })
             .catch((err) => {
@@ -6938,7 +6936,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             const AHORA = Date.now();
             
             listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus)).forEach(u => {
-                const tipoLic = u.tipoLicencia || 'permanente';
+                const tipoLic = u.tipoLicencia || 'prueba';
                 const expiracion = u.fechaExpiracion || null;
                 const diasRestantes = expiracion ? Math.ceil((expiracion - AHORA) / (1000*60*60*24)) : null;
                 const estaExpirada = diasRestantes !== null && diasRestantes <= 0;
