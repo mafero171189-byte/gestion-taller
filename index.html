@@ -4163,6 +4163,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
+
+        // Registrar último ingreso: máximo 1 escritura por día por dispositivo
+        if (!isAdmin) {
+            const claveLocal = 'st_ultimo_ingreso_' + u;
+            const ultimaEscritura = parseInt(localStorage.getItem(claveLocal) || '0');
+            if (Date.now() - ultimaEscritura > 24 * 60 * 60 * 1000) {
+                const ahora = Date.now();
+                db.ref('usuarios_registrados/' + u).update({ ultimoIngreso: ahora }).catch(() => {});
+                localStorage.setItem(claveLocal, ahora);
+            }
+        }
         
         // --- NUEVO: Cargar órdenes del caché para que aparezcan al INSTANTE ---
         const cache = localStorage.getItem('st_cache_ordenes_' + u);
@@ -4396,7 +4407,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
             document.getElementById('btn-nav-mantenimiento').style.display = 'inline-block'; // NUEVO BOTON
-            listarUsuarios();
+            cargarUsuariosAdmin();
             limpiarFotosAntiguas(false); 
             limpiarLicenciasExpiradas();
             cargarSolicitudesReset();
@@ -6434,7 +6445,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             cargarDatosContabilidad(); 
         }
         if (pageId === 'stock') { window.cargarStockData(); } // Refresca fresco al entrar a la pestaña
-        if (pageId === 'usuarios') listarUsuarios();
+        if (pageId === 'usuarios') cargarUsuariosAdmin();
     }
 
     function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
@@ -6916,6 +6927,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     // ====== PANEL DE ADMIN: USUARIOS, LICENCIAS Y BACKUP ======
     let listadoUsuarios = [];
+
+    function tiempoRelativo(ts) {
+        if (!ts) return null;
+        const diff = Date.now() - ts;
+        const mins  = Math.floor(diff / 60000);
+        const horas = Math.floor(diff / 3600000);
+        const dias  = Math.floor(diff / 86400000);
+        if (mins < 2)   return 'hace un momento';
+        if (mins < 60)  return `hace ${mins} min`;
+        if (horas < 24) return `hace ${horas}h`;
+        if (dias === 1) return 'ayer';
+        if (dias < 30)  return `hace ${dias} días`;
+        return new Date(ts).toLocaleDateString('es-AR');
+    }
     
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.replace(/\D/g, '');
@@ -7014,21 +7039,32 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         });
     }
 
-    function listarUsuarios() {
-        if(!isUserAdmin) return;
-        const body = document.getElementById('userTableBody');
-        const bus = document.getElementById('search-user').value.toLowerCase();
-        
-        db.ref('usuarios_registrados').on('value', snap => {
-            body.innerHTML = "";
+    let _usuariosListener = null;
+
+    function cargarUsuariosAdmin() {
+        if (!isUserAdmin) return;
+        if (_usuariosListener) return; // ya está escuchando, no duplicar
+        _usuariosListener = db.ref('usuarios_registrados').on('value', snap => {
             listadoUsuarios = [];
-            if(snap.val()) {
-                listadoUsuarios = Object.keys(snap.val()).map(k => ({id:k, ...snap.val()[k]}));
+            if (snap.val()) {
+                listadoUsuarios = Object.keys(snap.val()).map(k => ({id: k, ...snap.val()[k]}));
             }
-            
-            const AHORA = Date.now();
-            
-            listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus)).forEach(u => {
+            listarUsuarios(); // re-renderizar con el filtro actual
+        });
+    }
+
+    function listarUsuarios() {
+        if (!isUserAdmin) return;
+        const body = document.getElementById('userTableBody');
+        if (!body) return;
+        const bus = (document.getElementById('search-user')?.value || '').toLowerCase();
+
+        // Si aún no hay datos cargados, arrancar el listener
+        if (!_usuariosListener) { cargarUsuariosAdmin(); return; }
+        body.innerHTML = "";
+        const AHORA = Date.now();
+
+        listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus)).forEach(u => {
                 const tipoLic = u.tipoLicencia || 'prueba';
                 const expiracion = u.fechaExpiracion || null;
                 const diasRestantes = expiracion ? Math.ceil((expiracion - AHORA) / (1000*60*60*24)) : null;
@@ -7069,7 +7105,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
                 body.innerHTML += `
                     <tr>
-                        <td><b>${u.whatsapp || u.id}</b>${u.authEmail ? `<div style="font-size:10px;color:#9ca3af;">${u.authEmail}</div>` : ''}</td>
+                        <td>
+                            <b>${u.whatsapp || u.id}</b>
+                            ${u.authEmail ? `<div style="font-size:10px;color:#9ca3af;">${u.authEmail}</div>` : ''}
+                            <div style="font-size:11px;color:#9ca3af;margin-top:4px;">📅 Alta: ${u.fechaAlta ? u.fechaAlta.split(',')[0] : '—'}</div>
+                            <div style="font-size:11px;color:${u.ultimoIngreso ? '#4b5563' : '#d1d5db'};">🕐 ${u.ultimoIngreso ? tiempoRelativo(u.ultimoIngreso) : 'Sin registro aún'}</div>
+                        </td>
                         <td>${badgeHtml}</td>
                         <td>${venceHtml}</td>
                         <td class="action-btns" style="flex-wrap:wrap; gap:4px;">
@@ -7081,10 +7122,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 `;
             });
 
-            if (listadoUsuarios.length === 0) {
-                body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9ca3af; padding:20px;">No hay usuarios registrados.</td></tr>`;
-            }
-        });
+        if (listadoUsuarios.length === 0) {
+            body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#9ca3af; padding:20px;">No hay usuarios registrados.</td></tr>`;
+        }
     }
 
     // ====== MODAL GESTIÓN DE LICENCIA (ADMIN) ======
