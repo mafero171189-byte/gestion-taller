@@ -3316,21 +3316,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             document.getElementById('gesture-zone-top').style.display = 'none';
             
                         const container = document.querySelector('#app-content .container');
-            container.innerHTML = '<div style="color: #9ca3af; text-align: center; margin-top: 50px;">Cargando estado de su equipo...</div>';
+            container.innerHTML = '<div style="font-family:\'Outfit\',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;padding:50px 24px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.55);"><div style="width:42px;height:42px;border:4px solid rgba(30,77,140,0.15);border-top:4px solid #1e4d8c;border-radius:50%;animation:spin 0.85s linear infinite;margin:0 auto 20px;"></div><p style="color:#94a3b8;font-size:15px;font-weight:600;margin:0;">Cargando estado de tu equipo...</p></div>';
 
             container.style.display = 'block';
             container.style.background = 'transparent';
             container.style.boxShadow = 'none';
             container.style.padding = '0';
             container.style.width = '100%';
-            container.style.marginTop = '0';
+            container.style.borderTop = 'none';
 
-            document.body.style.backgroundColor = '#070709';
-            document.body.style.display = 'flex';
-            document.body.style.alignItems = 'center';
-            document.body.style.justifyContent = 'center';
+            document.body.style.backgroundColor = '#070c1a';
             document.body.style.minHeight = '100vh';
             document.body.style.margin = '0';
+            document.body.style.padding = '32px 16px 48px';
+            document.body.style.boxSizing = 'border-box';
 
             const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
             const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
@@ -3344,19 +3343,13 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                         if (snapArchivo.exists()) { 
                             renderVistaCliente({id: clienteId, ...snapArchivo.val()}, container); 
                         } else {
-                            container.innerHTML = `<div style="color: white; text-align: center;">Orden no encontrada o expirada</div>`;
+                            container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">🔍</div><h2 style="color:#dc2626;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Orden no encontrada</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">El enlace no corresponde a ninguna orden activa. Comunicate con el taller para más información.</p></div>`;
                         }
                     });
                 }
             })
             .catch(error => {
-                container.innerHTML = `
-                    <div style="background: #111118; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); width: 85%; max-width: 350px; color: white; border: 1px solid #1e1e2e; margin: auto;">
-                        <div style="font-size: 45px; margin-bottom: 10px;">🔍</div>
-                        <h2 style="color: #f59e0b; margin-top:0; margin-bottom: 15px;">Orden no disponible</h2>
-                        <p style="color: #9ca3af; font-size: 14px; line-height: 1.5;">El ticket que intentas buscar no existe, el enlace ha expirado o el equipo ya fue entregado.</p>
-                        <p style="font-size: 12px; color: #6b7280; margin-top: 25px;">Por favor, comunícate con el taller para más información.</p>
-                    </div>`;
+                container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">⚠️</div><h2 style="color:#d97706;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">No se pudo cargar la orden</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">Hubo un problema al conectarse. Por favor, intentá de nuevo o comunicate con el taller.</p></div>`;
             });
             return; 
         }
@@ -3368,11 +3361,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function renderVistaCliente(regEncontrado, container) {
         if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
-            container.innerHTML = `
-                <div style="background: #111118; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); width: 85%; max-width: 350px; color: white; border: 1px solid #1e1e2e; margin: auto;">
-                    <h2 style="color: #ef4444; margin-bottom: 15px;">Enlace Expirado</h2>
-                    <p style="color: #9ca3af; line-height: 1.5;">Esta orden ya fue entregada y el seguimiento no está disponible.</p>
-                </div>`;
+            container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">📦</div><h2 style="color:#6b7280;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Equipo Entregado</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">Este equipo ya fue entregado. El seguimiento de esta orden no está disponible.</p></div>`;
             return;
         }
 
@@ -3390,34 +3379,122 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     function generarHTMLCliente(regEncontrado, container, conf) {
         const nombreTaller = conf.nombreTaller || "Servicio Técnico";
         const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
-        const logoHtml = conf.logo ? `<img src="${conf.logo}" style="max-height: 60px; max-width: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px;">` : '';
+        const logoHtml = conf.logo
+            ? `<img src="${conf.logo}" style="max-height:55px;max-width:160px;object-fit:contain;margin-bottom:14px;border-radius:8px;display:block;margin-left:auto;margin-right:auto;">`
+            : '';
 
-        let colorEstado = '#f59e0b'; 
-        if (regEncontrado.estado === 'Reparado') colorEstado = '#059669';
-        if (regEncontrado.estado === 'No reparado') colorEstado = '#dc2626';
-        if (regEncontrado.estado === 'Entregado') colorEstado = '#9ca3af';
+        const statusMap = {
+            'Ingresado':          { color:'#2563eb', bg:'#eff6ff', icon:'🔵' },
+            'En revisión':        { color:'#d97706', bg:'#fffbeb', icon:'🔧' },
+            'Esperando repuesto': { color:'#7c3aed', bg:'#f5f3ff', icon:'⏳' },
+            'Presupuestado':      { color:'#0891b2', bg:'#ecfeff', icon:'💬' },
+            'Reparado':           { color:'#059669', bg:'#ecfdf5', icon:'✅' },
+            'No reparado':        { color:'#dc2626', bg:'#fef2f2', icon:'❌' },
+            'Entregado':          { color:'#6b7280', bg:'#f9fafb', icon:'📦' },
+        };
+        const st = statusMap[regEncontrado.estado] || { color:'#d97706', bg:'#fffbeb', icon:'🔧' };
 
-        registros = [regEncontrado]; 
+        let precioActual   = parseFloat(regEncontrado.precio) || 0;
+        let senaAbonada    = regEncontrado.senaOriginal !== undefined ? parseFloat(regEncontrado.senaOriginal) : (parseFloat(regEncontrado.sena) || 0);
+        let saldoCobrado   = parseFloat(regEncontrado.saldoCobrado) || 0;
+        let totalPagado    = senaAbonada + saldoCobrado;
+        let saldoPendiente = precioActual - totalPagado;
+
+        let equipoTexto = [regEncontrado.equipo, regEncontrado.marca, regEncontrado.modelo].filter(Boolean).join(' ');
+        if (regEncontrado.color) equipoTexto += ` · ${regEncontrado.color}`;
+
+        const row = (label, value) => (!value || value === '-') ? '' : `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:14px;line-height:1.45;">
+                <span style="color:#94a3b8;font-weight:600;white-space:nowrap;flex-shrink:0;">${label}</span>
+                <span style="color:#1e293b;font-weight:600;text-align:right;word-break:break-word;">${value}</span>
+            </div>`;
+
+        let finHtml = '';
+        if (precioActual > 0) {
+            let saldoLabel, saldoColor, saldoValor;
+            if (saldoPendiente > 0) {
+                saldoLabel = 'Saldo a pagar'; saldoColor = '#dc2626'; saldoValor = fmt.format(saldoPendiente);
+            } else {
+                saldoLabel = 'Estado de pago'; saldoColor = '#059669'; saldoValor = '✅ PAGADO';
+            }
+            finHtml = `
+            <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Información de Pago</div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    ${row('Precio total', fmt.format(precioActual))}
+                    ${totalPagado > 0 ? row('Abonado', fmt.format(totalPagado)) : ''}
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px;font-weight:800;padding-top:10px;border-top:1px solid #e8ecf0;">
+                        <span style="color:#1e293b;">${saldoLabel}</span>
+                        <span style="color:${saldoColor};">${saldoValor}</span>
+                    </div>
+                </div>
+            </div>`;
+        } else if (precioActual === 0 && totalPagado > 0) {
+            finHtml = `
+            <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:800;">
+                    <span style="color:#1e293b;">A favor</span>
+                    <span style="color:#059669;">${fmt.format(totalPagado)}</span>
+                </div>
+            </div>`;
+        }
+
+        const fallaTexto = regEncontrado.falla ? regEncontrado.falla.replace(/\s*\+\s*$/, '') : '';
+        const obsTexto   = regEncontrado.obs && regEncontrado.obs.trim() !== '-' ? regEncontrado.obs.trim() : '';
+        const obsHtml    = obsTexto ? `
+            <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;background:#fafbfc;">
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Observaciones del técnico</div>
+                <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">${obsTexto}</p>
+            </div>` : '';
+
+        registros = [regEncontrado];
 
         container.innerHTML = `
-            <div style="background: #111118; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); width: 85%; max-width: 350px; color: white; border: 1px solid #1e1e2e; margin: auto;">
-                ${logoHtml}
-                <h1 style="font-size: 22px; margin-bottom: 5px; margin-top:0; color: #1e4d8c;">${nombreTaller}</h1>
-                <p style="color: #9ca3af; font-size: 14px; margin-bottom: 30px;">${subtitulo}</p>
-                
-                <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; font-weight: bold;">Orden N°</div>
-                <div style="font-size: 32px; font-weight: bold; margin-bottom: 25px;">${regEncontrado.orden}</div>
-                
-                <div style="padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 2px solid ${colorEstado};">
-                    <div style="font-size: 11px; text-transform: uppercase; color: ${colorEstado}; font-weight: bold; letter-spacing: 1px;">Estado Actual</div>
-                    <div style="font-size: 24px; font-weight: bold; color: ${colorEstado}; margin-top: 5px;">${regEncontrado.estado.toUpperCase()}</div>
+            <div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);">
+
+                <div style="background:linear-gradient(135deg,#06122a 0%,#1a3565 100%);padding:28px 24px;text-align:center;">
+                    ${logoHtml}
+                    <h1 style="color:white;margin:0 0 5px;font-size:22px;font-weight:900;letter-spacing:-0.3px;font-family:'Outfit',sans-serif;">${nombreTaller}</h1>
+                    <p style="color:rgba(255,255,255,0.6);margin:0;font-size:13px;font-weight:500;">${subtitulo}</p>
                 </div>
 
-                <div style="margin-top:20px;">
-                    <button onclick="descargarPDFCliente()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);">📄 DESCARGAR TICKET PDF</button>
+                <div style="background:#f8fafc;padding:18px 24px;border-bottom:1px solid #e8ecf0;text-align:center;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Orden de Servicio</div>
+                    <div style="font-size:38px;font-weight:900;color:#06122a;letter-spacing:-1px;line-height:1.1;">#${regEncontrado.orden}</div>
                 </div>
 
-                <div style="margin-top:25px; font-size:12px; color:#6b7280; cursor:pointer;" onclick="abrirFotos('${regEncontrado.id}')">Gracias!</div>
+                <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Estado Actual</div>
+                    <div style="display:inline-flex;align-items:center;gap:10px;background:${st.bg};border:2px solid ${st.color};border-radius:50px;padding:10px 22px;">
+                        <span style="font-size:20px;">${st.icon}</span>
+                        <span style="font-size:15px;font-weight:900;color:${st.color};letter-spacing:0.5px;">${regEncontrado.estado.toUpperCase()}</span>
+                    </div>
+                </div>
+
+                <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Detalle</div>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        ${row('Cliente', regEncontrado.cliente)}
+                        ${equipoTexto ? row('Equipo', equipoTexto) : ''}
+                        ${regEncontrado.imei && regEncontrado.imei !== '-' ? row('IMEI / Serie', regEncontrado.imei) : ''}
+                        ${fallaTexto ? row('Falla reportada', fallaTexto) : ''}
+                        ${row('Fecha de ingreso', regEncontrado.fecha ? regEncontrado.fecha.split(',')[0] : '')}
+                    </div>
+                </div>
+
+                ${finHtml}
+                ${obsHtml}
+
+                <div style="padding:20px 24px;">
+                    <button onclick="descargarPDFCliente()" style="width:100%;background:linear-gradient(135deg,#1e4d8c,#0e2a5e);color:white;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(30,77,140,0.35);font-family:'Outfit',sans-serif;letter-spacing:0.2px;">
+                        📄 Descargar Ticket PDF
+                    </button>
+                </div>
+
+                <div style="padding:12px 24px 20px;text-align:center;background:#f8fafc;border-top:1px solid #e8ecf0;">
+                    <p style="margin:0;font-size:12px;color:#94a3b8;">Ante cualquier consulta, comunicate con el taller</p>
+                </div>
+
             </div>`;
     }
 
