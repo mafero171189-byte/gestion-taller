@@ -543,6 +543,18 @@
         body.dark-mode .dial-option:hover, body.dark-mode .dial-option.active { background: #374151; color: #93c5fd; }
         body.dark-mode .dial-code-num { color: #6b7280; }
         body.dark-mode .dial-sep { background: #111827; color: #6b7280; border-color: #374151; }
+
+        /* Ocultar menús si estamos en modo cliente */
+        body.client-mode nav, 
+        body.client-mode #gesture-zone-top,
+        body.client-mode #trial-banner,
+        body.client-mode #global-announcement {
+            display: none !important;
+        }
+        /* Ajuste visual para que la tarjeta de cliente no se pegue al techo */
+        body.client-mode #app-content .container {
+            margin-top: 20px !important;
+        }
     </style>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@700;800&amp;display=swap" rel="stylesheet">
   <!-- LANDING PAGE STYLES (scoped) -->
@@ -3293,10 +3305,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (clienteId && tecnicoUser) {
             isClientMode = true;
             currentUser = tecnicoUser;
-            
+
+            // AGREGAR CLASE DE BLOQUEO CSS
+            document.body.classList.add('client-mode');
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            document.querySelector('nav').style.display = 'none';
+
+            // Estas líneas ahora son redundantes por el CSS, pero conviene dejarlas
+            document.querySelectorAll('nav').forEach(n => n.style.display = 'none');
             document.getElementById('gesture-zone-top').style.display = 'none';
             
                         const container = document.querySelector('#app-content .container');
