@@ -1900,9 +1900,15 @@ function showApp() {
       <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
      </div>
      <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
-     <div style="display:flex; gap:10px; margin-top:20px;">
-      <button onclick="procesarReparado(false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ / AVISAR</button>
-      <button onclick="procesarReparado(true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR Y AVISAR</button>
+     <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+      <div style="display:flex; gap:10px;">
+       <button onclick="procesarReparado(false, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (SOLO GUARDAR)</button>
+       <button onclick="procesarReparado(false, true)" style="flex:1; padding:10px; border-radius:8px; border:2px solid #25D366; background:white; color:#16a34a; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (Y AVISAR)</button>
+      </div>
+      <div style="display:flex; gap:10px;">
+       <button onclick="procesarReparado(true, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#d1fae5; color:#065f46; font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR (SOLO GUARDAR)</button>
+       <button onclick="procesarReparado(true, true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR (Y AVISAR)</button>
+      </div>
      </div>
      <button onclick="cerrarModalStock()" style="margin-top:15px; border:none; background:none; color:#6b7280; cursor:pointer; font-size:12px; text-decoration: underline;">Cancelar y volver</button>
     </div>
@@ -4843,7 +4849,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         renderRepuestosModal();
     }
 
-    function procesarReparado(descontar) {
+    function procesarReparado(descontar, avisar = true) {
         let repuestosParaGuardar = null;
 
         if(descontar && repuestosSeleccionadosModal.length > 0) {
@@ -4857,13 +4863,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             });
             repuestosParaGuardar = repuestosSeleccionadosModal;
         } else if (descontar && repuestosSeleccionadosModal.length === 0) {
-            showToast("⚠️ Agregá un repuesto o tocá 'NO USÉ'", "#f59e0b");
+            showToast("⚠️ Agregá un repuesto o tocá las opciones de 'NO USÉ'", "#f59e0b");
             return;
         }
 
         cerrarModalStock();
         ejecutarCambioEstado('Reparado', repuestosParaGuardar);
-        enviarWhatsAppReparado(idParaEstado);
+        
+        // Si el botón que se presionó indica que sí hay que avisar, abre WhatsApp
+        if (avisar) {
+            enviarWhatsAppReparado(idParaEstado);
+        }
     }
 
     function enviarWhatsAppReparado(id) {
@@ -8112,10 +8122,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     // 3. Lógica del banner
     const esCelular = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
     let eventoInstalacion = null;
+    const esLinkSeguimiento = window.location.search.includes('id=') && window.location.search.includes('u=');
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         eventoInstalacion = e;
-        if (esCelular && !localStorage.getItem('pwa_descartado')) {
+        if (esCelular && !localStorage.getItem('pwa_descartado') && !esLinkSeguimiento) {
             bannerInstalar.style.display = 'flex';
         }
     });
