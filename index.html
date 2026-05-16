@@ -180,6 +180,7 @@
         .st-reparado { background: #d1fae5; color: #065f46; }
         .st-no-reparado { background: #fee2e2; color: #991b1b; }
         .st-entregado { background: #f3f4f6; color: #6b7280; }
+        .st-entregado-sin-cobrar { background: #fff7ed; color: #c2410c; border: 1.5px dashed #fb923c; animation: pulseAlerta 2s infinite; }
         .st-garantia, .st-garantía { background: #ede9fe; color: #5b21b6; }
 
         .btn { padding: 12px; border: none; border-radius: 9px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background-color 0.2s, transform 0.1s; font-family: 'Outfit', sans-serif; }
@@ -299,6 +300,7 @@
         body.dark-mode .badge-status.st-reparado { background-color: #052e16 !important; color: #86efac !important; }
         body.dark-mode .badge-status.st-no-reparado { background-color: #450a0a !important; color: #fca5a5 !important; }
         body.dark-mode .badge-status.st-entregado { background-color: #111830 !important; color: #9ca3af !important; }
+        body.dark-mode .badge-status.st-entregado-sin-cobrar { background-color: #431407 !important; color: #fb923c !important; border-color: #c2410c !important; }
         
         body.dark-mode .badge-metodo.bm-efectivo { background-color: #052e16 !important; color: #86efac !important; }
         body.dark-mode .badge-metodo.bm-transferencia { background-color: #0c1a4d !important; color: #93c5fd !important; }
@@ -1954,9 +1956,12 @@ function showApp() {
       </select>
      </div>
      
-     <div style="display:flex; gap:10px;">
-      <button onclick="document.getElementById('modalCobroEntregado').style.display='none'" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
+     <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button onclick="document.getElementById('modalCobroEntregado').style.display='none'; window._modoCobroDeuda=false;" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
       <button id="btnConfirmarEntrega" onclick="procesarCobroEntregado()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">COBRAR Y ENTREGAR</button>
+      <div id="btnEntregarSinCobrarContainer" style="display:none; flex-basis:100%;">
+       <button onclick="procesarEntregaSinCobrar()" style="width:100%; padding:10px; border-radius:8px; border:none; background:#f59e0b; color:white; font-weight:bold; cursor:pointer; font-family:'Outfit',sans-serif;">⚠️ ENTREGAR SIN COBRAR</button>
+      </div>
      </div>
     </div>
    </div>
@@ -4974,6 +4979,35 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         // -------------------------------------------------------
 
         mostrarLoader("Registrando entrega...");
+
+        // Modo "cobrar deuda": la orden ya fue entregada sin cobrar, ahora se registra el pago y se archiva
+        if (window._modoCobroDeuda) {
+            window._modoCobroDeuda = false;
+            updates.entregadoSinCobrar = false;
+            
+            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            const pathArchivadoDeuda = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            
+            db.ref(pathActivo).child(idParaEstado).update(updates).then(() => {
+                Object.assign(r, updates);
+                document.getElementById('modalCobroEntregado').style.display = 'none';
+                // Ahora archivar: mover al nodo archivado
+                r.archivado = true;
+                let copia = {...r};
+                delete copia.id;
+                return db.ref(pathArchivadoDeuda).child(idParaEstado).set(copia).then(() => {
+                    return db.ref(pathActivo).child(idParaEstado).remove();
+                }).then(() => {
+                    registros = registros.filter(x => x.id !== idParaEstado);
+                    if (historialDescargado) registrosArchivados.push({id: idParaEstado, ...copia});
+                    renderTable();
+                    ocultarLoader();
+                    showToast("💰 COBRO REGISTRADO — GUARDADO EN HISTORIAL ✅", "#059669");
+                });
+            });
+            return;
+        }
+
         db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
             Object.assign(r, updates);
             document.getElementById('modalCobroEntregado').style.display = 'none';
@@ -4981,6 +5015,70 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             ejecutarCambioEstado('Entregado');
         });
     }
+
+    // ── ENTREGAR SIN COBRAR ──────────────────────────────────────────────────
+    function procesarEntregaSinCobrar() {
+        const r = getRegistro(idParaEstado);
+        if(!r) return;
+        const selGar = document.getElementById('selectGarantia');
+        const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
+        
+        const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
+        let historialActual = r.historialEstados || [];
+        historialActual.push({ estado: 'Entregado', fecha: fechaActual });
+        
+        let updates = {
+            estado: 'Entregado',
+            entregadoSinCobrar: true,
+            historialEstados: historialActual
+        };
+        if (r.senaOriginal === undefined) updates.senaOriginal = parseFloat(r.sena) || 0;
+        if (diasGarantia > 0) {
+            let hoy = new Date();
+            hoy.setDate(hoy.getDate() + diasGarantia);
+            updates.vencimientoGarantia = hoy.toLocaleDateString('es-AR');
+        } else {
+            updates.vencimientoGarantia = "";
+        }
+        // Queda en nodo activo (NO se archiva)
+        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        mostrarLoader("Registrando entrega...");
+        db.ref(pathActivo).child(idParaEstado).update(updates).then(() => {
+            Object.assign(r, updates);
+            document.getElementById('modalCobroEntregado').style.display = 'none';
+            renderTable();
+            ocultarLoader();
+            showToast("📦 ENTREGADO — DEUDA PENDIENTE ⚠️", "#f59e0b");
+        });
+    }
+
+    // ── COBRAR DEUDA DE ORDEN YA ENTREGADA ──────────────────────────────────
+    function cobrarDeudaPendiente(id) {
+        idParaEstado = id;
+        const r = getRegistro(id);
+        if(!r) return;
+        let precio = parseFloat(r.precio) || 0;
+        let sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        let saldo = precio - sena;
+        
+        window._modoCobroDeuda = true;
+        
+        document.getElementById('tituloCobroEntregado').innerText = "💰 Registrar Cobro de Deuda";
+        document.getElementById('cobroSaldoContainer').style.display = 'block';
+        document.getElementById('cobroSaldoMonto').innerText = saldo > 0 ? `${fmt.format(saldo)} (deuda pendiente)` : "— (cotizar)";
+        document.getElementById('cobroCotizarContainer').style.display = precio === 0 ? 'block' : 'none';
+        document.getElementById('metodoCobroContainer').style.display = 'block';
+        document.getElementById('cobroAvisoSaldo').style.display = 'none';
+        document.getElementById('metodoCobroFinal').selectedIndex = 0;
+        document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ARCHIVAR";
+        document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
+        
+        const selGar = document.getElementById('selectGarantia');
+        if(selGar) selGar.value = r.vencimientoGarantia ? "0" : "0";
+        
+        document.getElementById('modalCobroEntregado').style.display = 'flex';
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     let idEditando = null;
     let modoArchivo = false;
@@ -5069,6 +5167,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 document.getElementById('cobroAvisoSaldo').style.display = 'none'; 
                 document.getElementById('metodoCobroFinal').selectedIndex = 0;
                 document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ENTREGAR";
+                document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
+                window._modoCobroDeuda = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 setTimeout(() => document.getElementById('cobroPrecioFinal').focus(), 100);
                 return;
@@ -5082,6 +5182,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 document.getElementById('cobroAvisoSaldo').style.display = 'block';
                 document.getElementById('metodoCobroFinal').selectedIndex = 0;
                 document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ENTREGAR";
+                document.getElementById('btnEntregarSinCobrarContainer').style.display = 'block';
+                window._modoCobroDeuda = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             } else {
@@ -5093,6 +5195,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 
                 document.getElementById('metodoCobroContainer').style.display = 'none';
                 document.getElementById('btnConfirmarEntrega').innerText = "ENTREGAR EQUIPO";
+                document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
+                window._modoCobroDeuda = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             }
@@ -5402,7 +5506,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
             
             let estadoPagoHTML = "";
-            if (r.archivado && r.estado === 'Entregado') {
+            if (r.entregadoSinCobrar && !r.archivado) {
+                // Entregado pero sin cobrar — orden activa con deuda pendiente
+                let saldo = precioActual > 0 ? precioActual - (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0) : 0;
+                estadoPagoHTML = `<div style="font-size:11px; line-height:1.5;">
+                    <span style="color:#c2410c; font-weight:800;">⚠️ DEUDA: ${saldo > 0 ? fmt.format(saldo) : 'A COTIZAR'}</span><br>
+                    <button onclick="cobrarDeudaPendiente('${r.id}')" style="margin-top:3px; background:#059669; color:white; border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">💰 COBRAR</button>
+                </div>`;
+            } else if (r.archivado && r.estado === 'Entregado') {
                 let sVal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
                 let bVal = parseFloat(r.saldoCobrado) || 0;
                 let detalle = [];
@@ -5435,7 +5546,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     ${escaparHTML(equipoCompleto)} ${badgeVentaRapida}${badgeHistorial}<br>
                     <span style="font-size:11px; color:#6b7280; font-style:italic;">🛠️ ${escaparHTML(fallaLimpia)}</span>
                 </td>
-                <td><span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" ${!r.esVentaRapida ? `onclick="openStatusModal('${r.id}')"` : ''}>${r.estado || 'Pendiente'}</span></td>
+                <td><span class="badge-status ${r.entregadoSinCobrar && !r.archivado ? 'st-entregado-sin-cobrar' : 'st-' + (r.estado || 'Pendiente').toLowerCase().replace(' ', '-')}" ${!r.esVentaRapida ? `onclick="openStatusModal('${r.id}')"` : ''}>${r.entregadoSinCobrar && !r.archivado ? '📦 Entregado s/c' : (r.estado || 'Pendiente')}</span></td>
                 <td ${(!r.esVentaRapida && !r.archivado) ? `onclick="openPriceModal('${r.id}')" style="cursor: pointer;"` : (r.archivado ? 'title="Usá el lápiz ✏️ para editar"' : '')}>
                     ${estadoPagoHTML}
                 </td>
@@ -6528,7 +6639,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
             let coincideSaldo = false;
             let estadoEntregado = null;
-            if (!r.esVentaRapida && r.historialEstados && r.saldoCobrado > 0) {
+            // Incluir órdenes con saldo cobrado O entregadas sin cobrar
+            if (!r.esVentaRapida && r.historialEstados && (r.saldoCobrado > 0 || r.entregadoSinCobrar)) {
                 // CORRECCIÓN CONTABILIDAD: Usamos el PRIMER 'Entregado' para que las garantías no muevan el ingreso de mes
                 estadoEntregado = r.historialEstados.find(e => e.estado === 'Entregado');
                 if (estadoEntregado) {
@@ -6588,7 +6700,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                         if (precioActual > 0) {
                             let cobroAnterior = parseFloat(r.saldoCobrado) || 0;
                             let s = precioActual - (senaOrig + cobroAnterior);
-                            if (s > 0 && r.estado !== 'Entregado') porCobrar += s;
+                            // Incluir también órdenes entregadas sin cobrar
+                            if (s > 0 && (r.estado !== 'Entregado' || r.entregadoSinCobrar)) porCobrar += s;
                         }
                     }
                 }
@@ -6604,6 +6717,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                         if (r.metodoPagoSaldo === 'Transferencia') ingresoTransf += cobro;
                         else if (r.metodoPagoSaldo === 'Tarjeta') ingresoTarjeta += cobro;
                         else ingresoEfectivo += cobro;
+                    } else if (r.entregadoSinCobrar) {
+                        // Entregado sin cobrar: aparece en contabilidad como deuda pendiente
+                        let precio = parseFloat(r.precio) || 0;
+                        let senaOrig2 = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+                        let deuda = precio - senaOrig2;
+                        mov.deudaPendiente = deuda > 0 ? deuda : 0;
+                        mov.fechaRaw = estadoEntregado.fecha;
+                        mov.desc.add('⚠️ Deuda Pendiente');
                     }
                 }
             }
@@ -6641,7 +6762,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 descStr: Array.from(m.desc).join(' + '),
                 metodoStr: metodoDetallado,
                 ingreso: m.ingreso, egreso: m.egreso, fechaRaw: m.fechaRaw,
-                esVentaRapida: m.esVentaRapida, equipo: m.equipo
+                esVentaRapida: m.esVentaRapida, equipo: m.equipo,
+                deudaPendiente: m.deudaPendiente || 0
             };
         });
 
@@ -6717,15 +6839,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 
                 let fechaDisplay = v.fechaRaw ? v.fechaRaw : '-';
                 
-                listHtml += `<tr class="tabla-contabilidad-row">
+                let ingresoCell = v.ingreso > 0
+                    ? `<b style="color:var(--success);">+${fmt.format(v.ingreso)}</b>`
+                    : (v.deudaPendiente > 0
+                        ? `<b style="color:#f59e0b;">⚠️ ${fmt.format(v.deudaPendiente)}</b><br><span style="font-size:10px; color:#9ca3af;">SIN COBRAR</span>`
+                        : '<span style="color:#e5e7eb;">-</span>');
+                listHtml += `<tr class="tabla-contabilidad-row" ${v.deudaPendiente > 0 ? 'style="background:#fffbeb !important;"' : ''}>
                     <td style="color:#6b7280; font-size:12px;">${fechaDisplay}</td>
                     <td><b>${ordenTxt}</b></td>
                     <td>${escaparHTML(v.cliente)}</td>
                     <td style="color:#6b7280; font-size:13px;">${v.descStr}</td>
-                    <td>${badgeMetodo}</td>
-                    <td>${v.ingreso > 0 ? `<b style="color:var(--success);">+${fmt.format(v.ingreso)}</b>` : '<span style="color:#e5e7eb;">-</span>'}</td>
+                    <td>${v.deudaPendiente > 0 ? '<span style="color:#9ca3af; font-weight:bold;">—</span>' : badgeMetodo}</td>
+                    <td>${ingresoCell}</td>
                     <td>${v.egreso > 0 ? `<b style="color:var(--danger);">-${fmt.format(v.egreso)}</b>` : '<span style="color:#e5e7eb;">-</span>'}</td>
-                    <td class="action-btns"><button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button></td>
+                    <td class="action-btns">${!v.deudaPendiente ? `<button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button>` : `<button onclick="cobrarDeudaPendiente('${v.id}')" style="background:#059669; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">💰 Cobrar</button>`}</td>
                 </tr>`;
             });
             listHtml += `</tbody></table></div>`;
