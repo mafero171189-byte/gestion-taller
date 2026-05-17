@@ -201,6 +201,24 @@
         .modo-archivo-activo { background: #f7f8fc !important; }
         .btn-active-filter { border: 2px solid #1e4d8c !important; box-shadow: 0 0 12px rgba(45,58,140,0.35); }
 
+        /* DROPDOWN FILTRO VISTA */
+        .dropdown-filtro { position: relative; display: inline-block; }
+        .btn-dropdown-filtro { background: #f59e0b; color: #856404; font-size: 12px; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 800; }
+        .btn-dropdown-filtro .chevron { font-size: 10px; transition: transform 0.2s; }
+        .btn-dropdown-filtro.open .chevron { transform: rotate(180deg); }
+        .dropdown-filtro-menu { position: absolute; top: calc(100% + 6px); right: 0; background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 999; min-width: 230px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .dropdown-filtro-item { padding: 12px 16px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; color: #374151; font-family: 'Outfit', sans-serif; }
+        .dropdown-filtro-item:hover { background: #f3f4f6; }
+        .dropdown-filtro-item.active { background: #fef3c7; color: #92400e; }
+        .dropdown-filtro-item.active-cobro { background: #fee2e2; color: #991b1b; }
+        .dropdown-filtro-item.active-historial { background: #f3f4f6; color: #374151; }
+        .dark-mode .dropdown-filtro-menu { background: #1e2537; border-color: #2d3748; }
+        .dark-mode .dropdown-filtro-item { color: #e2e8f0; }
+        .dark-mode .dropdown-filtro-item:hover { background: #2d3748; }
+        .dark-mode .dropdown-filtro-item.active { background: #44321a; color: #fbbf24; }
+        .dark-mode .dropdown-filtro-item.active-cobro { background: #4a1a1a; color: #fca5a5; }
+        .dark-mode .dropdown-filtro-item.active-historial { background: #2d3748; color: #e2e8f0; }
+
         .thumb-container { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .thumb-preview { width: 50px; height: 50px; border-radius: 5px; object-fit: cover; border: 1px solid #ddd; }
 
@@ -2293,8 +2311,16 @@ function showApp() {
      <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
       <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid #e5e7eb; min-width: 200px;">
       <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
-      <button class="btn" style="background:#f59e0b; color:#856404; font-size:12px;" onclick="togglePendientes()" id="btnPendientes">⏳ PENDIENTES</button>
-      <button class="btn" style="background:#6b7280; color:white; font-size:12px;" onclick="toggleArchivo()" id="btnArchivo">📁 HISTORIAL DE REPARACIONES Y VENTAS</button>
+      <div class="dropdown-filtro" id="dropdownFiltro">
+       <button class="btn btn-dropdown-filtro" id="btnFiltroVista" onclick="toggleDropdownFiltro()">
+        <span id="btnFiltroLabel">⏳ PENDIENTES</span><span class="chevron">▾</span>
+       </button>
+       <div class="dropdown-filtro-menu" id="dropdownFiltroMenu" style="display:none;">
+        <div class="dropdown-filtro-item active" id="filtroItemPendientes" onclick="setModoVista('pendientes')">⏳ Pendientes</div>
+        <div class="dropdown-filtro-item" id="filtroItemCobro" onclick="setModoVista('cobro')">💰 Pendiente de Cobro</div>
+        <div class="dropdown-filtro-item" id="filtroItemHistorial" onclick="setModoVista('historial')">📁 Hist. de Reparaciones y Ventas</div>
+       </div>
+      </div>
       <button class="btn btn-alerta-amarilla" id="btnAlertaAmarilla" onclick="abrirModalOlvidados()" style="display: none;">⚠️ 0 Equipos Olvidados</button>
      </div>
      <div class="table-wrapper" style="overflow-x:auto;">
@@ -5083,6 +5109,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     let idEditando = null;
     let modoArchivo = false;
     let modoPendientes = true; // Iniciamos mostrando solo las pendientes
+    let modoCobro = false;
     let idParaEstado = null;
     let idParaPrecio = null;
     let idParaBorrar = null;
@@ -5405,6 +5432,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             limiteTabla = 50;
             if (bus.length === 0) {
                 modoArchivo = false;
+                modoCobro = false;
                 renderTable();
                 return;
             }
@@ -5432,8 +5460,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const bus = document.getElementById('search').value.toLowerCase();
         const body = document.getElementById('tableBody');
         const table = document.getElementById('mainTable');
-        const btnArch = document.getElementById('btnArchivo');
-        const btnPend = document.getElementById('btnPendientes');
 
         body.innerHTML = "";
         
@@ -5445,24 +5471,35 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             listaBase = registros;
         }
 
-        if(modoArchivo) { 
-            table.classList.add('modo-archivo-activo'); 
-            btnArch.classList.add('btn-active-filter');
-            btnArch.innerHTML = "📁 HIST. DE REPARACIONES Y VENTAS ✅";
-        } else { 
-            table.classList.remove('modo-archivo-activo'); 
-            btnArch.classList.remove('btn-active-filter');
-            btnArch.innerHTML = "📁 HIST. DE REPARACIONES Y VENTAS";
-        }
+        const btnFiltro = document.getElementById('btnFiltroVista');
+        const btnLabel = document.getElementById('btnFiltroLabel');
+        const itemPend = document.getElementById('filtroItemPendientes');
+        const itemCobro = document.getElementById('filtroItemCobro');
+        const itemHist = document.getElementById('filtroItemHistorial');
 
-        const cantPendientes = registros.filter(r => !r.archivado && r.estado === 'Pendiente').length;
-        const labelPend = cantPendientes > 0 ? `⏳ PENDIENTES <span style="background:white; color:#856404; border-radius:50%; padding:1px 7px; font-size:12px; font-weight:900;">${cantPendientes}</span>` : "⏳ PENDIENTES";
-        if(modoPendientes) {
-            btnPend.classList.add('btn-active-filter');
-            btnPend.innerHTML = labelPend + " ✅";
+        if (modoArchivo) { 
+            table.classList.add('modo-archivo-activo'); 
+            if (btnFiltro) { btnFiltro.style.background='#6b7280'; btnFiltro.style.color='white'; }
+            if (btnLabel) btnLabel.textContent = '📁 HIST. REPARACIONES Y VENTAS';
+            if (itemPend) { itemPend.className='dropdown-filtro-item'; }
+            if (itemCobro) { itemCobro.className='dropdown-filtro-item'; }
+            if (itemHist) { itemHist.className='dropdown-filtro-item active-historial'; }
+        } else if (modoCobro) {
+            table.classList.remove('modo-archivo-activo');
+            if (btnFiltro) { btnFiltro.style.background='#ef4444'; btnFiltro.style.color='white'; }
+            if (btnLabel) btnLabel.textContent = '💰 PENDIENTE DE COBRO';
+            if (itemPend) { itemPend.className='dropdown-filtro-item'; }
+            if (itemCobro) { itemCobro.className='dropdown-filtro-item active-cobro'; }
+            if (itemHist) { itemHist.className='dropdown-filtro-item'; }
         } else {
-            btnPend.classList.remove('btn-active-filter');
-            btnPend.innerHTML = labelPend;
+            table.classList.remove('modo-archivo-activo'); 
+            const cantPendientes = registros.filter(r => !r.archivado && r.estado === 'Pendiente').length;
+            const labelTxt = cantPendientes > 0 ? `⏳ PENDIENTES (${cantPendientes})` : '⏳ PENDIENTES';
+            if (btnFiltro) { btnFiltro.style.background='#f59e0b'; btnFiltro.style.color='#856404'; }
+            if (btnLabel) btnLabel.textContent = modoPendientes ? labelTxt : '👀 TODOS';
+            if (itemPend) { itemPend.className = modoPendientes ? 'dropdown-filtro-item active' : 'dropdown-filtro-item'; }
+            if (itemCobro) { itemCobro.className='dropdown-filtro-item'; }
+            if (itemHist) { itemHist.className='dropdown-filtro-item'; }
         }
 
         let listaFinal = listaBase;
@@ -5480,6 +5517,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             if (bus.length === 0 && !modoArchivo && r.archivado) matchFiltro = false; 
             if (bus.length === 0 && modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
             if (bus.length === 0 && !modoArchivo && r.esVentaRapida) matchFiltro = false;
+            if (bus.length === 0 && modoCobro && !(r.entregadoSinCobrar === true && !r.archivado)) matchFiltro = false;
 
             return matchBusqueda && matchFiltro;
         });
@@ -5648,43 +5686,72 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         setTimeout(() => { document.getElementById('costo-inner').style.display = "none"; }, 200);
     }
 
-    function togglePendientes() {
-        modoPendientes = !modoPendientes;
-        limiteTabla = 50; 
-        if(modoPendientes) { modoArchivo = false; showToast("FILTRANDO PENDIENTES ⏳", "#f59e0b"); }
-        else { showToast("MOSTRANDO TODOS 👀", "#1e4d8c"); }
-        renderTable();
+    function toggleDropdownFiltro() {
+        const menu = document.getElementById('dropdownFiltroMenu');
+        const btn = document.getElementById('btnFiltroVista');
+        const isOpen = menu.style.display !== 'none';
+        menu.style.display = isOpen ? 'none' : 'block';
+        if (btn) btn.classList.toggle('open', !isOpen);
     }
 
-    function toggleArchivo() { 
-        modoArchivo = !modoArchivo; 
-        limiteTabla = 50; 
-        if(modoArchivo) { 
-            modoPendientes = false; 
-            
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', function(e) {
+        const dd = document.getElementById('dropdownFiltro');
+        if (dd && !dd.contains(e.target)) {
+            const menu = document.getElementById('dropdownFiltroMenu');
+            const btn = document.getElementById('btnFiltroVista');
+            if (menu) menu.style.display = 'none';
+            if (btn) btn.classList.remove('open');
+        }
+    });
+
+    function setModoVista(modo) {
+        // Cerrar dropdown
+        const menu = document.getElementById('dropdownFiltroMenu');
+        const btn = document.getElementById('btnFiltroVista');
+        if (menu) menu.style.display = 'none';
+        if (btn) btn.classList.remove('open');
+
+        limiteTabla = 50;
+
+        if (modo === 'pendientes') {
+            modoPendientes = true;
+            modoArchivo = false;
+            modoCobro = false;
+            showToast("FILTRANDO PENDIENTES ⏳", "#f59e0b");
+            renderTable();
+        } else if (modo === 'cobro') {
+            modoCobro = true;
+            modoPendientes = false;
+            modoArchivo = false;
+            showToast("PENDIENTE DE COBRO 💰", "#ef4444");
+            renderTable();
+        } else if (modo === 'historial') {
+            modoArchivo = true;
+            modoPendientes = false;
+            modoCobro = false;
             if (historialDescargado) {
                 showToast("MOSTRANDO HISTORIAL 📁", "#6b7280");
                 renderTable();
-                return; 
+                return;
             }
-
-            mostrarLoader("Descargando Historial..."); 
+            mostrarLoader("Descargando Historial...");
             const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
             db.ref(pathArchivado).once('value').then(snap => {
                 const v = snap.val();
                 registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                historialDescargado = true; 
+                historialDescargado = true;
                 actualizarListasAutocompletado();
                 ocultarLoader();
                 showToast("HISTORIAL CARGADO 📁", "#6b7280");
-                renderTable(); 
+                renderTable();
             });
         }
-        else { 
-            showToast("MOSTRANDO ACTIVOS 🔙", "#1e4d8c"); 
-            renderTable(); 
-        }
     }
+
+    // Mantener compatibilidad con código antiguo que llame a estas funciones
+    function togglePendientes() { setModoVista(modoPendientes ? 'todos' : 'pendientes'); }
+    function toggleArchivo() { setModoVista(modoArchivo ? 'pendientes' : 'historial'); }
     
     function archivar(id) { 
         const r = getRegistro(id);
@@ -5956,6 +6023,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         function postGuardado() {
             modoArchivo = false;
             modoPendientes = false;
+            modoCobro = false;
             limiteTabla = 50; 
             if (document.getElementById('search')) document.getElementById('search').value = "";
             
