@@ -3440,10 +3440,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         };
         const st = statusMap[regEncontrado.estado] || { color:'#d97706', bg:'#fffbeb', icon:'🔧' };
 
-        let precioActual   = parseFloat(regEncontrado.precio) || 0;
-        let senaAbonada    = regEncontrado.senaOriginal !== undefined ? parseFloat(regEncontrado.senaOriginal) : (parseFloat(regEncontrado.sena) || 0);
-        let saldoCobrado   = parseFloat(regEncontrado.saldoCobrado) || 0;
-        let totalPagado    = senaAbonada + saldoCobrado;
+        // CORRECCIÓN: Cálculo de saldo sincronizado
+        const parseSeguro = (val) => val ? Number(String(val).replace(/\D/g, '')) || 0 : 0;
+        
+        let precioActual = parseSeguro(regEncontrado.precio);
+        let totalPagado = 0;
+        
+        if (regEncontrado.estado === 'Entregado') {
+            let senaAbonada = regEncontrado.senaOriginal !== undefined ? parseSeguro(regEncontrado.senaOriginal) : parseSeguro(regEncontrado.sena);
+            let saldoCobrado = parseSeguro(regEncontrado.saldoCobrado);
+            totalPagado = senaAbonada + saldoCobrado;
+        } else {
+            totalPagado = parseSeguro(regEncontrado.sena);
+        }
+        
         let saldoPendiente = precioActual - totalPagado;
 
         let equipoTexto = [regEncontrado.equipo, regEncontrado.marca, regEncontrado.modelo].filter(Boolean).join(' ');
@@ -3635,10 +3645,18 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         printRow("FALLA:", linesFalla); 
         printRow("OBS:", linesObs);
         
+        // CORRECCIÓN: Cálculo de saldo sincronizado
         let precioActual = parseFloat(r.precio) || 0;
-        let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
-        let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
-        let totalPagado = senaAbonada + saldoCobrado;
+        let totalPagado = 0;
+        
+        if (r.estado === 'Entregado') {
+            let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
+            let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+            totalPagado = senaAbonada + saldoCobrado;
+        } else {
+            totalPagado = parseFloat(r.sena) || 0;
+        }
+        
         let saldoPendiente = precioActual - totalPagado;
 
         y += 3; doc.line(10, y, 70, y); y += 10;
@@ -6150,40 +6168,41 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     }
 
     function editar(id) {
-        const r = getRegistro(id); if(!r) return;
         idEditando = id;
+        const r = getRegistro(id);
+        if(!r) return;
         
         document.getElementById('nroOrden').value = r.orden;
         document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel;
         document.getElementById('equipo').value = r.equipo || "Smartphone";
         document.getElementById('marca').value = r.marca || "Samsung";
-        document.getElementById('modelo').value = r.modelo;
+        document.getElementById('modelo').value = r.modelo || "";
         document.getElementById('color').value = r.color || "";
         document.getElementById('imei').value = r.imei || "";
         document.getElementById('pin').value = r.pin || "";
-        
-        document.getElementById('precio').value = r.precio ? fmt.format(r.precio).replace('$ ', '') : "";
-        
-        let senaReal = r.senaOriginal !== undefined ? r.senaOriginal : r.sena;
-        document.getElementById('sena').value = senaReal ? fmt.format(senaReal).replace(/\D/g, '') : "";
-        
-        document.getElementById('costoRepuesto').value = r.costoRepuesto ? fmt.format(r.costoRepuesto).replace('$ ', '') : "";
-        
-        document.getElementById('metodoPago').value = r.metodoPagoSena || "A Cotizar";
-        
         document.getElementById('falla').value = r.falla || "";
         document.getElementById('obs').value = r.obs || "";
         document.getElementById('notaInterna').value = r.notaInterna || "";
+        document.getElementById('metodoPago').value = r.metodoPagoSena || "A Cotizar";
+        document.getElementById('costoRepuesto').value = r.costoRepuesto ? fmt.format(r.costoRepuesto).replace('$','').trim() : '';
+        document.getElementById('precio').value = r.precio ? fmt.format(r.precio).replace('$','').trim() : '';
         
-        document.getElementById('btnSubmit').innerText = "ACTUALIZAR DATOS";
+        // CORRECCIÓN: Usar siempre la seña actual para que al editar no se vuelva a 0
+        let senaMostrar = r.sena;
+        document.getElementById('sena').value = senaMostrar ? fmt.format(senaMostrar).replace('$','').trim() : '';
+
+        const chk = document.getElementById('checkPagoTotal');
+        if (chk) chk.checked = (parseFloat(r.precio) > 0 && parseFloat(r.precio) === parseFloat(senaMostrar));
+
+        document.getElementById('btnSubmit').innerText = "ACTUALIZAR";
         document.getElementById('btnLimpiar').innerText = "✖ CANCELAR";
         document.getElementById('btnLimpiar').style.background = "#dc2626";
-        document.getElementById('costo-inner').style.display = "none"; 
-        
+        document.getElementById('costo-inner').style.display = "none";
+
         fotosTemporales = [];
         document.getElementById('formThumbnails').innerHTML = "";
-        
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
         showToast("MODO EDICIÓN ✏️", "#f59e0b");
     }
