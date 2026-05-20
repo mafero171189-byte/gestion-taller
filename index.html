@@ -6874,8 +6874,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                         if (precioActual > 0) {
                             let cobroAnterior = parseFloat(r.saldoCobrado) || 0;
                             let s = precioActual - (senaOrig + cobroAnterior);
-                            // Incluir también órdenes entregadas sin cobrar
-                            if (s > 0 && (r.estado !== 'Entregado' || r.entregadoSinCobrar)) porCobrar += s;
+                            // Solo va a "por cobrar" si hay deuda real Y el adelanto no cubrió el total.
+                            // Así las órdenes pagadas completo al ingreso no figuran como pendientes,
+                            // aunque el estado todavía sea 'Pendiente' o 'En revisión'.
+                            const yaCubierto = (senaOrig + cobroAnterior) >= precioActual;
+                            if (s > 0 && !yaCubierto && (r.estado !== 'Entregado' || r.entregadoSinCobrar)) porCobrar += s;
                         }
                     }
                 }
