@@ -166,6 +166,17 @@
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; background: #f7f8fc; padding: 20px; border-radius: 12px; border: 1px solid #e8eaf5; margin-bottom: 25px; transition: background-color 0.3s, border-color 0.3s; }
         .full { grid-column: 1 / -1; }
+        /* Grupo Seña $ + 🔒 + Método de Pago — responsive */
+        .sena-group-row { display: flex; flex-direction: column; gap: 8px; }
+        .sena-group-top .sena-field { max-width: 50%; }
+        .sena-group-top .sena-metodo { margin-top: 10px; }
+        @media (min-width: 600px) {
+            .sena-group-row { gap: 6px; }
+            .sena-group-top { display: flex; align-items: flex-end; gap: 12px; }
+            .sena-group-top .sena-field  { flex: 1 1 120px; min-width: 0; max-width: none; }
+            .sena-group-top .sena-lock   { flex: 0 0 auto; padding-bottom: 8px; }
+            .sena-group-top .sena-metodo { flex: 2 1 160px; min-width: 0; margin-top: 0; }
+        }
         label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; transition: color 0.3s; letter-spacing: 0.4px; font-family: 'Outfit', sans-serif; }
         input, textarea, select { width: 100%; padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; box-sizing: border-box; font-size: 15px; font-family: 'Outfit', sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
         input:focus, textarea:focus, select:focus { border-color: #1e4d8c; outline: none; box-shadow: 0 0 0 3px rgba(45,58,140,0.1); }
@@ -206,14 +217,21 @@
         .btn-dropdown-filtro { background: #f59e0b; color: #856404; font-size: 12px; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 800; }
         .btn-dropdown-filtro .chevron { font-size: 10px; transition: transform 0.2s; }
         .btn-dropdown-filtro.open .chevron { transform: rotate(180deg); }
-        .dropdown-filtro-menu { position: absolute; top: calc(100% + 6px); right: 0; background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 999; min-width: 230px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .dropdown-filtro-item { padding: 12px 16px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; color: #374151; font-family: 'Outfit', sans-serif; }
+        .dropdown-filtro-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1998; }
+        .dropdown-filtro-backdrop.visible { display: block; }
+        .dropdown-filtro-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); z-index: 1999; min-width: 270px; overflow: hidden; border: 1px solid #e5e7eb; animation: filtroFadeIn 0.2s ease; }
+        @keyframes filtroFadeIn { from { opacity:0; transform: translate(-50%, -48%) scale(0.95); } to { opacity:1; transform: translate(-50%, -50%) scale(1); } }
+        .dropdown-filtro-menu.open { display: block; }
+        .dropdown-filtro-menu-title { padding: 14px 16px 10px; font-size: 11px; font-weight: 800; color: #9ca3af; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid #f3f4f6; }
+        .dropdown-filtro-item { padding: 14px 16px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; color: #374151; font-family: 'Outfit', sans-serif; border-bottom: 1px solid #f9fafb; }
+        .dropdown-filtro-item:last-child { border-bottom: none; }
         .dropdown-filtro-item:hover { background: #f3f4f6; }
         .dropdown-filtro-item.active { background: #fef3c7; color: #92400e; }
         .dropdown-filtro-item.active-cobro { background: #fee2e2; color: #991b1b; }
         .dropdown-filtro-item.active-historial { background: #f3f4f6; color: #374151; }
         .dark-mode .dropdown-filtro-menu { background: #1e2537; border-color: #2d3748; }
-        .dark-mode .dropdown-filtro-item { color: #e2e8f0; }
+        .dark-mode .dropdown-filtro-menu-title { color: #6b7280; border-color: #2d3748; }
+        .dark-mode .dropdown-filtro-item { color: #e2e8f0; border-color: #2d3748; }
         .dark-mode .dropdown-filtro-item:hover { background: #2d3748; }
         .dark-mode .dropdown-filtro-item.active { background: #44321a; color: #fbbf24; }
         .dark-mode .dropdown-filtro-item.active-cobro { background: #4a1a1a; color: #fca5a5; }
@@ -2269,22 +2287,22 @@ function showApp() {
        <div>
         <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()">
        </div>
-       <div>
-        <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
-        <div style="margin-top:5px; font-size:11px; display:flex; align-items:center; gap:5px; color:#6b7280;">
+       <div class="full sena-group-row">
+        <div class="sena-group-top">
+         <div class="sena-field">
+          <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
+         </div>
+         <div class="sena-metodo">
+          <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
+         </div>
+        </div>
+        <div style="font-size:11px; display:flex; align-items:center; gap:10px; color:#6b7280; margin-top:4px;">
          <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
+         <span id="btn-lock" style="cursor:pointer; font-size:20px; margin-left:4px;" onclick="revelarCosto()">🔒</span>
+         <div id="costo-inner" style="display:none;">
+          <label style="display:inline; margin:0;">Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
+         </div>
         </div>
-       </div>
-       <div class="full" style="display: flex; align-items: flex-end; gap: 10px;">
-        <div style="padding-bottom: 5px;">
-         <span id="btn-lock" style="cursor:pointer; font-size:24px;" onclick="revelarCosto()">🔒</span>
-        </div>
-        <div id="costo-inner" style="display:none;">
-         <label>Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
-        </div>
-       </div>
-       <div>
-        <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
        </div>
        <div class="full" style="position: relative;">
         <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#1e4d8c;">(Agregá " + " para sumar varias fallas)</span></label> <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
@@ -2316,10 +2334,12 @@ function showApp() {
       <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid #e5e7eb; min-width: 200px;">
       <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
       <div class="dropdown-filtro" id="dropdownFiltro">
+       <div class="dropdown-filtro-backdrop" id="dropdownFiltroBackdrop" onclick="toggleDropdownFiltro()"></div>
        <button class="btn btn-dropdown-filtro" id="btnFiltroVista" onclick="toggleDropdownFiltro()">
         <span id="btnFiltroLabel">👀 VER TODO</span><span class="chevron">▾</span>
        </button>
        <div class="dropdown-filtro-menu" id="dropdownFiltroMenu" style="display:none;">
+        <div class="dropdown-filtro-menu-title">📋 Ver órdenes</div>
         <div class="dropdown-filtro-item active" id="filtroItemTodos" onclick="setModoVista('todos')">👀 Ver Todo</div>
         <div class="dropdown-filtro-item" id="filtroItemPendientes" onclick="setModoVista('pendientes')">⏳ Pendientes</div>
         <div class="dropdown-filtro-item" id="filtroItemCobro" onclick="setModoVista('cobro')">💰 Pendiente de Cobro</div>
@@ -5789,19 +5809,32 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     function toggleDropdownFiltro() {
         const menu = document.getElementById('dropdownFiltroMenu');
         const btn = document.getElementById('btnFiltroVista');
-        const isOpen = menu.style.display !== 'none';
-        menu.style.display = isOpen ? 'none' : 'block';
-        if (btn) btn.classList.toggle('open', !isOpen);
+        const backdrop = document.getElementById('dropdownFiltroBackdrop');
+        const isOpen = menu.classList.contains('open');
+        if (isOpen) {
+            menu.classList.remove('open');
+            menu.style.display = 'none';
+            if (backdrop) backdrop.classList.remove('visible');
+            if (btn) btn.classList.remove('open');
+        } else {
+            menu.style.display = 'block';
+            menu.offsetHeight; // reflow para animación
+            menu.classList.add('open');
+            if (backdrop) backdrop.classList.add('visible');
+            if (btn) btn.classList.add('open');
+        }
     }
 
-    // Cerrar dropdown al hacer click fuera
+    // Cerrar al hacer click fuera (teclado / otros elementos)
     document.addEventListener('click', function(e) {
-        const dd = document.getElementById('dropdownFiltro');
-        if (dd && !dd.contains(e.target)) {
-            const menu = document.getElementById('dropdownFiltroMenu');
-            const btn = document.getElementById('btnFiltroVista');
-            if (menu) menu.style.display = 'none';
-            if (btn) btn.classList.remove('open');
+        const menu = document.getElementById('dropdownFiltroMenu');
+        const btn = document.getElementById('btnFiltroVista');
+        const backdrop = document.getElementById('dropdownFiltroBackdrop');
+        if (!menu || !btn) return;
+        if (!menu.contains(e.target) && !btn.contains(e.target) && e.target !== backdrop) {
+            menu.classList.remove('open'); menu.style.display = 'none';
+            if (backdrop) backdrop.classList.remove('visible');
+            btn.classList.remove('open');
         }
     });
 
@@ -5809,8 +5842,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         // Cerrar dropdown
         const menu = document.getElementById('dropdownFiltroMenu');
         const btn = document.getElementById('btnFiltroVista');
-        if (menu) menu.style.display = 'none';
+        const backdrop = document.getElementById('dropdownFiltroBackdrop');
+        if (menu) { menu.classList.remove('open'); menu.style.display = 'none'; }
         if (btn) btn.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('visible');
 
         limiteTabla = 50;
 
