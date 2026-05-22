@@ -593,6 +593,124 @@
         body.client-mode #app-content .container {
             margin-top: 20px !important;
         }
+
+        /* ============================================================
+           REDISEÑO MOBILE — max-width: 599px
+        ============================================================ */
+        @media (max-width: 599px) {
+            /* Grid sin fondo/borde: las secciones lo reemplazan */
+            .form-grid {
+                padding: 0; gap: 0;
+                background: transparent; border: none;
+                margin-bottom: 86px;
+            }
+
+            /* Tarjetas de sección */
+            .mobile-section {
+                background: white; border-radius: 16px;
+                margin-bottom: 10px; border: 1px solid #e8eaf5;
+                overflow: hidden; grid-column: 1 / -1;
+            }
+            body.dark-mode .mobile-section { background: #141826; border-color: #2d3748; }
+            .mobile-section-header {
+                padding: 12px 16px 10px;
+                font-size: 11px; font-weight: 800;
+                color: #1e4d8c; letter-spacing: 1px;
+                text-transform: uppercase;
+                display: flex; align-items: center; gap: 6px;
+                border-bottom: 1px solid #f0f2ff;
+            }
+            body.dark-mode .mobile-section-header { color: #7ba7e0; border-color: #2d3748; }
+            .mobile-section-body {
+                padding: 14px 16px 16px;
+                display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+            }
+            .mobile-section-body .full { grid-column: 1 / -1; }
+
+            /* Inputs más grandes y táctiles */
+            .mobile-section-body input,
+            .mobile-section-body select,
+            .mobile-section-body textarea {
+                font-size: 16px !important;
+                padding: 13px 14px !important;
+                border-radius: 10px !important;
+            }
+            .mobile-section-body label { font-size: 12px !important; margin-bottom: 6px !important; }
+
+            /* Botones de foto más grandes */
+            .mobile-section-body .btn { padding: 14px !important; font-size: 14px !important; }
+
+            /* PAGO TOTAL — toggle pill */
+            .pago-total-toggle-wrap {
+                display: flex; align-items: center; gap: 12px;
+                padding: 13px 14px; background: #f8fafc;
+                border-radius: 10px; border: 1.5px solid #e5e7eb;
+                cursor: pointer; user-select: none;
+                transition: border-color 0.2s, background 0.2s;
+            }
+            body.dark-mode .pago-total-toggle-wrap { background: #1e2537; border-color: #2d3748; }
+            .pago-total-toggle-wrap input[type="checkbox"] {
+                position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+            }
+            .toggle-pill {
+                width: 46px; height: 26px; background: #d1d5db;
+                border-radius: 13px; position: relative;
+                flex-shrink: 0; transition: background 0.25s;
+            }
+            .toggle-pill::after {
+                content: ''; width: 22px; height: 22px;
+                background: white; border-radius: 50%;
+                position: absolute; top: 2px; left: 2px;
+                transition: transform 0.25s;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+            }
+            #checkPagoTotal:checked ~ .toggle-pill { background: #059669; }
+            #checkPagoTotal:checked ~ .toggle-pill::after { transform: translateX(20px); }
+            .toggle-pill-label { font-size: 14px; font-weight: 700; color: #374151; }
+            body.dark-mode .toggle-pill-label { color: #e2e8f0; }
+
+            /* Precio + Seña como tarjeta de pago */
+            .precio-sena-row {
+                grid-column: 1 / -1;
+                display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            }
+
+            /* Barra sticky REGISTRAR */
+            #sticky-submit-bar {
+                display: flex !important;
+                position: fixed; bottom: 0; left: 0; right: 0;
+                padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+                background: white; border-top: 1px solid #e8eaf5;
+                box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+                gap: 10px; z-index: 500;
+            }
+            body.dark-mode #sticky-submit-bar { background: #141826; border-color: #2d3748; }
+            #sticky-submit-bar .btn-main { flex: 2; font-size: 15px; padding: 15px; }
+            #sticky-submit-bar .btn-limpiar { flex: 1; font-size: 14px; padding: 15px; background: #94a3b8; color: white; }
+
+            /* Ocultar botones originales en mobile */
+            .form-submit-original { display: none !important; }
+
+            /* Sena group en mobile dentro de la sección */
+            .sena-group-row { gap: 0; }
+            .sena-group-top { gap: 0; }
+            .sena-group-top .sena-field { max-width: 100%; }
+            .sena-group-top .sena-metodo { margin-top: 14px; }
+
+            /* Stock: mantener padding y gap propios */
+            #stock-form-grid {
+                padding: 16px !important;
+                gap: 16px !important;
+                background: #f7f8fc !important;
+                border: 1px solid #e8eaf5 !important;
+                border-radius: 12px !important;
+                margin-bottom: 20px !important;
+            }
+            #stock-form-grid input, #stock-form-grid select {
+                font-size: 16px !important;
+                padding: 13px 14px !important;
+            }
+        }
     </style>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@700;800&amp;display=swap" rel="stylesheet">
   <!-- LANDING PAGE STYLES (scoped) -->
@@ -2254,82 +2372,136 @@ function showApp() {
     <div id="page-gestion" class="page active" style="display:block;">
      <form id="repairForm">
       <div class="form-grid">
-       <div>
-        <label>N° Orden</label><input type="text" id="nroOrden" readonly>
-       </div>
-       <div>
-        <label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()">
-       </div>
-       <div>
-        <label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()">
-       </div>
-       <div>
-        <label>Equipo</label> <select id="equipo" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;"> <option value="Smartphone">📱 Smartphone</option> <option value="Tablet">📳 Tablet</option> <option value="PC/Notebook">💻 PC/Notebook</option> <option value="Consola">🎮 Consola</option> <option value="Otro">🔧 Otro</option> </select>
-       </div>
-       <div>
-        <label>Marca</label> <select id="marca" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;"> <option value="Samsung">Samsung</option> <option value="Apple">Apple</option> <option value="Motorola">Motorola</option> <option value="Xiaomi">Xiaomi</option> <option value="Huawei">Huawei</option> <option value="Oppo">Oppo</option> <option value="Otra">Otra</option> </select>
-       </div>
-       <div>
-        <label>Modelo</label> <input type="text" id="modelo" required oninput="saveDraft()" autocomplete="off" placeholder="Escribe el modelo...">
-       </div>
-       <div>
-        <label>Color</label><input type="text" id="color" oninput="saveDraft()">
-       </div>
-       <div>
-        <label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()">
-       </div>
-       <div style="display:flex; align-items:flex-start; gap:5px;">
-        <div style="flex:1;">
-         <label>Clave/PIN 🔒</label> <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
-        </div>
-        <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px; margin-top:19px;" title="Dibujar Patrón">✍️</button>
-       </div>
-       <div>
-        <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()">
-       </div>
-       <div class="full sena-group-row">
-        <div class="sena-group-top">
-         <div class="sena-field">
-          <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
+       <!-- SECCIÓN CLIENTE -->
+       <div class="mobile-section full">
+        <div class="mobile-section-header">👤 Cliente</div>
+        <div class="mobile-section-body">
+         <div>
+          <label>N° Orden</label><input type="text" id="nroOrden" readonly>
          </div>
-         <div class="sena-metodo">
-          <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
+         <div>
+          <label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()">
          </div>
-        </div>
-        <div style="font-size:11px; display:flex; align-items:center; gap:10px; color:#6b7280; margin-top:4px;">
-         <input type="checkbox" id="checkPagoTotal" style="width:14px; height:14px;" onchange="togglePagoForm()"> PAGO TOTAL
-         <span id="btn-lock" style="cursor:pointer; font-size:20px; margin-left:4px;" onclick="revelarCosto()">🔒</span>
-         <div id="costo-inner" style="display:none;">
-          <label style="display:inline; margin:0;">Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
+         <div class="full">
+          <label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()">
          </div>
         </div>
        </div>
-       <div class="full" style="position: relative;">
-        <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#1e4d8c;">(Agregá " + " para sumar varias fallas)</span></label> <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
-        <div id="autocomplete-falla" class="autocomplete-list"></div>
-       </div>
-       <div class="full">
-        <label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()">
-       </div>
-       <div class="full">
-        <label style="color:#7c3aed;">🔒 Nota Interna <span style="font-weight:normal; text-transform:none; color:#9ca3af;">(no aparece en el PDF del cliente)</span></label>
-        <input type="text" id="notaInterna" oninput="saveDraft()" placeholder="Solo visible para el taller" style="border-color:#c4b5fd; background:#faf5ff;">
-       </div>
-       <div class="full" style="display:flex; flex-direction: column; gap:5px;">
-        <label>Agregar Fotos <span id="fotoContador" style="font-weight:700; color:#2d3a8c; text-transform:none; font-size:11px;">(0 / 5)</span></label>
-        <div style="display:flex; gap:10px;">
-         <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
-         <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
+
+       <!-- SECCIÓN EQUIPO -->
+       <div class="mobile-section full">
+        <div class="mobile-section-header">📱 Equipo</div>
+        <div class="mobile-section-body">
+         <div>
+          <label>Equipo</label> <select id="equipo" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;"> <option value="Smartphone">📱 Smartphone</option> <option value="Tablet">📳 Tablet</option> <option value="PC/Notebook">💻 PC/Notebook</option> <option value="Consola">🎮 Consola</option> <option value="Otro">🔧 Otro</option> </select>
+         </div>
+         <div>
+          <label>Marca</label> <select id="marca" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;"> <option value="Samsung">Samsung</option> <option value="Apple">Apple</option> <option value="Motorola">Motorola</option> <option value="Xiaomi">Xiaomi</option> <option value="Huawei">Huawei</option> <option value="Oppo">Oppo</option> <option value="Otra">Otra</option> </select>
+         </div>
+         <div class="full">
+          <label>Modelo</label> <input type="text" id="modelo" required oninput="saveDraft()" autocomplete="off" placeholder="Escribe el modelo...">
+         </div>
+         <div>
+          <label>Color</label><input type="text" id="color" oninput="saveDraft()">
+         </div>
+         <div>
+          <label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()">
+         </div>
+         <div class="full" style="display:flex; align-items:flex-start; gap:5px;">
+          <div style="flex:1;">
+           <label>Clave/PIN 🔒</label> <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
+          </div>
+          <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px; margin-top:19px;" title="Dibujar Patrón">✍️</button>
+         </div>
         </div>
-        <div id="formThumbnails" class="thumb-container"></div>
        </div>
-       <div class="full" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+
+       <!-- SECCIÓN FALLA Y FOTOS -->
+       <div class="mobile-section full">
+        <div class="mobile-section-header">🔧 Falla y Fotos</div>
+        <div class="mobile-section-body">
+         <div class="full" style="position: relative;">
+          <label>Falla Reportada <span style="font-weight:normal; text-transform:none; color:#1e4d8c;">(Agregá " + " para sumar varias fallas)</span></label> <input type="text" id="falla" required oninput="saveDraft(); showAutocomplete('falla')" onfocus="showAutocomplete('falla')" onblur="hideAutocomplete('falla')" autocomplete="off" placeholder="Ej: Pantalla rota + Pin de carga">
+          <div id="autocomplete-falla" class="autocomplete-list"></div>
+         </div>
+         <div class="full" style="display:flex; flex-direction: column; gap:5px;">
+          <label>Agregar Fotos <span id="fotoContador" style="font-weight:700; color:#2d3a8c; text-transform:none; font-size:11px;">(0 / 5)</span></label>
+          <div style="display:flex; gap:10px;">
+           <button type="button" class="btn" style="background:#6c5ce7; color:white; flex:1;" onclick="document.getElementById('inputFotoCam').click()">📷 CÁMARA</button>
+           <button type="button" class="btn" style="background:#0984e3; color:white; flex:1;" onclick="document.getElementById('inputFotoGal').click()">🖼️ GALERÍA</button>
+          </div>
+          <div id="formThumbnails" class="thumb-container"></div>
+         </div>
+        </div>
+       </div>
+
+       <!-- SECCIÓN OBSERVACIONES -->
+       <div class="mobile-section full">
+        <div class="mobile-section-header">📝 Observaciones</div>
+        <div class="mobile-section-body">
+         <div class="full">
+          <label>Observaciones</label><input type="text" id="obs" oninput="saveDraft()">
+         </div>
+        </div>
+       </div>
+
+       <!-- SECCIÓN NOTA INTERNA -->
+       <div class="mobile-section full">
+        <div class="mobile-section-header">🔒 Nota Interna</div>
+        <div class="mobile-section-body">
+         <div class="full">
+          <label style="color:#7c3aed;">🔒 Nota Interna <span style="font-weight:normal; text-transform:none; color:#9ca3af;">(no aparece en el PDF del cliente)</span></label>
+          <input type="text" id="notaInterna" oninput="saveDraft()" placeholder="Solo visible para el taller" style="border-color:#c4b5fd; background:#faf5ff;">
+         </div>
+        </div>
+       </div>
+
+       <!-- SECCIÓN PRECIO Y PAGOS -->
+       <div class="mobile-section full">
+        <div class="mobile-section-header">💰 Precio y Pagos</div>
+        <div class="mobile-section-body">
+         <div class="precio-sena-row">
+          <div>
+           <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()">
+          </div>
+          <div class="sena-field">
+           <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
+          </div>
+         </div>
+         <div class="full sena-group-row">
+          <div class="sena-group-top">
+           <div class="sena-metodo">
+            <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
+           </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
+           <label class="pago-total-toggle-wrap" for="checkPagoTotal" style="flex:1; min-width:160px;">
+            <input type="checkbox" id="checkPagoTotal" onchange="togglePagoForm()">
+            <span class="toggle-pill"></span>
+            <span class="toggle-pill-label">PAGO TOTAL</span>
+           </label>
+           <span id="btn-lock" style="cursor:pointer; font-size:22px;" onclick="revelarCosto()">🔒</span>
+           <div id="costo-inner" style="display:none;">
+            <label style="display:inline; margin:0;">Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+
+       <!-- Botones originales (ocultos en mobile, visibles en desktop) -->
+       <div class="full form-submit-original" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
         <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
         <button type="button" id="btnLimpiar" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
         <input type="file" id="inputFotoCam" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)"> <input type="file" id="inputFotoGal" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
        </div>
       </div>
      </form>
+     <!-- Barra sticky mobile (oculta en desktop) -->
+     <div id="sticky-submit-bar" style="display:none;">
+      <button type="button" class="btn btn-main" onclick="document.getElementById('repairForm').requestSubmit()">✅ REGISTRAR</button>
+      <button type="button" class="btn btn-limpiar" onclick="clickLimpiar()">🗑️ LIMPIAR</button>
+     </div>
      <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
       <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid #e5e7eb; min-width: 200px;">
       <button class="btn" style="background:#8e44ad; color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
@@ -2386,7 +2558,7 @@ function showApp() {
      <div style="margin-bottom: 15px; margin-top: 10px;">
       <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
      </div>
-     <div class="form-grid">
+     <div class="form-grid" id="stock-form-grid">
       <input type="hidden" id="stockId">
       <div>
        <label>Artículo/Repuesto</label><input type="text" id="stockNombre" placeholder="Ej: Módulo Samsung A10" required>
