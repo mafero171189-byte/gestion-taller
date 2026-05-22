@@ -696,6 +696,19 @@
             .sena-group-top { gap: 0; }
             .sena-group-top .sena-field { max-width: 100%; }
             .sena-group-top .sena-metodo { margin-top: 14px; }
+            /* En mobile los IDs siguen siendo columna */
+            #desktop-pago-row {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0 !important;
+            }
+            #pago-total-inline {
+                margin-top: 14px !important;
+                flex-direction: row !important;
+            }
+
+            /* Botón patrón en mobile: bajar para alinearse con el input */
+            #pin-wrapper > button { margin-top: 19px !important; }
 
             /* Stock: mantener padding y gap propios */
             #stock-form-grid {
@@ -710,6 +723,200 @@
                 font-size: 16px !important;
                 padding: 13px 14px !important;
             }
+        }
+
+        /* ============================================================
+           DESKTOP — min-width: 600px
+           Restaurar el layout original del form-grid,
+           anulando los estilos de mobile-section
+        ============================================================ */
+        @media (min-width: 600px) {
+            /* El form-grid recupera su aspecto original: una sola fila densa */
+            .form-grid {
+                display: grid !important;
+                grid-template-columns: repeat(7, 1fr) !important;
+                gap: 12px !important;
+                background: #f7f8fc !important;
+                padding: 20px !important;
+                border-radius: 12px !important;
+                border: 1px solid #e8eaf5 !important;
+                margin-bottom: 25px !important;
+            }
+
+            /* mobile-section y mobile-section-body: display:contents para
+               que sus hijos participen directamente en el grid del padre */
+            .mobile-section {
+                display: contents !important;
+            }
+            .mobile-section-header {
+                display: none !important;
+            }
+            .mobile-section-body {
+                display: contents !important;
+            }
+
+            /* Por defecto: cada hijo directo = 1 columna (no se expande) */
+            .mobile-section-body > div,
+            .form-grid > div {
+                grid-column: auto !important;
+            }
+
+            /* precio-sena-row: sus dos hijos (Precio y Seña) fluyen en el grid */
+            .precio-sena-row {
+                display: contents !important;
+            }
+
+            /* precio-sena-row + sena-group-row: todos en la misma fila */
+
+            /* precio-sena-row: los campos Precio y Seña son flex normales dentro del grid */
+            .precio-sena-row {
+                display: contents !important;
+            }
+
+            /* sena-group-row: ocupa el resto de la fila, flex horizontal */
+            #desktop-pago-row {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: flex-end !important;
+                gap: 14px !important;
+                flex-wrap: nowrap !important;
+                grid-column: auto !important;
+                flex: 1 1 auto !important;
+            }
+            #desktop-pago-row .sena-group-top {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: flex-end !important;
+                flex: 0 0 auto !important;
+            }
+            #desktop-pago-row .sena-metodo {
+                flex: 0 0 180px !important;
+                margin-top: 0 !important;
+            }
+            #pago-total-inline {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 10px !important;
+                margin-top: 0 !important;
+                flex: 0 0 auto !important;
+                padding-bottom: 2px !important;
+            }
+
+            /* Contenedor de precio+seña+metodo+pagototal: misma fila via flex wrapper */
+            /* mobile-section-body de Precio y Pagos → flex row en desktop */
+            .mobile-section-body:has(.precio-sena-row) {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: flex-end !important;
+                gap: 14px !important;
+                flex-wrap: nowrap !important;
+                grid-column: 1 / -1 !important;
+            }
+            .mobile-section-body:has(.precio-sena-row) .precio-sena-row {
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 14px !important;
+                flex: 0 0 auto !important;
+            }
+            .mobile-section-body:has(.precio-sena-row) .precio-sena-row > div {
+                flex: 0 0 120px !important;
+            }
+
+            .sena-field { max-width: none !important; }
+
+            /* Clave/PIN wrapper: celda normal del grid */
+            #pin-wrapper {
+                grid-column: auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0 !important;
+            }
+            /* Label + botón en la misma línea */
+            #pin-wrapper > div {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            /* Input + botón ✍️ alineados horizontalmente */
+            #pin-wrapper > div > input,
+            #pin-wrapper > button {
+                margin-top: 0 !important;
+            }
+            /* Reemplazar el flex externo: label arriba, luego fila con input+botón */
+            #pin-wrapper {
+                flex-direction: row !important;
+                align-items: flex-end !important;
+            }
+            #pin-wrapper > button {
+                flex: 0 0 auto !important;
+                margin-top: 0 !important;
+                height: 38px !important;
+                align-self: flex-end !important;
+                margin-bottom: 1px !important;
+            }
+
+            /* Falla Reportada → ancho completo */
+            .mobile-section-body > div[style*="position: relative"] {
+                grid-column: 1 / -1 !important;
+            }
+
+            /* Fotos → ancho completo */
+            .mobile-section-body > div[style*="flex-direction: column"] {
+                grid-column: 1 / -1 !important;
+            }
+
+            /* Observaciones → ancho completo */
+            .mobile-section-body > div:has(#obs) {
+                grid-column: 1 / -1 !important;
+            }
+
+            /* Nota Interna → ancho completo */
+            .mobile-section-body > div:has(#notaInterna) {
+                grid-column: 1 / -1 !important;
+            }
+
+            /* Toggle Pago Total: checkbox normal (sin pill) */
+            .pago-total-toggle-wrap {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                padding: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                cursor: pointer !important;
+                flex: 0 0 auto !important;
+            }
+            .toggle-pill { display: none !important; }
+            #checkPagoTotal {
+                position: static !important;
+                opacity: 1 !important;
+                width: auto !important;
+                height: auto !important;
+                pointer-events: auto !important;
+            }
+            .toggle-pill-label { font-size: 13px !important; font-weight: 700 !important; }
+
+            /* Botones submit → ancho completo, REGISTRAR y LIMPIAR lado a lado */
+            #desktop-submit-row {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                grid-column: 1 / -1 !important;
+                margin-top: 10px !important;
+                gap: 10px !important;
+                align-items: center !important;
+            }
+            #desktop-submit-row #btnSubmit {
+                flex: 2 !important;
+            }
+            #desktop-submit-row #btnLimpiar {
+                flex: 1 !important;
+            }
+
+            /* Barra sticky: oculta en desktop */
+            #sticky-submit-bar { display: none !important; }
         }
     </style>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@700;800&amp;display=swap" rel="stylesheet">
@@ -2407,11 +2614,11 @@ function showApp() {
          <div>
           <label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()">
          </div>
-         <div class="full" style="display:flex; align-items:flex-start; gap:5px;">
+         <div id="pin-wrapper" class="full" style="display:flex; align-items:flex-start; gap:5px;">
           <div style="flex:1;">
            <label>Clave/PIN 🔒</label> <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
           </div>
-          <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px; margin-top:19px;" title="Dibujar Patrón">✍️</button>
+          <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px;" title="Dibujar Patrón">✍️</button>
          </div>
         </div>
        </div>
@@ -2468,13 +2675,13 @@ function showApp() {
            <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
           </div>
          </div>
-         <div class="full sena-group-row">
+         <div class="full sena-group-row" id="desktop-pago-row">
           <div class="sena-group-top">
            <div class="sena-metodo">
             <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
            </div>
           </div>
-          <div style="display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
+          <div id="pago-total-inline" style="display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
            <label class="pago-total-toggle-wrap" for="checkPagoTotal" style="flex:1; min-width:160px;">
             <input type="checkbox" id="checkPagoTotal" onchange="togglePagoForm()">
             <span class="toggle-pill"></span>
@@ -2490,7 +2697,7 @@ function showApp() {
        </div>
 
        <!-- Botones originales (ocultos en mobile, visibles en desktop) -->
-       <div class="full form-submit-original" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+       <div id="desktop-submit-row" class="full form-submit-original" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
         <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
         <button type="button" id="btnLimpiar" class="btn" style="background:#94a3b8; color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
         <input type="file" id="inputFotoCam" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)"> <input type="file" id="inputFotoGal" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
