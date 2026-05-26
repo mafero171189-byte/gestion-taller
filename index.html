@@ -2420,6 +2420,18 @@ function showApp() {
      <button onclick="closeStatusModal()" style="margin-top:15px; border:none; background:none; color:#6b7280; cursor:pointer;">Cerrar</button>
     </div>
    </div>
+   <div id="modalPDFAcciones" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:320px;">
+     <p style="font-size:16px; font-weight:bold; margin-bottom:18px;">📄 Ticket PDF — ¿Qué querés hacer?</p>
+     <div style="display:flex; flex-direction:column; gap:10px;">
+      <button id="btnPDFVer" style="padding:13px; border:none; border-radius:10px; background:#1e4d8c; color:white; font-weight:bold; font-size:14px; cursor:pointer;">👁️ Ver PDF</button>
+      <button id="btnPDFDescargar" style="padding:13px; border:none; border-radius:10px; background:#059669; color:white; font-weight:bold; font-size:14px; cursor:pointer;">⬇️ Descargar</button>
+      <button id="btnPDFCompartir" style="padding:13px; border:none; border-radius:10px; background:#25d366; color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">📲 Compartir</button>
+     </div>
+     <button onclick="document.getElementById('modalPDFAcciones').style.display='none'" style="margin-top:14px; border:none; background:none; color:#6b7280; cursor:pointer; font-size:13px;">Cerrar</button>
+    </div>
+   </div>
+
    <div id="historyModal" class="modal-overlay">
     <div class="modal-box" style="width:300px;">
      <p style="font-size:18px;"><b>🕒 Historial de la Orden</b></p>
@@ -3930,9 +3942,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 ${finHtml}
                 ${obsHtml}
 
-                <div style="padding:20px 24px;">
-                    <button onclick="descargarPDFCliente()" style="width:100%;background:linear-gradient(135deg,#1e4d8c,#0e2a5e);color:white;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(30,77,140,0.35);font-family:'Outfit',sans-serif;letter-spacing:0.2px;">
-                        📄 Descargar Ticket PDF
+                <div style="padding:20px 24px; display:flex; flex-direction:column; gap:10px;">
+                    <button onclick="verPDFCliente()" style="width:100%;background:linear-gradient(135deg,#1e4d8c,#0e2a5e);color:white;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(30,77,140,0.35);font-family:'Outfit',sans-serif;">
+                        👁️ Ver Ticket PDF
+                    </button>
+                    <button onclick="descargarPDFCliente()" style="width:100%;background:linear-gradient(135deg,#059669,#065f46);color:white;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(5,150,105,0.3);font-family:'Outfit',sans-serif;">
+                        ⬇️ Descargar PDF
                     </button>
                 </div>
 
@@ -3943,14 +3958,26 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             </div>`;
     }
 
-    function descargarPDFCliente() {
-        const r = registros[0]; 
-        if(!r) return;
+    function verPDFCliente() {
+        const r = registros[0]; if(!r) return;
         const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {});
+            generarEImprimirPDF(r, snap.val() || {}); // abre en nueva pestaña (comportamiento default)
+        });
+    }
+
+    function descargarPDFCliente() {
+        const r = registros[0]; if(!r) return;
+        const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        mostrarLoader("Generando PDF...");
+        db.ref(path).once('value', snap => {
+            generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
+                URL.revokeObjectURL(url);
+            });
         });
     }
 
@@ -3958,14 +3985,40 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const r = getRegistro(id); 
         if(!r) return;
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
-        
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {});
+            generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
+                const url = URL.createObjectURL(blob);
+                const modal = document.getElementById('modalPDFAcciones');
+                const btnVer = document.getElementById('btnPDFVer');
+                const btnDesc = document.getElementById('btnPDFDescargar');
+                const btnComp = document.getElementById('btnPDFCompartir');
+
+                btnVer.onclick = () => {
+                    window.open(url, '_blank');
+                    modal.style.display = 'none';
+                };
+                btnDesc.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
+                    modal.style.display = 'none';
+                };
+                if (navigator.share) {
+                    btnComp.style.display = 'block';
+                    btnComp.onclick = () => {
+                        const file = new File([blob], `Orden-${nro}.pdf`, { type: 'application/pdf' });
+                        navigator.share({ title: `Ticket Orden #${nro}`, files: [file] }).catch(() => {});
+                        modal.style.display = 'none';
+                    };
+                } else {
+                    btnComp.style.display = 'none';
+                }
+                modal.style.display = 'flex';
+            });
         });
     }
 
-    function generarEImprimirPDF(r, conf) {
+    function generarEImprimirPDF(r, conf, callback) {
         const nombreHeader = conf.nombreTaller || "";
         const subHeader = conf.subtitulo || "";
         const wappHeader = conf.wappTicket || "";
@@ -4067,15 +4120,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         doc.text(lineasGarantia, 40, y + 20, {align:'center'});
         
         const pdfBlob = doc.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = `Orden-${nroLimpio}.pdf`;
-        link.click();
-        URL.revokeObjectURL(pdfUrl);
-        
         ocultarLoader();
+        if (typeof callback === 'function') {
+            callback(pdfBlob, nroLimpio);
+        } else {
+            // comportamiento por defecto: abrir en nueva pestaña
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            const link = document.createElement('a');
+            link.href = pdfUrl;
+            link.target = '_blank';
+            link.click();
+        }
     }
     
     function toggleLoginPassword() {
