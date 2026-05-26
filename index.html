@@ -5807,6 +5807,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         updates.estado = nuevo;
         updates.historialEstados = historialActual;
 
+        // Si se cambia desde "Entregado s/c" a cualquier otro estado, limpiar la bandera
+        if (nuevo !== "Entregado" && r.entregadoSinCobrar) {
+            updates.entregadoSinCobrar = false;
+        }
+
         if (repuestosUsados) {
             updates.repuestosDescontados = repuestosUsados;
             r.repuestosDescontados = repuestosUsados;
