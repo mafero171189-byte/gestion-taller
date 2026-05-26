@@ -4071,8 +4071,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         
         const link = document.createElement('a');
         link.href = pdfUrl;
-        link.target = '_blank';
+        link.download = `Orden-${nroLimpio}.pdf`;
         link.click();
+        URL.revokeObjectURL(pdfUrl);
         
         ocultarLoader();
     }
