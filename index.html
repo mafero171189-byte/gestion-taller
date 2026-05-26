@@ -5447,7 +5447,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
         
         let precioActual = parseFloat(r.precio) || 0;
         let senaPrevia = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
@@ -5801,7 +5801,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
         const coloresEstado = { 'Pendiente': '#f59e0b', 'Reparado': '#059669', 'Entregado': '#6b7280', 'No reparado': '#dc2626', 'Garantía': '#1e40af' };
-        let historialActual = r.historialEstados || [];
+        let historialActual = [...(r.historialEstados || [])];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
         
         updates.estado = nuevo;
@@ -5814,7 +5814,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
 
                 if (nuevo === 'Garantía' && r.archivado) {
             updates.recordatorioEnviado = null; // <-- NUEVO: Resetea el aviso de WhatsApp
@@ -5832,22 +5832,22 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             });    
         } else if (nuevo === 'Entregado' && !r.archivado) {
             updates.archivado = true;
-            Object.assign(r, updates); // Aplica estado y archivado localmente al instante
 
-            // Saca la orden de la lista de activos visualmente al instante
-            registros = registros.filter(x => x.id !== idParaEstado);
-
-            let copia = {...r};
+            let copia = {...r, ...updates};
             delete copia.id;
             
             db.ref(pathArchivado).child(idParaEstado).set(copia).then(() => {
                 db.ref(pathActivo).child(idParaEstado).remove();
 
+                // Aplicar cambios locales SOLO después de confirmar Firebase
+                Object.assign(r, updates);
+                registros = registros.filter(x => x.id !== idParaEstado);
+
                 if (historialDescargado) {
                     registrosArchivados.push({id: idParaEstado, ...copia});
                 }
                 
-                ocultarLoader(); // Ahora sí, ocultamos el loader al final
+                ocultarLoader();
                 renderTable();
 
                 document.getElementById('statusModal').style.display = 'none';
@@ -5884,7 +5884,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
 
         const precioAnterior = parseFloat(r.precio) || 0;
         const historialPrecios = r.historialPrecios || [];
@@ -7525,7 +7525,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         mostrarLoader("Anulando movimientos...");
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodoActualizar = r.archivado ? pathArchivado : pathActivo;
+        const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
 
         if (r.esVentaRapida) {
             db.ref(nodoActualizar).child(idOrden).remove().then(() => {
