@@ -5534,7 +5534,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
 
         const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
-        let historialActual = r.historialEstados || [];
+        let historialActual = [...(r.historialEstados || [])];
         historialActual.push({ estado: 'Entregado (Cortesía)', fecha: fechaActual });
 
         let updates = {
@@ -5593,7 +5593,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
         
         const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
-        let historialActual = r.historialEstados || [];
+        let historialActual = [...(r.historialEstados || [])];
         historialActual.push({ estado: 'Entregado', fecha: fechaActual });
         
         let updates = {
