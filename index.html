@@ -707,9 +707,6 @@
                 flex-direction: row !important;
             }
 
-            /* Botón patrón en mobile: bajar para alinearse con el input */
-            #pin-wrapper > button { margin-top: 19px !important; }
-
             /* Stock: mantener padding y gap propios */
             #stock-form-grid {
                 padding: 16px !important;
@@ -851,6 +848,23 @@
         .picker-cancel:hover { background: rgba(255,255,255,0.07); color: white; }
         .picker-cancel:active { background: rgba(255,255,255,0.09); color: white; }
 
+        /* Pin input row — global */
+        #pin-input-row {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 6px;
+            margin-top: 0;
+        }
+        #pin-input-row input {
+            flex: 1;
+            min-width: 0;
+            margin-top: 0 !important;
+        }
+        #pin-wrapper label {
+            display: block;
+        }
+
         /* ============================================================
            DESKTOP — min-width: 600px
            Restaurar el layout original del form-grid,
@@ -951,35 +965,16 @@
 
             .sena-field { max-width: none !important; }
 
-            /* Clave/PIN wrapper: celda normal del grid */
+            /* Clave/PIN wrapper en desktop: igual que cualquier otra celda */
             #pin-wrapper {
-                grid-column: auto !important;
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 0 !important;
-            }
-            /* Label + botón en la misma línea */
-            #pin-wrapper > div {
-                flex: 1 !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
-            /* Input + botón ✍️ alineados horizontalmente */
-            #pin-wrapper > div > input,
-            #pin-wrapper > button {
-                margin-top: 0 !important;
-            }
-            /* Reemplazar el flex externo: label arriba, luego fila con input+botón */
-            #pin-wrapper {
-                flex-direction: row !important;
-                align-items: flex-end !important;
+                grid-column: span 2 !important;
+                display: block !important;
             }
             #pin-wrapper > button {
-                flex: 0 0 auto !important;
+                display: none !important;
+            }
+            #pin-input-row {
                 margin-top: 0 !important;
-                height: 38px !important;
-                align-self: flex-end !important;
-                margin-bottom: 1px !important;
             }
 
             /* Falla Reportada → ancho completo */
@@ -2762,11 +2757,24 @@ function showApp() {
          <div>
           <label>IMEI/Serie</label><input type="text" id="imei" oninput="saveDraft()">
          </div>
-         <div id="pin-wrapper" class="full" style="display:flex; align-items:flex-start; gap:5px;">
-          <div style="flex:1;">
-           <label>Clave/PIN 🔒</label> <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
+         <div id="pin-wrapper" class="full">
+          <label>Clave/PIN 🔒</label>
+          <div id="pin-input-row">
+           <input type="text" id="pin" placeholder="Ej: 1234 o Patrón Z" oninput="saveDraft()">
+           <button type="button" onclick="abrirPatternModal()" style="padding:8px 10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Dibujar Patrón">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="4"  cy="4"  r="2" fill="#1e4d8c"/>
+              <circle cx="11" cy="4"  r="2" fill="#1e4d8c"/>
+              <circle cx="18" cy="4"  r="2" fill="#1e4d8c"/>
+              <circle cx="4"  cy="11" r="2" fill="#1e4d8c"/>
+              <circle cx="11" cy="11" r="2" fill="#1e4d8c"/>
+              <circle cx="18" cy="11" r="2" fill="#1e4d8c"/>
+              <circle cx="4"  cy="18" r="2" fill="#1e4d8c"/>
+              <circle cx="11" cy="18" r="2" fill="#1e4d8c"/>
+              <circle cx="18" cy="18" r="2" fill="#1e4d8c"/>
+            </svg>
+           </button>
           </div>
-          <button type="button" onclick="abrirPatternModal()" style="padding:10px; border-radius:8px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer; height:43px;" title="Dibujar Patrón">✍️</button>
          </div>
         </div>
        </div>
