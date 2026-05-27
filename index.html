@@ -784,8 +784,26 @@
             background: #1e2537;
             border-radius: 22px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
             animation: pickerPopIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
             box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+        }
+        #picker-options {
+            overflow-y: auto;
+            flex: 1;
+            overscroll-behavior: contain;
+        }
+        #picker-options::-webkit-scrollbar {
+            width: 4px;
+        }
+        #picker-options::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #picker-options::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.18);
+            border-radius: 4px;
         }
         @keyframes pickerPopIn {
             from { opacity:0; transform: scale(0.88); }
@@ -9030,7 +9048,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         // Dropdown element for desktop
         var dropdown = document.createElement('div');
         dropdown.id = 'picker-dropdown';
-        dropdown.style.cssText = 'display:none; position:fixed; z-index:6000; background:#1e2537; border-radius:14px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07); min-width:200px;';
+        dropdown.style.cssText = 'display:none; position:fixed; z-index:6000; background:#1e2537; border-radius:14px; overflow-y:auto; overflow-x:hidden; max-height:60vh; box-shadow:0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07); min-width:200px;';
         document.body.appendChild(dropdown);
 
         // Close dropdown on outside click
@@ -9066,12 +9084,16 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             dropdown.style.minWidth = ddWidth + 'px';
 
             // After display, check if it fits below or needs to go above
-            const ddHeight = dropdown.offsetHeight;
             const spaceBelow = window.innerHeight - rect.bottom - 8;
-            if (spaceBelow >= ddHeight || spaceBelow >= 150) {
+            const spaceAbove = rect.top - 8;
+            const maxH = Math.min(window.innerHeight * 0.6, Math.max(spaceBelow, spaceAbove, 150));
+            dropdown.style.maxHeight = maxH + 'px';
+
+            const ddHeight = dropdown.scrollHeight;
+            if (spaceBelow >= Math.min(ddHeight, 150) || spaceBelow >= spaceAbove) {
                 dropdown.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
             } else {
-                dropdown.style.top  = (rect.top + window.scrollY - ddHeight - 4) + 'px';
+                dropdown.style.top  = (rect.top + window.scrollY - Math.min(ddHeight, maxH) - 4) + 'px';
             }
             dropdown.style.left = rect.left + 'px';
         }
