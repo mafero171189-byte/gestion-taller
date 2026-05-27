@@ -726,6 +726,132 @@
         }
 
         /* ============================================================
+           CUSTOM PICKER — global (mobile + desktop)
+        ============================================================ */
+        .custom-picker-btn {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; padding: 10px 12px;
+            background: #ffffff;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px; font-weight: 400;
+            color: #111827;
+            font-family: 'Outfit', sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 42px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .custom-picker-btn:hover {
+            border-color: #1e4d8c;
+            box-shadow: 0 0 0 3px rgba(30,77,140,0.08);
+        }
+        .custom-picker-btn:active {
+            background: #f5f6fc;
+            border-color: #1e4d8c;
+        }
+        .picker-chevron {
+            font-size: 13px; color: #9ca3af; font-weight: 400;
+            display: inline-block; flex-shrink: 0; margin-left: 4px;
+            line-height: 1;
+        }
+        body.dark-mode .custom-picker-btn {
+            background: #1a2035; border-color: #2d3748; color: #e2e8f0;
+        }
+
+        /* Mobile: inputs más grandes */
+        @media (max-width: 599px) {
+            .custom-picker-btn { font-size: 16px !important; padding: 13px 14px !important; border-radius: 10px !important; min-height: 50px !important; }
+            .picker-chevron { font-size: 18px !important; transform: rotate(90deg); }
+        }
+
+        /* PICKER MODAL — global */
+        .picker-backdrop {
+            display: none; position: fixed; inset: 0;
+            background: rgba(8,12,24,0.72);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 5000;
+            align-items: center; justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        .picker-backdrop.open { display: flex; }
+
+        .picker-sheet {
+            width: 100%; max-width: 340px;
+            background: #1e2537;
+            border-radius: 22px;
+            overflow: hidden;
+            animation: pickerPopIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+        }
+        @keyframes pickerPopIn {
+            from { opacity:0; transform: scale(0.88); }
+            to   { opacity:1; transform: scale(1); }
+        }
+        .picker-sheet-handle { display: none; }
+        .picker-sheet-title {
+            text-align: center; padding: 18px 20px 14px;
+            font-size: 12px; font-weight: 800;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase; letter-spacing: 1.2px;
+            font-family: 'Outfit', sans-serif;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .picker-option {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 17px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: background 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .picker-option:last-of-type { border-bottom: none; }
+        .picker-option:hover { background: rgba(255,255,255,0.05); }
+        .picker-option:active { background: rgba(255,255,255,0.07); }
+        .picker-option-label {
+            font-size: 16px; font-weight: 500;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .picker-radio {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.15s;
+        }
+        .picker-radio.selected { border-color: #4a90e2; }
+        .picker-radio.selected::after {
+            content: '';
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #4a90e2;
+            box-shadow: 0 0 10px rgba(74,144,226,0.7);
+        }
+        .picker-cancel {
+            display: block; width: 100%;
+            padding: 15px;
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            font-size: 14px; font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            border: none; border-top: 1px solid rgba(255,255,255,0.07);
+            cursor: pointer;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .picker-cancel:hover { background: rgba(255,255,255,0.07); color: white; }
+        .picker-cancel:active { background: rgba(255,255,255,0.09); color: white; }
+
+        /* ============================================================
            DESKTOP — min-width: 600px
            Restaurar el layout original del form-grid,
            anulando los estilos de mobile-section
@@ -2612,10 +2738,20 @@ function showApp() {
         <div class="mobile-section-header">📱 Equipo</div>
         <div class="mobile-section-body">
          <div>
-          <label>Equipo</label> <select id="equipo" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;"> <option value="Smartphone">📱 Smartphone</option> <option value="Tablet">📳 Tablet</option> <option value="PC/Notebook">💻 PC/Notebook</option> <option value="Consola">🎮 Consola</option> <option value="Otro">🔧 Otro</option> </select>
+          <label>Equipo</label>
+          <div class="custom-picker-btn" id="equipo-btn" onclick="openPicker('equipo')">
+            <span id="equipo-display">📱 Smartphone</span>
+            <span class="picker-chevron">›</span>
+          </div>
+          <input type="hidden" id="equipo" value="Smartphone">
          </div>
          <div>
-          <label>Marca</label> <select id="marca" required onchange="saveDraft()" style="cursor:pointer; padding:10px; border-radius:8px; border:1px solid #e5e7eb;"> <option value="Samsung">Samsung</option> <option value="Apple">Apple</option> <option value="Motorola">Motorola</option> <option value="Xiaomi">Xiaomi</option> <option value="Huawei">Huawei</option> <option value="Oppo">Oppo</option> <option value="Otra">Otra</option> </select>
+          <label>Marca</label>
+          <div class="custom-picker-btn" id="marca-btn" onclick="openPicker('marca')">
+            <span id="marca-display">Samsung</span>
+            <span class="picker-chevron">›</span>
+          </div>
+          <input type="hidden" id="marca" value="Samsung">
          </div>
          <div class="full">
           <label>Modelo</label> <input type="text" id="modelo" required oninput="saveDraft()" autocomplete="off" placeholder="Escribe el modelo...">
@@ -6401,7 +6537,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         document.getElementById('equipo').value = "Smartphone";
         document.getElementById('marca').value = "Samsung";
-        
+        if(typeof syncPickerDisplay === 'function') { syncPickerDisplay('equipo'); syncPickerDisplay('marca'); }
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
         document.getElementById('autocomplete-falla').style.display = 'none';
@@ -6442,6 +6578,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     document.getElementById('tel').value = d.tel || "";
                     document.getElementById('equipo').value = d.equipo || "Smartphone";
                     document.getElementById('marca').value = d.marca || "Samsung";
+                    if(typeof syncPickerDisplay === 'function') { syncPickerDisplay('equipo'); syncPickerDisplay('marca'); }
                     document.getElementById('modelo').value = d.modelo || "";
                     document.getElementById('falla').value = d.falla || "";
                     document.getElementById('metodoPago').value = d.metodoPago || "A Cotizar";
@@ -6657,6 +6794,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('tel').value = r.tel;
         document.getElementById('equipo').value = r.equipo || "Smartphone";
         document.getElementById('marca').value = r.marca || "Samsung";
+        if(typeof syncPickerDisplay === 'function') { syncPickerDisplay('equipo'); syncPickerDisplay('marca'); }
         document.getElementById('modelo').value = r.modelo;
         document.getElementById('color').value = r.color || "";
         document.getElementById('imei').value = r.imei || "";
@@ -8830,6 +8968,172 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         });
     });
 })();
+
+    // ==========================================
+    // CUSTOM PICKER (Equipo y Marca)
+    // ==========================================
+    (function() {
+        const PICKERS = {
+            equipo: {
+                title: 'Tipo de equipo',
+                options: [
+                    { value: 'Smartphone', label: '📱 Smartphone' },
+                    { value: 'Tablet',     label: '📳 Tablet' },
+                    { value: 'PC/Notebook',label: '💻 PC/Notebook' },
+                    { value: 'Consola',    label: '🎮 Consola' },
+                    { value: 'Otro',       label: '🔧 Otro' },
+                ]
+            },
+            marca: {
+                title: 'Marca del equipo',
+                options: [
+                    { value: 'Samsung',  label: 'Samsung' },
+                    { value: 'Apple',    label: 'Apple' },
+                    { value: 'Motorola', label: 'Motorola' },
+                    { value: 'Xiaomi',   label: 'Xiaomi' },
+                    { value: 'Huawei',   label: 'Huawei' },
+                    { value: 'Oppo',     label: 'Oppo' },
+                    { value: 'Otra',     label: 'Otra' },
+                ]
+            }
+        };
+
+        let currentPicker = null;
+
+        // Build backdrop once
+        const backdrop = document.createElement('div');
+        backdrop.className = 'picker-backdrop';
+        backdrop.innerHTML = `
+            <div class="picker-sheet" id="picker-sheet">
+                <div class="picker-sheet-handle"></div>
+                <div class="picker-sheet-title" id="picker-title"></div>
+                <div id="picker-options"></div>
+                <button class="picker-cancel" onclick="closePicker()">Cancelar</button>
+            </div>`;
+        document.body.appendChild(backdrop);
+
+        // Close on backdrop click (outside sheet)
+        backdrop.addEventListener('click', function(e) {
+            if (e.target === backdrop) closePicker();
+        });
+
+        var isDesktop = function() { return window.innerWidth >= 600; };
+
+        // Dropdown element for desktop
+        var dropdown = document.createElement('div');
+        dropdown.id = 'picker-dropdown';
+        dropdown.style.cssText = 'display:none; position:fixed; z-index:6000; background:#1e2537; border-radius:14px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07); min-width:200px;';
+        document.body.appendChild(dropdown);
+
+        // Close dropdown on outside click
+        document.addEventListener('click', function(e) {
+            if (dropdown.style.display !== 'none' && !dropdown.contains(e.target) && !e.target.closest('.custom-picker-btn')) {
+                closeDropdown();
+            }
+        });
+
+        function openDropdown(type, btnEl) {
+            currentPicker = type;
+            const cfg = PICKERS[type];
+            const currentVal = document.getElementById(type).value;
+
+            dropdown.innerHTML = '';
+            cfg.options.forEach(function(opt) {
+                const div = document.createElement('div');
+                div.className = 'picker-option';
+                div.innerHTML = `
+                    <span class="picker-option-label">${opt.label}</span>
+                    <div class="picker-radio ${opt.value === currentVal ? 'selected' : ''}" data-val="${opt.value}"></div>`;
+                div.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectPickerValue(type, opt.value, opt.label);
+                });
+                dropdown.appendChild(div);
+            });
+
+            // Position below the button
+            const rect = btnEl.getBoundingClientRect();
+            dropdown.style.display = 'block';
+            const ddWidth = Math.max(btnEl.offsetWidth, 200);
+            dropdown.style.minWidth = ddWidth + 'px';
+
+            // After display, check if it fits below or needs to go above
+            const ddHeight = dropdown.offsetHeight;
+            const spaceBelow = window.innerHeight - rect.bottom - 8;
+            if (spaceBelow >= ddHeight || spaceBelow >= 150) {
+                dropdown.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+            } else {
+                dropdown.style.top  = (rect.top + window.scrollY - ddHeight - 4) + 'px';
+            }
+            dropdown.style.left = rect.left + 'px';
+        }
+
+        function closeDropdown() {
+            dropdown.style.display = 'none';
+            currentPicker = null;
+        }
+
+        window.openPicker = function(type) {
+            if (isDesktop()) {
+                const btnEl = document.getElementById(type + '-btn');
+                // Toggle
+                if (dropdown.style.display !== 'none' && currentPicker === type) {
+                    closeDropdown(); return;
+                }
+                openDropdown(type, btnEl);
+                return;
+            }
+
+            // Mobile: centered modal
+            currentPicker = type;
+            const cfg = PICKERS[type];
+            const currentVal = document.getElementById(type).value;
+
+            document.getElementById('picker-title').textContent = cfg.title;
+            const container = document.getElementById('picker-options');
+            container.innerHTML = '';
+
+            cfg.options.forEach(function(opt) {
+                const div = document.createElement('div');
+                div.className = 'picker-option';
+                div.innerHTML = `
+                    <span class="picker-option-label">${opt.label}</span>
+                    <div class="picker-radio ${opt.value === currentVal ? 'selected' : ''}" data-val="${opt.value}"></div>`;
+                div.addEventListener('click', function() {
+                    selectPickerValue(type, opt.value, opt.label);
+                });
+                container.appendChild(div);
+            });
+
+            backdrop.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closePicker = function() {
+            backdrop.classList.remove('open');
+            document.body.style.overflow = '';
+            closeDropdown();
+            currentPicker = null;
+        };
+
+        window.selectPickerValue = function(type, value, label) {
+            document.getElementById(type).value = value;
+            document.getElementById(type + '-display').textContent = label;
+            closePicker();
+            if (typeof saveDraft === 'function') saveDraft();
+        };
+
+        // Sync display label from a hidden input value
+        window.syncPickerDisplay = function(type) {
+            const val = document.getElementById(type) ? document.getElementById(type).value : null;
+            if (!val) return;
+            const cfg = PICKERS[type];
+            if (!cfg) return;
+            const found = cfg.options.find(function(o) { return o.value === val; });
+            const displayEl = document.getElementById(type + '-display');
+            if (found && displayEl) displayEl.textContent = found.label;
+        };
+    })();
 
     // ==========================================
     // LÓGICA DE INSTALACIÓN PWA (MODO CELULAR - TODO EN UN ARCHIVO)
