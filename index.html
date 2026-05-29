@@ -508,6 +508,32 @@
         .btn-revertir-confirmar:active { transform: scale(0.97); }
         .btn-revertir-cancelar { background: transparent; color: #9ca3af; box-shadow: none; font-size: 13px; padding: 10px; }
         body.dark-mode .revertir-modal-box   { background: #111827; }
+
+        /* MODAL SIN GUARDAR */
+        #modal-sin-guardar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(8,12,24,0.78); z-index: 13000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+        }
+        #modal-sin-guardar.open { display: flex; }
+        .msg-sin-guardar-box {
+            background: #fff; border-radius: 20px; width: 88%; max-width: 360px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+            overflow: hidden; animation: slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);
+        }
+        @keyframes slideUpModal { from { opacity:0; transform:translateY(22px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .msg-sin-guardar-icon { background: linear-gradient(135deg,#fef3c7,#fde68a); text-align:center; padding:22px 20px 14px; font-size:42px; line-height:1; }
+        .msg-sin-guardar-body { padding: 18px 22px 6px; }
+        .msg-sin-guardar-body h3 { margin:0 0 8px; font-size:17px; font-weight:900; font-family:'Outfit',sans-serif; color:#111827; letter-spacing:-0.3px; }
+        .msg-sin-guardar-body p  { margin:0; font-size:13.5px; color:#6b7280; font-family:'Outfit',sans-serif; line-height:1.55; font-weight:500; }
+        .msg-sin-guardar-footer { padding:16px 22px 20px; display:flex; flex-direction:column; gap:9px; }
+        .btn-msg-salir { width:100%; padding:14px; border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; box-shadow:0 4px 14px rgba(220,38,38,0.3); transition:all 0.18s; }
+        .btn-msg-salir:active { transform:scale(0.97); }
+        .btn-msg-quedar { width:100%; padding:11px; border:none; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif; background:transparent; color:#9ca3af; }
+        body.dark-mode .msg-sin-guardar-box { background:#111827; }
+        body.dark-mode .msg-sin-guardar-body h3 { color:#f9fafb; }
+        body.dark-mode .msg-sin-guardar-body p  { color:#9ca3af; }
         body.dark-mode #modalReingresarGarantia .modal-box { background: #111827; }
         body.dark-mode #motivoGarantia { background: #1e1b4b; border-color: #4c1d95; color: #e9d5ff; }
         body.dark-mode #modalGarantiaDesc { color: #9ca3af; }
@@ -6516,53 +6542,52 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         return parseFloat(cleanValue) || 0; 
     }
     
-    function autoOrden() { 
-    if(!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) { 
-        const inputNro = document.getElementById('nroOrden');
-        inputNro.placeholder = '⏳ calculando...';
+    function autoOrden() {
+        if (!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) {
+            const inputNro = document.getElementById('nroOrden');
+            inputNro.placeholder = '⏳ calculando...';
 
-        // Usamos una transacción atómica sobre un contador dedicado en Firebase
-        // para evitar condiciones de carrera entre usuarios/pestañas concurrentes.
-        const pathContador = isUserAdmin
-            ? 'contadores/admin/ultimaOrden'
-            : 'contadores/' + currentUser + '/ultimaOrden';
+            const pathActivo   = isUserAdmin ? 'reparaciones'           : 'reparaciones_usuarios/' + currentUser;
+            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
 
-        db.ref(pathContador).transaction(function(valorActual) {
-            // Si el contador aún no existe, calculamos el máximo conocido como base
-            if (valorActual === null) {
-                let todos = [...registros, ...registrosArchivados];
-                let maxLocal = 99;
-                if (todos.length > 0) {
-                    const nums = todos.map(r => {
-                        const val = String(r.orden).replace(/[^\d]/g, '');
-                        return val ? parseInt(val) : 0;
+            // Consulta ambas ramas de Firebase para obtener el máximo número de orden real
+            Promise.all([
+                db.ref(pathActivo).orderByChild('orden').limitToLast(1).once('value'),
+                db.ref(pathArchivado).orderByChild('orden').limitToLast(1).once('value')
+            ]).then(function(snaps) {
+                let maxNum = 0;
+
+                snaps.forEach(function(snap) {
+                    snap.forEach(function(child) {
+                        const val = parseInt(String(child.val().orden).replace(/[^\d]/g, ''), 10);
+                        if (!isNaN(val) && val > maxNum) maxNum = val;
                     });
-                    maxLocal = Math.max(maxLocal, Math.max(...nums));
-                }
-                return maxLocal + 1;
-            }
-            return valorActual + 1;
-        }).then(function(resultado) {
-            if (resultado.committed && !inputNro.value) {
-                inputNro.value = resultado.snapshot.val();
-            }
-            inputNro.placeholder = '';
-        }).catch(function() {
-            // Fallback: usar el máximo local si la transacción falla
-            let todos = [...registros, ...registrosArchivados];
-            let maxLocal = 99;
-            if (todos.length > 0) {
-                const nums = todos.map(r => {
-                    const val = String(r.orden).replace(/[^\d]/g, '');
-                    return val ? parseInt(val) : 0;
                 });
-                maxLocal = Math.max(maxLocal, Math.max(...nums));
-            }
-            if (!inputNro.value) inputNro.value = maxLocal + 1;
-            inputNro.placeholder = '';
-        });
-    } 
-}
+
+                // También comparar contra registros en memoria por si hay datos no persistidos aún
+                const enMemoria = [...registros, ...registrosArchivados];
+                enMemoria.forEach(function(r) {
+                    const val = parseInt(String(r.orden).replace(/[^\d]/g, ''), 10);
+                    if (!isNaN(val) && val > maxNum) maxNum = val;
+                });
+
+                if (!inputNro.value) {
+                    inputNro.value = maxNum + 1;
+                }
+                inputNro.placeholder = '';
+            }).catch(function() {
+                // Fallback: solo memoria local
+                const enMemoria = [...registros, ...registrosArchivados];
+                let maxNum = 0;
+                enMemoria.forEach(function(r) {
+                    const val = parseInt(String(r.orden).replace(/[^\d]/g, ''), 10);
+                    if (!isNaN(val) && val > maxNum) maxNum = val;
+                });
+                if (!inputNro.value) inputNro.value = maxNum + 1;
+                inputNro.placeholder = '';
+            });
+        }
+    }
 
     function revelarCosto() { 
         let c = document.getElementById('costo-inner');
@@ -7731,31 +7756,50 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function formularioTieneDatos() {
         if (isClientMode) return false;
+        const nroOrden = document.getElementById('nroOrden') ? document.getElementById('nroOrden').value.trim() : '';
+        if (!nroOrden) return false; // Si no se asignó número de orden, no hay datos "reales" cargados
         const cliente = document.getElementById('cliente') ? document.getElementById('cliente').value.trim() : '';
         const modelo = document.getElementById('modelo') ? document.getElementById('modelo').value.trim() : '';
         const falla = document.getElementById('falla') ? document.getElementById('falla').value.trim() : '';
         return (cliente.length > 0 || modelo.length > 0 || falla.length > 0);
     }
 
-    function showPage(pageId) {
-        if (pageId !== 'gestion' && !idEditando && formularioTieneDatos()) {
-            if (!confirm("Tenés datos en el formulario que se perderán.\n¿Salir sin registrar?")) {
-                return;
+    // Modal personalizado "datos sin guardar"
+    (function() {
+        let _pendingPageId = null;
+        const modal = document.getElementById('modal-sin-guardar');
+        document.getElementById('btn-msg-quedar').addEventListener('click', function() {
+            modal.classList.remove('open'); _pendingPageId = null;
+        });
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) { modal.classList.remove('open'); _pendingPageId = null; }
+        });
+        document.getElementById('btn-msg-confirmar-salir').addEventListener('click', function() {
+            modal.classList.remove('open');
+            if (_pendingPageId) {
+                clickLimpiar(true);
+                _doShowPage(_pendingPageId);
+                _pendingPageId = null;
             }
-            clickLimpiar(true); 
-        }
+        });
+        window._abrirModalSinGuardar = function(pageId) {
+            _pendingPageId = pageId;
+            modal.classList.add('open');
+        };
+    })();
+
+    function _doShowPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        
         document.getElementById('page-' + pageId).style.display = 'block';
         document.getElementById('btn-nav-' + pageId).classList.add('active');
-        
-        // OPTIMIZACIÓN: Solo carga datos si el usuario entra a la pestaña específica
-        if (pageId === 'contabilidad') {
-            cargarDatosContabilidad(); 
-        }
-        if (pageId === 'stock') { window.cargarStockData(); } // Refresca fresco al entrar a la pestaña
+        if (pageId === 'contabilidad') cargarDatosContabilidad();
+        if (pageId === 'stock') window.cargarStockData();
         if (pageId === 'usuarios') cargarUsuariosAdmin();
+    }
+
+    function showPage(pageId) {
+        _doShowPage(pageId);
     }
 
     function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
@@ -9194,6 +9238,21 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     </div>
    </div>
   </div>
+  <!-- MODAL: DATOS SIN GUARDAR -->
+  <div id="modal-sin-guardar">
+    <div class="msg-sin-guardar-box">
+      <div class="msg-sin-guardar-icon">⚠️</div>
+      <div class="msg-sin-guardar-body">
+        <h3>¿Salir sin registrar?</h3>
+        <p>Tenés datos en el formulario que se perderán si salís ahora.</p>
+      </div>
+      <div class="msg-sin-guardar-footer">
+        <button class="btn-msg-salir" id="btn-msg-confirmar-salir">🚪 Sí, salir sin guardar</button>
+        <button class="btn-msg-quedar" id="btn-msg-quedar">Quedarme y seguir editando</button>
+      </div>
+    </div>
+  </div>
+
   <!-- PANTALLA COMPLETA DE MANTENIMIENTO (PARA LOS USUARIOS BLOQUEADOS) -->
   <div id="mantenimiento-overlay" style="position: fixed; inset: 0; background: #06122a; z-index: 30000; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 30px;">
     <div style="font-size: 80px; margin-bottom: 20px; animation: pulseAlerta 2s infinite;">🛠️</div>
