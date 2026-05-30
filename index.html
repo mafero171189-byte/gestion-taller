@@ -4242,7 +4242,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             return;
         }
 
-        const pathPerfil = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        // Usamos el usuario de la URL (?u=...) para no depender de currentUser,
+        // que puede ser null cuando el cliente abre el link sin estar logueado.
+        const urlParams = new URLSearchParams(window.location.search);
+        const tecnicoUser = urlParams.get('u') || currentUser;
+        const pathPerfil = (tecnicoUser === 'Admin') ? 'configuracion/admin' : 'usuarios_registrados/' + tecnicoUser;
         
         db.ref(pathPerfil).once('value')
         .then(snap => {
@@ -5270,7 +5274,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         // --------------------------------------------------------------------
 
         isUserAdmin = isAdmin;
-        isUserAdmin = isAdmin;
         isClientMode = false;
         const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(pathActivo);
@@ -5646,7 +5649,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
     
-    // ====== PERFIL CON CORRECCIÓN DEL ERROR ======
+    // ====== PERFIL ======
     function updatePassword() {
         const newP = document.getElementById('newPass').value.trim();
         const nTaller = document.getElementById('confNombreTaller').value.trim();
@@ -5656,26 +5659,39 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
-        
-        if(newP) {
-            firebase.auth().currentUser.updatePassword(newP).then(() => {
-                showToast("CLAVE SEGURA ACTUALIZADA ✅", "#059669");
-            }).catch(e => {
-                showToast("Vuelve a iniciar sesión para cambiar la clave", "#dc2626");
-            });
-        }
-        if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64; 
-        
+        if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64;
+
         mostrarLoader("Guardando Perfil...");
-        
-        db.ref(path).update(updates).then(() => {
-            ocultarLoader();
-            showToast("PERFIL ACTUALIZADO ✅", "#059669");
-            closePassModal();
-        }).catch(err => {
-            ocultarLoader();
-            alert("Error al guardar el perfil: " + err.message + "\n\n(Si dice 'Permission Denied', es un problema en las Reglas de tu Firebase).");
-        });
+
+        // Bug 14 fix: si hay nueva clave, intentar cambiarla PRIMERO.
+        // Solo si eso tiene éxito (o no hay clave nueva) guardamos el perfil.
+        // Antes el perfil se guardaba siempre aunque el cambio de clave fallara,
+        // y el usuario veía "PERFIL ACTUALIZADO" creyendo que la clave también cambió.
+        const cambiarClave = newP
+            ? firebase.auth().currentUser.updatePassword(newP)
+            : Promise.resolve();
+
+        cambiarClave
+            .then(() => {
+                if (newP) showToast("CLAVE ACTUALIZADA ✅", "#059669");
+                return db.ref(path).update(updates);
+            })
+            .then(() => {
+                ocultarLoader();
+                showToast("PERFIL ACTUALIZADO ✅", "#059669");
+                closePassModal();
+            })
+            .catch(err => {
+                ocultarLoader();
+                // Error de re-autenticación requerida (sesión vieja)
+                if (err.code === 'auth/requires-recent-login') {
+                    alert("⚠️ Para cambiar la contraseña necesitás volver a iniciar sesión.\n\nCerrá sesión, ingresá de nuevo y repetí el cambio.");
+                } else if (err.message) {
+                    alert("Error al guardar: " + err.message + "\n\n(Si dice 'Permission Denied', revisá las Reglas de tu Firebase).");
+                } else {
+                    showToast("Error al guardar el perfil", "#dc2626");
+                }
+            });
     }
 
     let fallasGlobal = [];
@@ -5865,6 +5881,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             senaOriginal: precioTotal,
             metodoPagoSena: metodo,
             costoRepuesto: costoTotal,
+            cantVendida: cant,   // cantidad para restaurar al anular
+            stockId: sId,        // ID del artículo para restaurar sin buscar por nombre
             estado: "Entregado",
             esVentaRapida: true,
             archivado: false, 
@@ -5877,14 +5895,21 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
             // Transacción atómica de Firebase para evitar choques
             const refStockCant = db.ref(pathStock).child(sId).child('cantidad');
-            refStockCant.transaction((cantActual) => {
+            return refStockCant.transaction((cantActual) => {
                 return (cantActual || 0) - cant;
             });
-            
+        }).then(() => {
             document.getElementById('modalVentaRapida').style.display = 'none';
             ocultarLoader();
             showToast("VENTA REGISTRADA ✅", "#059669");
             cargarDatosContabilidad();
+            window.cargarStockData();
+        }).catch((err) => {
+            ocultarLoader();
+            showToast("⚠️ Venta guardada pero error al descontar stock. Revisá el inventario.", "#f59e0b");
+            console.error("Error al descontar stock en venta rápida:", err);
+            cargarDatosContabilidad();
+            window.cargarStockData();
         });
     }
 
@@ -6211,7 +6236,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if(!r) return;
         let precio = parseFloat(r.precio) || 0;
         let sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-        let saldo = precio - sena;
+        // Bug 11 fix: descontar también lo que ya cobró en pagos anteriores
+        let yaAbonado = sena + (parseFloat(r.saldoCobrado) || 0);
+        let saldo = Math.max(0, precio - yaAbonado);
         
         window._modoCobroDeuda = true;
         
@@ -7190,7 +7217,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             modelo: document.getElementById('modelo').value, 
             color: document.getElementById('color').value,
             imei: document.getElementById('imei').value,
-            pin: document.getElementById('pin').value,
+            // PIN no se guarda en draft por seguridad (localStorage no es seguro)
             precio: document.getElementById('precio').value,
             sena: document.getElementById('sena').value,
             costoRepuesto: document.getElementById('costoRepuesto').value,
@@ -7217,7 +7244,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     document.getElementById('modelo').value = d.modelo || "";
                     document.getElementById('color').value = d.color || "";
                     document.getElementById('imei').value = d.imei || "";
-                    document.getElementById('pin').value = d.pin || "";
+                    // PIN no se restaura desde draft (no se guarda por seguridad)
                     document.getElementById('precio').value = d.precio || "";
                     document.getElementById('sena').value = d.sena || "";
                     document.getElementById('costoRepuesto').value = d.costoRepuesto || "";
@@ -7641,20 +7668,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     function subirFotoDirecta(input) {
         if(!idParaFotos) return;
         if(input.files && input.files[0]) {
-            const r = getRegistro(idParaFotos);
-            let fotosActuales = r.fotos || [];
-            if(fotosActuales.length >= 5) {
-                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
-                input.value = "";
-                return;
-            }
             document.getElementById('loader-text').innerText = "Subiendo foto...";
             document.getElementById('global-loader').style.display = 'flex';
-            
+
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
-               const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
+                const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
                 refFotos.once('value').then(snap => {
+                    // Leemos el conteo real desde Firebase, no desde la memoria local
                     let fotosActuales = (snap.val() || {}).fotos || [];
+                    if(fotosActuales.length >= 5) {
+                        ocultarLoader();
+                        input.value = "";
+                        showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+                        return;
+                    }
                     fotosActuales.push(base64);
                     refFotos.update({fotos: fotosActuales}).then(() => {
                         renderGaleria(fotosActuales);
@@ -8136,8 +8163,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
             targetYearStr = String(dObj.getFullYear());
         } else {
-            targetMonthStr = String(parseInt(mesFiltro) + 1).padStart(2, '0');
-            targetYearStr = String(new Date().getFullYear());
+            const mesSel = parseInt(mesFiltro);
+            const hoy = new Date();
+            // Si el mes seleccionado es mayor al mes actual, pertenece al año anterior
+            const anio = mesSel > hoy.getMonth() ? hoy.getFullYear() - 1 : hoy.getFullYear();
+            targetMonthStr = String(mesSel + 1).padStart(2, '0');
+            targetYearStr = String(anio);
         }
 
         let ingresoEfectivo = 0, ingresoTransf = 0, ingresoTarjeta = 0;
@@ -8409,20 +8440,39 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (r.esVentaRapida) {
             db.ref(nodoActualizar).child(idOrden).remove().then(() => {
                 const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
-                db.ref(pathStock).once('value', snap => {
-                    let st = snap.val();
-                    if(st) {
-                        let stockItem = Object.keys(st).find(k => st[k].nombre === r.modelo);
-                        if(stockItem) {
-                            db.ref(pathStock).child(stockItem).update({cantidad: st[stockItem].cantidad + 1});
+                const cantRestaurar = parseInt(r.cantVendida) || 1; // Bug 7 fix: usar cantidad real vendida
+
+                // Si el registro tiene stockId guardado lo usamos directo (ventas nuevas)
+                // Si es una venta vieja sin stockId, buscamos por nombre como fallback
+                if (r.stockId) {
+                    const refCant = db.ref(pathStock).child(r.stockId).child('cantidad');
+                    refCant.transaction(cantActual => (cantActual || 0) + cantRestaurar).then(() => {
+                        registros = registros.filter(x => x.id !== idOrden);
+                        registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
+                        ocultarLoader();
+                        showToast("Venta Anulada (Stock repuesto)", "#dc2626");
+                        cargarDatosContabilidad();
+                        window.cargarStockData();
+                    });
+                } else {
+                    // Fallback para ventas viejas sin stockId: buscar por nombre
+                    db.ref(pathStock).once('value', snap => {
+                        let st = snap.val();
+                        if(st) {
+                            let stockKey = Object.keys(st).find(k => st[k].nombre === r.modelo);
+                            if(stockKey) {
+                                const refCant = db.ref(pathStock).child(stockKey).child('cantidad');
+                                refCant.transaction(cantActual => (cantActual || 0) + cantRestaurar);
+                            }
                         }
-                    }
-                    registros = registros.filter(x => x.id !== idOrden);
-                    registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
-                    ocultarLoader();
-                    showToast("Venta Anulada (Stock repuesto)", "#dc2626");
-                    cargarDatosContabilidad();
-                });
+                        registros = registros.filter(x => x.id !== idOrden);
+                        registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
+                        ocultarLoader();
+                        showToast("Venta Anulada (Stock repuesto)", "#dc2626");
+                        cargarDatosContabilidad();
+                        window.cargarStockData();
+                    });
+                }
             });
             return;
         }
@@ -8467,8 +8517,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
             targetYearStr = String(dObj.getFullYear());
         } else {
-            targetMonthStr = String(parseInt(m) + 1).padStart(2, '0');
-            targetYearStr = String(new Date().getFullYear());
+            const mesSel = parseInt(m);
+            const hoy = new Date();
+            const anio = mesSel > hoy.getMonth() ? hoy.getFullYear() - 1 : hoy.getFullYear();
+            targetMonthStr = String(mesSel + 1).padStart(2, '0');
+            targetYearStr = String(anio);
         }
 
         const mapaOrdenes = {};
@@ -8688,22 +8741,25 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     }
 
     function resetearClaveUsuario(wa) {
-        const nuevaClave = Math.random().toString(36).slice(-8);
-        mostrarLoader("Generando clave temporal...");
+        // Bug 10 fix: no es posible cambiar la clave desde el cliente sin Admin SDK.
+        // Usamos sendPasswordResetEmail con el email real del usuario (mecanismo oficial Firebase).
+        mostrarLoader("Enviando email de recuperación...");
 
-        secondaryApp.auth().signInWithEmailAndPassword(wa + '@mitallerweb.com', '____invalidpass____')
-            .catch(() => {}) 
-            .finally(() => {
-                const msj = `¡Hola! Tu nueva clave temporal para Mi Taller Web es:\n\n🔑 *Clave:* ${nuevaClave}\n\n👤 *Usuario:* ${wa}\n\nIngresá con esta clave y luego cambiala desde tu perfil (👤 Mi Perfil → Nueva Contraseña).`;
-                
-                db.ref('solicitudes_reset/' + wa).update({ estado: 'atendido', claveEnviada: true }).then(() => {
-                    ocultarLoader();
-                    window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
-                    showToast(`✅ Abrí WhatsApp para enviarle la clave a ${wa}`, "#059669");
-                });
+        db.ref('usuarios_registrados/' + wa + '/authEmail').once('value').then(snap => {
+            const emailUsuario = snap.val() || (wa + '@mitallerweb.com');
+            return firebase.auth().sendPasswordResetEmail(emailUsuario).then(() => {
+                return db.ref('solicitudes_reset/' + wa).update({ estado: 'atendido', claveEnviada: true });
+            }).then(() => {
+                ocultarLoader();
+                const msj = `¡Hola! Te enviamos un email a *${emailUsuario}* con un enlace para restablecer tu contraseña de Mi Taller Web.\n\n📧 Revisá tu bandeja (y la carpeta de spam).\n\n👤 *Usuario:* ${wa}\n\nSi no lo recibís en unos minutos, escribinos de nuevo.`;
+                window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
+                showToast(`✅ Email de recuperación enviado a ${emailUsuario}`, "#059669");
             });
+        }).catch(err => {
+            ocultarLoader();
+            showToast("Error al enviar email de recuperación: " + (err.message || err.code), "#dc2626");
+        });
     }
-
     function descartarSolicitudReset(wa) {
         db.ref('solicitudes_reset/' + wa).update({ estado: 'descartado' }).then(() => {
             showToast("Solicitud descartada", "#6b7280");
@@ -8991,22 +9047,31 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const AHORA = new Date().getTime();
         const DIAS_7_EN_MS = 7 * 24 * 60 * 60 * 1000;
         
-        db.ref('usuarios_registrados').once('value', snap => {
+        // Bug 12 fix: encadenar los removes con Promise.all para que sean atómicos.
+        // Antes se lanzaban 5 remove() sueltos; si uno fallaba los demás igual corrían
+        // y podía quedar el usuario borrado pero sus datos intactos, o al revés.
+        db.ref('usuarios_registrados').once('value').then(snap => {
             const users = snap.val();
-            if(users) {
-                Object.keys(users).forEach(wa => {
-                    const u = users[wa];
-                    if(u.estado === 'suspendido' && u.fechaSuspension) {
-                        if (AHORA - u.fechaSuspension > DIAS_7_EN_MS) {
-                            db.ref('reparaciones_usuarios/' + wa).remove();
-                            db.ref('reparaciones_archivadas_usuarios/' + wa).remove();
-                            db.ref('stock_usuarios/' + wa).remove(); 
-                            db.ref('solicitudes_registro/' + wa).remove();
-                            db.ref('usuarios_registrados/' + wa).remove();
-                        }
+            if(!users) return;
+            const promesas = [];
+            Object.keys(users).forEach(wa => {
+                const u = users[wa];
+                if(u.estado === 'suspendido' && u.fechaSuspension) {
+                    if (AHORA - u.fechaSuspension > DIAS_7_EN_MS) {
+                        promesas.push(
+                            Promise.all([
+                                db.ref('reparaciones_usuarios/' + wa).remove(),
+                                db.ref('reparaciones_archivadas_usuarios/' + wa).remove(),
+                                db.ref('stock_usuarios/' + wa).remove(),
+                                db.ref('solicitudes_registro/' + wa).remove(),
+                                db.ref('indices/' + wa).remove()
+                            ]).then(() => db.ref('usuarios_registrados/' + wa).remove())
+                            .catch(err => console.warn('Error al limpiar licencia ' + wa + ':', err))
+                        );
                     }
-                });
-            }
+                }
+            });
+            return Promise.all(promesas);
         });
     }
 
@@ -9247,7 +9312,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (!isUserAdmin) return;
         
         const pathUltima = 'configuracion/admin/ultimaLimpiezaFotos';
-        db.ref(pathUltima).once('value', snap => {
+        // Bug 8 fix: usar .once('value') con Promise en lugar de callback,
+        // para que los db.ref internos se encadenen correctamente
+        db.ref(pathUltima).once('value').then(snap => {
             const ultimaLimpieza = snap.val() || 0;
             const HOY_MS = new Date().getTime();
             const DIAS_7_MS = 7 * 24 * 60 * 60 * 1000;
@@ -9256,28 +9323,29 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 if (forzar) mostrarLoader("Limpiando fotos globales...");
                 
                 const pathsLimpiar = ['reparaciones', 'reparaciones_archivadas', 'reparaciones_usuarios', 'reparaciones_archivadas_usuarios'];
-                let promesas = [];
 
-                pathsLimpiar.forEach(pathRaiz => {
-                    db.ref(pathRaiz).once('value', snapRaiz => {
+                // Convertir cada rama en una Promise real antes de armar el Promise.all
+                const promesasRamas = pathsLimpiar.map(pathRaiz => {
+                    return db.ref(pathRaiz).once('value').then(snapRaiz => {
                         const datos = snapRaiz.val();
-                        if (datos) {
-                            if (pathRaiz.includes('usuarios')) {
-                                Object.keys(datos).forEach(wa => {
-                                    Object.keys(datos[wa]).forEach(ordenId => {
-                                        promesas.push(evaluarYBorrarFoto(pathRaiz + '/' + wa + '/' + ordenId, datos[wa][ordenId], HOY_MS));
-                                    });
+                        if (!datos) return;
+                        let promesas = [];
+                        if (pathRaiz.includes('usuarios')) {
+                            Object.keys(datos).forEach(wa => {
+                                Object.keys(datos[wa]).forEach(ordenId => {
+                                    promesas.push(evaluarYBorrarFoto(pathRaiz + '/' + wa + '/' + ordenId, datos[wa][ordenId], HOY_MS));
                                 });
-                            } else {
-                                Object.keys(datos).forEach(ordenId => {
-                                    promesas.push(evaluarYBorrarFoto(pathRaiz + '/' + ordenId, datos[ordenId], HOY_MS));
-                                });
-                            }
+                            });
+                        } else {
+                            Object.keys(datos).forEach(ordenId => {
+                                promesas.push(evaluarYBorrarFoto(pathRaiz + '/' + ordenId, datos[ordenId], HOY_MS));
+                            });
                         }
+                        return Promise.all(promesas);
                     });
                 });
 
-                Promise.all(promesas).then(() => {
+                Promise.all(promesasRamas).then(() => {
                     db.ref(pathUltima).set(HOY_MS);
                     if (forzar) {
                         ocultarLoader();
@@ -9490,7 +9558,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
    <div class="confirm-modal-box">
     <div class="confirm-modal-header">
      <div class="confirm-modal-icon verde">⭐</div>
-     <h3>Activar Licencia Permanente</h3>
      <h3>Activar Licencia Mensual</h3>
      <p>¿Activar licencia mensual para el número
       <br>
