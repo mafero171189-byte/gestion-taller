@@ -3039,7 +3039,7 @@ function showApp() {
           <div><label>Fecha</label><input type="text" id="pres-fecha" readonly style="background:#f1f5f9;"></div>
           <div><label>WhatsApp</label><input type="text" id="pres-tel" placeholder="549..."></div>
           <div class="full"><label>Cliente</label><input type="text" id="pres-cliente" placeholder="Nombre del cliente"></div>
-          <div>
+          <div style="position:relative;">
             <label>Equipo / Dispositivo</label>
             <div class="custom-picker-btn" id="pres-equipo-btn" onclick="openPresPickerEquipo()">
               <span id="pres-equipo-display">📱 Smartphone</span>
@@ -3047,7 +3047,7 @@ function showApp() {
             </div>
             <input type="hidden" id="pres-equipo" value="Smartphone">
           </div>
-          <div>
+          <div style="position:relative;">
             <label>Marca</label>
             <div class="custom-picker-btn" id="pres-marca-btn" onclick="openPresPickerMarca()">
               <span id="pres-marca-display">Samsung</span>
@@ -8078,7 +8078,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('btn-nav-' + pageId).classList.add('active');
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'stock') window.cargarStockData();
-        if (pageId === 'usuarios') cargarUsuariosAdmin();
+        if (pageId === 'usuarios') { cargarUsuariosAdmin(); setTimeout(() => listarUsuarios(), 50); }
         if (pageId === 'presupuesto') cargarPresupuestos();
     }
 
@@ -8700,7 +8700,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function cargarUsuariosAdmin() {
         if (!isUserAdmin) return;
-        if (_usuariosListener) return; // ya está escuchando, no duplicar
+        if (_usuariosListener) { listarUsuarios(); return; } // ya está escuchando — solo re-renderizar
         _usuariosListener = db.ref('usuarios_registrados').on('value', snap => {
             listadoUsuarios = [];
             if (snap.val()) {
@@ -9794,25 +9794,22 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 dropdown.appendChild(div);
             });
 
-            // Position below the button
+            // Position SIEMPRE abajo del botón (position:fixed usa viewport, no necesita scrollY)
             const rect = btnEl.getBoundingClientRect();
             dropdown.style.display = 'block';
             const ddWidth = Math.max(btnEl.offsetWidth, 200);
             dropdown.style.minWidth = ddWidth + 'px';
 
-            // After display, check if it fits below or needs to go above
-            const spaceBelow = window.innerHeight - rect.bottom - 8;
-            const spaceAbove = rect.top - 8;
-            const maxH = Math.min(window.innerHeight * 0.6, Math.max(spaceBelow, spaceAbove, 150));
+            // Siempre abajo, limitar altura según espacio disponible
+            const spaceBelow = window.innerHeight - rect.bottom - 12;
+            const maxH = Math.min(spaceBelow > 80 ? spaceBelow : window.innerHeight * 0.55, 320);
             dropdown.style.maxHeight = maxH + 'px';
+            dropdown.style.top  = (rect.bottom + 4) + 'px';
 
-            const ddHeight = dropdown.scrollHeight;
-            if (spaceBelow >= Math.min(ddHeight, 150) || spaceBelow >= spaceAbove) {
-                dropdown.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
-            } else {
-                dropdown.style.top  = (rect.top + window.scrollY - Math.min(ddHeight, maxH) - 4) + 'px';
-            }
-            dropdown.style.left = rect.left + 'px';
+            // Ajustar si se va por la derecha de la pantalla
+            const ddW = dropdown.offsetWidth || ddWidth;
+            const leftPos = Math.min(rect.left, window.innerWidth - ddW - 8);
+            dropdown.style.left = Math.max(0, leftPos) + 'px';
         }
 
         function closeDropdown() {
@@ -10115,7 +10112,7 @@ function autoNroPresupuesto() {
     const nroInput = document.getElementById('pres-nro');
     if (nroInput.value) return;
     // Calculate next sequential number from existing presupuestos (min 348)
-    const BASE = 348;
+    const BASE = isUserAdmin ? 348 : 100;
     let maxNro = BASE - 1;
     presupuestosCache.forEach(p => {
         const n = parseInt(String(p.nro || '').replace(/\D/g, ''));
@@ -10230,11 +10227,25 @@ function editarPresupuesto(id) {
 }
 
 function eliminarPresupuesto(id) {
-    if (!confirm('¿Eliminar este presupuesto?')) return;
-    db.ref(presPathActivo()).child(id).remove().then(() => {
-        showToast('Presupuesto eliminado', '#6b7280');
-        cargarPresupuestos();
-    });
+    const p = presupuestosCache.find(x => x.id === id);
+    const modal = document.getElementById('modalEliminarPresupuesto');
+    const info = document.getElementById('elimPresInfo');
+    if (info && p) {
+        info.innerHTML = `<b>${p.cliente || 'Sin nombre'}</b><br><span style="font-size:12px;color:#94a3b8;">N° ${p.nro || '-'} · ${p.fecha || ''}</span>`;
+    }
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('btnConfirmarElimPres').onclick = function() {
+            modal.style.display = 'none';
+            db.ref(presPathActivo()).child(id).remove().then(() => {
+                showToast('🗑️ Presupuesto eliminado', '#6b7280');
+                cargarPresupuestos();
+            });
+        };
+        document.getElementById('btnCancelarElimPres').onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
 }
 
 function cambiarEstadoPresupuesto(id, estado) {
@@ -10536,13 +10547,13 @@ function openPresPickerMarca() {
 }
 
 function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
-    // Desktop: dropdown
+    // Desktop: dropdown SIEMPRE abajo del botón
     if (window.innerWidth >= 600 && btnEl) {
         const existing = document.getElementById('pres-picker-dropdown');
-        if (existing) existing.remove();
+        if (existing) { existing.remove(); return; } // toggle si ya estaba abierto
         const dd = document.createElement('div');
         dd.id = 'pres-picker-dropdown';
-        dd.style.cssText = 'position:fixed; z-index:6000; background:#1e2537; border-radius:14px; overflow-y:auto; max-height:60vh; box-shadow:0 12px 40px rgba(0,0,0,0.45); min-width:200px;';
+        dd.style.cssText = 'position:fixed; z-index:9000; background:#1e2537; border-radius:14px; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,0.55); min-width:200px;';
         options.forEach(opt => {
             const div = document.createElement('div');
             div.className = 'picker-option';
@@ -10551,16 +10562,34 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
             dd.appendChild(div);
         });
         document.body.appendChild(dd);
+
+        // Posicionar SIEMPRE abajo del botón, limitando la altura si el espacio es justo
         const rect = btnEl.getBoundingClientRect();
         dd.style.left = rect.left + 'px';
-        dd.style.minWidth = btnEl.offsetWidth + 'px';
-        const spaceBelow = window.innerHeight - rect.bottom - 8;
-        if (spaceBelow > 150) { dd.style.top = (rect.bottom + window.scrollY + 4) + 'px'; }
-        else { dd.style.top = (rect.top + window.scrollY - Math.min(dd.scrollHeight, 300) - 4) + 'px'; }
-        setTimeout(() => { document.addEventListener('click', function h(e) { if (!dd.contains(e.target) && e.target !== btnEl) { dd.remove(); document.removeEventListener('click', h); } }); }, 0);
+        dd.style.minWidth = Math.max(btnEl.offsetWidth, 200) + 'px';
+        const spaceBelow = window.innerHeight - rect.bottom - 12;
+        const maxH = Math.min(spaceBelow > 80 ? spaceBelow : window.innerHeight * 0.5, 320);
+        dd.style.maxHeight = maxH + 'px';
+        dd.style.top = (rect.bottom + 4) + 'px';
+
+        // Si el borde derecho sale de la pantalla, ajustar
+        const ddW = dd.offsetWidth || parseInt(dd.style.minWidth);
+        if (rect.left + ddW > window.innerWidth - 8) {
+            dd.style.left = (window.innerWidth - ddW - 8) + 'px';
+        }
+
+        setTimeout(() => {
+            document.addEventListener('click', function h(e) {
+                if (!dd.contains(e.target) && e.target !== btnEl && !btnEl.contains(e.target)) {
+                    dd.remove();
+                    document.removeEventListener('click', h);
+                }
+            });
+        }, 0);
         return;
     }
-    // Mobile: bottom sheet
+
+    // Mobile: bottom sheet (mismo estilo que el picker de gestión)
     const bd = document.createElement('div');
     bd.className = 'picker-backdrop open';
     bd.innerHTML = '<div class="picker-sheet"><div class="picker-sheet-handle"></div><div class="picker-sheet-title">' + title + '</div><div id="pres-picker-opts"></div><button class="picker-cancel">Cancelar</button></div>';
@@ -10582,7 +10611,152 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
 // ============= FIN MÓDULO PRESUPUESTOS =============
 // ===================================================
 
+// ===================================================
+// === NAVEGACIÓN POR TECLADO EN PC ==================
+// ===================================================
+(function() {
+    // Solo activo en desktop
+    if (window.innerWidth < 600) return;
+    // Re-chequear al resize (por si carga en mobile y después van a PC)
+    window.addEventListener('resize', function() {
+        _kbEnabled = window.innerWidth >= 600;
+    });
+    var _kbEnabled = true;
+
+    // IDs de los campos del formulario de gestión (en orden de tabulación)
+    var GESTION_FIELDS = [
+        'nroOrden','cliente','tel',
+        'equipo-btn','marca-btn',
+        'modelo','color','imei','pin',
+        'falla','obs','notaInterna',
+        'precio','sena','metodoPago',
+        'btnSubmit'
+    ];
+
+    // IDs del formulario de presupuesto
+    var PRES_FIELDS = [
+        'pres-nro','pres-fecha','pres-cliente','pres-tel',
+        'pres-equipo-btn','pres-marca-btn',
+        'pres-modelo','pres-descripcion','pres-obs'
+    ];
+
+    function focusEl(id) {
+        var el = document.getElementById(id);
+        if (!el) return false;
+        if (el.style && el.style.display === 'none') return false;
+        el.focus();
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            try { el.select(); } catch(e) {}
+        }
+        return true;
+    }
+
+    function navigateList(fields, currentId, dir) {
+        var idx = fields.indexOf(currentId);
+        if (idx === -1) return;
+        var step = dir === 'next' ? 1 : -1;
+        for (var i = idx + step; i >= 0 && i < fields.length; i += step) {
+            if (focusEl(fields[i])) return;
+        }
+    }
+
+    // Enter en inputs navega al siguiente campo (en formularios de gestión y presupuesto)
+    document.addEventListener('keydown', function(e) {
+        if (!_kbEnabled) return;
+        var el = document.activeElement;
+        if (!el) return;
+        var id = el.id;
+
+        // Atajos de navegación entre páginas (Alt + número)
+        if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+            var pageMap = { '1': 'gestion', '2': 'presupuesto', '3': 'contabilidad', '4': 'stock' };
+            if (pageMap[e.key]) {
+                e.preventDefault();
+                if (typeof showPage === 'function') showPage(pageMap[e.key]);
+                return;
+            }
+        }
+
+        // Navegación con Enter en campos de gestión
+        if (e.key === 'Enter' && !e.shiftKey) {
+            if (GESTION_FIELDS.indexOf(id) !== -1) {
+                // Si es el botón submit, no interceptar (deja que haga click normalmente)
+                if (id === 'btnSubmit') return;
+                // Si es un picker-btn, hacer click para abrir
+                if (id === 'equipo-btn' || id === 'marca-btn') {
+                    e.preventDefault();
+                    el.click();
+                    return;
+                }
+                // Textarea con Shift+Enter = salto de línea, Enter = siguiente campo
+                if (el.tagName === 'TEXTAREA') {
+                    e.preventDefault();
+                    navigateList(GESTION_FIELDS, id, 'next');
+                    return;
+                }
+                e.preventDefault();
+                navigateList(GESTION_FIELDS, id, 'next');
+                return;
+            }
+            // Presupuesto fields
+            if (PRES_FIELDS.indexOf(id) !== -1) {
+                if (id === 'pres-equipo-btn' || id === 'pres-marca-btn') {
+                    e.preventDefault(); el.click(); return;
+                }
+                if (el.tagName === 'TEXTAREA') { e.preventDefault(); navigateList(PRES_FIELDS, id, 'next'); return; }
+                e.preventDefault();
+                navigateList(PRES_FIELDS, id, 'next');
+                return;
+            }
+        }
+
+        // Flechas arriba/abajo en pickers (picker-option dentro de dropdown)
+        if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && el.closest && el.closest('#picker-dropdown, .picker-sheet, #pres-picker-dropdown')) {
+            e.preventDefault();
+            var opts = Array.from(document.querySelectorAll('#picker-dropdown .picker-option, .picker-sheet .picker-option, #pres-picker-dropdown .picker-option'));
+            var cur = opts.indexOf(el.closest('.picker-option'));
+            var next = e.key === 'ArrowDown' ? cur + 1 : cur - 1;
+            if (opts[next]) opts[next].focus();
+            return;
+        }
+
+        // Escape cierra pickers, modales, dropdowns
+        if (e.key === 'Escape') {
+            // Cerrar dropdown de pickers
+            var dd = document.getElementById('picker-dropdown');
+            if (dd && dd.style.display !== 'none') { if (typeof closePicker === 'function') closePicker(); return; }
+            var ddPres = document.getElementById('pres-picker-dropdown');
+            if (ddPres) { ddPres.remove(); return; }
+        }
+    });
+
+    // Hacer los botones picker-btn focusables
+    document.addEventListener('DOMContentLoaded', function() {
+        ['equipo-btn','marca-btn','pres-equipo-btn','pres-marca-btn'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && !el.getAttribute('tabindex')) el.setAttribute('tabindex', '0');
+        });
+    });
+})();
+
 
 </script>
+
+<!-- MODAL ELIMINAR PRESUPUESTO -->
+<div id="modalEliminarPresupuesto" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.78);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);">
+  <div style="background:#fff;border-radius:20px;width:88%;max-width:340px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+    <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);text-align:center;padding:24px 20px 14px;font-size:44px;line-height:1;">🗑️</div>
+    <div style="padding:18px 22px 6px;">
+      <h3 style="margin:0 0 8px;font-size:17px;font-weight:900;font-family:'Outfit',sans-serif;color:#111827;letter-spacing:-0.3px;">¿Eliminar presupuesto?</h3>
+      <div id="elimPresInfo" style="font-size:13.5px;color:#6b7280;font-family:'Outfit',sans-serif;line-height:1.55;font-weight:500;margin-bottom:4px;"></div>
+      <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;font-family:'Outfit',sans-serif;">Esta acción no se puede deshacer.</p>
+    </div>
+    <div style="padding:16px 22px 20px;display:flex;flex-direction:column;gap:9px;">
+      <button id="btnConfirmarElimPres" style="width:100%;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;box-shadow:0 4px 14px rgba(220,38,38,0.3);transition:all 0.18s;">SÍ, ELIMINAR</button>
+      <button id="btnCancelarElimPres" style="width:100%;padding:11px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;color:#9ca3af;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
  </body>
 </html>
