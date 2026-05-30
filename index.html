@@ -3076,12 +3076,16 @@ function showApp() {
           <div id="pres-items-container"></div>
           <div style="background:#1e4d8c; color:white; border-radius:10px; padding:12px 16px; text-align:right; margin-top:10px; font-size:16px; font-weight:800;">TOTAL: <span id="pres-total-display">$0</span></div>
         </div>
-        <div style="margin-top:10px;"><label>Observaciones / Validez</label><textarea id="pres-obs" rows="2" placeholder="Ej: Validez del presupuesto: 7 días..." style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; margin-top:4px;"></textarea></div>
+        <div style="margin-top:10px; display:flex; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:160px;"><label>Válido hasta</label><input type="date" id="pres-vencimiento" style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; box-sizing:border-box; margin-top:4px;"></div>
+          <div style="flex:2; min-width:200px;"><label>Observaciones</label><textarea id="pres-obs" rows="2" placeholder="Condiciones, garantía, notas..." style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; margin-top:4px;"></textarea></div>
+        </div>
         <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
           <button type="button" data-pres-action="guardar" class="btn btn-main" style="flex:2; min-width:140px;">&#128190; GUARDAR PRESUPUESTO</button>
           <button type="button" data-pres-action="cerrar" class="btn" style="flex:1; min-width:100px; background:#94a3b8; color:white;">CANCELAR</button>
         </div>
       </div>
+      <div id="pres-stats-bar" style="display:none; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
       <div style="margin-bottom:12px;">
         <input type="text" id="search-presupuesto" placeholder="&#128269; Buscar por N°, cliente o equipo..." style="width:100%; padding:12px; border-radius:8px; border:1.5px solid #e2e8f0; box-sizing:border-box; font-size:15px;">
       </div>
@@ -10019,6 +10023,7 @@ document.addEventListener('click', function(e) {
     if (action === 'pdf') generarPDFPresupuesto(id);
     if (action === 'wapp') enviarWappPresupuesto(id);
     if (action === 'quitar-item') quitarItemPresupuesto(id);
+    if (action === 'crear-orden') crearOrdenDesdePresupuesto(id);
 });
 document.addEventListener('change', function(e) {
     const t = e.target.closest('[data-pres-estado]');
@@ -10047,6 +10052,24 @@ function renderListaPresupuestos() {
     const lista = document.getElementById('lista-presupuestos');
     if (!lista) return;
     let items = presupuestosCache;
+
+    // Stats bar
+    const statsBar = document.getElementById('pres-stats-bar');
+    if (statsBar && presupuestosCache.length) {
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+        let pendiente = 0, aprobado = 0, rechazado = 0, vencido = 0;
+        presupuestosCache.forEach(p => {
+            const est = p.estado || 'Pendiente';
+            if (est === 'Aprobado') aprobado++;
+            else if (est === 'Rechazado') rechazado++;
+            else pendiente++;
+            if (p.vencimiento) { const vd = new Date(p.vencimiento + 'T00:00:00'); if (vd < hoy && est !== 'Rechazado') vencido++; }
+        });
+        const badge = (label, count, bg, color) => count > 0 ? `<span style="background:${bg};color:${color};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:800;">${label} ${count}</span>` : '';
+        statsBar.innerHTML = badge('🕐 Pendientes', pendiente, '#fef3c7', '#92400e') + badge('✅ Aprobados', aprobado, '#d1fae5', '#065f46') + badge('❌ Rechazados', rechazado, '#fee2e2', '#991b1b') + (vencido ? badge('⏰ Vencidos', vencido, '#fee2e2', '#dc2626') : '');
+        statsBar.style.display = 'flex';
+    } else if (statsBar) { statsBar.style.display = 'none'; }
+
     if (q) items = items.filter(p =>
         (p.nro || '').toLowerCase().includes(q) ||
         (p.cliente || '').toLowerCase().includes(q) ||
@@ -10066,6 +10089,7 @@ function renderListaPresupuestos() {
                     <span style="font-size:13px; color:#6b7280; font-weight:600;">N° ${p.nro || '-'}</span>
                     <span style="margin:0 8px; color:#e2e8f0;">|</span>
                     <span style="font-size:13px; color:#94a3b8;">${p.fecha || ''}</span>
+                    ${(function(){ if(!p.vencimiento) return ''; const hoy = new Date(); hoy.setHours(0,0,0,0); const venc = new Date(p.vencimiento + 'T00:00:00'); const diff = Math.ceil((venc - hoy) / 86400000); if(diff < 0) return '<span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ VENCIDO</span>'; if(diff === 0) return '<span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ VENCE HOY</span>'; if(diff <= 3) return `<span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ Vence en ${diff}d</span>`; return `<span style="font-size:11px; color:#94a3b8; margin-left:6px;">Válido hasta ${venc.toLocaleDateString('es-AR')}</span>`; })()}
                 </div>
                 <span style="background:${estadoBg}; color:${estadoColor}; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">${p.estado || 'Pendiente'}</span>
             </div>
@@ -10076,6 +10100,7 @@ function renderListaPresupuestos() {
                 <button data-pres-action="editar" data-pres-id="${p.id}" style="background:#1e4d8c; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">✏️ EDITAR</button>
                 <button data-pres-action="pdf" data-pres-id="${p.id}" style="background:#7c3aed; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">🖨️ PDF</button>
                 <button data-pres-action="wapp" data-pres-id="${p.id}" style="background:#25d366; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">💬 WAPP</button>
+                ${p.estado === 'Aprobado' ? `<button data-pres-action="crear-orden" data-pres-id="${p.id}" style="background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(5,150,105,0.3);">▶ CREAR ORDEN</button>` : ''}
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <select data-pres-estado="${p.id}" style="flex:1; max-width:200px; border:1.5px solid #e2e8f0; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:700; cursor:pointer; color:#374151; background:white;">
@@ -10106,6 +10131,7 @@ function abrirFormPresupuesto() {
     document.getElementById('pres-modelo').value = '';
     document.getElementById('pres-descripcion').value = '';
     document.getElementById('pres-obs').value = '';
+    document.getElementById('pres-vencimiento').value = '';
     document.getElementById('pres-items-container').innerHTML = '';
     document.getElementById('pres-total-display').textContent = '$0';
     agregarItemPresupuesto();
@@ -10190,6 +10216,7 @@ function guardarPresupuesto() {
         modelo: document.getElementById('pres-modelo').value.trim(),
         descripcion: document.getElementById('pres-descripcion').value.trim(),
         obs: document.getElementById('pres-obs').value.trim(),
+        vencimiento: document.getElementById('pres-vencimiento').value || '',
         items,
         estado: 'Pendiente',
         timestamp: Date.now()
@@ -10229,6 +10256,7 @@ function editarPresupuesto(id) {
     document.getElementById('pres-modelo').value = p.modelo || '';
     document.getElementById('pres-descripcion').value = p.descripcion || '';
     document.getElementById('pres-obs').value = p.obs || '';
+    document.getElementById('pres-vencimiento').value = p.vencimiento || '';
     document.getElementById('pres-items-container').innerHTML = '';
     (p.items || []).forEach(i => agregarItemPresupuesto(i.descripcion || '', i.precio || '', i.cantidad || 1));
     document.getElementById('form-presupuesto-container').style.display = 'block';
@@ -10263,6 +10291,34 @@ function cambiarEstadoPresupuesto(id, estado) {
         showToast('Estado: ' + estado, estado === 'Aprobado' ? '#059669' : estado === 'Rechazado' ? '#dc2626' : '#d97706');
         cargarPresupuestos();
     });
+}
+
+function crearOrdenDesdePresupuesto(id) {
+    const p = presupuestosCache.find(x => x.id === id);
+    if (!p) return;
+    // Armar descripción de falla desde items + descripción del presupuesto
+    const itemsStr = (p.items || []).map(i => i.descripcion).filter(Boolean).join(' + ');
+    const fallaFinal = itemsStr || p.descripcion || '';
+    // Navegar a gestión y pre-rellenar
+    showPage('gestion');
+    setTimeout(function() {
+        clickLimpiar(true);
+        document.getElementById('cliente').value = p.cliente || '';
+        document.getElementById('tel').value = p.tel || '';
+        document.getElementById('equipo').value = p.equipo || 'Smartphone';
+        document.getElementById('marca').value = p.marca || 'Samsung';
+        if (typeof syncPickerDisplay === 'function') { syncPickerDisplay('equipo'); syncPickerDisplay('marca'); }
+        document.getElementById('modelo').value = p.modelo || '';
+        document.getElementById('falla').value = fallaFinal;
+        document.getElementById('obs').value = p.obs || '';
+        if (p.descripcion && p.descripcion !== fallaFinal) {
+            document.getElementById('obs').value = (p.obs ? p.obs + ' | ' : '') + p.descripcion;
+        }
+        // Disparar autoOrden para asignar número
+        if (typeof autoOrden === 'function') autoOrden();
+        if (typeof saveDraft === 'function') saveDraft();
+        showToast('✅ Datos del presupuesto cargados en la orden', '#059669');
+    }, 200);
 }
 
 function generarPDFPresupuesto(id) {
