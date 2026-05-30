@@ -10103,11 +10103,10 @@ function renderListaPresupuestos() {
                 ${p.estado === 'Aprobado' ? `<button data-pres-action="crear-orden" data-pres-id="${p.id}" style="background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(5,150,105,0.3);">▶ CREAR ORDEN</button>` : ''}
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-                <select data-pres-estado="${p.id}" style="flex:1; max-width:200px; border:1.5px solid #e2e8f0; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:700; cursor:pointer; color:#374151; background:white;">
-                    <option value="" disabled selected>Estado...</option>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Aprobado">Aprobado</option>
-                    <option value="Rechazado">Rechazado</option>
+                <select data-pres-estado="${p.id}" style="flex:1; border:none; border-radius:20px; padding:8px 14px; font-size:13px; font-weight:800; cursor:pointer; appearance:none; -webkit-appearance:none; background:${(p.estado||'Pendiente')==='Aprobado' ? 'linear-gradient(135deg,#059669,#047857)' : (p.estado||'Pendiente')==='Rechazado' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#d97706,#b45309)'}; color:white; text-align:center;">
+                    <option value="Pendiente" ${(p.estado||'Pendiente')==='Pendiente'?'selected':''}>🕐 Pendiente</option>
+                    <option value="Aprobado" ${p.estado==='Aprobado'?'selected':''}>✅ Aprobado</option>
+                    <option value="Rechazado" ${p.estado==='Rechazado'?'selected':''}>❌ Rechazado</option>
                 </select>
                 <button data-pres-action="eliminar" data-pres-id="${p.id}" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; padding:7px 10px; font-size:14px; cursor:pointer; flex-shrink:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;">🗑️</button>
             </div>
@@ -10289,6 +10288,9 @@ function cambiarEstadoPresupuesto(id, estado) {
     if (!estado) return;
     db.ref(presPathActivo()).child(id).update({ estado }).then(() => {
         showToast('Estado: ' + estado, estado === 'Aprobado' ? '#059669' : estado === 'Rechazado' ? '#dc2626' : '#d97706');
+        // Actualizar color del select sin re-renderizar toda la lista
+        const sel = document.querySelector(`[data-pres-estado="${id}"]`);
+        if (sel) sel.style.background = estado === 'Aprobado' ? 'linear-gradient(135deg,#059669,#047857)' : estado === 'Rechazado' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#d97706,#b45309)';
         cargarPresupuestos();
     });
 }
