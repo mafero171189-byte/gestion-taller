@@ -3730,6 +3730,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     let limiteTabla = 50;
     let logoTemporalBase64 = null; 
     let appIniciada = false;
+    let clienteRenderizado = false;
 
     let idParaSuspender = null;
     let idParaEliminarLicencia = null;
@@ -4108,8 +4109,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 ocultarLoader();
                 if (!esVistaCliente) {
                     document.getElementById('login-overlay').style.display = 'flex';
-                } else {
-                    checkStoredSession();
                 }
             }
         }, 1500);
@@ -4126,6 +4125,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         // Vista cliente para PRESUPUESTO
         const presupuestoId = urlParams.get('presid');
+        if ((presupuestoId || clienteId) && tecnicoUser) {
+            if (clienteRenderizado) return;
+            clienteRenderizado = true;
+        }
         if (presupuestoId && tecnicoUser) {
             isClientMode = true;
             currentUser = tecnicoUser;
