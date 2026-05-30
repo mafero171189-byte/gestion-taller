@@ -873,6 +873,16 @@
             background: rgba(255,255,255,0.18);
             border-radius: 4px;
         }
+        /* Presupuesto picker opts — mismos estilos que picker-options */
+        #pres-picker-opts {
+            overflow-y: auto;
+            flex: 1;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        #pres-picker-opts::-webkit-scrollbar { width: 4px; }
+        #pres-picker-opts::-webkit-scrollbar-track { background: transparent; }
+        #pres-picker-opts::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 4px; }
         @keyframes pickerPopIn {
             from { opacity:0; transform: scale(0.88); }
             to   { opacity:1; transform: scale(1); }
@@ -885,6 +895,7 @@
             text-transform: uppercase; letter-spacing: 1.2px;
             font-family: 'Outfit', sans-serif;
             border-bottom: 1px solid rgba(255,255,255,0.07);
+            flex-shrink: 0;
         }
         .picker-option {
             display: flex; align-items: center; justify-content: space-between;
@@ -929,6 +940,7 @@
             border: none; border-top: 1px solid rgba(255,255,255,0.07);
             cursor: pointer;
             box-sizing: border-box;
+            flex-shrink: 0;
             -webkit-tap-highlight-color: transparent;
         }
         .picker-cancel:hover { background: rgba(255,255,255,0.07); color: white; }
@@ -3037,8 +3049,8 @@ function showApp() {
         <div class="form-grid pres-form-grid">
           <div><label>N° Presupuesto</label><input type="text" id="pres-nro" readonly style="background:#f1f5f9;"></div>
           <div><label>Fecha</label><input type="text" id="pres-fecha" readonly style="background:#f1f5f9;"></div>
+          <div><label>Cliente</label><input type="text" id="pres-cliente" placeholder="Nombre del cliente"></div>
           <div><label>WhatsApp</label><input type="text" id="pres-tel" placeholder="549..."></div>
-          <div class="full"><label>Cliente</label><input type="text" id="pres-cliente" placeholder="Nombre del cliente"></div>
           <div style="position:relative;">
             <label>Equipo / Dispositivo</label>
             <div class="custom-picker-btn" id="pres-equipo-btn" onclick="openPresPickerEquipo()">
