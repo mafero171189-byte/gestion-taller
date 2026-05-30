@@ -17,7 +17,7 @@
             
             var isLogged = localStorage.getItem('st_login_wa');
             var isRecordada = localStorage.getItem('st_session_recordada');
-            var isClient = window.location.search.includes('id=') && window.location.search.includes('u=');
+            var isClient = (window.location.search.includes('id=') && window.location.search.includes('u=')) || (window.location.search.includes('presid=') && window.location.search.includes('u='));
             var isSkipped = sessionStorage.getItem('st_landing_skipped');
             
             if (isLogged || isRecordada || isClient || isSkipped) {
@@ -749,6 +749,45 @@
                 font-size: 16px !important;
                 padding: 13px 14px !important;
             }
+
+            /* Presupuesto form: espaciado correcto en mobile */
+            .pres-form-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 14px !important;
+                background: white !important;
+                padding: 16px !important;
+                border: 1px solid #e8eaf5 !important;
+                border-radius: 12px !important;
+                margin-bottom: 16px !important;
+            }
+            .pres-form-grid .full {
+                grid-column: 1 / -1 !important;
+            }
+            .pres-form-grid label {
+                font-size: 11px !important;
+                font-weight: 800 !important;
+                color: #1e4d8c !important;
+                letter-spacing: 0.5px !important;
+                text-transform: uppercase !important;
+                margin-bottom: 6px !important;
+                display: block !important;
+            }
+            .pres-form-grid input,
+            .pres-form-grid textarea {
+                font-size: 15px !important;
+                padding: 12px 13px !important;
+                border-radius: 10px !important;
+                border: 1.5px solid #e2e8f0 !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .pres-form-grid .custom-picker-btn {
+                font-size: 15px !important;
+                padding: 12px 13px !important;
+                border-radius: 10px !important;
+                min-height: 48px !important;
+            }
         }
 
         /* ============================================================
@@ -918,16 +957,24 @@
            anulando los estilos de mobile-section
         ============================================================ */
         @media (min-width: 600px) {
-            /* El form-grid recupera su aspecto original: una sola fila densa */
+            /* El form-grid recupera su aspecto original: 3 columnas ordenadas */
             .form-grid {
                 display: grid !important;
-                grid-template-columns: repeat(7, 1fr) !important;
+                grid-template-columns: repeat(3, 1fr) !important;
                 gap: 12px !important;
                 background: #f7f8fc !important;
                 padding: 20px !important;
                 border-radius: 12px !important;
                 border: 1px solid #e8eaf5 !important;
                 margin-bottom: 25px !important;
+            }
+
+            /* Presupuesto form: 3 columnas fijas, descripción ocupa fila completa */
+            .pres-form-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+            .pres-form-grid .full {
+                grid-column: 1 / -1 !important;
             }
 
             /* mobile-section y mobile-section-body: display:contents para
@@ -2599,6 +2646,17 @@ function showApp() {
      <button onclick="document.getElementById('modalPDFAcciones').style.display='none'" style="margin-top:14px; border:none; background:none; color:#6b7280; cursor:pointer; font-size:13px;">Cerrar</button>
     </div>
    </div>
+   <div id="modalPDFPresupuesto" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:320px;">
+     <p style="font-size:16px; font-weight:bold; margin-bottom:18px;">📋 Presupuesto PDF — ¿Qué querés hacer?</p>
+     <div style="display:flex; flex-direction:column; gap:10px;">
+      <button id="btnPresPDFVer" style="padding:13px; border:none; border-radius:10px; background:#1e4d8c; color:white; font-weight:bold; font-size:14px; cursor:pointer;">👁️ Ver presupuesto</button>
+      <button id="btnPresPDFDescargar" style="padding:13px; border:none; border-radius:10px; background:#059669; color:white; font-weight:bold; font-size:14px; cursor:pointer;">⬇️ Descargar</button>
+      <button id="btnPresPDFCompartir" style="padding:13px; border:none; border-radius:10px; background:#25d366; color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">📲 Compartir</button>
+     </div>
+     <button onclick="document.getElementById('modalPDFPresupuesto').style.display='none'" style="margin-top:14px; border:none; background:none; color:#6b7280; cursor:pointer; font-size:13px;">Cerrar</button>
+    </div>
+   </div>
 
    <div id="historyModal" class="modal-overlay">
     <div class="modal-box" style="width:300px;">
@@ -2750,6 +2808,7 @@ function showApp() {
    </div>
 <nav>
     <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
+    <button onclick="showPage('presupuesto')" id="btn-nav-presupuesto">📋 PRESUPUESTO</button>
     <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
     <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
     <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
@@ -2963,6 +3022,62 @@ function showApp() {
      <div style="text-align:center; padding: 20px 0;">
       <button id="btnCargarMas" onclick="cargarMasOrdenes()" style="display:none; background:#1e4d8c; color:white; border:none; padding:10px 25px; border-radius:20px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);">⬇️ Cargar más órdenes...</button>
      </div>
+    </div>
+    <!-- ===== PÁGINA PRESUPUESTO ===== -->
+    <div id="page-presupuesto" class="page" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+        <h2 style="margin:0; font-size:22px;">📋 Presupuestos</h2>
+        <button data-pres-action="nuevo" id="btn-nuevo-presupuesto" class="btn btn-main" style="font-size:13px; padding:10px 18px;">＋ NUEVO PRESUPUESTO</button>
+      </div>
+      <div id="form-presupuesto-container" style="display:none; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 id="form-presupuesto-titulo" style="margin:0; font-size:16px; color:#1e4d8c;">📝 Nuevo Presupuesto</h3>
+          <button data-pres-action="cerrar" style="background:none; border:none; font-size:20px; cursor:pointer; color:#94a3b8;">&#10005;</button>
+        </div>
+        <div class="form-grid pres-form-grid">
+          <div><label>N° Presupuesto</label><input type="text" id="pres-nro" readonly style="background:#f1f5f9;"></div>
+          <div><label>Fecha</label><input type="text" id="pres-fecha" readonly style="background:#f1f5f9;"></div>
+          <div><label>WhatsApp</label><input type="text" id="pres-tel" placeholder="549..."></div>
+          <div class="full"><label>Cliente</label><input type="text" id="pres-cliente" placeholder="Nombre del cliente"></div>
+          <div>
+            <label>Equipo / Dispositivo</label>
+            <div class="custom-picker-btn" id="pres-equipo-btn" onclick="openPresPickerEquipo()">
+              <span id="pres-equipo-display">📱 Smartphone</span>
+              <span class="picker-chevron">›</span>
+            </div>
+            <input type="hidden" id="pres-equipo" value="Smartphone">
+          </div>
+          <div>
+            <label>Marca</label>
+            <div class="custom-picker-btn" id="pres-marca-btn" onclick="openPresPickerMarca()">
+              <span id="pres-marca-display">Samsung</span>
+              <span class="picker-chevron">›</span>
+            </div>
+            <input type="hidden" id="pres-marca" value="Samsung">
+          </div>
+          <div><label>Modelo</label><input type="text" id="pres-modelo" placeholder="Ej: A54, iPhone 14..."></div>
+          <div class="full"><label>Descripción del problema</label><textarea id="pres-descripcion" rows="3" placeholder="Describí el problema o lo que solicita el cliente..." style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box;"></textarea></div>
+        </div>
+        <div style="margin:14px 0 8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="font-weight:700; color:#374151; margin:0;">&#128295; Trabajos / Repuestos</label>
+            <button type="button" data-pres-action="agregar-item" style="background:#1e4d8c; color:white; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;">+ AGREGAR ÍTEM</button>
+          </div>
+          <div id="pres-items-container"></div>
+          <div style="background:#1e4d8c; color:white; border-radius:10px; padding:12px 16px; text-align:right; margin-top:10px; font-size:16px; font-weight:800;">TOTAL: <span id="pres-total-display">$0</span></div>
+        </div>
+        <div style="margin-top:10px;"><label>Observaciones / Validez</label><textarea id="pres-obs" rows="2" placeholder="Ej: Validez del presupuesto: 7 días..." style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; margin-top:4px;"></textarea></div>
+        <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
+          <button type="button" data-pres-action="guardar" class="btn btn-main" style="flex:2; min-width:140px;">&#128190; GUARDAR PRESUPUESTO</button>
+          <button type="button" data-pres-action="cerrar" class="btn" style="flex:1; min-width:100px; background:#94a3b8; color:white;">CANCELAR</button>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <input type="text" id="search-presupuesto" placeholder="&#128269; Buscar por N°, cliente o equipo..." style="width:100%; padding:12px; border-radius:8px; border:1.5px solid #e2e8f0; box-sizing:border-box; font-size:15px;">
+      </div>
+      <div id="lista-presupuestos">
+        <p style="text-align:center; color:#94a3b8; padding:30px;">No hay presupuestos guardados.</p>
+      </div>
     </div>
     <div id="page-contabilidad" class="page" style="display:none;">
      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 15px;">
@@ -3935,7 +4050,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function iniciarSeguridad() {
         const urlParams = new URLSearchParams(window.location.search);
-        const esVistaCliente = urlParams.get('id') && urlParams.get('u');
+        const esVistaCliente = (urlParams.get('id') && urlParams.get('u')) || (urlParams.get('presid') && urlParams.get('u'));
 
         // OPTIMIZACIÓN DE VELOCIDAD: Solo mostramos loader si hay una sesión guardada. Si no, salta al login.
         const posibleSesion = localStorage.getItem('st_login_wa');
@@ -4010,6 +4125,44 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const urlParams = new URLSearchParams(window.location.search);
         const clienteId = urlParams.get('id');
         const tecnicoUser = urlParams.get('u');
+
+        // Vista cliente para PRESUPUESTO
+        const presupuestoId = urlParams.get('presid');
+        if (presupuestoId && tecnicoUser) {
+            isClientMode = true;
+            currentUser = tecnicoUser;
+            document.body.classList.add('client-mode');
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            document.querySelectorAll('nav').forEach(n => n.style.display = 'none');
+            document.getElementById('gesture-zone-top').style.display = 'none';
+            const container = document.querySelector('#app-content .container');
+            container.innerHTML = '<div style="font-family:\'Outfit\',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;padding:50px 24px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.55);"><div style="width:42px;height:42px;border:4px solid rgba(30,77,140,0.15);border-top:4px solid #1e4d8c;border-radius:50%;animation:spin 0.85s linear infinite;margin:0 auto 20px;"></div><p style="color:#94a3b8;font-size:15px;font-weight:600;margin:0;">Cargando presupuesto...</p></div>';
+            container.style.display = 'block';
+            container.style.background = 'transparent';
+            container.style.boxShadow = 'none';
+            container.style.padding = '0';
+            container.style.width = '100%';
+            container.style.borderTop = 'none';
+            document.body.style.backgroundColor = '#070c1a';
+            document.body.style.minHeight = '100vh';
+            document.body.style.margin = '0';
+            document.body.style.padding = '32px 16px 48px';
+            document.body.style.boxSizing = 'border-box';
+            const prespath = tecnicoUser === 'Admin' ? 'presupuestos' : 'presupuestos_usuarios/' + tecnicoUser;
+            db.ref(prespath).child(presupuestoId).once('value')
+            .then(snap => {
+                if (snap.exists()) {
+                    renderVistaPresupuestoCliente({ id: presupuestoId, ...snap.val() }, container, tecnicoUser);
+                } else {
+                    container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">🔍</div><h2 style="color:#dc2626;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Presupuesto no encontrado</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">El enlace no corresponde a ningún presupuesto activo. Comunicate con el taller.</p></div>`;
+                }
+            })
+            .catch(() => {
+                container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">⚠️</div><h2 style="color:#d97706;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Error al cargar</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">No se pudo cargar el presupuesto. Intentá de nuevo.</p></div>`;
+            });
+            return;
+        }
 
         if (clienteId && tecnicoUser) {
             isClientMode = true;
@@ -4231,6 +4384,132 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 URL.revokeObjectURL(url);
             });
         });
+    }
+
+    function renderVistaPresupuestoCliente(p, container, tecnicoUser) {
+        const pathPerfil = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + tecnicoUser;
+        db.ref(pathPerfil).once('value')
+        .then(snap => { generarHTMLPresupuestoCliente(p, container, snap.val() || {}); })
+        .catch(() => { generarHTMLPresupuestoCliente(p, container, { nombreTaller: 'Servicio Técnico' }); });
+    }
+
+    function generarHTMLPresupuestoCliente(p, container, conf) {
+        const nombreTaller = conf.nombreTaller || 'Servicio Técnico';
+        const subtitulo = conf.subtitulo || 'Presupuesto';
+        const logoHtml = conf.logo
+            ? `<img src="${conf.logo}" style="max-height:55px;max-width:160px;object-fit:contain;margin-bottom:14px;border-radius:8px;display:block;margin-left:auto;margin-right:auto;">`
+            : '';
+
+        const estadoMap = {
+            'Pendiente':  { color:'#d97706', bg:'#fffbeb', icon:'⏳' },
+            'Aprobado':   { color:'#059669', bg:'#ecfdf5', icon:'✅' },
+            'Rechazado':  { color:'#dc2626', bg:'#fef2f2', icon:'❌' },
+        };
+        const est = estadoMap[p.estado] || estadoMap['Pendiente'];
+
+        const items = p.items || [];
+        const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
+
+        const row = (label, value) => (!value || value === '-') ? '' : `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:14px;line-height:1.45;">
+                <span style="color:#94a3b8;font-weight:600;white-space:nowrap;flex-shrink:0;">${label}</span>
+                <span style="color:#1e293b;font-weight:600;text-align:right;word-break:break-word;">${value}</span>
+            </div>`;
+
+        const itemsHtml = items.length > 0 ? `
+            <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Detalle del Presupuesto</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    ${items.map(i => {
+                        const subtotal = (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1);
+                        return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:14px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;">
+                            <span style="color:#1e293b;font-weight:600;flex:1;">${i.descripcion || '-'}${(parseInt(i.cantidad)||1) > 1 ? ' <span style="color:#94a3b8;font-size:12px;">x${i.cantidad}</span>' : ''}</span>
+                            <span style="color:#1e4d8c;font-weight:700;white-space:nowrap;">${fmt.format(subtotal)}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:2px solid #e8ecf0;">
+                    <span style="font-size:15px;font-weight:800;color:#1e293b;">TOTAL</span>
+                    <span style="font-size:18px;font-weight:900;color:#1e4d8c;">${fmt.format(total)}</span>
+                </div>
+            </div>` : '';
+
+        const obsHtml = p.obs ? `
+            <div style="padding:18px 24px;border-bottom:1px solid #e8ecf0;background:#fafbfc;">
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Validez / Observaciones</div>
+                <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">${p.obs}</p>
+            </div>` : '';
+
+        // Guardar presupuesto en variable global para poder generar PDF
+        window._presupuestoClienteData = p;
+        window._presupuestoClienteConf = conf;
+
+        container.innerHTML = `
+            <div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);">
+
+                <div style="background:linear-gradient(135deg,#06122a 0%,#1a3565 100%);padding:28px 24px;text-align:center;">
+                    ${logoHtml}
+                    <h1 style="color:white;margin:0 0 5px;font-size:22px;font-weight:900;letter-spacing:-0.3px;font-family:'Outfit',sans-serif;">${nombreTaller}</h1>
+                    <p style="color:rgba(255,255,255,0.6);margin:0;font-size:13px;font-weight:500;">${subtitulo}</p>
+                </div>
+
+                <div style="background:#f8fafc;padding:18px 24px;border-bottom:1px solid #e8ecf0;text-align:center;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Presupuesto</div>
+                    <div style="font-size:38px;font-weight:900;color:#06122a;letter-spacing:-1px;line-height:1.1;">#${p.nro || ''}</div>
+                    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${p.fecha || ''}</div>
+                </div>
+
+                <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Estado</div>
+                    <div style="display:inline-flex;align-items:center;gap:10px;background:${est.bg};border:2px solid ${est.color};border-radius:50px;padding:10px 22px;">
+                        <span style="font-size:20px;">${est.icon}</span>
+                        <span style="font-size:15px;font-weight:900;color:${est.color};letter-spacing:0.5px;">${(p.estado || 'PENDIENTE').toUpperCase()}</span>
+                    </div>
+                </div>
+
+                <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
+                    <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Datos</div>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        ${row('Cliente', p.cliente)}
+                        ${equipoStr ? row('Equipo', equipoStr) : ''}
+                        ${p.descripcion ? row('Problema', p.descripcion) : ''}
+                    </div>
+                </div>
+
+                ${itemsHtml}
+                ${obsHtml}
+
+                <div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px;">
+                    <button onclick="descargarPDFPresupuestoCliente()" style="width:100%;background:linear-gradient(135deg,#1e4d8c,#0e2a5e);color:white;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(30,77,140,0.35);font-family:'Outfit',sans-serif;">
+                        📄 Descargar Presupuesto PDF
+                    </button>
+                </div>
+
+                <div style="padding:12px 24px 20px;text-align:center;background:#f8fafc;border-top:1px solid #e8ecf0;">
+                    <p style="margin:0;font-size:12px;color:#94a3b8;">Ante cualquier consulta, comunicate con el taller</p>
+                </div>
+
+            </div>`;
+    }
+
+    function descargarPDFPresupuestoCliente() {
+        const p = window._presupuestoClienteData;
+        const conf = window._presupuestoClienteConf || {};
+        if (!p) return;
+        mostrarLoader('Generando PDF...');
+        setTimeout(() => {
+            const blob = _buildPDFPresupuestoBlob(p, conf);
+            ocultarLoader();
+            if (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Presupuesto-' + (p.nro || p.id) + '.pdf';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }, 100);
     }
 
     function imprimir(id) {
@@ -7796,6 +8075,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'stock') window.cargarStockData();
         if (pageId === 'usuarios') cargarUsuariosAdmin();
+        if (pageId === 'presupuesto') cargarPresupuestos();
     }
 
     function showPage(pageId) {
@@ -9129,6 +9409,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         });
     }
 
+
 </script>
   <!-- MODAL PAGO MERCADO PAGO -->
   <div id="modalPagoMP">
@@ -9700,6 +9981,642 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         bannerInstalar.style.display = 'none';
         if(window.showToast) window.showToast("¡App instalada con éxito! 🎉", "success");
     });
+</script>
+
+<script>
+// ============= MÓDULO PRESUPUESTOS =================
+// ===================================================
+// ============= MÓDULO PRESUPUESTOS =================
+// ===================================================
+
+var presupuestosCache = [];
+var presupuestoEditandoId = null;
+var presItemCount = 0;
+
+// Bind con addEventListener para garantizar scope correcto
+document.addEventListener('click', function(e) {
+    const t = e.target.closest('[data-pres-action]');
+    if (!t) return;
+    const action = t.getAttribute('data-pres-action');
+    const id = t.getAttribute('data-pres-id');
+    if (action === 'nuevo') abrirFormPresupuesto();
+    if (action === 'cerrar') cerrarFormPresupuesto();
+    if (action === 'guardar') guardarPresupuesto();
+    if (action === 'agregar-item') agregarItemPresupuesto();
+    if (action === 'editar') editarPresupuesto(id);
+    if (action === 'eliminar') eliminarPresupuesto(id);
+    if (action === 'pdf') generarPDFPresupuesto(id);
+    if (action === 'wapp') enviarWappPresupuesto(id);
+    if (action === 'quitar-item') quitarItemPresupuesto(id);
+});
+document.addEventListener('change', function(e) {
+    const t = e.target.closest('[data-pres-estado]');
+    if (!t) return;
+    cambiarEstadoPresupuesto(t.getAttribute('data-pres-estado'), t.value);
+});
+document.addEventListener('input', function(e) {
+    if (e.target.id === 'search-presupuesto') renderListaPresupuestos();
+    if (e.target.closest('#pres-items-container')) calcTotalPresupuesto();
+});
+
+function presPathActivo() {
+    return isUserAdmin ? 'presupuestos' : 'presupuestos_usuarios/' + currentUser;
+}
+
+function cargarPresupuestos() {
+    db.ref(presPathActivo()).orderByChild('timestamp').once('value', snap => {
+        const v = snap.val() || {};
+        presupuestosCache = Object.keys(v).map(k => ({ id: k, ...v[k] })).reverse();
+        renderListaPresupuestos();
+    });
+}
+
+function renderListaPresupuestos() {
+    const q = (document.getElementById('search-presupuesto')?.value || '').toLowerCase();
+    const lista = document.getElementById('lista-presupuestos');
+    if (!lista) return;
+    let items = presupuestosCache;
+    if (q) items = items.filter(p =>
+        (p.nro || '').toLowerCase().includes(q) ||
+        (p.cliente || '').toLowerCase().includes(q) ||
+        (p.equipo || '').toLowerCase().includes(q)
+    );
+    if (!items.length) {
+        lista.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:30px;">No hay presupuestos guardados.</p>';
+        return;
+    }
+    lista.innerHTML = items.map(p => {
+        const total = (p.items || []).reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const estadoColor = p.estado === 'Aprobado' ? '#059669' : p.estado === 'Rechazado' ? '#dc2626' : '#d97706';
+        const estadoBg = p.estado === 'Aprobado' ? '#d1fae5' : p.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7';
+        return `<div style="background:white; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                <div>
+                    <span style="font-size:13px; color:#6b7280; font-weight:600;">N° ${p.nro || '-'}</span>
+                    <span style="margin:0 8px; color:#e2e8f0;">|</span>
+                    <span style="font-size:13px; color:#94a3b8;">${p.fecha || ''}</span>
+                </div>
+                <span style="background:${estadoBg}; color:${estadoColor}; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">${p.estado || 'Pendiente'}</span>
+            </div>
+            <div style="font-size:16px; font-weight:800; color:#111827; margin-bottom:2px;">👤 ${p.cliente || '-'}</div>
+            <div style="font-size:13px; color:#6b7280; margin-bottom:10px;">📱 ${[p.equipo, p.marca, p.modelo].filter(Boolean).join(' ') || '-'}</div>
+            <div style="font-size:15px; font-weight:800; color:#1e4d8c; margin-bottom:12px;">${fmt.format(total)}</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+                <button data-pres-action="editar" data-pres-id="${p.id}" style="background:#1e4d8c; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">✏️ EDITAR</button>
+                <button data-pres-action="pdf" data-pres-id="${p.id}" style="background:#7c3aed; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">🖨️ PDF</button>
+                <button data-pres-action="wapp" data-pres-id="${p.id}" style="background:#25d366; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">💬 WAPP</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <select data-pres-estado="${p.id}" style="flex:1; max-width:200px; border:1.5px solid #e2e8f0; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:700; cursor:pointer; color:#374151; background:white;">
+                    <option value="" disabled selected>Estado...</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Aprobado">Aprobado</option>
+                    <option value="Rechazado">Rechazado</option>
+                </select>
+                <button data-pres-action="eliminar" data-pres-id="${p.id}" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; padding:7px 10px; font-size:14px; cursor:pointer; flex-shrink:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function abrirFormPresupuesto() {
+    presupuestoEditandoId = null;
+    presItemCount = 0;
+    document.getElementById('form-presupuesto-titulo').textContent = '📝 Nuevo Presupuesto';
+    document.getElementById('pres-nro').value = '';
+    document.getElementById('pres-fecha').value = new Date().toLocaleDateString('es-AR');
+    autoNroPresupuesto(); // assign number immediately on open
+    document.getElementById('pres-cliente').value = '';
+    document.getElementById('pres-tel').value = '';
+    document.getElementById('pres-equipo').value = 'Smartphone';
+    document.getElementById('pres-equipo-display').textContent = '📱 Smartphone';
+    document.getElementById('pres-marca').value = 'Samsung';
+    document.getElementById('pres-marca-display').textContent = 'Samsung';
+    document.getElementById('pres-modelo').value = '';
+    document.getElementById('pres-descripcion').value = '';
+    document.getElementById('pres-obs').value = '';
+    document.getElementById('pres-items-container').innerHTML = '';
+    document.getElementById('pres-total-display').textContent = '$0';
+    agregarItemPresupuesto();
+    document.getElementById('form-presupuesto-container').style.display = 'block';
+    document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cerrarFormPresupuesto() {
+    document.getElementById('form-presupuesto-container').style.display = 'none';
+    presupuestoEditandoId = null;
+}
+
+function autoNroPresupuesto() {
+    const nroInput = document.getElementById('pres-nro');
+    if (nroInput.value) return;
+    // Calculate next sequential number from existing presupuestos (min 348)
+    const BASE = 348;
+    let maxNro = BASE - 1;
+    presupuestosCache.forEach(p => {
+        const n = parseInt(String(p.nro || '').replace(/\D/g, ''));
+        if (!isNaN(n) && n > maxNro) maxNro = n;
+    });
+    nroInput.value = String(maxNro + 1);
+}
+
+function agregarItemPresupuesto(desc = '', precio = '', cant = 1) {
+    presItemCount++;
+    const idx = presItemCount;
+    const div = document.createElement('div');
+    div.id = 'pres-item-' + idx;
+    div.style.cssText = 'display:grid; grid-template-columns:1fr 90px 60px 36px; gap:6px; margin-bottom:6px; align-items:center;';
+    div.innerHTML = `
+        <input type="text" placeholder="Descripción del trabajo/repuesto" value="${desc}" id="pres-item-desc-${idx}" style="padding:9px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; font-family:inherit;">
+        <input type="text" placeholder="Precio" value="${precio}" id="pres-item-precio-${idx}" style="padding:9px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; text-align:right; font-family:inherit;">
+        <input type="number" min="1" value="${cant}" id="pres-item-cant-${idx}" style="padding:9px 8px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; text-align:center; font-family:inherit;">
+        <button type="button" data-pres-action="quitar-item" data-pres-id="${idx}" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; padding:8px; font-size:14px; cursor:pointer; line-height:1;">✕</button>`;
+    document.getElementById('pres-items-container').appendChild(div);
+    calcTotalPresupuesto();
+}
+
+function quitarItemPresupuesto(idx) {
+    const el = document.getElementById('pres-item-' + idx);
+    if (el) el.remove();
+    calcTotalPresupuesto();
+}
+
+function calcTotalPresupuesto() {
+    let total = 0;
+    document.querySelectorAll('[id^="pres-item-precio-"]').forEach(input => {
+        const idx = input.id.split('-').pop();
+        const cant = parseInt(document.getElementById('pres-item-cant-' + idx)?.value) || 1;
+        total += parseMoney(input.value) * cant;
+    });
+    const disp = document.getElementById('pres-total-display');
+    if (disp) disp.textContent = fmt.format(total);
+}
+
+function recolectarItemsPresupuesto() {
+    const items = [];
+    document.querySelectorAll('[id^="pres-item-desc-"]').forEach(input => {
+        const idx = input.id.split('-').pop();
+        const desc = input.value.trim();
+        const precio = parseMoney(document.getElementById('pres-item-precio-' + idx)?.value);
+        const cant = parseInt(document.getElementById('pres-item-cant-' + idx)?.value) || 1;
+        if (desc || precio) items.push({ descripcion: desc, precio, cantidad: cant });
+    });
+    return items;
+}
+
+function guardarPresupuesto() {
+    const cliente = document.getElementById('pres-cliente').value.trim();
+    if (!cliente) { showToast('⚠️ Ingresá el nombre del cliente', '#f59e0b'); return; }
+    autoNroPresupuesto();
+    const items = recolectarItemsPresupuesto();
+    if (!items.length) { showToast('⚠️ Agregá al menos un ítem', '#f59e0b'); return; }
+    const data = {
+        nro: document.getElementById('pres-nro').value,
+        fecha: document.getElementById('pres-fecha').value,
+        cliente,
+        tel: document.getElementById('pres-tel').value.trim(),
+        equipo: document.getElementById('pres-equipo').value.trim(),
+        marca: document.getElementById('pres-marca').value.trim(),
+        modelo: document.getElementById('pres-modelo').value.trim(),
+        descripcion: document.getElementById('pres-descripcion').value.trim(),
+        obs: document.getElementById('pres-obs').value.trim(),
+        items,
+        estado: 'Pendiente',
+        timestamp: Date.now()
+    };
+    mostrarLoader('Guardando presupuesto...');
+    const path = presPathActivo();
+    const ref = presupuestoEditandoId ? db.ref(path).child(presupuestoEditandoId) : db.ref(path).push();
+    if (presupuestoEditandoId) {
+        const existing = presupuestosCache.find(p => p.id === presupuestoEditandoId);
+        if (existing) { data.estado = existing.estado || 'Pendiente'; data.timestamp = existing.timestamp || Date.now(); }
+    }
+    ref.set(data).then(() => {
+        ocultarLoader();
+        showToast(presupuestoEditandoId ? '✅ Presupuesto actualizado' : '✅ Presupuesto guardado', '#059669');
+        cerrarFormPresupuesto();
+        cargarPresupuestos();
+    }).catch(() => { ocultarLoader(); showToast('❌ Error al guardar', '#dc2626'); });
+}
+
+function editarPresupuesto(id) {
+    const p = presupuestosCache.find(x => x.id === id);
+    if (!p) return;
+    presupuestoEditandoId = id;
+    presItemCount = 0;
+    document.getElementById('form-presupuesto-titulo').textContent = '✏️ Editar Presupuesto';
+    document.getElementById('pres-nro').value = p.nro || '';
+    document.getElementById('pres-fecha').value = p.fecha || '';
+    document.getElementById('pres-cliente').value = p.cliente || '';
+    document.getElementById('pres-tel').value = p.tel || '';
+    document.getElementById('pres-equipo').value = p.equipo || 'Smartphone';
+    document.getElementById('pres-equipo-display').textContent = (function(){
+        const map = {'Smartphone':'📱 Smartphone','Tablet':'📳 Tablet','PC/Notebook':'💻 PC/Notebook','Consola':'🎮 Consola','Otro':'🔧 Otro'};
+        return map[p.equipo] || p.equipo || '📱 Smartphone';
+    })();
+    document.getElementById('pres-marca').value = p.marca || 'Samsung';
+    document.getElementById('pres-marca-display').textContent = p.marca || 'Samsung';
+    document.getElementById('pres-modelo').value = p.modelo || '';
+    document.getElementById('pres-descripcion').value = p.descripcion || '';
+    document.getElementById('pres-obs').value = p.obs || '';
+    document.getElementById('pres-items-container').innerHTML = '';
+    (p.items || []).forEach(i => agregarItemPresupuesto(i.descripcion || '', i.precio || '', i.cantidad || 1));
+    document.getElementById('form-presupuesto-container').style.display = 'block';
+    document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function eliminarPresupuesto(id) {
+    if (!confirm('¿Eliminar este presupuesto?')) return;
+    db.ref(presPathActivo()).child(id).remove().then(() => {
+        showToast('Presupuesto eliminado', '#6b7280');
+        cargarPresupuestos();
+    });
+}
+
+function cambiarEstadoPresupuesto(id, estado) {
+    if (!estado) return;
+    db.ref(presPathActivo()).child(id).update({ estado }).then(() => {
+        showToast('Estado: ' + estado, estado === 'Aprobado' ? '#059669' : estado === 'Rechazado' ? '#dc2626' : '#d97706');
+        cargarPresupuestos();
+    });
+}
+
+function generarPDFPresupuesto(id) {
+    const p = presupuestosCache.find(x => x.id === id);
+    if (!p) return;
+    mostrarLoader('Generando PDF...');
+    const confPath = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+    db.ref(confPath).once('value', snap => {
+        const conf = snap.val() || {};
+        ocultarLoader();
+        const blob = _buildPDFPresupuestoBlob(p, conf);
+        if (!blob) { showToast('❌ Error al generar PDF', '#dc2626'); return; }
+        const fileName = 'Presupuesto-' + (p.nro || id) + '.pdf';
+        const url = URL.createObjectURL(blob);
+        const modal = document.getElementById('modalPDFPresupuesto');
+        const btnVer  = document.getElementById('btnPresPDFVer');
+        const btnDesc = document.getElementById('btnPresPDFDescargar');
+        const btnComp = document.getElementById('btnPresPDFCompartir');
+
+        btnVer.onclick = () => {
+            window.open(url, '_blank');
+            modal.style.display = 'none';
+        };
+        btnDesc.onclick = () => {
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName; a.click();
+            modal.style.display = 'none';
+        };
+        if (navigator.canShare) {
+            btnComp.style.display = 'block';
+            btnComp.onclick = () => {
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+                navigator.share({ title: 'Presupuesto ' + (p.nro || ''), files: [file] }).catch(() => {});
+                modal.style.display = 'none';
+            };
+        } else {
+            btnComp.style.display = 'none';
+        }
+        modal.style.display = 'flex';
+    });
+}
+
+function _buildPDFPresupuesto(p, conf) {
+    const { jsPDF } = window.jspdf;
+    const nombreTaller = conf.nombreTaller || 'Servicio Técnico';
+    const subtitulo = conf.subtitulo || '';
+    const wapp = conf.wappTicket || '';
+    const items = p.items || [];
+    const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+
+    // Medidas dinámicas
+    const docTmp = new jsPDF({ unit: 'mm', format: [80, 200] });
+    docTmp.setFontSize(9);
+    let extraH = 0;
+    items.forEach(i => {
+        const lines = docTmp.splitTextToSize(i.descripcion || '', 44);
+        extraH += (lines.length - 1) * 4;
+    });
+    const obsLines = p.obs ? docTmp.splitTextToSize(p.obs, 60) : [];
+    const descLines = p.descripcion ? docTmp.splitTextToSize(p.descripcion, 60) : [];
+    const altoTotal = 185 + extraH + (obsLines.length * 4) + (descLines.length * 4);
+
+    const doc = new jsPDF({ unit: 'mm', format: [80, altoTotal] });
+
+    // HEADER — azul oscuro
+    const altoH = conf.logo ? 32 : 22;
+    doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoH, 'F');
+    if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } catch(e) {} }
+    doc.setTextColor(255, 255, 255);
+    const txtX = conf.logo ? 28 : 40;
+    const align = conf.logo ? 'left' : 'center';
+    let hy = conf.logo ? 12 : 10;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 13 : 15);
+    doc.text(nombreTaller, txtX, hy, { align });
+    hy += 6;
+    if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(subtitulo, txtX, hy, { align }); hy += 5; }
+    if (wapp) { doc.setFontSize(8); doc.text('WhatsApp: ' + wapp, txtX, hy, { align }); }
+
+    // TÍTULO PRESUPUESTO — banda violeta
+    let y = altoH + 1;
+    doc.setFillColor(109, 40, 217); doc.rect(0, y, 80, 14, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('PRESUPUESTO', 40, y + 5.5, { align: 'center' });
+    doc.setFontSize(14); doc.text(String(p.nro || ''), 40, y + 11.5, { align: 'center' });
+    y += 16;
+
+    // DATOS CLIENTE
+    doc.setTextColor(26, 42, 58);
+    doc.setFillColor(241, 245, 249); doc.rect(0, y, 80, 26, 'F');
+    y += 6;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('FECHA:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.fecha || '', 24, y); y += 5;
+    doc.setFont('helvetica', 'bold'); doc.text('CLIENTE:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.cliente || '', 24, y); y += 5;
+    const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
+    if (equipoStr) { doc.setFont('helvetica', 'bold'); doc.text('EQUIPO:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(equipoStr, 24, y); y += 5; }
+    y += 3;
+
+    // DESCRIPCIÓN DEL PROBLEMA (si existe)
+    if (p.descripcion) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(109, 40, 217);
+        doc.text('MOTIVO DE CONSULTA:', 5, y); y += 5;
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
+        const dLines = doc.splitTextToSize(p.descripcion, 70);
+        doc.text(dLines, 5, y); y += dLines.length * 4.5 + 4;
+    }
+
+    // LINEA SEPARADORA
+    doc.setDrawColor(200, 200, 200); doc.line(5, y, 75, y); y += 5;
+
+    // ITEMS — tabla
+    doc.setFillColor(26, 42, 58); doc.rect(0, y - 1, 80, 7, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+    doc.text('DESCRIPCIÓN', 5, y + 4);
+    doc.text('CANT', 52, y + 4, { align: 'center' });
+    doc.text('PRECIO', 75, y + 4, { align: 'right' });
+    y += 8;
+
+    doc.setTextColor(30, 30, 30);
+    items.forEach((item, idx) => {
+        if (idx % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(0, y - 1, 80, 8, 'F'); }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+        const dsc = doc.splitTextToSize(item.descripcion || '-', 44);
+        doc.text(dsc, 5, y + 3.5);
+        doc.text(String(item.cantidad || 1), 52, y + 3.5, { align: 'center' });
+        const subtotal = (parseFloat(item.precio) || 0) * (parseInt(item.cantidad) || 1);
+        doc.text(fmt.format(subtotal), 75, y + 3.5, { align: 'right' });
+        y += (dsc.length - 1) * 4 + 8;
+    });
+
+    // TOTAL — banda verde azulada
+    doc.setFillColor(30, 77, 140); doc.rect(0, y, 80, 12, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('TOTAL: ' + fmt.format(total), 40, y + 8.5, { align: 'center' });
+    y += 14;
+
+    // OBSERVACIONES
+    if (p.obs) {
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+        const oLines = doc.splitTextToSize(p.obs, 68);
+        doc.text(oLines, 6, y + 4);
+        y += oLines.length * 4 + 6;
+    }
+
+    // PIE DE PÁGINA
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(140, 140, 140);
+    doc.text('Presupuesto generado por Mi Taller Web', 40, y + 6, { align: 'center' });
+
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.click();
+}
+
+function _buildPDFPresupuestoBlob(p, conf) {
+    try {
+        const { jsPDF } = window.jspdf;
+        const nombreTaller = conf.nombreTaller || 'Servicio Técnico';
+        const subtitulo = conf.subtitulo || '';
+        const wapp = conf.wappTicket || '';
+        const items = p.items || [];
+        const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const fmt2 = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+
+        const docTmp = new jsPDF({ unit: 'mm', format: [80, 200] });
+        docTmp.setFontSize(9);
+        let extraH = 0;
+        items.forEach(i => { const lines = docTmp.splitTextToSize(i.descripcion || '', 44); extraH += (lines.length - 1) * 4; });
+        const obsLines = p.obs ? docTmp.splitTextToSize(p.obs, 60) : [];
+        const descLines = p.descripcion ? docTmp.splitTextToSize(p.descripcion, 60) : [];
+        const altoTotal = 185 + extraH + (obsLines.length * 4) + (descLines.length * 4);
+
+        const doc = new jsPDF({ unit: 'mm', format: [80, altoTotal] });
+        const altoH = conf.logo ? 32 : 22;
+        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoH, 'F');
+        if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } catch(e) {} }
+        doc.setTextColor(255, 255, 255);
+        const txtX = conf.logo ? 28 : 40;
+        const align = conf.logo ? 'left' : 'center';
+        let hy = conf.logo ? 12 : 10;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 13 : 15);
+        doc.text(nombreTaller, txtX, hy, { align });
+        hy += 6;
+        if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(subtitulo, txtX, hy, { align }); hy += 5; }
+        if (wapp) { doc.setFontSize(8); doc.text('WhatsApp: ' + wapp, txtX, hy, { align }); }
+
+        let y = altoH + 1;
+        doc.setFillColor(109, 40, 217); doc.rect(0, y, 80, 14, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+        doc.text('PRESUPUESTO', 40, y + 5.5, { align: 'center' });
+        doc.setFontSize(14); doc.text(String(p.nro || ''), 40, y + 11.5, { align: 'center' });
+        y += 16;
+
+        doc.setTextColor(26, 42, 58);
+        doc.setFillColor(241, 245, 249); doc.rect(0, y, 80, 26, 'F');
+        y += 6;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('FECHA:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.fecha || '', 24, y); y += 5;
+        doc.setFont('helvetica', 'bold'); doc.text('CLIENTE:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.cliente || '', 24, y); y += 5;
+        const equipoStr2 = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
+        if (equipoStr2) { doc.setFont('helvetica', 'bold'); doc.text('EQUIPO:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(equipoStr2, 24, y); y += 5; }
+        y += 3;
+
+        if (p.descripcion) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(109, 40, 217);
+            doc.text('MOTIVO DE CONSULTA:', 5, y); y += 5;
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
+            const dLines = doc.splitTextToSize(p.descripcion, 70);
+            doc.text(dLines, 5, y); y += dLines.length * 4.5 + 4;
+        }
+
+        doc.setDrawColor(200, 200, 200); doc.line(5, y, 75, y); y += 5;
+        doc.setFillColor(26, 42, 58); doc.rect(0, y - 1, 80, 7, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+        doc.text('DESCRIPCIÓN', 5, y + 4);
+        doc.text('CANT', 52, y + 4, { align: 'center' });
+        doc.text('PRECIO', 75, y + 4, { align: 'right' });
+        y += 8;
+
+        doc.setTextColor(30, 30, 30);
+        items.forEach((item, idx) => {
+            if (idx % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(0, y - 1, 80, 8, 'F'); }
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+            const dsc = doc.splitTextToSize(item.descripcion || '-', 44);
+            doc.text(dsc, 5, y + 3.5);
+            doc.text(String(item.cantidad || 1), 52, y + 3.5, { align: 'center' });
+            const subtotal = (parseFloat(item.precio) || 0) * (parseInt(item.cantidad) || 1);
+            doc.text(fmt2.format(subtotal), 75, y + 3.5, { align: 'right' });
+            y += (dsc.length - 1) * 4 + 8;
+        });
+
+        doc.setFillColor(30, 77, 140); doc.rect(0, y, 80, 12, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+        doc.text('TOTAL: ' + fmt2.format(total), 40, y + 8.5, { align: 'center' });
+        y += 14;
+
+        if (p.obs) {
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+            const oLines = doc.splitTextToSize(p.obs, 68);
+            doc.text(oLines, 6, y + 4);
+            y += oLines.length * 4 + 6;
+        }
+
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(140, 140, 140);
+        doc.text('Presupuesto generado por Mi Taller Web', 40, y + 6, { align: 'center' });
+
+        return doc.output('blob');
+    } catch(e) { return null; }
+}
+
+function enviarWappPresupuesto(id) {
+    const p = presupuestosCache.find(x => x.id === id);
+    if (!p) return;
+
+    // Normalize phone number — same logic as orders
+    let rawTel = String(p.tel || '').replace(/\D/g, '');
+    if (!rawTel) { showToast('⚠️ Este presupuesto no tiene número de WhatsApp', '#f59e0b'); return; }
+    let num;
+    if (rawTel.startsWith('549'))      { num = rawTel; }
+    else if (rawTel.startsWith('54'))  { num = rawTel.replace(/^54/, '549'); }
+    else if (rawTel.startsWith('9') && rawTel.length >= 10) { num = '54' + rawTel; }
+    else                               { num = '549' + rawTel; }
+
+    mostrarLoader('Generando PDF...');
+    const confPath = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+    db.ref(confPath).once('value', snap => {
+        const conf = snap.val() || {};
+        ocultarLoader();
+
+        // Build PDF blob and open share modal
+        const pdfBlob = _buildPDFPresupuestoBlob(p, conf);
+        const fileName = 'Presupuesto-' + (p.nro || id) + '.pdf';
+        const items = p.items || [];
+        const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const nombreTaller = conf.nombreTaller || 'nuestro taller';
+        const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
+        const baseUrl = window.location.origin + window.location.pathname;
+        const presLink = `${baseUrl}?presid=${id}&u=${currentUser}`;
+        const msj = '¡Hola ' + (p.cliente || '') + '! 👋 Te envío el presupuesto de *' + nombreTaller + '*.'
+            + '\n\n📋 *PRESUPUESTO N° ' + (p.nro || '') + '*'
+            + '\n📅 Fecha: ' + (p.fecha || '')
+            + (equipoStr ? '\n📱 Equipo: ' + equipoStr : '')
+            + (p.descripcion ? '\n🔧 ' + p.descripcion : '')
+            + '\n\n💰 *TOTAL: ' + fmt.format(total) + '*'
+            + (p.obs ? '\n\n📌 ' + p.obs : '')
+            + '\n\n🔎 *VER Y DESCARGAR PRESUPUESTO PDF AQUÍ:*\n' + presLink;
+
+        // Open WhatsApp directly to the client number
+        window.open('https://api.whatsapp.com/send?phone=' + num + '&text=' + encodeURIComponent(msj), '_blank');
+    });
+}
+
+// Picker helpers for presupuesto equipo/marca
+function openPresPickerEquipo() {
+    // Reuse PICKERS config via a proxy approach
+    const currentVal = document.getElementById('pres-equipo').value;
+    const options = [
+        { value: 'Smartphone', label: '📱 Smartphone' },
+        { value: 'Tablet',     label: '📳 Tablet' },
+        { value: 'PC/Notebook',label: '💻 PC/Notebook' },
+        { value: 'Consola',    label: '🎮 Consola' },
+        { value: 'Otro',       label: '🔧 Otro' },
+    ];
+    showPresPickerModal('Tipo de equipo', options, currentVal, function(val, label) {
+        document.getElementById('pres-equipo').value = val;
+        document.getElementById('pres-equipo-display').textContent = label;
+    }, document.getElementById('pres-equipo-btn'));
+}
+
+function openPresPickerMarca() {
+    const currentVal = document.getElementById('pres-marca').value;
+    const options = [
+        { value: 'Apple',    label: 'Apple' },
+        { value: 'Huawei',   label: 'Huawei' },
+        { value: 'LG',       label: 'LG' },
+        { value: 'Motorola', label: 'Motorola' },
+        { value: 'Nokia',    label: 'Nokia' },
+        { value: 'Nubia',    label: 'Nubia' },
+        { value: 'Oppo',     label: 'Oppo' },
+        { value: 'Samsung',  label: 'Samsung' },
+        { value: 'TCL',      label: 'TCL' },
+        { value: 'Xiaomi',   label: 'Xiaomi' },
+        { value: 'ZTE',      label: 'ZTE' },
+        { value: 'Otra',     label: 'Otra' },
+    ];
+    showPresPickerModal('Marca del equipo', options, currentVal, function(val, label) {
+        document.getElementById('pres-marca').value = val;
+        document.getElementById('pres-marca-display').textContent = label;
+    }, document.getElementById('pres-marca-btn'));
+}
+
+function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
+    // Desktop: dropdown
+    if (window.innerWidth >= 600 && btnEl) {
+        const existing = document.getElementById('pres-picker-dropdown');
+        if (existing) existing.remove();
+        const dd = document.createElement('div');
+        dd.id = 'pres-picker-dropdown';
+        dd.style.cssText = 'position:fixed; z-index:6000; background:#1e2537; border-radius:14px; overflow-y:auto; max-height:60vh; box-shadow:0 12px 40px rgba(0,0,0,0.45); min-width:200px;';
+        options.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'picker-option';
+            div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span><div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '"></div>';
+            div.addEventListener('click', function(e) { e.stopPropagation(); onSelect(opt.value, opt.label); dd.remove(); });
+            dd.appendChild(div);
+        });
+        document.body.appendChild(dd);
+        const rect = btnEl.getBoundingClientRect();
+        dd.style.left = rect.left + 'px';
+        dd.style.minWidth = btnEl.offsetWidth + 'px';
+        const spaceBelow = window.innerHeight - rect.bottom - 8;
+        if (spaceBelow > 150) { dd.style.top = (rect.bottom + window.scrollY + 4) + 'px'; }
+        else { dd.style.top = (rect.top + window.scrollY - Math.min(dd.scrollHeight, 300) - 4) + 'px'; }
+        setTimeout(() => { document.addEventListener('click', function h(e) { if (!dd.contains(e.target) && e.target !== btnEl) { dd.remove(); document.removeEventListener('click', h); } }); }, 0);
+        return;
+    }
+    // Mobile: bottom sheet
+    const bd = document.createElement('div');
+    bd.className = 'picker-backdrop open';
+    bd.innerHTML = '<div class="picker-sheet"><div class="picker-sheet-handle"></div><div class="picker-sheet-title">' + title + '</div><div id="pres-picker-opts"></div><button class="picker-cancel">Cancelar</button></div>';
+    bd.querySelector('.picker-cancel').addEventListener('click', function() { bd.remove(); document.body.style.overflow = ''; });
+    bd.addEventListener('click', function(e) { if (e.target === bd) { bd.remove(); document.body.style.overflow = ''; } });
+    const container = bd.querySelector('#pres-picker-opts');
+    options.forEach(opt => {
+        const div = document.createElement('div');
+        div.className = 'picker-option';
+        div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span><div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '"></div>';
+        div.addEventListener('click', function() { onSelect(opt.value, opt.label); bd.remove(); document.body.style.overflow = ''; });
+        container.appendChild(div);
+    });
+    document.body.appendChild(bd);
+    document.body.style.overflow = 'hidden';
+}
+
+// ===================================================
+// ============= FIN MÓDULO PRESUPUESTOS =============
+// ===================================================
+
+
 </script>
  </body>
 </html>
