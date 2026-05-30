@@ -3039,12 +3039,10 @@ function showApp() {
     <div id="page-presupuesto" class="page" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
         <h2 style="margin:0; font-size:22px;">📋 Presupuestos</h2>
-        <button data-pres-action="nuevo" id="btn-nuevo-presupuesto" class="btn btn-main" style="font-size:13px; padding:10px 18px;">＋ NUEVO PRESUPUESTO</button>
       </div>
-      <div id="form-presupuesto-container" style="display:none; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:20px;">
+      <div id="form-presupuesto-container" style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           <h3 id="form-presupuesto-titulo" style="margin:0; font-size:16px; color:#1e4d8c;">📝 Nuevo Presupuesto</h3>
-          <button data-pres-action="cerrar" style="background:none; border:none; font-size:20px; cursor:pointer; color:#94a3b8;">&#10005;</button>
         </div>
         <div class="form-grid pres-form-grid">
           <div><label>N° Presupuesto</label><input type="text" id="pres-nro" readonly style="background:#f1f5f9;"></div>
@@ -8091,7 +8089,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'stock') window.cargarStockData();
         if (pageId === 'usuarios') { cargarUsuariosAdmin(); setTimeout(() => listarUsuarios(), 50); }
-        if (pageId === 'presupuesto') cargarPresupuestos();
+        if (pageId === 'presupuesto') { cargarPresupuestos(); setTimeout(() => abrirFormPresupuesto(), 50); }
     }
 
     function showPage(pageId) {
@@ -10112,12 +10110,11 @@ function abrirFormPresupuesto() {
     document.getElementById('pres-total-display').textContent = '$0';
     agregarItemPresupuesto();
     document.getElementById('form-presupuesto-container').style.display = 'block';
-    document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function cerrarFormPresupuesto() {
-    document.getElementById('form-presupuesto-container').style.display = 'none';
     presupuestoEditandoId = null;
+    abrirFormPresupuesto();
 }
 
 function autoNroPresupuesto() {
