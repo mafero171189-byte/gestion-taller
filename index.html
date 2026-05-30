@@ -4092,12 +4092,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 }
             } else {
                 if (esVistaCliente) {
-                    try { 
-                        await firebase.auth().signInAnonymously(); 
-                    } catch(e) { 
-                        console.error(e);
-                        checkStoredSession(); 
-                    }
+                    // No depender de login anónimo — ir directo a la vista
+                    checkStoredSession();
                 } else {
                     ocultarLoader();
                     checkStoredSession(); 
@@ -4112,9 +4108,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 ocultarLoader();
                 if (!esVistaCliente) {
                     document.getElementById('login-overlay').style.display = 'flex';
+                } else {
+                    checkStoredSession();
                 }
             }
-        }, 3000);
+        }, 1500);
     }
 
     function getRegistro(id) {
