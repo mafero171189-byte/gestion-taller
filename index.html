@@ -10285,212 +10285,174 @@ function generarPDFPresupuesto(id) {
     });
 }
 
-function _buildPDFPresupuesto(p, conf) {
+function _buildPDFPresupuestoCore(p, conf) {
     const { jsPDF } = window.jspdf;
     const nombreTaller = conf.nombreTaller || 'Servicio Técnico';
     const subtitulo = conf.subtitulo || '';
     const wapp = conf.wappTicket || '';
     const items = p.items || [];
     const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+    const fmtARS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
-    // Medidas dinámicas
-    const docTmp = new jsPDF({ unit: 'mm', format: [80, 200] });
+    // Estado
+    const estadoMap = {
+        'Aprobado':  { r: 5,  g: 150, b: 105, label: 'APROBADO' },
+        'Rechazado': { r: 220,g: 38,  b: 38,  label: 'RECHAZADO' },
+        'Pendiente': { r: 217,g: 119, b: 6,   label: 'PENDIENTE' },
+    };
+    const est = estadoMap[p.estado] || estadoMap['Pendiente'];
+
+    // Calcular alto dinámico
+    const docTmp = new jsPDF({ unit: 'mm', format: [80, 300] });
     docTmp.setFontSize(9);
     let extraH = 0;
-    items.forEach(i => {
-        const lines = docTmp.splitTextToSize(i.descripcion || '', 44);
-        extraH += (lines.length - 1) * 4;
-    });
-    const obsLines = p.obs ? docTmp.splitTextToSize(p.obs, 60) : [];
-    const descLines = p.descripcion ? docTmp.splitTextToSize(p.descripcion, 60) : [];
-    const altoTotal = 185 + extraH + (obsLines.length * 4) + (descLines.length * 4);
-
-    const doc = new jsPDF({ unit: 'mm', format: [80, altoTotal] });
-
-    // HEADER — azul oscuro
-    const altoH = conf.logo ? 32 : 22;
-    doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoH, 'F');
-    if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } catch(e) {} }
-    doc.setTextColor(255, 255, 255);
-    const txtX = conf.logo ? 28 : 40;
-    const align = conf.logo ? 'left' : 'center';
-    let hy = conf.logo ? 12 : 10;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 13 : 15);
-    doc.text(nombreTaller, txtX, hy, { align });
-    hy += 6;
-    if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(subtitulo, txtX, hy, { align }); hy += 5; }
-    if (wapp) { doc.setFontSize(8); doc.text('WhatsApp: ' + wapp, txtX, hy, { align }); }
-
-    // TÍTULO PRESUPUESTO — banda violeta
-    let y = altoH + 1;
-    doc.setFillColor(109, 40, 217); doc.rect(0, y, 80, 14, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text('PRESUPUESTO', 40, y + 5.5, { align: 'center' });
-    doc.setFontSize(14); doc.text(String(p.nro || ''), 40, y + 11.5, { align: 'center' });
-    y += 16;
-
-    // DATOS CLIENTE
-    doc.setTextColor(26, 42, 58);
-    doc.setFillColor(241, 245, 249); doc.rect(0, y, 80, 26, 'F');
-    y += 6;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('FECHA:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.fecha || '', 24, y); y += 5;
-    doc.setFont('helvetica', 'bold'); doc.text('CLIENTE:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.cliente || '', 24, y); y += 5;
+    items.forEach(i => { const lines = docTmp.splitTextToSize(i.descripcion || '', 52); extraH += lines.length * 6; });
+    const obsLines = p.obs ? docTmp.splitTextToSize(p.obs, 66) : [];
+    const descLines = p.descripcion ? docTmp.splitTextToSize(p.descripcion, 66) : [];
     const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
-    if (equipoStr) { doc.setFont('helvetica', 'bold'); doc.text('EQUIPO:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(equipoStr, 24, y); y += 5; }
-    y += 3;
+    // Header + nro + estado + datos + items header + items + total + obs + footer
+    const altoHeader = conf.logo ? 36 : 28;
+    const altoNro    = 22;
+    const altoEstado = 18;
+    const altoDatos  = 6 + (p.fecha ? 7 : 0) + (p.cliente ? 7 : 0) + (equipoStr ? 7 : 0) + (p.descripcion ? descLines.length * 5 + 12 : 0) + 4;
+    const altoItems  = 10 + extraH + 14;
+    const altoObs    = obsLines.length > 0 ? obsLines.length * 5 + 10 : 0;
+    const altoTotal2 = altoHeader + altoNro + altoEstado + altoDatos + altoItems + altoObs + 16;
 
-    // DESCRIPCIÓN DEL PROBLEMA (si existe)
+    const doc = new jsPDF({ unit: 'mm', format: [80, Math.max(altoTotal2, 180)] });
+
+    // ── HEADER azul oscuro ──
+    const altoH = conf.logo ? 36 : 28;
+    doc.setFillColor(6, 18, 42); doc.rect(0, 0, 80, altoH, 'F');
+    if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 7, 18, 18); } catch(e) {} }
+    doc.setTextColor(255, 255, 255);
+    const txtX = conf.logo ? 27 : 40;
+    const algn = conf.logo ? 'left' : 'center';
+    let hy = conf.logo ? 14 : 11;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 12 : 14);
+    doc.text(nombreTaller, txtX, hy, { align: algn }); hy += 6;
+    if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(180, 200, 220); doc.text(subtitulo, txtX, hy, { align: algn }); hy += 5; }
+    if (wapp) { doc.setFontSize(7.5); doc.setTextColor(180, 200, 220); doc.text('WhatsApp: ' + wapp, txtX, hy, { align: algn }); }
+
+    // ── SECCIÓN NRO ──
+    let y = altoH;
+    doc.setFillColor(248, 250, 252); doc.rect(0, y, 80, altoNro, 'F');
+    doc.setTextColor(148, 163, 184); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text('Presupuesto', 40, y + 6, { align: 'center' });
+    // Línea bajo "Presupuesto"
+    doc.setDrawColor(220, 225, 235); doc.setLineWidth(0.3);
+    doc.line(22, y + 8, 58, y + 8);
+    doc.setTextColor(6, 18, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+    doc.text('#' + (p.nro || ''), 40, y + 16, { align: 'center' });
+    if (p.fecha) { doc.setTextColor(148, 163, 184); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(p.fecha, 40, y + 21, { align: 'center' }); }
+    y += altoNro;
+
+    // ── SECCIÓN ESTADO ──
+    doc.setDrawColor(232, 236, 240); doc.setLineWidth(0.3);
+    doc.line(5, y, 75, y);
+    y += 4;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+    doc.text('Estado', 5, y + 3);
+    y += 6;
+    // Badge de estado
+    const badgeW = 36; const badgeH = 7; const badgeX = (80 - badgeW) / 2;
+    doc.setDrawColor(est.r, est.g, est.b); doc.setLineWidth(0.5);
+    doc.roundedRect(badgeX, y, badgeW, badgeH, 3, 3, 'S');
+    doc.setTextColor(est.r, est.g, est.b); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text(est.label, 40, y + 5, { align: 'center' });
+    y += badgeH + 5;
+
+    // ── SECCIÓN DATOS ──
+    doc.setLineWidth(0.3); doc.setDrawColor(232, 236, 240);
+    doc.line(5, y, 75, y); y += 4;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+    doc.text('Datos', 5, y + 3); y += 7;
+
+    const dataRow = (label, value) => {
+        if (!value) return;
+        const valLines = doc.splitTextToSize(String(value), 42);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
+        doc.text(label, 5, y);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
+        doc.text(valLines, 75, y, { align: 'right' });
+        y += valLines.length * 5 + 2;
+    };
+    dataRow('Cliente', p.cliente);
+    dataRow('Equipo', equipoStr);
     if (p.descripcion) {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(109, 40, 217);
-        doc.text('MOTIVO DE CONSULTA:', 5, y); y += 5;
-        doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
-        const dLines = doc.splitTextToSize(p.descripcion, 70);
-        doc.text(dLines, 5, y); y += dLines.length * 4.5 + 4;
+        const dLines = doc.splitTextToSize(p.descripcion, 66);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
+        doc.text('Problema', 5, y); y += 5;
+        doc.setTextColor(30, 41, 59); doc.setFont('helvetica', 'normal');
+        doc.text(dLines, 5, y); y += dLines.length * 5 + 2;
     }
+    y += 2;
 
-    // LINEA SEPARADORA
-    doc.setDrawColor(200, 200, 200); doc.line(5, y, 75, y); y += 5;
+    // ── SECCIÓN ITEMS ──
+    doc.setLineWidth(0.3); doc.setDrawColor(232, 236, 240);
+    doc.line(5, y, 75, y); y += 4;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+    doc.text('Detalle del presupuesto', 5, y + 3); y += 8;
 
-    // ITEMS — tabla
-    doc.setFillColor(26, 42, 58); doc.rect(0, y - 1, 80, 7, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
-    doc.text('DESCRIPCIÓN', 5, y + 4);
-    doc.text('CANT', 52, y + 4, { align: 'center' });
-    doc.text('PRECIO', 75, y + 4, { align: 'right' });
-    y += 8;
-
-    doc.setTextColor(30, 30, 30);
     items.forEach((item, idx) => {
-        if (idx % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(0, y - 1, 80, 8, 'F'); }
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-        const dsc = doc.splitTextToSize(item.descripcion || '-', 44);
-        doc.text(dsc, 5, y + 3.5);
-        doc.text(String(item.cantidad || 1), 52, y + 3.5, { align: 'center' });
-        const subtotal = (parseFloat(item.precio) || 0) * (parseInt(item.cantidad) || 1);
-        doc.text(fmt.format(subtotal), 75, y + 3.5, { align: 'right' });
-        y += (dsc.length - 1) * 4 + 8;
+        const dsc = doc.splitTextToSize(item.descripcion || '-', 52);
+        const cant = parseInt(item.cantidad) || 1;
+        const subtotal = (parseFloat(item.precio) || 0) * cant;
+        const labelItem = cant > 1 ? item.descripcion + ' x' + cant : (item.descripcion || '-');
+        const itemLines = doc.splitTextToSize(labelItem, 50);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
+        doc.text(itemLines, 5, y);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 77, 140);
+        doc.text(fmtARS.format(subtotal), 75, y, { align: 'right' });
+        y += itemLines.length * 5 + 3;
+        if (idx < items.length - 1) { doc.setLineWidth(0.2); doc.setDrawColor(241, 245, 249); doc.line(5, y - 1, 75, y - 1); }
     });
 
-    // TOTAL — banda verde azulada
-    doc.setFillColor(30, 77, 140); doc.rect(0, y, 80, 12, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-    doc.text('TOTAL: ' + fmt.format(total), 40, y + 8.5, { align: 'center' });
+    // Línea antes del total
+    y += 2;
+    doc.setLineWidth(0.5); doc.setDrawColor(30, 77, 140); doc.line(5, y, 75, y); y += 2;
+    // Fila TOTAL
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
+    doc.text('TOTAL', 5, y + 6);
+    doc.setFontSize(12); doc.setTextColor(30, 77, 140);
+    doc.text(fmtARS.format(total), 75, y + 6, { align: 'right' });
     y += 14;
 
-    // OBSERVACIONES
+    // ── OBSERVACIONES ──
     if (p.obs) {
-        doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+        doc.setLineWidth(0.3); doc.setDrawColor(232, 236, 240);
+        doc.line(5, y, 75, y); y += 4;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+        doc.text('Validez / Observaciones', 5, y + 3); y += 8;
         const oLines = doc.splitTextToSize(p.obs, 68);
-        doc.text(oLines, 6, y + 4);
-        y += oLines.length * 4 + 6;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+        doc.text(oLines, 5, y); y += oLines.length * 5 + 4;
     }
 
-    // PIE DE PÁGINA
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(140, 140, 140);
-    doc.text('Presupuesto generado por Mi Taller Web', 40, y + 6, { align: 'center' });
+    // ── PIE ──
+    doc.setLineWidth(0.3); doc.setDrawColor(232, 236, 240);
+    doc.line(5, y, 75, y); y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+    doc.text('Ante cualquier consulta, comunicate con el taller', 40, y, { align: 'center' }); y += 4;
+    doc.text('Presupuesto generado por Mi Taller Web', 40, y, { align: 'center' });
 
-    const pdfBlob = doc.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = url; a.target = '_blank'; a.click();
+    return doc.output('blob');
+}
+
+function _buildPDFPresupuesto(p, conf) {
+    try {
+        const blob = _buildPDFPresupuestoCore(p, conf);
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.target = '_blank'; a.click();
+    } catch(e) { console.error(e); }
 }
 
 function _buildPDFPresupuestoBlob(p, conf) {
-    try {
-        const { jsPDF } = window.jspdf;
-        const nombreTaller = conf.nombreTaller || 'Servicio Técnico';
-        const subtitulo = conf.subtitulo || '';
-        const wapp = conf.wappTicket || '';
-        const items = p.items || [];
-        const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
-        const fmt2 = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
-
-        const docTmp = new jsPDF({ unit: 'mm', format: [80, 200] });
-        docTmp.setFontSize(9);
-        let extraH = 0;
-        items.forEach(i => { const lines = docTmp.splitTextToSize(i.descripcion || '', 44); extraH += (lines.length - 1) * 4; });
-        const obsLines = p.obs ? docTmp.splitTextToSize(p.obs, 60) : [];
-        const descLines = p.descripcion ? docTmp.splitTextToSize(p.descripcion, 60) : [];
-        const altoTotal = 185 + extraH + (obsLines.length * 4) + (descLines.length * 4);
-
-        const doc = new jsPDF({ unit: 'mm', format: [80, altoTotal] });
-        const altoH = conf.logo ? 32 : 22;
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoH, 'F');
-        if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } catch(e) {} }
-        doc.setTextColor(255, 255, 255);
-        const txtX = conf.logo ? 28 : 40;
-        const align = conf.logo ? 'left' : 'center';
-        let hy = conf.logo ? 12 : 10;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 13 : 15);
-        doc.text(nombreTaller, txtX, hy, { align });
-        hy += 6;
-        if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(subtitulo, txtX, hy, { align }); hy += 5; }
-        if (wapp) { doc.setFontSize(8); doc.text('WhatsApp: ' + wapp, txtX, hy, { align }); }
-
-        let y = altoH + 1;
-        doc.setFillColor(109, 40, 217); doc.rect(0, y, 80, 14, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-        doc.text('PRESUPUESTO', 40, y + 5.5, { align: 'center' });
-        doc.setFontSize(14); doc.text(String(p.nro || ''), 40, y + 11.5, { align: 'center' });
-        y += 16;
-
-        doc.setTextColor(26, 42, 58);
-        doc.setFillColor(241, 245, 249); doc.rect(0, y, 80, 26, 'F');
-        y += 6;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('FECHA:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.fecha || '', 24, y); y += 5;
-        doc.setFont('helvetica', 'bold'); doc.text('CLIENTE:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(p.cliente || '', 24, y); y += 5;
-        const equipoStr2 = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
-        if (equipoStr2) { doc.setFont('helvetica', 'bold'); doc.text('EQUIPO:', 5, y); doc.setFont('helvetica', 'normal'); doc.text(equipoStr2, 24, y); y += 5; }
-        y += 3;
-
-        if (p.descripcion) {
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(109, 40, 217);
-            doc.text('MOTIVO DE CONSULTA:', 5, y); y += 5;
-            doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 50, 50);
-            const dLines = doc.splitTextToSize(p.descripcion, 70);
-            doc.text(dLines, 5, y); y += dLines.length * 4.5 + 4;
-        }
-
-        doc.setDrawColor(200, 200, 200); doc.line(5, y, 75, y); y += 5;
-        doc.setFillColor(26, 42, 58); doc.rect(0, y - 1, 80, 7, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
-        doc.text('DESCRIPCIÓN', 5, y + 4);
-        doc.text('CANT', 52, y + 4, { align: 'center' });
-        doc.text('PRECIO', 75, y + 4, { align: 'right' });
-        y += 8;
-
-        doc.setTextColor(30, 30, 30);
-        items.forEach((item, idx) => {
-            if (idx % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(0, y - 1, 80, 8, 'F'); }
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-            const dsc = doc.splitTextToSize(item.descripcion || '-', 44);
-            doc.text(dsc, 5, y + 3.5);
-            doc.text(String(item.cantidad || 1), 52, y + 3.5, { align: 'center' });
-            const subtotal = (parseFloat(item.precio) || 0) * (parseInt(item.cantidad) || 1);
-            doc.text(fmt2.format(subtotal), 75, y + 3.5, { align: 'right' });
-            y += (dsc.length - 1) * 4 + 8;
-        });
-
-        doc.setFillColor(30, 77, 140); doc.rect(0, y, 80, 12, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-        doc.text('TOTAL: ' + fmt2.format(total), 40, y + 8.5, { align: 'center' });
-        y += 14;
-
-        if (p.obs) {
-            doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(100, 100, 100);
-            const oLines = doc.splitTextToSize(p.obs, 68);
-            doc.text(oLines, 6, y + 4);
-            y += oLines.length * 4 + 6;
-        }
-
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(140, 140, 140);
-        doc.text('Presupuesto generado por Mi Taller Web', 40, y + 6, { align: 'center' });
-
-        return doc.output('blob');
-    } catch(e) { return null; }
+    try { return _buildPDFPresupuestoCore(p, conf); } catch(e) { return null; }
 }
+
 
 function enviarWappPresupuesto(id) {
     const p = presupuestosCache.find(x => x.id === id);
