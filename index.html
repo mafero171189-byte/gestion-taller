@@ -4101,7 +4101,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             }
         });
 
-        verificarAccionURL();
+        try { verificarAccionURL(); } catch(e) {}
 
         setTimeout(() => {
             if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
@@ -8045,13 +8045,16 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     (function() {
         let _pendingPageId = null;
         const modal = document.getElementById('modal-sin-guardar');
-        document.getElementById('btn-msg-quedar').addEventListener('click', function() {
+        if (!modal) return;
+        const btnQuedar = document.getElementById('btn-msg-quedar');
+        const btnSalir = document.getElementById('btn-msg-confirmar-salir');
+        if (btnQuedar) btnQuedar.addEventListener('click', function() {
             modal.classList.remove('open'); _pendingPageId = null;
         });
         modal.addEventListener('click', function(e) {
             if (e.target === modal) { modal.classList.remove('open'); _pendingPageId = null; }
         });
-        document.getElementById('btn-msg-confirmar-salir').addEventListener('click', function() {
+        if (btnSalir) btnSalir.addEventListener('click', function() {
             modal.classList.remove('open');
             if (_pendingPageId) {
                 clickLimpiar(true);
