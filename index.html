@@ -144,7 +144,7 @@
         nav button.active { color: white; background: rgba(45,58,140,0.18); border: 1px solid rgba(45,58,140,0.35); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e8eaf5; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
         
-        .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; border-top: 3px solid #1e4d8c; }
+        .container { max-width: 1150px; margin: 0 auto; background: transparent; padding: 25px; border-radius: 0; box-shadow: none; min-height: unset; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; border-top: none; }
         
         #toast-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 28px; border-radius: 50px; color: white; font-weight: 700; z-index: 9999; display: none; box-shadow: 0 6px 24px rgba(0,0,0,0.3); font-size: 14px; animation: slideDown 0.3s ease; font-family: 'Outfit', sans-serif; letter-spacing: 0.2px; }
         @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
@@ -373,6 +373,35 @@
         /* Alerta amarilla */
         .btn-alerta-amarilla { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: 800; animation: pulseAlerta 2s infinite; border: none; border-radius: 9px; font-family: 'Outfit', sans-serif; }
         @keyframes pulseAlerta { 0% { transform: scale(1); } 50% { transform: scale(1.03); box-shadow: 0 0 15px rgba(45,58,140,0.5); } 100% { transform: scale(1); } }
+
+        /* === MÓDULOS NUEVOS: Dashboard / Clientes / Alertas / Etiquetas === */
+        .cliente-acordeon { background:white; border-radius:14px; border:1px solid #e8eaf5; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:box-shadow 0.2s; }
+        .cliente-acordeon:hover { box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+        .cliente-acordeon-header { padding:16px 18px; display:flex; align-items:center; gap:12px; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+        .cliente-acordeon-header .ca-avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,#1e4d8c,#2d63b8); display:flex; align-items:center; justify-content:center; color:white; font-size:18px; font-weight:900; flex-shrink:0; font-family:'Outfit',sans-serif; }
+        .cliente-acordeon-header .ca-info { flex:1; min-width:0; }
+        .cliente-acordeon-header .ca-nombre { font-size:15px; font-weight:800; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .cliente-acordeon-header .ca-meta { font-size:12px; color:#6b7280; font-weight:600; margin-top:2px; }
+        .cliente-acordeon-header .ca-total { font-size:13px; font-weight:900; color:#059669; white-space:nowrap; }
+        .cliente-acordeon-header .ca-chevron { font-size:16px; color:#9ca3af; transition:transform 0.2s; flex-shrink:0; }
+        .cliente-acordeon.open .ca-chevron { transform:rotate(90deg); }
+        .cliente-acordeon-body { display:none; border-top:1px solid #f3f4f6; padding:14px 18px; }
+        .cliente-acordeon-body.open { display:block; }
+        .ca-rep-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #f9fafb; font-size:13px; }
+        .ca-rep-item:last-child { border-bottom:none; }
+        body.dark-mode .cliente-acordeon { background:#141826; border-color:#2d3748; }
+        body.dark-mode .cliente-acordeon-header .ca-nombre { color:#f1f5f9; }
+        body.dark-mode .cliente-acordeon-header .ca-meta { color:#94a3b8; }
+        body.dark-mode .cliente-acordeon-body { border-color:#2d3748; }
+        body.dark-mode .ca-rep-item { border-color:#1e2537; color:#d1d5db; }
+        .alerta-item { background:white; border-radius:12px; padding:14px 16px; border:1.5px solid #e8eaf5; display:flex; align-items:center; gap:12px; }
+        .alerta-item.critica { border-color:#fca5a5; background:#fef2f2; }
+        .alerta-item.alta { border-color:#fdba74; background:#fff7ed; }
+        .alerta-item.media { border-color:#fde047; background:#fefce8; }
+        body.dark-mode .alerta-item { background:#141826; border-color:#2d3748; color:#d1d5db; }
+        body.dark-mode .alerta-item.critica { background:#2d0a0a; border-color:#7f1d1d; }
+        body.dark-mode .alerta-item.alta { background:#2d1600; border-color:#92400e; }
+        body.dark-mode .alerta-item.media { background:#1e1a00; border-color:#854d0e; }
 
         /* Historia item */
         .history-item { text-align: left; border-left: 3px solid #1e4d8c; padding-left: 15px; margin-bottom: 15px; position: relative; }
@@ -2490,6 +2519,10 @@ function showApp() {
       <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
      </div>
      <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
+     <div style="margin-top:14px; text-align:left;">
+      <label style="font-size:12px; font-weight:700; color:#6b7280; display:block; margin-bottom:5px;">📝 Notas de reparación (opcional)</label>
+      <textarea id="notasReparacion" placeholder="Ej: Cambié display, soldé pin de carga..." rows="2" style="width:100%; padding:9px 11px; border:1.5px solid #d1d5db; border-radius:8px; font-size:13px; font-family:'Outfit',sans-serif; resize:none; box-sizing:border-box; color:#374151;" onfocus="this.style.borderColor='#1e4d8c'" onblur="this.style.borderColor='#d1d5db'"></textarea>
+     </div>
      <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
       <div style="display:flex; gap:10px;">
        <button onclick="procesarReparado(false, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (SOLO GUARDAR)</button>
@@ -2819,7 +2852,8 @@ function showApp() {
     </div>
    </div>
 <nav>
-    <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
+    <button onclick="showPage('dashboard')" id="btn-nav-dashboard">🏠 DASHBOARD</button>
+    <button onclick="showPage('gestion')" id="btn-nav-gestion">🛠️ GESTIÓN</button>
     <button onclick="showPage('presupuesto')" id="btn-nav-presupuesto">📋 PRESUPUESTO</button>
     <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
     <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
@@ -2842,7 +2876,7 @@ function showApp() {
     </div>
    </div>
    <div class="container">
-    <div id="page-gestion" class="page active" style="display:block;">
+    <div id="page-gestion" class="page" style="display:none;">
      <form id="repairForm">
       <div class="form-grid">
        <!-- SECCIÓN CLIENTE -->
@@ -3108,7 +3142,13 @@ function showApp() {
      <div id="contabilidad-diaria"></div>
     </div>
     <div id="page-stock" class="page" style="display:none;">
-     <h2 style="margin-top:0;">📦 Control de Stock</h2>
+     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0; margin-bottom:4px;">
+       <h2 style="margin:0;">📦 Control de Stock</h2>
+       <button onclick="abrirMinimoGlobal()" title="Configurar stock mínimo para TODOS los artículos" style="display:flex; align-items:center; gap:7px; background:linear-gradient(135deg,#1e4d8c,#0e2a5e); color:white; border:none; border-radius:10px; padding:10px 16px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(30,77,140,0.3); transition:all 0.2s;">
+         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+         Mínimo Global
+       </button>
+     </div>
      <div style="margin-bottom: 15px; margin-top: 10px;">
       <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
      </div>
@@ -3266,335 +3306,230 @@ function showApp() {
 
     </div>
     <div id="page-ayuda" class="page" style="display:none;">
-     <!-- HEADER GUÍA -->
-     <div style="background: linear-gradient(135deg, #06122a 0%, #1e4d8c 100%); border-radius: 16px; padding: 28px 30px; margin-bottom: 28px; color: white; position: relative; overflow: hidden;">
-      <div style="position:absolute; right:-20px; top:-20px; font-size:120px; opacity:0.06; line-height:1;">📘</div>
-      <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 8px;">DOCUMENTACIÓN OFICIAL</div>
-      <h2 style="margin: 0 0 8px; font-size: 26px; font-weight: 900; color: white; letter-spacing: -0.5px;">Guía de Mi Taller Web</h2>
-      <p style="margin: 0; font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.5;">Todo lo que necesitás saber para sacarle el máximo provecho al sistema. Hacé clic en cada sección para expandirla.</p>
+     <div style="background:linear-gradient(135deg,#06122a 0%,#1e4d8c 100%);border-radius:16px;padding:28px 30px;margin-bottom:28px;color:white;position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-20px;top:-20px;font-size:120px;opacity:0.06;line-height:1;">&#128218;</div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:8px;">DOCUMENTACI&Oacute;N OFICIAL</div>
+      <h2 style="margin:0 0 8px;font-size:26px;font-weight:900;color:white;letter-spacing:-0.5px;">Gu&iacute;a de Mi Taller Web</h2>
+      <p style="margin:0;font-size:14px;color:rgba(255,255,255,0.65);line-height:1.5;">Todo lo que necesit&aacute;s saber para sacarle el m&aacute;ximo provecho al sistema. Hac&eacute; clic en cada secci&oacute;n para expandirla.</p>
      </div>
-     <!-- SECCIÓN 1: GESTIÓN -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">🛠️ Sección 1: Gestión — El Corazón del Taller <span>+</span></summary>
-       <div class="faq-content">
-        <p>La pestaña <b>Gestión</b> es donde ocurre todo. Desde acá ingresás equipos, seguís el estado de cada reparación y comunicás novedades al cliente.</p>
-        <b>A. Formulario de Ingreso de Equipo</b>
-        <ul>
-         <li><b>Cliente y WhatsApp:</b> Escribí el nombre del cliente. El número de WhatsApp debe incluir el código de país sin el "+", por ejemplo: <b>5491145678900</b>. El sistema usa ese número para enviar mensajes automáticos.</li>
-         <li><b>Equipo, Marca y Modelo:</b> Completá estos tres campos para identificar claramente el dispositivo. El autocompletado aprende de los equipos que ya ingresaste.</li>
-         <li><b>IMEI:</b> Opcional pero recomendado. Te protege ante cualquier reclamo legal o confusión de equipos.</li>
-         <li><b>PIN / Patrón de desbloqueo:</b> Guardalo acá para no perderlo. Usá el ícono del candado 🔒 para registrar también el <b>Costo del Repuesto</b> que solo verás vos, sin que aparezca en el ticket del cliente.</li>
-         <li><b>Precio Final y Seña:</b> Si el cliente dejó una seña, cargala. El sistema calculará automáticamente el saldo pendiente. Tildá <b>"Pago Total"</b> si ya abonó todo al traer el equipo.</li>
-         <li><b>Falla:</b> Usá el autocompletado para fallas frecuentes (ej: "No carga", "Pantalla rota"). Podés escribir algo personalizado si la falla no está en la lista.</li>
-         <li><b>Fotos:</b> Sacá fotos del equipo al momento del ingreso. Esto es clave como prueba del estado físico antes de cualquier intervención. Se comprimen automáticamente para no ocupar espacio.</li>
-        </ul>
-        <b>B. Estados de Reparación</b>
-        <p>Cada orden tiene un estado visible. Tocando el badge de estado se abre el menú de cambio:</p>
-        <ul>
-         <li><b>⏳ Pendiente:</b> Estado inicial. El equipo está esperando diagnóstico o reparación.</li>
-         <li><b>✅ Reparado:</b> La reparación fue exitosa. El sistema te pregunta si usaste repuestos del stock para descontarlos automáticamente del inventario. Se puede notificar al cliente por WhatsApp con un solo toque.</li>
-         <li><b>❌ No Reparado:</b> No fue posible arreglarlo. Podés enviarle un mensaje automático al cliente avisándole que puede retirar su equipo.</li>
-         <li><b>📦 Entregado:</b> El equipo fue devuelto al cliente. Si había saldo pendiente, el sistema abre la ventana de cobro para registrar el método de pago (Efectivo, Transferencia o Tarjeta) antes de marcar como entregado.</li>
-         <li><b>🔄 Garantía (Reingreso):</b> El cliente trajo el equipo de vuelta por un problema relacionado. Lo reingresa automáticamente a la lista activa sin generar un nuevo número de orden.</li>
-        </ul>
-        <b>C. Acciones por Orden</b>
-        <ul>
-         <li><b>📄 PDF / Ticket:</b> Genera un recibo profesional con el logo de tu taller, datos del equipo, precios y tus términos y condiciones.</li>
-         <li><b>💬 WhatsApp:</b> Abre un mensaje prediseñado con el estado actual del equipo y un link para que el cliente vea su estado online.</li>
-         <li><b>🕒 Historial:</b> Muestra todos los cambios de estado de esa orden con fecha y hora.</li>
-         <li><b>✏️ Editar precio:</b> Actualizá el precio final si el presupuesto cambió durante la reparación.</li>
-         <li><b>🗑️ Eliminar:</b> Borra la orden de forma permanente. Pedirá confirmación antes de proceder.</li>
-        </ul>
-        <b>D. Buscador y Filtros</b>
-        <ul>
-         <li>Usá la <b>barra de búsqueda</b> para encontrar órdenes por nombre de cliente, modelo de equipo o número de orden.</li>
-         <li>El botón <b>📁 Archivo</b> muestra las órdenes históricas (entregadas hace más de 24hs) sin mezclarlas con el trabajo del día.</li>
-         <li>Podés filtrar por estado (Pendiente, Reparado, etc.) para ver solo lo que necesitás.</li>
-        </ul>
-       </div>
-      </details>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128202; Secci&oacute;n 1: Dashboard &mdash; Panel de Control Instant&aacute;neo <span>+</span></summary>
+      <div class="faq-content">
+       <p>El <b>Dashboard</b> es la pantalla principal que ves al ingresar. De un vistazo ten&eacute;s el estado completo de tu taller en tiempo real.</p>
+       <b>Tarjetas KPI (indicadores clave)</b>
+       <ul>
+        <li><b>&#9203; Pendientes:</b> &Oacute;rdenes activas esperando diagn&oacute;stico o reparaci&oacute;n. Hac&eacute; clic para ir directo a Gesti&oacute;n con el filtro ya aplicado y scroll autom&aacute;tico hasta la tabla de &oacute;rdenes.</li>
+        <li><b>&#9989; Listos p/ retirar:</b> Equipos reparados esperando que el cliente retire. Hac&eacute; clic para ver solo esas &oacute;rdenes en Gesti&oacute;n instant&aacute;neamente.</li>
+        <li><b>&#128176; Ingresos hoy:</b> Total facturado en el d&iacute;a. Hac&eacute; clic para ir a Contabilidad y ver el detalle.</li>
+        <li><b>&#128230; Stock cr&iacute;tico:</b> Art&iacute;culos del inventario por debajo del m&iacute;nimo. Hac&eacute; clic para ir al Stock y reponerlos.</li>
+       </ul>
+       <b>Banner de Stock Cr&iacute;tico</b>
+       <ul><li>Si hay art&iacute;culos con stock bajo, aparece autom&aacute;ticamente un banner rojo con un bot&oacute;n de acceso r&aacute;pido al inventario.</li></ul>
+       <b>Accesos R&aacute;pidos</b>
+       <ul><li>Botones directos para las acciones m&aacute;s frecuentes: nueva orden, ver stock, contabilidad, alertas y m&aacute;s.</li></ul>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128295; Secci&oacute;n 2: Gesti&oacute;n &mdash; El Coraz&oacute;n del Taller <span>+</span></summary>
+      <div class="faq-content">
+       <p>La pesta&ntilde;a <b>Gesti&oacute;n</b> es donde ocurre todo. Desde ac&aacute; ingres&aacute;s equipos, segu&iacute;s el estado de cada reparaci&oacute;n y comunic&aacute;s novedades al cliente.</p>
+       <b>A. Formulario de Ingreso</b>
+       <ul>
+        <li><b>Cliente y WhatsApp:</b> El n&uacute;mero se normaliza autom&aacute;ticamente para Argentina. Pod&eacute;s ingresar <b>1135654094</b>, <b>541135654094</b> o <b>5491135654094</b> y el link de WhatsApp siempre va a funcionar.</li>
+        <li><b>Equipo, Marca y Modelo:</b> El autocompletado aprende de los equipos ya ingresados.</li>
+        <li><b>IMEI:</b> Opcional pero recomendado. Te protege ante reclamos o confusi&oacute;n de equipos.</li>
+        <li><b>PIN / Patr&oacute;n:</b> Guard&aacute;lo ac&aacute;. Us&aacute; el candado &#128274; para registrar el <b>Costo del Repuesto</b> (privado, no aparece en el ticket del cliente).</li>
+        <li><b>Precio Final y Se&ntilde;a:</b> El sistema calcula autom&aacute;ticamente el saldo pendiente. Tild&aacute; "Pago Total" si ya abon&oacute; todo al traer el equipo.</li>
+        <li><b>Fotos:</b> M&aacute;ximo 5 fotos por orden. Se comprimen autom&aacute;ticamente.</li>
+       </ul>
+       <b>B. Estados de Reparaci&oacute;n</b>
+       <ul>
+        <li><b>&#9203; Pendiente:</b> Estado inicial. El equipo espera diagn&oacute;stico o reparaci&oacute;n.</li>
+        <li><b>&#9989; Reparado:</b> Reparaci&oacute;n exitosa. El sistema descuenta el stock usado autom&aacute;ticamente y pod&eacute;s notificar al cliente por WhatsApp.</li>
+        <li><b>&#10060; No Reparado:</b> Pod&eacute;s enviar un mensaje autom&aacute;tico al cliente avis&aacute;ndole que puede retirar su equipo.</li>
+        <li><b>&#128230; Entregado:</b> Si hab&iacute;a saldo pendiente, se abre la ventana de cobro para registrar el m&eacute;todo de pago.</li>
+        <li><b>&#128260; Garant&iacute;a:</b> Reingresa el equipo al flujo sin crear una nueva orden, manteniendo el historial unificado.</li>
+       </ul>
+       <b>C. Acciones por Orden</b>
+       <ul>
+        <li><b>&#128196; PDF / Ticket:</b> Recibo profesional con logo, datos del equipo, precios y t&eacute;rminos y condiciones.</li>
+        <li><b>&#128172; WhatsApp:</b> Mensaje predise&ntilde;ado con estado actual y link de seguimiento para el cliente.</li>
+        <li><b>&#128338; Historial:</b> Todos los cambios de estado con fecha y hora.</li>
+        <li><b>&#9999; Editar precio:</b> Actualiz&aacute; el precio final si el presupuesto cambi&oacute; durante la reparaci&oacute;n.</li>
+        <li><b>&#128465; Eliminar:</b> Borra la orden con confirmaci&oacute;n previa.</li>
+       </ul>
+       <b>D. Filtros y Vistas</b>
+       <ul>
+        <li>Men&uacute; de filtros: "Ver Todo", "Pendientes", "Listos p/ Retirar", "Pendiente de Cobro" o "Historial".</li>
+        <li>Las &oacute;rdenes entregadas se archivan autom&aacute;ticamente para mantener limpia tu vista de trabajo.</li>
+       </ul>
+       <b>E. Perfil de Cliente</b>
+       <ul><li>Al tocar el nombre del cliente en cualquier orden, el sistema filtra autom&aacute;ticamente mostrando todas sus reparaciones anteriores, el total gastado y el historial de equipos.</li></ul>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128101; Secci&oacute;n 3: Clientes &mdash; Base de Datos de tu Cartera <span>+</span></summary>
+      <div class="faq-content">
+       <p>La pesta&ntilde;a <b>Clientes</b> organiza autom&aacute;ticamente a todos tus clientes a partir de las &oacute;rdenes existentes.</p>
+       <b>Lista de Clientes</b>
+       <ul>
+        <li>Los clientes aparecen ordenados <b>alfab&eacute;ticamente</b> para encontrarlos r&aacute;pido.</li>
+        <li>Cada tarjeta muestra nombre, tel&eacute;fono, cantidad de reparaciones y el <b>total acumulado gastado</b> en el taller.</li>
+        <li>El bot&oacute;n <b>&#128242; WA</b> abre WhatsApp directamente. El sistema normaliza autom&aacute;ticamente el n&uacute;mero (agrega el prefijo 549 si falta).</li>
+       </ul>
+       <b>B&uacute;squeda</b>
+       <ul><li>Us&aacute; la barra de b&uacute;squeda para filtrar por nombre o n&uacute;mero de WhatsApp en tiempo real.</li></ul>
+       <b>Detalle del Cliente</b>
+       <ul><li>Al hacer clic en la tarjeta pod&eacute;s ver el resumen completo: todas sus &oacute;rdenes, equipos, fechas y montos.</li></ul>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#9200; Secci&oacute;n 4: Alertas &mdash; &Oacute;rdenes Sin Movimiento <span>+</span></summary>
+      <div class="faq-content">
+       <p>La pesta&ntilde;a <b>Alertas</b> detecta &oacute;rdenes activas que llevan mucho tiempo sin cambiar de estado, para que ning&uacute;n equipo quede abandonado.</p>
+       <b>Configuraci&oacute;n</b>
+       <ul>
+        <li>Defin&iacute; cu&aacute;ntos d&iacute;as sin movimiento disparan la alerta (por defecto: 7). Esa configuraci&oacute;n se <b>guarda autom&aacute;ticamente</b> y se restaura cada vez que abr&iacute;s la pesta&ntilde;a.</li>
+        <li>Al presionar <b>Aplicar</b> aparece una confirmaci&oacute;n visual verde.</li>
+       </ul>
+       <b>Niveles de Criticidad</b>
+       <ul>
+        <li><b>&#128308; Cr&iacute;tica:</b> M&aacute;s de 15 d&iacute;as sin movimiento.</li>
+        <li><b>&#128992; Alta:</b> Entre 7 y 15 d&iacute;as sin movimiento.</li>
+        <li><b>&#128993; Media:</b> Menos de 7 d&iacute;as (pero supera el umbral configurado).</li>
+       </ul>
+       <b>Acciones</b>
+       <ul>
+        <li>Hac&eacute; clic en <b>&#128242; Avisar</b> para abrir WhatsApp con un mensaje autom&aacute;tico al cliente con cu&aacute;ntos d&iacute;as lleva el equipo y en qu&eacute; estado est&aacute;.</li>
+        <li>El bot&oacute;n <b>"Avisar a todos"</b> notifica a todos los clientes con alertas de una sola vez.</li>
+       </ul>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128176; Secci&oacute;n 5: Contabilidad &mdash; Tus N&uacute;meros Claros <span>+</span></summary>
+      <div class="faq-content">
+       <p>La pesta&ntilde;a <b>Contabilidad</b> te da una radiograf&iacute;a financiera completa de tu taller.</p>
+       <b>Tarjetas de Resumen</b>
+       <ul>
+        <li><b>&#128181; Ingresos Totales:</b> Todo lo cobrado en el per&iacute;odo (reparaciones + ventas de mostrador).</li>
+        <li><b>&#9203; Saldos por Cobrar:</b> Lo que los clientes todav&iacute;a te deben de &oacute;rdenes activas.</li>
+        <li><b>&#128201; Gastos:</b> Total invertido en repuestos seg&uacute;n el costo privado cargado en cada orden.</li>
+        <li><b>&#128200; Ganancia Neta:</b> Ingresos menos Gastos. Tu ganancia real.</li>
+       </ul>
+       <b>Filtros de Per&iacute;odo:</b> Filtr&aacute; por mes actual, d&iacute;a espec&iacute;fico o todo el hist&oacute;rico.
+       <b>Exportaci&oacute;n:</b> El bot&oacute;n <b>Descargar Excel</b> exporta los movimientos a un CSV compatible con Excel y Google Sheets.
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128230; Secci&oacute;n 6: Stock &mdash; Control de Inventario <span>+</span></summary>
+      <div class="faq-content">
+       <p>Desde la pesta&ntilde;a <b>Stock</b> control&aacute;s todo tu inventario: repuestos t&eacute;cnicos y accesorios de venta.</p>
+       <b>Descuento Autom&aacute;tico</b>
+       <ul>
+        <li>Al marcar una orden como <b>Reparado</b>, el sistema pregunta si us&aacute;s repuestos del inventario. Al confirmar, el stock se descuenta solo.</li>
+        <li>Si despu&eacute;s cambi&aacute;s a "No reparado" o "Pendiente", el repuesto <b>vuelve autom&aacute;ticamente</b> al inventario.</li>
+       </ul>
+       <b>Venta R&aacute;pida de Mostrador &#128722;</b>
+       <ul><li>Desde Gesti&oacute;n, el bot&oacute;n &#128722; abre la Venta R&aacute;pida: ideal para cables, fundas o accesorios sin crear una orden t&eacute;cnica. El movimiento queda en Contabilidad y el stock se descuenta.</li></ul>
+       <b>Alertas de Stock Bajo</b>
+       <ul><li>Los art&iacute;culos que llegaron al m&iacute;nimo se resaltan en rojo/naranja. El Dashboard tambi&eacute;n muestra el contador y el banner de stock cr&iacute;tico.</li></ul>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128100; Secci&oacute;n 7: Mi Perfil &mdash; Tu Marca y Configuraci&oacute;n <span>+</span></summary>
+      <div class="faq-content">
+       <p>Desde <b>Mi Perfil</b> personaliz&aacute;s el sistema para que refleje la identidad de tu taller.</p>
+       <ul>
+        <li><b>Logo:</b> Sub&iacute; tu logo (PNG o JPG). Aparecer&aacute; en todos los tickets PDF.</li>
+        <li><b>Nombre del Taller y Subt&iacute;tulo:</b> Aparecen en los tickets y en la vista de seguimiento del cliente.</li>
+        <li><b>WhatsApp en Ticket:</b> El n&uacute;mero de contacto que figura al pie del ticket PDF.</li>
+        <li><b>T&eacute;rminos y Condiciones:</b> Tu texto de garant&iacute;a o condiciones generales. Aparece al pie de cada ticket.</li>
+        <li><b>Seguridad:</b> Cambi&aacute; tu contrase&ntilde;a en cualquier momento desde este panel.</li>
+       </ul>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128640; Secci&oacute;n 8: Herramientas Especiales y Funciones Avanzadas <span>+</span></summary>
+      <div class="faq-content">
+       <b>&#9888; Alerta de Equipos Olvidados</b>
+       <ul><li>Un bot&oacute;n amarillo parpadeante aparece en la barra superior cuando hay equipos "Reparado" con m&aacute;s de 15 d&iacute;as sin ser retirados. Pod&eacute;s enviar recordatorios por WhatsApp desde ah&iacute;.</li></ul>
+       <b>&#128279; Vista de Seguimiento del Cliente</b>
+       <ul><li>Al enviar el WhatsApp, el cliente recibe un link donde ve en tiempo real el estado de su equipo y puede descargar su ticket PDF. No requiere cuenta ni contrase&ntilde;a.</li></ul>
+       <b>&#127769; Modo Oscuro</b>
+       <ul><li>Activalo desde el bot&oacute;n en la barra superior. El sistema recuerda tu preferencia.</li></ul>
+       <b>&#128269; Zoom en Fotos</b>
+       <ul><li>Pellizco (pinch) en el celular o rueda del mouse en la PC para ampliar las fotos del ingreso y verificar el estado f&iacute;sico del equipo.</li></ul>
+       <b>&#128274; Consulta de PIN y Patr&oacute;n de Desbloqueo</b>
+       <ul><li>Dentro del detalle de la orden pod&eacute;s consultar el PIN num&eacute;rico o visualizar el patr&oacute;n de desbloqueo tal cual fue trazado al ingresar el equipo.</li></ul>
+       <b>&#128203; Auditor&iacute;a de Repuestos</b>
+       <ul><li>En cada orden archivada queda registrado qu&eacute; repuesto se us&oacute; y cu&aacute;l fue su costo en ese momento. Tus estad&iacute;sticas de ganancia son siempre reales aunque el precio del repuesto haya cambiado despu&eacute;s.</li></ul>
+       <b>&#128242; Normalizaci&oacute;n Autom&aacute;tica de WhatsApp</b>
+       <ul><li>El sistema corrige autom&aacute;ticamente todos los n&uacute;meros de tel&eacute;fono en toda la app (formulario, clientes, alertas) agregando el prefijo argentino 549 si falta. Los links siempre funcionan.</li></ul>
+      </div>
+     </details></div>
+     <div style="background:linear-gradient(135deg,#06122a 0%,#0e2a5e 100%);border-radius:16px;padding:22px 30px;margin:32px 0 24px;color:white;position:relative;overflow:hidden;">
+      <div style="position:absolute;right:-10px;top:-10px;font-size:100px;opacity:0.06;line-height:1;">&#10067;</div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:6px;">SOPORTE</div>
+      <h2 style="margin:0;font-size:22px;font-weight:900;color:white;letter-spacing:-0.3px;">Preguntas Frecuentes</h2>
      </div>
-     <!-- SECCIÓN 2: CONTABILIDAD -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">💰 Sección 2: Contabilidad — Tus Números Claros <span>+</span></summary>
-       <div class="faq-content">
-        <p>La pestaña <b>Contabilidad</b> te da una radiografía financiera de tu taller. Dejás de "contar de cabeza" y pasás a tener datos reales.</p>
-        <b>Tarjetas de Resumen (parte superior)</b>
-        <ul>
-         <li><b>💵 Ingresos Totales:</b> Suma de todo lo cobrado en el período seleccionado (reparaciones + ventas de mostrador).</li>
-         <li><b>⏳ Saldos por Cobrar:</b> Lo que los clientes todavía te deben de órdenes activas.</li>
-         <li><b>📉 Gastos (Costos):</b> Total de lo que invertiste en repuestos según el costo privado que cargaste en cada orden.</li>
-         <li><b>📈 Ganancia Neta:</b> Ingresos menos Gastos. Tu ganancia real.</li>
-        </ul>
-        <b>Filtros de Período</b>
-        <ul>
-         <li>Seleccioná <b>el mes actual</b> para ver el resumen mensual.</li>
-         <li>Usá el <b>selector de fecha</b> para analizar un día específico.</li>
-         <li>El filtro <b>"Todo"</b> muestra el histórico completo desde que empezaste a usar el sistema.</li>
-        </ul>
-        <b>Tabla de Movimientos</b>
-        <ul>
-         <li>Cada fila es un ingreso: muestra fecha, cliente, equipo, método de pago y monto.</li>
-         <li>Los métodos se distinguen visualmente: 💵 Efectivo, 📲 Transferencia, 💳 Tarjeta.</li>
-         <li>Las ventas rápidas de mostrador también aparecen acá, identificadas como "Venta de Stock".</li>
-        </ul>
-        <b>Exportación</b>
-        <ul>
-         <li>El botón <b>Descargar Excel</b> exporta todos los movimientos del período a un archivo CSV compatible con Excel, Google Sheets y cualquier software contable.</li>
-        </ul>
-       </div>
-      </details>
-     </div>
-     <!-- SECCIÓN 3: STOCK -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">📦 Sección 3: Stock — Control de Inventario <span>+</span></summary>
-       <div class="faq-content">
-        <p>Desde la pestaña <b>Stock</b> controlás todo tu inventario: repuestos técnicos y accesorios de venta.</p>
-        <b>Agregar Artículos al Inventario</b>
-        <ul>
-         <li>Completá el <b>nombre del artículo</b> (ej: "Módulo iPhone 13", "Funda Samsung A54"), el <b>costo de compra</b> y el <b>precio de venta al público</b>.</li>
-         <li>Cargá la <b>cantidad disponible</b> actual. Podés actualizarla manualmente cuando recibís nueva mercadería.</li>
-        </ul>
-        <b>Descuento Automático de Stock</b>
-        <ul>
-         <li>Cuando marcás una orden como <b>Reparado</b>, el sistema te pregunta si usaste repuestos del inventario.</li>
-         <li>Seleccionás el artículo y la cantidad usada, y el stock se descuenta solo.</li>
-         <li>Si luego cancelás la reparación (cambiás a "No reparado" o "Pendiente"), el sistema <b>devuelve el repuesto automáticamente</b> al inventario.</li>
-        </ul>
-        <b>Venta Rápida de Mostrador 🛒</b>
-        <ul>
-         <li>Desde la pestaña Gestión, el botón 🛒 abre la <b>Venta Rápida</b>.</li>
-         <li>Ideal para vender cables, fundas, auriculares o cualquier accesorio sin necesitar crear una orden técnica.</li>
-         <li>Buscás el artículo, ingresás cantidad y precio, elegís el método de pago y listo: el movimiento queda registrado en Contabilidad y el stock se descuenta.</li>
-        </ul>
-        <b>Alertas de Stock Bajo</b>
-        <ul>
-         <li>Los artículos que llegaron al mínimo definido se resaltan visualmente en rojo/naranja para que los veas de un vistazo.</li>
-        </ul>
-       </div>
-      </details>
-     </div>
-     <!-- SECCIÓN 4: PERFIL -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">👤 Sección 4: Mi Perfil — Tu Marca y Configuración <span>+</span></summary>
-       <div class="faq-content">
-        <p>Desde <b>Mi Perfil</b> personalizás el sistema para que refleje la identidad de tu taller.</p>
-        <b>Identidad Visual</b>
-        <ul>
-         <li><b>Logo:</b> Subí la imagen de tu logo. Aparecerá en todos los tickets PDF que generes. Formatos recomendados: PNG con fondo transparente o JPG.</li>
-         <li><b>Nombre del Taller:</b> El nombre que aparece en el encabezado de los tickets y en la vista de seguimiento del cliente.</li>
-         <li><b>Descripción / Subtítulo:</b> Un texto corto debajo del nombre, por ejemplo: "Reparación de celulares y tablets" o "Especialistas en microelectrónica".</li>
-         <li><b>WhatsApp en Ticket:</b> El número de contacto de tu taller que figura al pie del ticket PDF para que el cliente te contacte.</li>
-        </ul>
-        <b>Términos y Condiciones</b>
-        <ul>
-         <li>Escribí tu texto de garantía o condiciones generales. Aparece al pie de cada ticket PDF.</li>
-         <li>Ejemplo: <i>"Garantía de 30 días sobre la mano de obra. Pasados los 90 días desde el ingreso, no nos hacemos responsables del equipo."</i></li>
-        </ul>
-        <b>Seguridad</b>
-        <ul>
-         <li>Podés cambiar tu contraseña de acceso en cualquier momento desde este panel.</li>
-         <li>Dejá el campo "Nueva Clave" vacío si no querés cambiarla al actualizar el resto de los datos.</li>
-        </ul>
-       </div>
-      </details>
-     </div>
-     <!-- SECCIÓN 5: HERRAMIENTAS ESPECIALES -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">🚀 Sección 5: Herramientas Especiales y Funciones Avanzadas <span>+</span></summary>
-       <div class="faq-content">
-        <b>⚠️ Alerta de Equipos Olvidados</b>
-        <ul>
-         <li>Un botón amarillo parpadeante aparece automáticamente en la barra superior cuando tenés equipos con estado "Reparado" que llevan más de <b>15 días sin ser retirados</b>.</li>
-         <li>Al hacer clic, se abre una tabla con todos esos equipos. Desde ahí podés enviar un <b>recordatorio por WhatsApp</b> a cada cliente con un solo toque.</li>
-         <li>Una vez enviado el mensaje, el botón del cliente cambia a "Notificado" para que no lo dupliques.</li>
-        </ul>
-        <b>🔗 Vista de Seguimiento del Cliente</b>
-        <ul>
-         <li>Cuando le mandás el WhatsApp al cliente, recibe un link personalizado donde puede ver en tiempo real el estado de su equipo.</li>
-         <li>La vista del cliente es profesional, muestra tu logo, nombre del taller, estado de la reparación y un botón para descargarse su propio ticket PDF.</li>
-         <li>No requiere que el cliente tenga cuenta ni contraseña.</li>
-        </ul>
-        <b>📲 Modo Oscuro</b>
-        <ul>
-         <li>Activalo desde el botón en la barra superior. El sistema recuerda tu preferencia para la próxima vez que entres.</li>
-         <li>Ideal para trabajar en ambientes con poca luz o simplemente si preferís el estilo oscuro.</li>
-        </ul>
-        <b>📁 Historial y Archivo</b>
-        <ul>
-         <li>Las órdenes entregadas se archivan automáticamente para mantener limpia tu vista de trabajo pendiente.</li>
-         </ul>
-         </b>Inteligencia en el Historial y Control de Clientes:</b>
-         </ul>
-<li>​Perfil de Cliente y Gasto Acumulado: Al hacer clic sobre el nombre del cliente en cualquier orden, el sistema activa un filtro automático. Podrás ver instantáneamente todas las reparaciones y compras que te realizó anteriormente.
-<li>El monto total de dinero que ese cliente lleva gastado en tu taller (ideal para aplicar descuentos a clientes fieles)
-<li>Un resumen de qué equipos te entregó y en qué fechas.
-<li>Acceso a Claves de Seguridad: Dentro del detalle de la orden, podés consultar en cualquier momento los datos de acceso guardados:
-Visualización de Patrón: Si el cliente dibujó un patrón de desbloqueo al ingresar, lo verás tal cual fue trazado.
-Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el ícono de seguridad para que puedas probar el equipo sin demoras.
-<li>Consulta de Fotos con Zoom: Desde el historial, podés reabrir las fotos que se subieron al inicio de la reparación. Gracias a la nueva función de Zoom con un toque, podés ampliar la imagen para verificar el estado estético o detalles técnicos exactos de cómo entró el equipo hace meses.
-<li>Auditoría de Repuestos: En cada orden archivada, el sistema guarda el registro de qué producto se descontó del stock y cuál fue el costo de ese repuesto en ese momento, asegurando que tus estadísticas de ganancia sean siempre reales aunque el precio del repuesto haya cambiado después.</li>
-     </ul>
-       </div>
-      </details>
-     </div>
-     <!-- SEPARADOR FAQ -->
-     <div style="background: linear-gradient(135deg, #06122a 0%, #0e2a5e 100%); border-radius: 16px; padding: 22px 30px; margin: 32px 0 24px; color: white; position: relative; overflow: hidden;">
-      <div style="position:absolute; right:-10px; top:-10px; font-size:100px; opacity:0.06; line-height:1;">❓</div>
-      <div style="font-size: 11px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 6px;">SOPORTE</div>
-      <h2 style="margin: 0; font-size: 22px; font-weight: 900; color: white; letter-spacing: -0.3px;">Preguntas Frecuentes</h2>
-     </div>
-     <!-- FAQ 1: ACCESO Y SEGURIDAD -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">🔐 Acceso y Seguridad <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>Me olvidé mi contraseña, ¿qué hago?</b>
-         <br>
-         Desde la pantalla de inicio de sesión, usá el enlace <b>"¿Olvidaste tu contraseña?"</b>. El sistema enviará un link de recuperación a tu correo electrónico registrado. Si no lo encontrás, revisá la carpeta de spam.</p>
-        <p><b>¿Cómo cambio mi contraseña actual?</b>
-         <br>
-         Ingresá a <b>👤 Mi Perfil</b>, escribí la nueva clave en el campo "Nueva Clave" y presioná "ACTUALIZAR". La nueva contraseña estará activa de inmediato.</p>
-        <p><b>Me aparece el mensaje "Acceso Denegado".</b>
-         <br>
-         Esto ocurre en dos situaciones: (1) tu cuenta fue iniciada en otro dispositivo al mismo tiempo — el sistema solo permite una sesión activa por usuario, simplemente volvé a iniciar sesión y recuperarás el acceso; (2) tu licencia fue suspendida por el administrador — en ese caso contactá al soporte.</p>
-        <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b>
-         <br>
-         No. Por seguridad, el sistema permite solo una sesión activa por cuenta. Si iniciás sesión en un segundo dispositivo, el primero quedará desconectado automáticamente.</p>
-       </div>
-      </details>
-     </div>
-     <!-- FAQ 2: TICKETS Y PDF -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">🖨️ Impresión y Tickets PDF <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>¿Cómo genero e imprimo el ticket?</b>
-         <br>
-         Presioná el botón 📄 en la fila de la orden. Se genera un PDF automáticamente y se abre en una pestaña nueva del navegador. Desde ahí podés imprimirlo, guardarlo o enviarlo por WhatsApp.</p>
-        <p><b>¿Cómo lo imprimo desde el celular?</b>
-         <br>
-         Con el PDF abierto en el navegador móvil, tocá el ícono de compartir y seleccioná tu impresora. Si tenés una impresora térmica conectada por Bluetooth o Wi-Fi, también aparecerá como opción. También podés enviarlo directamente por WhatsApp al cliente.</p>
-        <p><b>Mi logo no aparece en el PDF.</b>
-         <br>
-         Verificá en <b>👤 Mi Perfil</b> que hayas cargado una imagen con el botón "📷 CARGAR LOGO" y que hayas presionado "ACTUALIZAR". El logo debe ser una imagen válida (JPG o PNG). Si el archivo pesa demasiado, intentá con una versión más liviana.</p>
-        <p><b>¿Puedo personalizar el texto del ticket?</b>
-         <br>
-         Sí. El nombre del taller, subtítulo, número de WhatsApp y los términos y condiciones que configurés en Mi Perfil aparecerán en todos los tickets. El cuerpo del ticket (datos del equipo, precios) se genera automáticamente.</p>
-        <p><b>¿El cliente puede descargar su propio ticket?</b>
-         <br>
-         Sí. La vista de seguimiento que el cliente recibe por WhatsApp incluye un botón para que descargue su propio PDF con los datos de su reparación.</p>
-       </div>
-      </details>
-     </div>
-     <!-- FAQ 3: FOTOS -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">📷 Fotos y Archivos <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>¿Por qué no puedo subir una foto?</b>
-         <br>
-         El sistema comprime las fotos automáticamente. Si la subida falla, verificá que tengas conexión a internet estable. Un indicador "Sincronizando..." aparece en la parte superior cuando la conexión es débil. Intentá con una foto de menor resolución si el problema persiste.</p>
-        <p><b>¿Cuántas fotos puedo subir por orden?</b>
-         <br>
-         El límite es de <b>5 fotos por orden</b>. Al intentar agregar una sexta, el sistema te avisará con un mensaje de error. El contador visible junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: <i>2 / 5</i>). Priorizá las que muestren el estado físico del equipo: pantalla rota, golpes, estado de los puertos.</p>
-        <p><b>¿Se borran mis fotos con el tiempo?</b>
-         <br>
-         Sí. Para mantener la velocidad del sistema, las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan en las limpiezas automáticas. Los datos de la orden (cliente, falla, precio, estado) se conservan siempre. Solo desaparecen las imágenes.</p>
-        <p><b>¿Cómo veo las fotos de una orden?</b>
-         <br>
-         Desde la tabla de órdenes, hacé clic sobre cualquier miniatura de foto. Se abre el visor a pantalla completa donde podés hacer zoom con pellizco (pinch) en el celular o con la rueda del mouse en la PC.</p>
-       </div>
-      </details>
-     </div>
-     <!-- FAQ 4: ESTADOS -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">🔄 Estados y Flujo de Reparación <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>Cambié un equipo a "Entregado" y desapareció de la lista principal.</b>
-         <br>
-         Es por diseño: el sistema mantiene tu mesa de trabajo limpia. Las órdenes entregadas se mueven a la pestaña <b>📁 Historial</b> automáticamente cuando se entrega el equipo. Podés seguir viéndolas y buscándolas desde ahí.</p>
-        <p><b>¿Puedo revertir un cambio de estado?</b>
-         <br>
-         Sí, podés cambiar el estado libremente mientras la orden esté activa. La excepción es "Entregado": una vez entregado y archivado, no se puede volver a activo fácilmente. Usá el estado con cuidado.</p>
-        <p><b>¿Cómo devuelvo un repuesto al stock si la reparación se canceló?</b>
-         <br>
-         Si marcaste un equipo como "Reparado" descontando stock y luego el cliente se arrepiente, cambiá el estado a "Pendiente" o "No reparado". El sistema detecta que habías descontado un repuesto y lo <b>devuelve automáticamente</b> al inventario.</p>
-        <p><b>¿Qué pasa con el cobro si cambio a "Entregado"?</b>
-         <br>
-         Si la orden tiene saldo pendiente (el precio final es mayor que la seña), se abre automáticamente la ventana de cobro al marcar como Entregado. Elegís el método de pago y el movimiento queda registrado en Contabilidad.</p>
-        <p><b>¿Para qué sirve el estado "Garantía"?</b>
-         <br>
-         Si un cliente vuelve con un equipo ya entregado por un problema relacionado con la reparación original, usás este estado para reingresar el equipo al flujo de trabajo sin crear una nueva orden, manteniendo el historial unificado.</p>
-       </div>
-      </details>
-     </div>
-     <!-- FAQ 5: CONTABILIDAD -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">💳 Contabilidad y Pagos <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>¿La seña que cargué al ingreso queda registrada?</b>
-         <br>
-         Sí. La seña se registra como un ingreso parcial en la fecha en que fue cargada. Cuando el cliente retira y abona el saldo, ese segundo movimiento también queda registrado con su propio método de pago.</p>
-        <p><b>¿Puedo registrar diferentes métodos de pago para la seña y el saldo?</b>
-         <br>
-         Sí. Al ingresar el equipo elegís el método de la seña (Efectivo, Transferencia o Tarjeta), y al momento de la entrega elegís el método del saldo restante. Ambos quedan detallados en Contabilidad.</p>
-        <p><b>¿Las ventas rápidas de mostrador aparecen en la contabilidad?</b>
-         <br>
-         Sí. Toda venta realizada desde el botón 🛒 se registra automáticamente en Contabilidad como "Venta de Stock" con el monto, método de pago y fecha.</p>
-        <p><b>¿Qué significa la "Ganancia Neta"?</b>
-         <br>
-         Es el resultado de restar tus costos (los repuestos que cargaste de forma privada en cada orden) a tus ingresos totales del período. Es tu ganancia real.</p>
-        <p><b>El Excel que descargué tiene caracteres extraños.</b>
-         <br>
-         Al abrir el CSV en Excel, asegurate de seleccionar codificación <b>UTF-8</b> en el asistente de importación para que los acentos y caracteres especiales se vean correctamente.</p>
-       </div>
-      </details>
-     </div>
-     <!-- FAQ 6: STOCK -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">📦 Stock e Inventario <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>¿Puedo agregar el mismo producto varias veces?</b>
-         <br>
-         Podés, pero es mejor tener un único registro por artículo y actualizar su cantidad. Así los descuentos automáticos funcionan correctamente y no se genera confusión en el inventario.</p>
-        <p><b>El stock de un artículo quedó en negativo, ¿qué hago?</b>
-         <br>
-         Actualizá la cantidad manualmente desde la sección Stock ingresando el número correcto. Esto puede pasar si ingresaste repuestos manualmente y el sistema los descontó además.</p>
-       </div>
-      </details>
-     </div>
-     <!-- FAQ 7: TÉCNICOS -->
-     <div class="faq-accordion">
-      <details>
-       <summary class="faq-summary">⚙️ Técnico y Rendimiento <span>+</span></summary>
-       <div class="faq-content">
-        <p><b>¿El sistema funciona sin internet?</b>
-         <br>
-         No. Mi Taller Web es una aplicación en la nube y requiere conexión a internet para funcionar. Sin conexión, verás un indicador rojo en la barra superior y no podrás guardar cambios.</p>
-        <p><b>¿Mis datos están respaldados?</b>
-         <br>
-         Sí. Todos los datos se guardan en tiempo real en Firebase (infraestructura de Google). No necesitás hacer backups manuales; la sincronización es automática y continua.</p>
-        <p><b>El sistema se pone lento. ¿Qué puedo hacer?</b>
-         <br>
-         Probá cerrar otras pestañas del navegador y limpiar el caché. Si el problema persiste en una conexión de datos móviles, verificá la señal. La aplicación también funciona más fluido en redes WiFi estables.</p>
-        <p><b>¿Puedo instalarla como app en mi celular?</b>
-         <br>
-         Sí. Al abrir el sistema en tu navegador móvil (Chrome recomendado), el navegador te ofrecerá la opción de "Agregar a pantalla de inicio". Esto crea un ícono en tu celular que abre la app en modo pantalla completa, similar a una app nativa.</p>
-        <p><b>¿Desde qué dispositivos puedo usar el sistema?</b>
-         <br>
-         Desde cualquier dispositivo con navegador web moderno: celulares Android e iPhone, tablets, computadoras de escritorio y notebooks. La interfaz es responsive y se adapta a cualquier tamaño de pantalla.</p>
-       </div>
-      </details>
-     </div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128272; Acceso y Seguridad <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>Me olvid&eacute; mi contrase&ntilde;a.</b><br>Desde la pantalla de inicio, us&aacute; el enlace "&iquest;Olvidaste tu contrase&ntilde;a?". El sistema enviar&aacute; un link de recuperaci&oacute;n a tu correo.</p>
+       <p><b>&iquest;C&oacute;mo cambio mi contrase&ntilde;a?</b><br>Ingres&aacute; a Mi Perfil, escrib&iacute; la nueva clave y presion&aacute; "ACTUALIZAR".</p>
+       <p><b>Me aparece "Acceso Denegado".</b><br>Ocurre cuando tu cuenta est&aacute; activa en otro dispositivo (solo una sesi&oacute;n activa por usuario) o la licencia fue suspendida. Volv&eacute; a iniciar sesi&oacute;n para recuperar el acceso.</p>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128424; Impresi&oacute;n y Tickets PDF <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>&iquest;C&oacute;mo genero el ticket?</b><br>Presion&aacute; el bot&oacute;n &#128196; en la fila de la orden. Se genera un PDF en una pesta&ntilde;a nueva para imprimir o compartir por WhatsApp.</p>
+       <p><b>Mi logo no aparece en el PDF.</b><br>Verific&aacute; en Mi Perfil que hayas cargado una imagen v&aacute;lida (JPG o PNG) y presionado "ACTUALIZAR".</p>
+       <p><b>&iquest;El cliente puede descargar su propio ticket?</b><br>S&iacute;. La vista de seguimiento incluye un bot&oacute;n para que el cliente descargue su PDF.</p>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128247; Fotos y Archivos <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>&iquest;Cu&aacute;ntas fotos puedo subir?</b><br>M&aacute;ximo <b>5 fotos por orden</b>. El contador junto al bot&oacute;n te muestra cu&aacute;ntas llev&aacute;s (ej: 2 / 5).</p>
+       <p><b>&iquest;Se borran las fotos con el tiempo?</b><br>S&iacute;. Las fotos de &oacute;rdenes con m&aacute;s de 45 d&iacute;as se eliminan autom&aacute;ticamente. Los datos de la orden se conservan siempre.</p>
+       <p><b>&iquest;C&oacute;mo hago zoom?</b><br>Hac&eacute; clic sobre la miniatura para abrir el visor. Pellizco en el celular o rueda del mouse en la PC.</p>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128260; Estados y Flujo de Reparaci&oacute;n <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>Cambi&eacute; a "Entregado" y desapareci&oacute; de la lista.</b><br>Es por dise&ntilde;o: las &oacute;rdenes entregadas se mueven al Historial autom&aacute;ticamente para mantener limpia tu vista de trabajo.</p>
+       <p><b>&iquest;Puedo revertir un cambio de estado?</b><br>S&iacute;, pod&eacute;s cambiar el estado libremente mientras la orden est&eacute; activa. "Entregado" es la excepci&oacute;n: una vez archivado no se puede volver a activo f&aacute;cilmente.</p>
+       <p><b>&iquest;C&oacute;mo devuelvo un repuesto al stock si la reparaci&oacute;n se cancel&oacute;?</b><br>Cambi&aacute; el estado a "Pendiente" o "No reparado". El sistema detecta el descuento previo y <b>devuelve el repuesto autom&aacute;ticamente</b> al inventario.</p>
+       <p><b>&iquest;Para qu&eacute; sirve el estado "Garant&iacute;a"?</b><br>Para reingresar un equipo ya entregado por un problema relacionado, sin crear una nueva orden y manteniendo el historial unificado.</p>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128179; Contabilidad y Pagos <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>&iquest;La se&ntilde;a queda registrada?</b><br>S&iacute;. La se&ntilde;a se registra como ingreso parcial en la fecha de carga. Al entregar, el saldo restante tambi&eacute;n queda registrado con su propio m&eacute;todo de pago.</p>
+       <p><b>&iquest;Las ventas r&aacute;pidas aparecen en contabilidad?</b><br>S&iacute;. Toda venta desde el bot&oacute;n &#128722; se registra autom&aacute;ticamente como "Venta de Stock".</p>
+       <p><b>El Excel tiene caracteres extra&ntilde;os.</b><br>Al abrir el CSV en Excel, selecci&oacute;n&aacute; codificaci&oacute;n <b>UTF-8</b> en el asistente de importaci&oacute;n.</p>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#128230; Stock e Inventario <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>&iquest;Puedo agregar el mismo producto varias veces?</b><br>Pod&eacute;s, pero es mejor tener un &uacute;nico registro por art&iacute;culo y actualizar su cantidad. As&iacute; los descuentos autom&aacute;ticos funcionan correctamente.</p>
+       <p><b>El stock qued&oacute; en negativo.</b><br>Actualiz&aacute; la cantidad manualmente desde la secci&oacute;n Stock ingresando el n&uacute;mero correcto.</p>
+      </div>
+     </details></div>
+     <div class="faq-accordion"><details>
+      <summary class="faq-summary">&#9881; T&eacute;cnico y Rendimiento <span>+</span></summary>
+      <div class="faq-content">
+       <p><b>&iquest;El sistema funciona sin internet?</b><br>No. Es una aplicaci&oacute;n en la nube. Sin conexi&oacute;n ver&aacute;s un indicador rojo y no podr&aacute;s guardar cambios.</p>
+       <p><b>&iquest;Mis datos est&aacute;n respaldados?</b><br>S&iacute;. Todos los datos se guardan en tiempo real en Firebase (Google). No necesit&aacute;s hacer backups manuales.</p>
+       <p><b>&iquest;Puedo instalarla como app?</b><br>S&iacute;. En Chrome, us&aacute; "Agregar a pantalla de inicio". Crea un &iacute;cono que abre la app en modo pantalla completa, como una app nativa.</p>
+       <p><b>&iquest;Desde qu&eacute; dispositivos puedo usarla?</b><br>Desde cualquier dispositivo con navegador moderno: Android, iPhone, tablets, computadoras y notebooks.</p>
+      </div>
+     </details></div>
+    </div>
     </div>
    </div>
   </div>
@@ -5263,16 +5198,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             }
         }
         
-        // --- NUEVO: Cargar órdenes del caché para que aparezcan al INSTANTE ---
-        const cache = localStorage.getItem('st_cache_ordenes_' + u);
-        if (cache) {
-            try {
-                registros = JSON.parse(cache);
-                setTimeout(() => renderTable(), 100); // Dibujamos la tabla enseguida
-            } catch(e) { console.error("Error en caché"); }
-        }
-        // --------------------------------------------------------------------
-
         isUserAdmin = isAdmin;
         isClientMode = false;
         const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
@@ -5282,9 +5207,58 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('app-content').style.display = 'block';
         const landingEl = document.getElementById('landing-page');
         if (landingEl) landingEl.style.display = 'none';
-                document.querySelector('#app-content .container').style.display = 'block'; 
+        document.querySelector('#app-content .container').style.display = 'block';
+        // Mostrar dashboard como primera página
+        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        const dashPage = document.getElementById('page-dashboard');
+        const dashBtn = document.getElementById('btn-nav-dashboard');
+        if (dashPage) dashPage.style.display = 'block';
+        if (dashBtn) dashBtn.classList.add('active');
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
+
+        // PASO 1: Pintar dashboard YA con lo que hay en caché local (instantáneo, sin Firebase)
+        const _cacheOrdenes = localStorage.getItem('st_cache_ordenes_' + u);
+        if (_cacheOrdenes) {
+            try { registros = JSON.parse(_cacheOrdenes); } catch(e) {}
+        }
+        const _cacheStock = localStorage.getItem('st_cache_stock_' + u);
+        if (_cacheStock) {
+            try { stockData = JSON.parse(_cacheStock); } catch(e) {}
+        }
+        // cargarDashboard se llama después de que cargarStockData esté definido (ver abajo)
+
+        // PASO 2: Cargar datos frescos de Firebase y refrescar dashboard
+        const _cargarTodo = () => {
+            const _pathActivo2 = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
+            const _pathArch = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
+            db.ref(_pathActivo2).once('value').then(snap => {
+                const vr = snap.val();
+                registros = vr ? Object.keys(vr).map(k => ({id:k, ...vr[k]})) : [];
+                localStorage.setItem('st_cache_ordenes_' + u, JSON.stringify(registros));
+                renderTable();
+                actualizarListasAutocompletado();
+                ocultarLoader();
+                if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
+            }).catch(() => { ocultarLoader(); });
+            db.ref(_pathArch).once('value').then(snap => {
+                const va = snap.val();
+                registrosArchivados = va ? Object.keys(va).map(k => ({id:k, ...va[k]})) : [];
+                historialDescargado = true;
+                if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
+            }).catch(() => {});
+            // El stock lo maneja cargarStockData() definido más abajo
+        };
+
+        if (isStored) mostrarLoader("Actualizando...");
+        if (firebase.auth().currentUser) {
+            _cargarTodo();
+        } else {
+            const _unsubAuth = firebase.auth().onAuthStateChanged(authUser => {
+                if (authUser) { _unsubAuth(); _cargarTodo(); }
+            });
+        }
 
         // Lógica de Sistema (Bloqueo y Anuncios) - EN VIVO
         db.ref('configuracion/sistema').on('value', snap => {
@@ -5433,63 +5407,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             }
         });
 
-        if (isStored) mostrarLoader("Cargando sistema...");
-
-        const iniciarListener = () => {
-                        dbRef.once('value', snap => {
-                try {
-                    const v = snap.val(); 
-                    registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                    
-                    // --- NUEVO: Guardar en el caché para la próxima entrada ---
-                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
-                    
-                    renderTable(); 
-                    actualizarListasAutocompletado();
-                    
-                } catch (error) {
-                    showToast("Error interno al cargar la tabla", "#dc2626");
-                } finally {
-                    ocultarLoader();
-                }
-            }, errorDeFirebase => {
-                ocultarLoader();
-                // Solo mostramos el error si ya pasó suficiente tiempo (no es el arranque de sesión guardada)
-                if (!isStored || Date.now() - _grantAccessTime > 5000) {
-                    showToast("Problema de conexión con la base de datos", "#dc2626");
-                }
-            });
-        };
-
-        // Si es sesión guardada, esperamos a que Firebase Auth termine de restaurar el token
-        const _grantAccessTime = Date.now();
-        if (isStored) {
-            if (firebase.auth().currentUser) {
-                iniciarListener();
-            } else {
-                // onAuthStateChanged se dispara con null primero y luego con el usuario real.
-                // Esperamos a que llegue el usuario autenticado antes de arrancar el listener.
-                const unsubscribe = firebase.auth().onAuthStateChanged((authUser) => {
-                    if (authUser) {
-                        unsubscribe(); // nos desuscribimos para que no se llame de nuevo
-                        iniciarListener();
-                    }
-                });
-            }
-        } else {
-            iniciarListener();
-        }
-
         // CORRECCIÓN: Desconectamos el Stock del "tiempo real" global
         window.cargarStockData = () => {
             const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
             db.ref(pathStock).once('value', snap => {
                 const v = snap.val();
                 stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                if(document.getElementById('page-stock').style.display === 'block') renderStock();
+                localStorage.setItem('st_cache_stock_' + u, JSON.stringify(stockData));
+                if (document.getElementById('page-stock').style.display === 'block') renderStock();
+                if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
             });
         };
-        window.cargarStockData(); // Carga inicial
+        window.cargarStockData(); // Carga inicial desde Firebase
+        // Pintar dashboard con caché al instante (cargarStockData actualizará el KPI cuando llegue Firebase)
+        if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
         
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
@@ -5913,7 +5844,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         });
     }
 
-    function cerrarModalStock() { document.getElementById('modalUsoStock').style.display = 'none'; }
+    function cerrarModalStock() {
+        document.getElementById('modalUsoStock').style.display = 'none';
+        const notasEl = document.getElementById('notasReparacion');
+        if (notasEl) notasEl.value = '';
+    }
 
     function filtrarStockModal() {
         if(isClientMode) return;
@@ -5982,7 +5917,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if(descontar && repuestosSeleccionadosModal.length > 0) {
             const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
             repuestosSeleccionadosModal.forEach(rep => {
-                // Transacción atómica de Firebase para evitar choques
                 const refStockCant = db.ref(pathStock).child(rep.id).child('cantidad');
                 refStockCant.transaction((cantActual) => {
                     return (cantActual || 0) - rep.cant;
@@ -5994,10 +5928,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             return;
         }
 
+        // Guardar notas de reparación si se escribieron
+        const notasEl = document.getElementById('notasReparacion');
+        const notas = notasEl ? notasEl.value.trim() : '';
+        if (notas && idParaEstado) {
+            const pathReg = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            db.ref(pathReg).child(idParaEstado).update({ notasReparacion: notas });
+            const reg = getRegistro(idParaEstado);
+            if (reg) reg.notasReparacion = notas;
+        }
+
         cerrarModalStock();
         ejecutarCambioEstado('Reparado', repuestosParaGuardar);
         
-        // Si el botón que se presionó indica que sí hay que avisar, abre WhatsApp
         if (avisar) {
             enviarWhatsAppReparado(idParaEstado);
         }
@@ -6263,6 +6206,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     let modoArchivo = false;
     let modoPendientes = false; // Por defecto muestra todas las órdenes activas
     let modoCobro = false;
+    let modoReparado = false;
     let idParaEstado = null;
     let idParaPrecio = null;
     let idParaBorrar = null;
@@ -6311,6 +6255,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             document.getElementById('repuestoModalUsado').value = "";
             repuestosSeleccionadosModal = [];
             renderRepuestosModal();
+            const notasEl = document.getElementById('notasReparacion');
+            if (notasEl) notasEl.value = '';
             document.getElementById('modalUsoStock').style.display = 'flex';
             return; 
         }
@@ -6551,6 +6497,25 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             });
             h += `</div>`;
         }
+
+        // --- NOTAS DE REPARACIÓN ---
+        if(r.notasReparacion) {
+            h += `<div style="margin-top:15px; padding:12px 14px; background:#f0fdf4; border-radius:10px; border-left:3px solid #059669;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                      <div style="font-size:11px; font-weight:800; color:#059669; text-transform:uppercase;">📝 Notas de Reparación</div>
+                      <button onclick="editarNotasReparacion('${r.id}')" style="background:none; border:1px solid #059669; border-radius:6px; color:#059669; font-size:11px; font-weight:700; padding:2px 8px; cursor:pointer;">✏️ Editar</button>
+                    </div>
+                    <div id="notas-texto-${r.id}" style="font-size:13px; color:#374151; line-height:1.5;">${escaparHTML(r.notasReparacion)}</div>
+                  </div>`;
+        } else if(r.estado === 'Reparado') {
+            h += `<div style="margin-top:15px; padding:12px 14px; background:#f9fafb; border-radius:10px; border-left:3px solid #d1d5db;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <div style="font-size:11px; font-weight:800; color:#9ca3af; text-transform:uppercase;">📝 Notas de Reparación</div>
+                      <button onclick="editarNotasReparacion('${r.id}')" style="background:none; border:1px solid #6b7280; border-radius:6px; color:#6b7280; font-size:11px; font-weight:700; padding:2px 8px; cursor:pointer;">+ Agregar</button>
+                    </div>
+                    <div style="font-size:12px; color:#9ca3af; margin-top:4px;">Sin notas registradas</div>
+                  </div>`;
+        }
       
             if(r.vencimientoGarantia) {
             h += `<div class="history-item" style="border-left-color:#1e40af;"><b>Garantía Válida Hasta</b><span style="color:#1e40af; font-weight:bold; font-size:15px;">${r.vencimientoGarantia}</span></div>`;
@@ -6571,6 +6536,40 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     }
 
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
+
+    let _editarNotasId = null;
+    window.editarNotasReparacion = function(id) {
+        _editarNotasId = id;
+        const r = getRegistro(id);
+        const input = document.getElementById('editarNotasInput');
+        if (input) input.value = (r && r.notasReparacion) ? r.notasReparacion : '';
+        document.getElementById('modalEditarNotas').style.display = 'flex';
+        setTimeout(() => { if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); } }, 80);
+    };
+    window.cerrarModalEditarNotas = function() {
+        document.getElementById('modalEditarNotas').style.display = 'none';
+        _editarNotasId = null;
+    };
+    window.guardarNotasEditadas = function() {
+        const id = _editarNotasId;
+        if (!id) return;
+        const input = document.getElementById('editarNotasInput');
+        const notas = input ? input.value.trim() : '';
+        const r = getRegistro(id);
+        const esArchivado = r && r.archivado;
+        const pathReg = esArchivado
+            ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
+            : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+        const update = notas ? { notasReparacion: notas } : { notasReparacion: null };
+        db.ref(pathReg).child(id).update(update).then(() => {
+            if (r) r.notasReparacion = notas || null;
+            window.cerrarModalEditarNotas();
+            showToast(notas ? '📝 Notas actualizadas' : '🗑️ Notas eliminadas', '#059669');
+            if (document.getElementById('historyModal').style.display === 'flex') {
+                openHistory(id);
+            }
+        });
+    };
 
     function resetPaginacion() {
         clearTimeout(debounceTimer);
@@ -6743,6 +6742,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let matchFiltro = true;
             if (bus.length === 0 && !modoArchivo && r.archivado) matchFiltro = false; 
             if (bus.length === 0 && modoPendientes && r.estado !== 'Pendiente') matchFiltro = false;
+            if (bus.length === 0 && modoReparado && r.estado !== 'Reparado') matchFiltro = false;
             if (bus.length === 0 && !modoArchivo && r.esVentaRapida) matchFiltro = false;
             if (bus.length === 0 && modoCobro && !(r.entregadoSinCobrar === true && !r.archivado)) matchFiltro = false;
 
@@ -6832,6 +6832,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }
 
         calcularOlvidados();
+
+        // Si el dashboard está visible, actualizarlo con los registros recién cargados
+        if (document.getElementById('page-dashboard') && document.getElementById('page-dashboard').style.display === 'block') {
+            if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
+        }
     }
 
     // Delegación de evento para links de historial de cliente (evita XSS por onclick inline)
@@ -6957,7 +6962,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }
     });
 
-    function setModoVista(modo) {
+    window.setModoVista = function(modo) {
         // Cerrar dropdown
         const menu = document.getElementById('dropdownFiltroMenu');
         const btn = document.getElementById('btnFiltroVista');
@@ -6972,24 +6977,35 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             modoPendientes = false;
             modoArchivo = false;
             modoCobro = false;
+            modoReparado = false;
             showToast("MOSTRANDO TODAS LAS ÓRDENES 👀", "#1e4d8c");
             renderTable();
         } else if (modo === 'pendientes') {
             modoPendientes = true;
             modoArchivo = false;
             modoCobro = false;
+            modoReparado = false;
             showToast("FILTRANDO PENDIENTES ⏳", "#f59e0b");
+            renderTable();
+        } else if (modo === 'reparado') {
+            modoReparado = true;
+            modoPendientes = false;
+            modoArchivo = false;
+            modoCobro = false;
+            showToast('LISTOS PARA RETIRAR ✅', '#059669');
             renderTable();
         } else if (modo === 'cobro') {
             modoCobro = true;
             modoPendientes = false;
             modoArchivo = false;
+            modoReparado = false;
             showToast("PENDIENTE DE COBRO 💰", "#ef4444");
             renderTable();
         } else if (modo === 'historial') {
             modoArchivo = true;
             modoPendientes = false;
             modoCobro = false;
+            modoReparado = false;
             if (historialDescargado) {
                 showToast("MOSTRANDO HISTORIAL 📁", "#6b7280");
                 renderTable();
@@ -8028,18 +8044,48 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         body.innerHTML = "";
         
         const filtrados = stockData.filter(i => (i.nombre||"").toLowerCase().includes(bus));
-        
         filtrados.sort((a,b) => a.nombre.localeCompare(b.nombre));
-        
+
+        // Banner de faltantes
+        const criticos = stockData.filter(s => s.minimo > 0 && s.cantidad <= s.minimo);
+        let bannerEl = document.getElementById('stock-critico-banner');
+        if (!bannerEl) {
+            bannerEl = document.createElement('div');
+            bannerEl.id = 'stock-critico-banner';
+            bannerEl.style.cssText = 'margin-bottom:14px; background:linear-gradient(135deg,#fef2f2,#fee2e2); border:1.5px solid #fca5a5; border-radius:12px; padding:12px 16px; font-size:13px; font-weight:800; color:#dc2626; display:none; align-items:center; gap:10px;';
+            const stockPage = document.getElementById('page-stock');
+            if (stockPage) stockPage.insertBefore(bannerEl, stockPage.querySelector('.form-grid'));
+        }
+        if (criticos.length > 0) {
+            bannerEl.innerHTML = '🚨 ' + criticos.length + ' artículo' + (criticos.length !== 1 ? 's' : '') + ' con stock mínimo o agotado';
+            bannerEl.style.display = 'flex';
+        } else {
+            bannerEl.style.display = 'none';
+        }
+
         filtrados.forEach(i => {
-            let colorCant = i.cantidad <= 2 ? 'color:red; font-weight:bold;' : 'color:green; font-weight:bold;';
+            const minimo = i.minimo || 0;
+            let badge, badgeStyle;
+            if (i.cantidad <= 0) {
+                badge = '🔴 Sin stock'; badgeStyle = 'background:#fee2e2; color:#dc2626;';
+            } else if (minimo > 0 && i.cantidad <= minimo) {
+                badge = '🟡 Stock bajo'; badgeStyle = 'background:#fef3c7; color:#d97706;';
+            } else {
+                badge = '🟢 OK'; badgeStyle = 'background:#d1fae5; color:#065f46;';
+            }
             body.innerHTML += `
-                <tr>
+                <tr data-stock-id="${i.id}">
                     <td><b>${escaparHTML(i.nombre)}</b></td>
-                    <td style="${colorCant}">${i.cantidad}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap; white-space:nowrap;">
+                            <span style="font-weight:800;">${i.cantidad}</span>
+                            <span style="padding:2px 8px; border-radius:20px; font-size:11px; font-weight:800; white-space:nowrap; ${badgeStyle}">${badge}</span>
+                        </div>
+                    </td>
                     <td>${fmt.format(i.costo || 0)}</td>
                     <td><b>${fmt.format(i.precioVenta || 0)}</b></td>
                     <td class="action-btns">
+                        <button onclick="guardarMinimoStock('${i.id}')" title="Configurar stock mínimo" style="color:#d97706;">🔔</button>
                         <button onclick="editarStock('${i.id}')" style="color:#1e4d8c;">✏️</button>
                         <button onclick="confirmarBorrarStock('${i.id}')" style="color:#dc2626;">❌</button>
                     </td>
@@ -8115,12 +8161,49 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     function _doShowPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById('page-' + pageId).style.display = 'block';
-        document.getElementById('btn-nav-' + pageId).classList.add('active');
+        const pageEl = document.getElementById('page-' + pageId);
+        const btnEl = document.getElementById('btn-nav-' + pageId);
+        if (pageEl) pageEl.style.display = 'block';
+        if (btnEl) btnEl.classList.add('active');
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'stock') window.cargarStockData();
         if (pageId === 'usuarios') { cargarUsuariosAdmin(); setTimeout(() => listarUsuarios(), 50); }
         if (pageId === 'presupuesto') { cargarPresupuestos(); setTimeout(() => abrirFormPresupuesto(), 50); }
+        // Nuevos módulos
+        if (pageId === 'dashboard') {
+            window.cargarStockData();
+            if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
+        }
+        if (pageId === 'clientes') {
+            setTimeout(() => {
+                if (typeof window.renderClientes !== 'function') return;
+                if (!historialDescargado) {
+                    const pathArch = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+                    db.ref(pathArch).once('value').then(snap => {
+                        const v = snap.val();
+                        registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                        historialDescargado = true;
+                        window.renderClientes();
+                    });
+                } else {
+                    window.renderClientes();
+                }
+            }, 50);
+        }
+        if (pageId === 'alertas') { setTimeout(() => { const saved = localStorage.getItem('st_alerta_dias'); if (saved) { const el = document.getElementById('alerta-dias'); if (el) el.value = saved; } if (typeof window.renderAlertas === 'function') window.renderAlertas(); }, 50); }
+        if (pageId === 'etiquetas') {
+            setTimeout(() => {
+                window._etiquetaOrden = null;
+                const busEl = document.getElementById('etiqueta-buscar');
+                const datosEl = document.getElementById('etiqueta-datos');
+                const prevEl = document.getElementById('etiqueta-preview');
+                const acEl = document.getElementById('etiqueta-autocomplete');
+                if (busEl) busEl.value = '';
+                if (datosEl) datosEl.style.display = 'none';
+                if (prevEl) { prevEl.innerHTML = 'Seleccioná una orden para ver la etiqueta'; prevEl.style.cssText = 'color:#9ca3af; font-size:14px; text-align:center;'; }
+                if (acEl) acEl.style.display = 'none';
+            }, 50);
+        }
     }
 
     function showPage(pageId) {
@@ -10746,6 +10829,537 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
 // ===================================================
 
 // ===================================================
+// === MÓDULO DASHBOARD ==============================
+// ===================================================
+window.cargarDashboard = function() {
+    const fmtARS = new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0 });
+    const hoy = new Date().toLocaleDateString('es-AR');
+
+    // KPIs desde registros en memoria
+    const activos = registros.filter(r => !r.archivado && !r.esVentaRapida);
+    const pendientes = activos.filter(r => r.estado === 'Pendiente' || !r.estado).length;
+    const reparados = activos.filter(r => r.estado === 'Reparado').length;
+    const enTrabajo = activos.filter(r => r.estado && !['Pendiente','Reparado','Entregado','No reparado'].includes(r.estado)).length;
+
+    // Ingresos hoy (sena cobrada hoy + saldo cobrado hoy)
+    let ingresosHoy = 0;
+    const todosArch = [...registros, ...registrosArchivados];
+    todosArch.forEach(r => {
+        if (!r.fecha) return;
+        const fechaOrden = r.fecha.split(',')[0].trim();
+        if (fechaOrden === hoy) {
+            ingresosHoy += (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0);
+            ingresosHoy += (parseFloat(r.saldoCobrado) || 0);
+        }
+    });
+
+    // Entregadas hoy
+    const entregadasHoy = registrosArchivados.filter(r => {
+        if (!r.historialEstados) return false;
+        return r.historialEstados.some(e => e.estado === 'Entregado' && e.fecha && e.fecha.split(',')[0].trim() === hoy);
+    }).length;
+
+    // Pintar KPIs que no dependen del stock
+    document.getElementById('kpi-pendientes').textContent = pendientes;
+    document.getElementById('kpi-reparados').textContent = reparados;
+    document.getElementById('kpi-ingresos').textContent = fmtARS.format(ingresosHoy);
+    const elTrabajo = document.getElementById('kpi-trabajo'); if (elTrabajo) elTrabajo.textContent = enTrabajo;
+    const elEntregadas = document.getElementById('kpi-entregadas'); if (elEntregadas) elEntregadas.textContent = entregadasHoy;
+
+    // Stock crítico
+    const criticos = stockData.filter(s => s.minimo > 0 && s.cantidad <= s.minimo).length;
+    const elKpi = document.getElementById('kpi-stock');
+    if (elKpi) elKpi.textContent = criticos;
+
+    // Gráfico semanal (7 días)
+    const chartEl = document.getElementById('dash-chart');
+    const labelsEl = document.getElementById('dash-chart-labels');
+    if (!chartEl || !labelsEl) { const recBox2 = document.getElementById('dash-recientes'); if (recBox2) { recBox2.innerHTML = ''; } }
+    if (chartEl) chartEl.innerHTML = '';
+    if (labelsEl) labelsEl.innerHTML = '';
+
+    const dias = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dias.push(d.toLocaleDateString('es-AR'));
+    }
+    const maxVal = Math.max(...dias.map(dia => {
+        let tot = 0;
+        todosArch.forEach(r => {
+            if (!r.fecha) return;
+            if (r.fecha.split(',')[0].trim() === dia) {
+                tot += (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0);
+                tot += (parseFloat(r.saldoCobrado) || 0);
+            }
+        });
+        return tot;
+    }), 1);
+    dias.forEach((dia, idx) => {
+        let tot = 0;
+        todosArch.forEach(r => {
+            if (!r.fecha) return;
+            if (r.fecha.split(',')[0].trim() === dia) {
+                tot += (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0);
+                tot += (parseFloat(r.saldoCobrado) || 0);
+            }
+        });
+        const pct = Math.max((tot / maxVal) * 100, 4);
+        const esHoy = idx === 6;
+        const bar = document.createElement('div');
+        bar.style.cssText = 'flex:1; background:' + (esHoy ? '#1e4d8c' : '#dbeafe') + '; border-radius:4px 4px 0 0; height:' + pct + '%; min-height:4px; transition:height 0.4s; cursor:default; position:relative;';
+        bar.title = dia + ': ' + fmtARS.format(tot);
+        chartEl.appendChild(bar);
+        const label = document.createElement('div');
+        const dObj = new Date();
+        dObj.setDate(dObj.getDate() - (6 - idx));
+        const nombres = ['D','L','M','X','J','V','S'];
+        label.style.cssText = 'flex:1; text-align:center; font-size:10px; color:' + (esHoy ? '#1e4d8c' : '#9ca3af') + '; font-weight:' + (esHoy ? '900' : '600') + '; font-family:\'Outfit\',sans-serif;';
+        label.textContent = nombres[dObj.getDay()];
+        labelsEl.appendChild(label);
+    });
+
+    // Órdenes recientes (últimas 5)
+    const recBox = document.getElementById('dash-recientes');
+    if (!recBox) return;
+    recBox.innerHTML = '';
+    const recientes = [...activos].reverse().slice(0, 5);
+    if (recientes.length === 0) {
+        recBox.innerHTML = '<div style="color:#9ca3af; font-size:13px; text-align:center; padding:20px 0;">No hay órdenes activas</div>';
+    } else {
+        recientes.forEach(r => {
+            const nro = String(r.orden).replace('ORD-', '');
+            const colores = { Pendiente:'#d97706', Reparado:'#059669', 'No reparado':'#dc2626', Entregado:'#6b7280', Garantía:'#7c3aed' };
+            const col = colores[r.estado] || '#d97706';
+            recBox.innerHTML += `<div style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:#f9fafb; border-radius:8px; border:1px solid #f3f4f6;">
+                <span style="font-weight:900; font-size:13px; color:#1e4d8c; min-width:38px;">#${nro}</span>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escaparHTML(r.cliente)}</div>
+                    <div style="font-size:11px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escaparHTML((r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||''))}</div>
+                </div>
+                <span style="font-size:11px; font-weight:800; color:${col}; white-space:nowrap;">${r.estado || 'Pendiente'}</span>
+            </div>`;
+        });
+    }
+};
+
+// ===================================================
+// === MÓDULO CLIENTES ===============================
+// ===================================================
+window.renderClientes = function() {
+    const bus = (document.getElementById('search-clientes').value || '').toLowerCase().trim();
+    const container = document.getElementById('lista-clientes');
+    const statsEl = document.getElementById('clientes-stats');
+    const fmtARS = new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0 });
+
+    // Agrupar todas las órdenes (activas + archivadas) por cliente
+    const mapa = new Map();
+    const todas = [...registros, ...registrosArchivados].filter(r => !r.esVentaRapida && r.cliente);
+    todas.forEach(r => {
+        const key = (r.cliente || '').trim().toLowerCase();
+        if (!mapa.has(key)) mapa.set(key, { nombre: r.cliente, tel: r.tel || '', ordenes: [] });
+        mapa.get(key).ordenes.push(r);
+    });
+
+    // Convertir a array y filtrar
+    let clientes = [...mapa.values()];
+    if (bus) {
+        clientes = clientes.filter(c => c.nombre.toLowerCase().includes(bus) || c.tel.includes(bus));
+    }
+    // Ordenar por cantidad de órdenes
+    clientes.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', {sensitivity: 'base'}));
+
+    statsEl.textContent = clientes.length + ' cliente' + (clientes.length !== 1 ? 's' : '') + ' encontrado' + (clientes.length !== 1 ? 's' : '');
+
+    if (clientes.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#9ca3af; font-size:14px;">No se encontraron clientes</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    clientes.forEach(c => {
+        const totalGastado = c.ordenes.reduce((acc, r) => {
+            const sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            const saldo = parseFloat(r.saldoCobrado) || 0;
+            return acc + sena + saldo;
+        }, 0);
+
+        const iniciales = c.nombre.trim().split(' ').slice(0, 2).map(s => s[0] || '').join('').toUpperCase();
+        const div = document.createElement('div');
+        div.className = 'cliente-acordeon';
+        div.innerHTML = `<div class="cliente-acordeon-header" onclick="toggleAcordeonCliente(this)">
+            <div class="ca-avatar">${escaparHTML(iniciales)}</div>
+            <div class="ca-info">
+                <div class="ca-nombre">${escaparHTML(c.nombre)}</div>
+                <div class="ca-meta">${c.ordenes.length} reparación${c.ordenes.length !== 1 ? 'es' : ''} · ${c.tel ? '📱 ' + escaparHTML(c.tel) : 'Sin tel'}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                <div class="ca-total">${fmtARS.format(totalGastado)}</div>
+                ${c.tel ? `<a href="https://wa.me/${(function(t){let n=t.replace(/\D/g,'');if(n.startsWith('549'))return n;if(n.startsWith('54'))return n.replace(/^54/,'549');if(n.startsWith('9')&&n.length>=10)return '54'+n;return '549'+n;})(c.tel)}" target="_blank" onclick="event.stopPropagation()" style="background:#25d366; color:white; border-radius:8px; padding:4px 10px; font-size:11px; font-weight:800; text-decoration:none; font-family:'Outfit',sans-serif;">📲 WA</a>` : ''}
+            </div>
+            <div class="ca-chevron">›</div>
+        </div>
+        <div class="cliente-acordeon-body">
+            <div style="margin-bottom:10px; font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px;">Historial de reparaciones</div>
+            ${c.ordenes.slice().reverse().map(r => {
+                const nro = String(r.orden).replace('ORD-', '');
+                const col = { Pendiente:'#d97706', Reparado:'#059669', 'No reparado':'#dc2626', Entregado:'#6b7280', Garantía:'#7c3aed' }[r.estado] || '#d97706';
+                const precioActual = parseFloat(r.precio) || 0;
+                const sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+                const saldoCob = parseFloat(r.saldoCobrado) || 0;
+                const totalPagado = sena + saldoCob;
+                return `<div class="ca-rep-item">
+                    <span style="font-weight:900; font-size:12px; color:#1e4d8c; min-width:36px;">#${escaparHTML(nro)}</span>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:13px; font-weight:700; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escaparHTML((r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||''))}</div>
+                        <div style="font-size:11px; color:#6b7280;">${escaparHTML(r.fecha || '')} · ${escaparHTML((r.falla||'').replace(/\s*\+\s*$/, ''))}</div>
+                    </div>
+                    <div style="text-align:right; flex-shrink:0;">
+                        <div style="font-size:11px; font-weight:800; color:${col};">${escaparHTML(r.estado || 'Pendiente')}</div>
+                        <div style="font-size:11px; color:#6b7280;">${fmtARS.format(totalPagado)}</div>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+        container.appendChild(div);
+    });
+};
+
+window.toggleAcordeonCliente = function(header) {
+    const card = header.closest('.cliente-acordeon');
+    const body = card.querySelector('.cliente-acordeon-body');
+    const isOpen = card.classList.contains('open');
+    // Cerrar todos primero
+    document.querySelectorAll('.cliente-acordeon.open').forEach(c => {
+        c.classList.remove('open');
+        c.querySelector('.cliente-acordeon-body').classList.remove('open');
+    });
+    if (!isOpen) {
+        card.classList.add('open');
+        body.classList.add('open');
+    }
+};
+
+// ===================================================
+// === MÓDULO ALERTAS ================================
+// ===================================================
+window.renderAlertas = function(mostrarToast) {
+    const diasInput = parseInt(document.getElementById('alerta-dias').value) || 7;
+    localStorage.setItem('st_alerta_dias', diasInput);
+    if (mostrarToast) showToast('✅ Configuración de alertas aplicada', '#059669');
+    const container = document.getElementById('lista-alertas');
+    const fmtARS = new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', minimumFractionDigits:0 });
+    const ahora = Date.now();
+
+    // Órdenes activas sin movimiento (sin llegar a Entregado)
+    const activas = registros.filter(r => !r.archivado && !r.esVentaRapida && r.estado !== 'Entregado');
+    const alertas = [];
+    activas.forEach(r => {
+        // Última fecha de cambio de estado
+        let ultimaFechaStr = r.fecha || '';
+        if (r.historialEstados && r.historialEstados.length > 0) {
+            ultimaFechaStr = r.historialEstados[r.historialEstados.length - 1].fecha || ultimaFechaStr;
+        }
+        // Parsear fecha argentina dd/mm/yyyy HH:MM:SS
+        let diasSinMov = 0;
+        if (ultimaFechaStr) {
+            const partes = ultimaFechaStr.split(/[,\s]+/);
+            const fechaParts = (partes[0] || '').split('/');
+            if (fechaParts.length === 3) {
+                const fechaMs = new Date(fechaParts[2], fechaParts[1] - 1, fechaParts[0]).getTime();
+                diasSinMov = Math.floor((ahora - fechaMs) / (1000 * 60 * 60 * 24));
+            }
+        }
+        if (diasSinMov >= diasInput) {
+            alertas.push({ r, diasSinMov, ultimaFechaStr });
+        }
+    });
+
+    // Ordenar por días DESC
+    alertas.sort((a, b) => b.diasSinMov - a.diasSinMov);
+
+    // Contadores por criticidad
+    let critica = 0, alta = 0, media = 0;
+    alertas.forEach(({ diasSinMov }) => {
+        if (diasSinMov >= 15) critica++;
+        else if (diasSinMov >= 7) alta++;
+        else media++;
+    });
+    document.getElementById('alert-critica-count').textContent = critica;
+    document.getElementById('alert-alta-count').textContent = alta;
+    document.getElementById('alert-media-count').textContent = media;
+
+    if (alertas.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#6b7280; font-size:14px; background:white; border-radius:14px; border:1px solid #e8eaf5;">✅ No hay órdenes sin movimiento</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    alertas.forEach(({ r, diasSinMov }) => {
+        const nro = String(r.orden).replace('ORD-', '');
+        let nivel = diasSinMov >= 15 ? 'critica' : diasSinMov >= 7 ? 'alta' : 'media';
+        let emoji = nivel === 'critica' ? '🔴' : nivel === 'alta' ? '🟠' : '🟡';
+        const saldo = (parseFloat(r.precio) || 0) - (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0);
+        const div = document.createElement('div');
+        div.className = 'alerta-item ' + nivel;
+        div.innerHTML = `<span style="font-size:22px;">${emoji}</span>
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:14px; font-weight:800; color:#111827;">#${escaparHTML(nro)} — ${escaparHTML(r.cliente)}</div>
+                <div style="font-size:12px; color:#6b7280; margin-top:2px;">${escaparHTML((r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||''))} · ${escaparHTML(r.estado || 'Pendiente')}</div>
+                <div style="font-size:11px; font-weight:800; color:${nivel === 'critica' ? '#dc2626' : nivel === 'alta' ? '#d97706' : '#ca8a04'}; margin-top:3px;">⏱ ${diasSinMov} días sin movimiento</div>
+            </div>
+            <div style="text-align:right; flex-shrink:0;">
+                ${saldo > 0 ? `<div style="font-size:12px; font-weight:800; color:#dc2626;">Saldo: ${fmtARS.format(saldo)}</div>` : ''}
+                ${r.tel ? `<a href="https://wa.me/${String(r.tel).replace(/\D/g,'')}?text=${encodeURIComponent('Hola ' + r.cliente + '! Te escribimos del taller. Tu ' + (r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||'') + ' (Orden #' + nro + ') lleva ' + diasSinMov + ' días con estado: ' + (r.estado||'Pendiente') + '. ¿Podemos ayudarte?')}" target="_blank" style="display:inline-block; margin-top:6px; background:#25d366; color:white; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:800; text-decoration:none; font-family:'Outfit',sans-serif;">📲 Avisar</a>` : ''}
+            </div>`;
+        container.appendChild(div);
+    });
+};
+
+window.notificarTodosAlertas = function() {
+    const items = document.querySelectorAll('#lista-alertas .alerta-item');
+    if (items.length === 0) { showToast('No hay alertas activas', '#6b7280'); return; }
+    let idx = 0;
+    function abrirSig() {
+        if (idx >= items.length) { showToast('✅ Se abrieron todos los chats', '#25d366'); return; }
+        const link = items[idx].querySelector('a[href*="wa.me"]');
+        if (link) { window.open(link.href, '_blank'); }
+        idx++;
+        setTimeout(abrirSig, 600);
+    }
+    abrirSig();
+};
+
+// ===================================================
+// === MÓDULO STOCK MEJORADO (badge + mínimo) ========
+// ===================================================
+// Parche sobre renderStock existente para agregar badge color y botón mínimo
+const _renderStockOriginal = window.renderStock;
+window.renderStock = function() {
+    if (typeof _renderStockOriginal === 'function') _renderStockOriginal();
+    // Añadir badges de color después
+    requestAnimationFrame(() => {
+        document.querySelectorAll('#bodyStock tr').forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length < 2) return;
+            const cantTd = tds[1];
+            const cant = parseInt(cantTd.textContent) || 0;
+            // Leer mínimo del dataset
+            const stockId = tr.getAttribute('data-stock-id') || '';
+            const item = stockData.find(s => s.id === stockId);
+            const minimo = item ? (item.minimo || 0) : 0;
+            let badge = '';
+            if (cant <= 0) badge = '<span style="margin-left:6px; background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:800;">🔴 Sin stock</span>';
+            else if (minimo > 0 && cant <= minimo) badge = '<span style="margin-left:6px; background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:800;">🟡 Stock bajo</span>';
+            else badge = '<span style="margin-left:6px; background:#d1fae5; color:#065f46; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:800;">🟢 OK</span>';
+            // Reemplazar solo si no tiene badge ya
+            if (!cantTd.querySelector('span')) {
+                cantTd.innerHTML = cant + badge;
+            }
+        });
+    });
+};
+
+// ===== MODAL STOCK MÍNIMO INDIVIDUAL =====
+let _stockMinimoId = null;
+
+window.guardarMinimoStock = function(id) {
+    _stockMinimoId = id;
+    const item = stockData.find(s => s.id === id);
+    const nombreEl = document.getElementById('stockMinimo-nombre');
+    if (nombreEl) nombreEl.textContent = item ? item.nombre : '';
+    const input = document.getElementById('stockMinimo-input');
+    if (input) { input.value = (item && item.minimo > 0) ? item.minimo : ''; }
+    const modal = document.getElementById('modalStockMinimo');
+    if (modal) { modal.style.display = 'flex'; setTimeout(() => input && input.focus(), 80); }
+};
+
+window.cerrarModalMinimoStock = function() {
+    const modal = document.getElementById('modalStockMinimo');
+    if (modal) modal.style.display = 'none';
+    _stockMinimoId = null;
+};
+
+window.confirmarMinimoStock = function() {
+    const input = document.getElementById('stockMinimo-input');
+    const val = parseInt(input ? input.value : '');
+    if (isNaN(val) || val < 0) { if (input) { input.style.borderColor='#ef4444'; setTimeout(()=>input.style.borderColor='rgba(255,255,255,0.12)',1200); } return; }
+    const id = _stockMinimoId;
+    if (!id) return;
+    window.cerrarModalMinimoStock();
+    const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+    db.ref(pathStock).child(id).update({ minimo: val }).then(() => {
+        const item = stockData.find(s => s.id === id);
+        if (item) item.minimo = val;
+        showToast(val === 0 ? '🔕 Alerta desactivada' : '🔔 Mínimo actualizado: ' + val, '#059669');
+        window.cargarStockData();
+    });
+};
+
+// ===== MODAL STOCK MÍNIMO GLOBAL =====
+window.abrirMinimoGlobal = function() {
+    const total = stockData.length;
+    const countEl = document.getElementById('stock-global-count');
+    if (countEl) countEl.textContent = total + ' artículo' + (total !== 1 ? 's' : '') + ' en el inventario serán actualizados';
+    const input = document.getElementById('stockMinimoGlobal-input');
+    if (input) { input.value = ''; }
+    const modal = document.getElementById('modalStockMinimoGlobal');
+    if (modal) { modal.style.display = 'flex'; setTimeout(() => input && input.focus(), 80); }
+};
+
+window.cerrarModalMinimoGlobal = function() {
+    const modal = document.getElementById('modalStockMinimoGlobal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.confirmarMinimoGlobal = function() {
+    const input = document.getElementById('stockMinimoGlobal-input');
+    const val = parseInt(input ? input.value : '');
+    if (isNaN(val) || val < 0) { if (input) { input.style.borderColor='#ef4444'; setTimeout(()=>input.style.borderColor='rgba(255,255,255,0.12)',1200); } return; }
+    window.cerrarModalMinimoGlobal();
+    const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+    const updates = {};
+    stockData.forEach(item => { updates[item.id + '/minimo'] = val; });
+    if (Object.keys(updates).length === 0) { showToast('No hay artículos en el inventario', '#d97706'); return; }
+    db.ref(pathStock).update(updates).then(() => {
+        stockData.forEach(item => { item.minimo = val; });
+        showToast(val === 0 ? '🔕 Alertas desactivadas para todos' : '🔔 Mínimo global aplicado: ' + val + ' uds.', '#d97706');
+        window.cargarStockData();
+    });
+};
+
+// ===================================================
+// === MÓDULO ETIQUETAS ==============================
+// ===================================================
+window._etiquetaOrden = null;
+
+window.buscarOrdenEtiqueta = function() {
+    const val = (document.getElementById('etiqueta-buscar').value || '').toLowerCase().trim();
+    const ac = document.getElementById('etiqueta-autocomplete');
+    if (!val || val.length < 2) { ac.style.display = 'none'; return; }
+    const todas = [...registros, ...registrosArchivados].filter(r => !r.esVentaRapida);
+    const filtradas = todas.filter(r => {
+        const nro = String(r.orden).replace('ORD-', '').toLowerCase();
+        return (r.cliente||'').toLowerCase().includes(val) || nro.includes(val);
+    }).slice(0, 8);
+    if (filtradas.length === 0) { ac.style.display = 'none'; return; }
+    ac.innerHTML = '';
+    filtradas.forEach(r => {
+        const nro = String(r.orden).replace('ORD-', '');
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:12px 14px; cursor:pointer; font-size:14px; font-family:\'Outfit\',sans-serif; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; gap:10px;';
+        item.innerHTML = `<span style="font-weight:900; color:#1e4d8c;">#${escaparHTML(nro)}</span><span>${escaparHTML(r.cliente)}</span><span style="color:#6b7280; font-size:12px; margin-left:auto;">${escaparHTML((r.equipo||'') + ' ' + (r.modelo||''))}</span>`;
+        item.onmousedown = function(e) { e.preventDefault(); seleccionarOrdenEtiqueta(r); };
+        ac.appendChild(item);
+    });
+    ac.style.display = 'block';
+};
+
+window.seleccionarOrdenEtiqueta = function(r) {
+    window._etiquetaOrden = r;
+    document.getElementById('etiqueta-buscar').value = '#' + String(r.orden).replace('ORD-', '') + ' — ' + r.cliente;
+    document.getElementById('etiqueta-autocomplete').style.display = 'none';
+    const nro = String(r.orden).replace('ORD-', '');
+    document.getElementById('etiqueta-orden-info').innerHTML =
+        '<b>Orden:</b> #' + escaparHTML(nro) + ' &nbsp;|&nbsp; <b>Cliente:</b> ' + escaparHTML(r.cliente) + '<br>' +
+        '<b>Equipo:</b> ' + escaparHTML((r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||'')) + ' &nbsp;|&nbsp; <b>Estado:</b> ' + escaparHTML(r.estado||'Pendiente') + '<br>' +
+        '<b>Falla:</b> ' + escaparHTML((r.falla||'').replace(/\s*\+\s*$/,''));
+    document.getElementById('etiqueta-datos').style.display = 'block';
+    actualizarPreviewEtiqueta();
+};
+
+window.actualizarPreviewEtiqueta = function() {
+    const r = window._etiquetaOrden;
+    if (!r) return;
+    const size = document.querySelector('input[name="etiqueta-size"]:checked').value;
+    const nro = String(r.orden).replace('ORD-', '');
+    const usuario = currentUser || 'admin';
+    const trackingUrl = window.location.origin + window.location.pathname + '?id=' + r.id + '&u=' + usuario;
+
+    // Dimensiones visuales del preview
+    const dims = { '80x40': [280, 140], '50x25': [200, 100], 'A8': [210, 148] };
+    const [w, h] = dims[size] || [280, 140];
+
+    // QR simple usando API de Google Charts (no requiere librería)
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=' + encodeURIComponent(trackingUrl);
+
+    const preview = document.getElementById('etiqueta-preview');
+    preview.style.cssText = `width:${w}px; min-height:${h}px; background:white; border:1.5px solid #374151; border-radius:6px; padding:10px 12px; font-family:'Outfit',sans-serif; display:flex; align-items:stretch; gap:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); position:relative;`;
+
+    preview.innerHTML = `
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+                <div style="font-size:${size === '50x25' ? 9 : 11}px; font-weight:900; color:#1e4d8c; letter-spacing:0.5px; text-transform:uppercase;">📋 ORDEN #${escaparHTML(nro)}</div>
+                <div style="font-size:${size === '50x25' ? 11 : 14}px; font-weight:800; color:#111827; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escaparHTML(r.cliente)}</div>
+                <div style="font-size:${size === '50x25' ? 9 : 11}px; color:#374151; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escaparHTML((r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||''))}</div>
+                ${size !== '50x25' ? `<div style="font-size:10px; color:#6b7280; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🛠️ ${escaparHTML((r.falla||'').replace(/\s*\+\s*$/,'').substring(0,40))}</div>` : ''}
+            </div>
+            <div style="font-size:9px; color:#9ca3af; margin-top:4px;">📅 ${escaparHTML(r.fecha ? r.fecha.split(',')[0] : '')}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex-shrink:0;">
+            <img src="${qrUrl}" style="width:${size === '50x25' ? 50 : 70}px; height:${size === '50x25' ? 50 : 70}px; border-radius:4px;" crossorigin="anonymous">
+            <div style="font-size:8px; color:#6b7280; text-align:center; max-width:${size === '50x25' ? 50 : 70}px;">Seguimiento</div>
+        </div>`;
+    preview.style.display = 'flex';
+};
+
+// Listener para cambio de tamaño de etiqueta
+document.querySelectorAll('input[name="etiqueta-size"]').forEach(r => r.addEventListener('change', () => { if (window._etiquetaOrden) actualizarPreviewEtiqueta(); }));
+
+window.imprimirEtiqueta = function() {
+    const r = window._etiquetaOrden;
+    if (!r) { showToast('Seleccioná una orden primero', '#f59e0b'); return; }
+    const size = document.querySelector('input[name="etiqueta-size"]:checked').value;
+    const nro = String(r.orden).replace('ORD-', '');
+    const usuario = currentUser || 'admin';
+    const trackingUrl = window.location.origin + window.location.pathname + '?id=' + r.id + '&u=' + usuario;
+    const dims = { '80x40': ['80mm','40mm'], '50x25': ['50mm','25mm'], 'A8': ['74mm','52mm'] };
+    const [pw, ph] = dims[size] || ['80mm','40mm'];
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(trackingUrl);
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>
+        @page { margin:0; size: ${pw} ${ph}; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { width:${pw}; height:${ph}; display:flex; padding:4mm; font-family:Arial,sans-serif; background:white; }
+        .label { width:100%; display:flex; align-items:stretch; gap:3mm; }
+        .info { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between; }
+        .orden { font-size:8pt; font-weight:900; color:#1e4d8c; }
+        .cliente { font-size:10pt; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .equipo { font-size:7.5pt; color:#374151; }
+        .falla { font-size:7pt; color:#6b7280; }
+        .fecha { font-size:6.5pt; color:#9ca3af; margin-top:auto; padding-top:2mm; }
+        .qr-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+        .qr-wrap img { width:18mm; height:18mm; }
+        .qr-label { font-size:5.5pt; color:#9ca3af; margin-top:1mm; text-align:center; }
+    </style></head><body>
+    <div class="label">
+        <div class="info">
+            <div class="orden">ORDEN #${escaparHTML(nro)}</div>
+            <div class="cliente">${escaparHTML(r.cliente)}</div>
+            <div class="equipo">${escaparHTML((r.equipo||'') + ' ' + (r.marca||'') + ' ' + (r.modelo||''))}</div>
+            <div class="falla">${escaparHTML((r.falla||'').replace(/\s*\+\s*$/,'').substring(0,60))}</div>
+            <div class="fecha">${escaparHTML(r.fecha ? r.fecha.split(',')[0] : '')}</div>
+        </div>
+        <div class="qr-wrap">
+            <img src="${qrUrl}">
+            <div class="qr-label">Seguimiento</div>
+        </div>
+    </div>
+    <script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script>
+    </body></html>`);
+    win.document.close();
+};
+
+window.descargarEtiqueta = function() {
+    const r = window._etiquetaOrden;
+    if (!r) { showToast('Seleccioná una orden primero', '#f59e0b'); return; }
+    // Usamos html2canvas-like approach: abrir print dialog
+    showToast('Usá el botón Imprimir y guardá como PDF', '#1e4d8c');
+    imprimirEtiqueta();
+};
+
+// ===================================================
 // === NAVEGACIÓN POR TECLADO EN PC ==================
 // ===================================================
 (function() {
@@ -10875,6 +11489,246 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
 
 
 </script>
+
+<!-- ===== PÁGINA DASHBOARD ===== -->
+<div id="page-dashboard" class="page" style="display:none;">
+
+  <!-- KPI grid -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:22px;">
+    <div onclick="showPage('gestion');setTimeout(()=>{setModoVista('pendientes');setTimeout(()=>{const t=document.getElementById('mainTable');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});},120);},80);" style="background:white; border-radius:14px; padding:18px 16px; border:1px solid #e8eaf5; box-shadow:0 2px 12px rgba(0,0,0,0.05); cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.13)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(0,0,0,0.05)'">
+      <div style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">⏳ Pendientes</div>
+      <div id="kpi-pendientes" style="font-size:32px; font-weight:900; color:#d97706; font-family:'Outfit',sans-serif;">—</div>
+    </div>
+    <div onclick="showPage('gestion');setTimeout(()=>{setModoVista('reparado');setTimeout(()=>{const t=document.getElementById('mainTable');if(t)t.scrollIntoView({behavior:'smooth',block:'start'});},120);},80);" style="background:white; border-radius:14px; padding:18px 16px; border:1px solid #e8eaf5; box-shadow:0 2px 12px rgba(0,0,0,0.05); cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.13)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(0,0,0,0.05)'">
+      <div style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">✅ Listos p/ retirar</div>
+      <div id="kpi-reparados" style="font-size:32px; font-weight:900; color:#059669; font-family:'Outfit',sans-serif;">—</div>
+    </div>
+    <div onclick="showPage('contabilidad');" style="background:white; border-radius:14px; padding:18px 16px; border:1px solid #e8eaf5; box-shadow:0 2px 12px rgba(0,0,0,0.05); cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.13)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(0,0,0,0.05)'">
+      <div style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">💰 Ingresos hoy</div>
+      <div id="kpi-ingresos" style="font-size:22px; font-weight:900; color:#1e4d8c; font-family:'Outfit',sans-serif;">—</div>
+    </div>
+    <div onclick="showPage('stock');" style="background:white; border-radius:14px; padding:18px 16px; border:1px solid #e8eaf5; box-shadow:0 2px 12px rgba(0,0,0,0.05); cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.13)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(0,0,0,0.05)'">
+      <div style="font-size:11px; font-weight:800; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">📦 Stock crítico</div>
+      <div id="kpi-stock" style="font-size:32px; font-weight:900; color:#dc2626; font-family:'Outfit',sans-serif;">—</div>
+    </div>
+
+  </div>
+
+
+
+  <!-- Accesos rápidos -->
+  <div style="background:white; border-radius:14px; padding:18px; border:1px solid #e8eaf5; box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+    <div style="font-size:13px; font-weight:800; color:#111827; margin-bottom:14px;">⚡ Accesos rápidos</div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+      <button onclick="showPage('gestion')" style="background:#1e4d8c; color:white; border:none; border-radius:10px; padding:12px 18px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">🛠️ Nueva Orden</button>
+      <button onclick="abrirVentaRapida()" style="background:#8e44ad; color:white; border:none; border-radius:10px; padding:12px 18px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">🛒 Venta Rápida</button>
+      <button onclick="showPage('stock')" style="background:#059669; color:white; border:none; border-radius:10px; padding:12px 18px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">📦 Ver Stock</button>
+      <button onclick="showPage('clientes')" style="background:#0891b2; color:white; border:none; border-radius:10px; padding:12px 18px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">👥 Clientes</button>
+      <button onclick="showPage('alertas')" style="background:#d97706; color:white; border:none; border-radius:10px; padding:12px 18px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">⏰ Alertas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PÁGINA CLIENTES ===== -->
+<div id="page-clientes" class="page" style="display:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+    <h2 style="margin:0; font-size:22px;">👥 Clientes</h2>
+    <div id="clientes-stats" style="font-size:13px; color:#6b7280; font-weight:600;"></div>
+  </div>
+  <div style="margin-bottom:16px;">
+    <input type="text" id="search-clientes" placeholder="🔍 Buscar cliente por nombre o WhatsApp..." oninput="renderClientes()" style="width:100%; padding:12px; border-radius:8px; border:1.5px solid #e5e7eb; box-sizing:border-box; font-size:15px;">
+  </div>
+  <div id="lista-clientes" style="display:flex; flex-direction:column; gap:10px;"></div>
+</div>
+
+<!-- ===== PÁGINA ALERTAS ===== -->
+<div id="page-alertas" class="page" style="display:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+    <h2 style="margin:0; font-size:22px;">⏰ Alertas</h2>
+  </div>
+
+  <!-- Config -->
+  <div style="background:#f8fafc; border-radius:14px; padding:18px; border:1.5px solid #e2e8f0; margin-bottom:20px;">
+    <div style="font-size:13px; font-weight:800; color:#374151; margin-bottom:12px;">⚙️ Configuración de alertas</div>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <label style="font-size:13px; color:#6b7280; font-weight:600; text-transform:none; letter-spacing:0;">Disparar alerta después de</label>
+      <input type="number" id="alerta-dias" value="7" min="1" max="90" style="width:70px; padding:8px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:16px; font-weight:800; text-align:center;">
+      <label style="font-size:13px; color:#6b7280; font-weight:600; text-transform:none; letter-spacing:0;">días sin movimiento</label>
+      <button onclick="renderAlertas(true)" style="background:#1e4d8c; color:white; border:none; border-radius:8px; padding:9px 18px; font-size:13px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">🔄 Aplicar</button>
+    </div>
+  </div>
+
+  <!-- Resumen criticidad -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px;">
+    <div style="background:#fef2f2; border-radius:12px; padding:14px; border:1.5px solid #fca5a5; text-align:center;">
+      <div style="font-size:22px; font-weight:900; color:#dc2626;" id="alert-critica-count">0</div>
+      <div style="font-size:11px; font-weight:800; color:#dc2626; text-transform:uppercase; margin-top:2px;">🔴 Crítica (+15d)</div>
+    </div>
+    <div style="background:#fff7ed; border-radius:12px; padding:14px; border:1.5px solid #fdba74; text-align:center;">
+      <div style="font-size:22px; font-weight:900; color:#d97706;" id="alert-alta-count">0</div>
+      <div style="font-size:11px; font-weight:800; color:#d97706; text-transform:uppercase; margin-top:2px;">🟠 Alta (+7d)</div>
+    </div>
+    <div style="background:#fefce8; border-radius:12px; padding:14px; border:1.5px solid #fde047; text-align:center;">
+      <div style="font-size:22px; font-weight:900; color:#ca8a04;" id="alert-media-count">0</div>
+      <div style="font-size:11px; font-weight:800; color:#ca8a04; text-transform:uppercase; margin-top:2px;">🟡 Media</div>
+    </div>
+  </div>
+
+  <!-- Botón notificar todos -->
+  <div style="margin-bottom:16px;">
+    <button onclick="notificarTodosAlertas()" style="background:linear-gradient(135deg,#25d366,#1da851); color:white; border:none; border-radius:10px; padding:13px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 4px 14px rgba(37,211,102,0.3);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Avisar a todos por WhatsApp
+    </button>
+  </div>
+
+  <div id="lista-alertas" style="display:flex; flex-direction:column; gap:10px;"></div>
+</div>
+
+<!-- ===== PÁGINA ETIQUETAS ===== -->
+<div id="page-etiquetas" class="page" style="display:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+    <h2 style="margin:0; font-size:22px;">🏷️ Etiquetas</h2>
+  </div>
+
+  <!-- Selector de orden -->
+  <div style="background:#f8fafc; border-radius:14px; padding:18px; border:1.5px solid #e2e8f0; margin-bottom:20px;">
+    <div style="font-size:13px; font-weight:800; color:#374151; margin-bottom:12px;">🔍 Seleccionar orden</div>
+    <input type="text" id="etiqueta-buscar" placeholder="Buscar por N° de orden o nombre del cliente..." oninput="buscarOrdenEtiqueta()" style="width:100%; padding:12px; border-radius:8px; border:1.5px solid #e2e8f0; box-sizing:border-box; font-size:15px; margin-bottom:10px;">
+    <div id="etiqueta-autocomplete" style="display:none; background:white; border:1.5px solid #e2e8f0; border-radius:10px; max-height:200px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.1);"></div>
+  </div>
+
+  <!-- Datos de la etiqueta (se llena cuando se selecciona orden) -->
+  <div id="etiqueta-datos" style="display:none; background:#f0f9ff; border-radius:14px; padding:18px; border:1.5px solid #bae6fd; margin-bottom:20px;">
+    <div style="font-size:13px; font-weight:800; color:#0369a1; margin-bottom:10px;">📋 Datos de la orden seleccionada</div>
+    <div id="etiqueta-orden-info" style="font-size:14px; color:#374151; font-weight:600; line-height:1.6;"></div>
+  </div>
+
+  <!-- Selector de tamaño -->
+  <div style="background:white; border-radius:14px; padding:18px; border:1px solid #e8eaf5; margin-bottom:20px; box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+    <div style="font-size:13px; font-weight:800; color:#374151; margin-bottom:12px;">📐 Tamaño de etiqueta</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <label style="flex:1; min-width:120px; cursor:pointer; text-transform:none; font-size:14px; font-weight:600; color:#374151; letter-spacing:0;">
+        <input type="radio" name="etiqueta-size" value="80x40" checked style="accent-color:#1e4d8c; margin-right:6px; width:auto; padding:0; border:none; background:none;"> 80×40mm <span style="font-size:11px; color:#6b7280;">(térmica)</span>
+      </label>
+      <label style="flex:1; min-width:120px; cursor:pointer; text-transform:none; font-size:14px; font-weight:600; color:#374151; letter-spacing:0;">
+        <input type="radio" name="etiqueta-size" value="50x25" style="accent-color:#1e4d8c; margin-right:6px; width:auto; padding:0; border:none; background:none;"> 50×25mm <span style="font-size:11px; color:#6b7280;">(pequeña)</span>
+      </label>
+      <label style="flex:1; min-width:120px; cursor:pointer; text-transform:none; font-size:14px; font-weight:600; color:#374151; letter-spacing:0;">
+        <input type="radio" name="etiqueta-size" value="A8" style="accent-color:#1e4d8c; margin-right:6px; width:auto; padding:0; border:none; background:none;"> A8 <span style="font-size:11px; color:#6b7280;">(hoja común)</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Preview de etiqueta -->
+  <div style="background:white; border-radius:14px; padding:18px; border:1px solid #e8eaf5; margin-bottom:20px; box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+    <div style="font-size:13px; font-weight:800; color:#374151; margin-bottom:14px;">👁️ Vista previa</div>
+    <div id="etiqueta-preview-wrap" style="display:flex; justify-content:center; padding:20px 0; background:#f9fafb; border-radius:10px; border:1.5px dashed #e2e8f0; min-height:120px; align-items:center;">
+      <div id="etiqueta-preview" style="color:#9ca3af; font-size:14px; text-align:center;">Seleccioná una orden para ver la etiqueta</div>
+    </div>
+  </div>
+
+  <!-- Botones acción -->
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button id="btn-imprimir-etiqueta" onclick="imprimirEtiqueta()" style="flex:1; min-width:140px; background:linear-gradient(135deg,#1e4d8c,#0e2a5e); color:white; border:none; border-radius:10px; padding:14px 20px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(30,77,140,0.3);">🖨️ Imprimir Etiqueta</button>
+    <button id="btn-descargar-etiqueta" onclick="descargarEtiqueta()" style="flex:1; min-width:140px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:10px; padding:14px 20px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(5,150,105,0.3);">⬇️ Descargar PNG</button>
+  </div>
+</div>
+
+<!-- ===== MODAL STOCK MÍNIMO INDIVIDUAL ===== -->
+<div id="modalStockMinimo" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,18,42,0.82);z-index:20000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+  <div style="background:#0e1e3d;border-radius:22px;width:88%;max-width:360px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.07);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1e4d8c,#0e2a5e);padding:22px 24px 18px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div>
+        <div style="color:white;font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.3px;">Alerta de Stock Mínimo</div>
+        <div id="stockMinimo-nombre" style="color:rgba(255,255,255,0.6);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;margin-top:2px;"></div>
+      </div>
+    </div>
+    <!-- Body -->
+    <div style="padding:22px 24px;">
+      <div style="color:#94a3b8;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;margin-bottom:14px;line-height:1.5;">
+        Ingresá el mínimo de stock para este artículo. Se te notificará cuando llegue a ese nivel. <strong style="color:#60a5fa;">Ponés 0 para desactivar.</strong>
+      </div>
+      <div style="position:relative;">
+        <input type="number" id="stockMinimo-input" min="0" placeholder="Ej: 5"
+          style="width:100%;padding:14px 16px;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;font-size:22px;font-weight:800;color:white;background:rgba(255,255,255,0.07);box-sizing:border-box;outline:none;font-family:'Outfit',sans-serif;text-align:center;transition:border-color 0.2s,box-shadow 0.2s;"
+          onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.2)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.12)';this.style.boxShadow='none'"
+          onkeydown="if(event.key==='Enter')confirmarMinimoStock()"
+        >
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button onclick="cerrarModalMinimoStock()" style="flex:1;padding:13px;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;color:#94a3b8;transition:all 0.18s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Cancelar</button>
+        <button onclick="confirmarMinimoStock()" style="flex:2;padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#1e4d8c,#0e2a5e);color:white;box-shadow:0 4px 14px rgba(30,77,140,0.4);transition:all 0.18s;"
+          onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(30,77,140,0.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(30,77,140,0.4)'">
+          ✓ Guardar Mínimo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL STOCK MÍNIMO GLOBAL ===== -->
+<div id="modalStockMinimoGlobal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,18,42,0.82);z-index:20000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+  <div style="background:#0e1e3d;border-radius:22px;width:88%;max-width:380px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.07);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#d97706,#b45309);padding:22px 24px 18px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;background:rgba(255,255,255,0.18);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="12" y1="2" x2="12" y2="5"/></svg>
+      </div>
+      <div>
+        <div style="color:white;font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;letter-spacing:-0.3px;">Mínimo Global de Stock</div>
+        <div style="color:rgba(255,255,255,0.65);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;margin-top:2px;">Se aplica a todos los artículos</div>
+      </div>
+    </div>
+    <!-- Body -->
+    <div style="padding:22px 24px;">
+      <div style="background:rgba(251,191,36,0.1);border:1.5px solid rgba(251,191,36,0.25);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:18px;line-height:1.3;">⚠️</span>
+        <div style="color:#fbbf24;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;line-height:1.5;">Este valor se aplicará a <strong>todos los artículos del inventario</strong>, incluso los que ya tienen mínimo configurado. Ponés 0 para desactivar todas las alertas.</div>
+      </div>
+      <div id="stock-global-count" style="color:#60a5fa;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;text-align:center;margin-bottom:14px;"></div>
+      <div style="position:relative;">
+        <input type="number" id="stockMinimoGlobal-input" min="0" placeholder="Ej: 3"
+          style="width:100%;padding:14px 16px;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;font-size:22px;font-weight:800;color:white;background:rgba(255,255,255,0.07);box-sizing:border-box;outline:none;font-family:'Outfit',sans-serif;text-align:center;transition:border-color 0.2s,box-shadow 0.2s;"
+          onfocus="this.style.borderColor='#f59e0b';this.style.boxShadow='0 0 0 4px rgba(245,158,11,0.2)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.12)';this.style.boxShadow='none'"
+          onkeydown="if(event.key==='Enter')confirmarMinimoGlobal()"
+        >
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button onclick="cerrarModalMinimoGlobal()" style="flex:1;padding:13px;border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;color:#94a3b8;transition:all 0.18s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">Cancelar</button>
+        <button onclick="confirmarMinimoGlobal()" style="flex:2;padding:13px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#d97706,#b45309);color:white;box-shadow:0 4px 14px rgba(217,119,6,0.4);transition:all 0.18s;"
+          onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+          🔔 Aplicar a Todos
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL EDITAR NOTAS REPARACIÓN ===== -->
+<div id="modalEditarNotas" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,18,42,0.82);z-index:20000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+  <div style="background:#ffffff;border-radius:20px;width:88%;max-width:360px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,0.4);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+    <div style="background:linear-gradient(135deg,#059669,#047857);padding:18px 20px;display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">📝</div>
+      <div style="color:white;font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;">Notas de Reparación</div>
+    </div>
+    <div style="padding:20px;">
+      <textarea id="editarNotasInput" rows="4" placeholder="Ej: Cambié display, soldé pin de carga..." style="width:100%;padding:11px 13px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;font-family:'Outfit',sans-serif;resize:none;box-sizing:border-box;color:#374151;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#d1d5db'"></textarea>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button onclick="cerrarModalEditarNotas()" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:white;color:#6b7280;">Cancelar</button>
+        <button onclick="guardarNotasEditadas()" style="flex:2;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#059669,#047857);color:white;box-shadow:0 4px 14px rgba(5,150,105,0.3);">✓ Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL ELIMINAR PRESUPUESTO -->
 <div id="modalEliminarPresupuesto" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.78);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);">
