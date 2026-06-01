@@ -4469,9 +4469,27 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         const obsHtml = p.obs ? `
             <div style="padding:18px 24px;border-bottom:1px solid #e8ecf0;background:#fafbfc;">
-                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Validez / Observaciones</div>
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Observaciones</div>
                 <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">${p.obs}</p>
             </div>` : '';
+
+        const vencimientoHtml = p.vencimiento ? (() => {
+            const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR');
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
+            const vd = new Date(p.vencimiento + 'T00:00:00');
+            const diff = Math.ceil((vd - hoy) / 86400000);
+            const vencido = diff < 0;
+            const venceHoy = diff === 0;
+            const bgColor = vencido ? '#fef2f2' : venceHoy ? '#fffbeb' : '#f0fdf4';
+            const borderColor = vencido ? '#fca5a5' : venceHoy ? '#fcd34d' : '#86efac';
+            const textColor = vencido ? '#dc2626' : venceHoy ? '#d97706' : '#059669';
+            const label = vencido ? '⏰ Venció el' : venceHoy ? '⏰ Vence hoy' : '✅ Válido hasta';
+            const extra = vencido ? '' : diff > 0 ? ` <span style="font-size:12px;color:${textColor};opacity:0.7;">(${diff} día${diff !== 1 ? 's' : ''})</span>` : '';
+            return `<div style="padding:14px 24px;border-bottom:1px solid #e8ecf0;background:${bgColor};border-left:3px solid ${borderColor};">
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Validez del presupuesto</div>
+                <p style="margin:0;font-size:15px;font-weight:800;color:${textColor};">${label} ${fechaVenc}${extra}</p>
+            </div>`;
+        })() : '';
 
         // Guardar presupuesto en variable global para poder generar PDF
         window._presupuestoClienteData = p;
@@ -4505,6 +4523,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     <div style="display:flex;flex-direction:column;gap:12px;">
                         ${row('Cliente', p.cliente)}
                         ${equipoStr ? row('Equipo', equipoStr) : ''}
+                        ${p.vencimiento ? `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:14px;line-height:1.45;"><span style="color:#94a3b8;font-weight:600;white-space:nowrap;flex-shrink:0;">Válido hasta</span><span style="color:#d97706;font-weight:800;text-align:right;">${new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR')}</span></div>` : ''}
                         ${p.descripcion ? row('Problema', p.descripcion) : ''}
                     </div>
                 </div>
@@ -10668,7 +10687,8 @@ function _buildPDFPresupuestoCore(p, conf) {
     const altoHeader = conf.logo ? 36 : 28;
     const altoNro    = 22;
     const altoEstado = 18;
-    const altoDatos  = 6 + (p.fecha ? 7 : 0) + (p.cliente ? 7 : 0) + (equipoStr ? 7 : 0) + (p.descripcion ? descLines.length * 5 + 12 : 0) + 4;
+    const altoVenc   = p.vencimiento ? 7 : 0;
+    const altoDatos  = 6 + (p.fecha ? 7 : 0) + (p.cliente ? 7 : 0) + (equipoStr ? 7 : 0) + (p.descripcion ? descLines.length * 5 + 12 : 0) + altoVenc + 4;
     const altoItems  = 10 + extraH + 14;
     const altoObs    = obsLines.length > 0 ? obsLines.length * 5 + 10 : 0;
     const altoTotal2 = altoHeader + altoNro + altoEstado + altoDatos + altoItems + altoObs + 16;
@@ -10733,6 +10753,14 @@ function _buildPDFPresupuestoCore(p, conf) {
     };
     dataRow('Cliente', p.cliente);
     dataRow('Equipo', equipoStr);
+    if (p.vencimiento) {
+        const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
+        doc.text('Válido hasta', 5, y);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(217, 119, 6);
+        doc.text(fechaVenc, 75, y, { align: 'right' });
+        y += 7;
+    }
     if (p.descripcion) {
         const dLines = doc.splitTextToSize(p.descripcion, 66);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
@@ -10842,6 +10870,7 @@ function enviarWappPresupuesto(id) {
             + (equipoStr ? '\n📱 Equipo: ' + equipoStr : '')
             + (p.descripcion ? '\n🔧 ' + p.descripcion : '')
             + '\n\n💰 *TOTAL: ' + fmt.format(total) + '*'
+            + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR') + '*' : '')
             + (p.obs ? '\n\n📌 ' + p.obs : '')
             + '\n\n🔎 *VER Y DESCARGAR PRESUPUESTO PDF AQUÍ:*\n' + presLink;
 
