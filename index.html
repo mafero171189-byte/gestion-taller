@@ -300,7 +300,17 @@
         body.dark-mode [style*="background:#f9fafb"],
         body.dark-mode [style*="background: #fdfdfd"],
         body.dark-mode [style*="background:#fdfdfd"],
-        body.dark-mode [style*="background:#fff5f5"] {
+        body.dark-mode [style*="background:#fff5f5"],
+        body.dark-mode #form-presupuesto-container,
+        body.dark-mode #stock-form-grid,
+        body.dark-mode [style*="background: #f8fafc"],
+        body.dark-mode [style*="background:#f8fafc"],
+        body.dark-mode [style*="background: #f0fdf4"],
+        body.dark-mode [style*="background:#f0fdf4"],
+        body.dark-mode [style*="background: #eff6ff"],
+        body.dark-mode [style*="background:#eff6ff"],
+        body.dark-mode [style*="background: #fefce8"],
+        body.dark-mode [style*="background:#fefce8"] {
             background-color: #0d1220 !important;
             border-color: #1a2040 !important;
         }
@@ -508,6 +518,8 @@
         .btn-revertir-confirmar:active { transform: scale(0.97); }
         .btn-revertir-cancelar { background: transparent; color: #9ca3af; box-shadow: none; font-size: 13px; padding: 10px; }
         body.dark-mode .revertir-modal-box   { background: #111827; }
+        body.dark-mode #modalStockMinGlobal > div { background: #111827 !important; }
+        body.dark-mode #modalConfigStockMin > div  { background: #111827 !important; }
 
         /* MODAL SIN GUARDAR */
         #modal-sin-guardar {
@@ -2490,11 +2502,7 @@ function showApp() {
       <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
      </div>
      <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
-     <div style="margin-top:14px; text-align:left;">
-      <label style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:5px; display:block;">📝 Notas de reparación <span style="font-weight:500; text-transform:none; color:#9ca3af;">(opcional)</span></label>
-      <textarea id="notasReparacionModal" rows="2" placeholder="Ej: Cambié display, soldé pin de carga..." style="width:100%; padding:10px 12px; border:1.5px solid #e5e7eb; border-radius:8px; font-size:13px; font-family:'Outfit',sans-serif; resize:none; box-sizing:border-box; color:#374151; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
-     </div>
-     <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+     <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
       <div style="display:flex; gap:10px;">
        <button onclick="procesarReparado(false, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (SOLO GUARDAR)</button>
        <button onclick="procesarReparado(false, true)" style="flex:1; padding:10px; border-radius:8px; border:2px solid #25D366; background:white; color:#16a34a; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (Y AVISAR)</button>
@@ -2793,7 +2801,7 @@ function showApp() {
       <button onclick="document.getElementById('modalHistorialCliente').style.display='none'" style="background: none; border: none; font-size: 18px; cursor: pointer; color: inherit;">❌</button>
      </div>
      <h4 id="hcNombre" style="margin-top:0; margin-bottom: 5px; color: #111827; text-align: left;"></h4>
-     <p id="hcTel" style="margin-top:0; font-size:13px; color: #6b7280; margin-bottom: 15px; text-align: left;"></p>
+     <p id="hcTel" style="margin-top:0; font-size:13px; color: #6b7280; margin-bottom: 15px; text-align: left; display:flex; align-items:center; gap:8px;"></p>
      <div style="overflow-x: auto; max-height: 350px;">
       <table class="tabla-olvidados" style="width: 100%;">
        <thead>
@@ -3112,12 +3120,13 @@ function showApp() {
      <div id="contabilidad-diaria"></div>
     </div>
     <div id="page-stock" class="page" style="display:none;">
-     <h2 style="margin-top:0;">📦 Control de Stock</h2>
+     <h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">📦 Control de Stock <span id="campana-stock" title="Configurar stock mínimo de alerta" onclick="abrirConfigStockMinimoGlobal()" style="cursor:pointer; font-size:22px; display:inline;">🔔</span></h2>
      <div style="margin-bottom: 15px; margin-top: 10px;">
       <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
      </div>
      <div class="form-grid" id="stock-form-grid">
       <input type="hidden" id="stockId">
+      <input type="hidden" id="stockMinimo">
       <div>
        <label>Artículo/Repuesto</label><input type="text" id="stockNombre" placeholder="Ej: Módulo Samsung A10" required>
       </div>
@@ -5490,6 +5499,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             db.ref(pathStock).once('value', snap => {
                 const v = snap.val();
                 stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                cargarStockMinimoGlobal();
                 if(document.getElementById('page-stock').style.display === 'block') renderStock();
             });
         };
@@ -5998,10 +6008,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             return;
         }
 
-        const notasRep = (document.getElementById('notasReparacionModal').value || '').trim();
-        document.getElementById('notasReparacionModal').value = '';
         cerrarModalStock();
-        ejecutarCambioEstado('Reparado', repuestosParaGuardar, notasRep);
+        ejecutarCambioEstado('Reparado', repuestosParaGuardar);
         
         // Si el botón que se presionó indica que sí hay que avisar, abre WhatsApp
         if (avisar) {
@@ -6389,7 +6397,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         ejecutarCambioEstado(nuevo);
     }
 
-    function ejecutarCambioEstado(nuevo, repuestosUsados = null, notasReparacion = null) {
+    function ejecutarCambioEstado(nuevo, repuestosUsados = null) {
         const r = getRegistro(idParaEstado);
         if(!r) return;
 
@@ -6431,10 +6439,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (repuestosUsados) {
             updates.repuestosDescontados = repuestosUsados;
             r.repuestosDescontados = repuestosUsados;
-        }
-
-        if (notasReparacion !== null) {
-            updates.notasReparacion = notasReparacion || null;
         }
         
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -6543,13 +6547,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             <div style="font-size:13px; color:#6b7280; line-height:1.3;">${escaparHTML(r.obs)}</div>` : ''}
             ${r.notaInterna ? `<div style="font-size:11px; color:#7c3aed; font-weight:bold; text-transform:uppercase; margin-top:8px; margin-bottom:2px;">🔒 Nota Interna</div>
             <div style="font-size:13px; color:#7c3aed; line-height:1.3; background:#faf5ff; padding:6px 8px; border-radius:6px; border:1px solid #e9d5ff;">${escaparHTML(r.notaInterna)}</div>` : ''}
-            <div style="margin-top:12px; padding-top:10px; border-top:1px solid #e5e7eb;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <div style="font-size:11px; color:#059669; font-weight:bold; text-transform:uppercase;">🔧 Notas de Reparación</div>
-                <button onclick="abrirEditarNotasRep('${id}')" style="background:none; border:1px solid #d1d5db; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer; color:#6b7280; font-family:'Outfit',sans-serif;">✏️ Editar</button>
-              </div>
-              <div id="notasRepTexto-${id}" style="font-size:13px; color:${r.notasReparacion ? '#059669' : '#9ca3af'}; line-height:1.4; font-style:${r.notasReparacion ? 'normal' : 'italic'};">${r.notasReparacion ? escaparHTML(r.notasReparacion) : 'Sin notas aún'}</div>
-            </div>
         </div>` : '';
 
         let h = fallaHtml;
@@ -7211,8 +7208,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if(typeof syncPickerDisplay === 'function') { syncPickerDisplay('equipo'); syncPickerDisplay('marca'); }
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
-        const stickyBtnR = document.querySelector('#sticky-submit-bar button:first-child');
-        if (stickyBtnR) stickyBtnR.innerText = "✅ REGISTRAR";
         document.getElementById('autocomplete-falla').style.display = 'none';
 
         document.getElementById('metodoPago').value = "A Cotizar";
@@ -7567,8 +7562,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('btnSubmit').innerText = "ACTUALIZAR DATOS";
         document.getElementById('btnLimpiar').innerText = "✖ CANCELAR";
         document.getElementById('btnLimpiar').style.background = "#dc2626";
-        const stickyBtn = document.querySelector('#sticky-submit-bar button:first-child');
-        if (stickyBtn) stickyBtn.innerText = "✅ ACTUALIZAR";
         document.getElementById('costo-inner').style.display = "none"; 
         
         fotosTemporales = [];
@@ -7945,10 +7938,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const c = parseInt(document.getElementById('stockCantidad').value);
         const costo = parseMoney(document.getElementById('stockCosto').value);
         const precio = parseMoney(document.getElementById('stockPrecio').value);
+        const minimo = parseInt(document.getElementById('stockMinimo').value) || 0;
 
         if(!n || isNaN(c)) { showToast("Nombre y cantidad requeridos", "#dc2626"); return; }
 
-        const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio };
+        const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio, stockMinimo: minimo };
         const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
         
         mostrarLoader("Guardando stock...");
@@ -7981,6 +7975,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('stockCantidad').value = "";
         document.getElementById('stockCosto').value = "";
         document.getElementById('stockPrecio').value = "";
+        document.getElementById('stockMinimo').value = "";
         document.getElementById('search-stock').value = "";
         
         // Resetear botón de Guardar
@@ -8004,6 +7999,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('stockCantidad').value = item.cantidad;
         document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
         document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
+        document.getElementById('stockMinimo').value = item.stockMinimo || "";
         
         // Cambiar a modo Actualizar
         const btnGuardar = document.getElementById('btnGuardarStock');
@@ -8047,25 +8043,191 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const bus = document.getElementById('search-stock').value.toLowerCase();
         const body = document.getElementById('bodyStock');
         body.innerHTML = "";
-        
+
         const filtrados = stockData.filter(i => (i.nombre||"").toLowerCase().includes(bus));
-        
         filtrados.sort((a,b) => a.nombre.localeCompare(b.nombre));
-        
+
+        // Calcular stock bajo para la campana (usa mínimo global como fallback)
+        const minimoGlobal = window._stockMinimoGlobal || 2;
+        const stockBajoItems = stockData.filter(i => {
+            const min = i.stockMinimo != null && i.stockMinimo > 0 ? i.stockMinimo : minimoGlobal;
+            return i.cantidad <= min;
+        });
+        const campana = document.getElementById('campana-stock');
+        if (campana) {
+            if (stockBajoItems.length > 0) {
+                campana.innerHTML = `🔔<sup style="background:#dc2626;color:white;border-radius:50%;padding:1px 5px;font-size:10px;font-weight:800;vertical-align:top;">${stockBajoItems.length}</sup>`;
+                campana.title = `${stockBajoItems.length} artículo(s) con stock bajo — clic para configurar`;
+            } else {
+                campana.innerHTML = '🔔';
+                campana.title = 'Configurar stock mínimo de alerta';
+            }
+        }
+
         filtrados.forEach(i => {
-            let colorCant = i.cantidad <= 2 ? 'color:red; font-weight:bold;' : 'color:green; font-weight:bold;';
+            const minimoGlobal = window._stockMinimoGlobal || 2;
+            const min = i.stockMinimo != null && i.stockMinimo > 0 ? i.stockMinimo : minimoGlobal;
+            const esBajo = i.cantidad <= min;
+            const colorCant = esBajo ? 'color:#dc2626; font-weight:bold;' : 'color:#059669; font-weight:bold;';
+            const badgeBajo = esBajo
+                ? `<span style="display:inline-block;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;font-size:10px;font-weight:800;padding:1px 6px;margin-left:6px;">⚠️ BAJO</span>`
+                : '';
+            const minimoTexto = (i.stockMinimo > 0) ? `<div style="font-size:10px;color:#9ca3af;margin-top:2px;">mín: ${i.stockMinimo}</div>` : '';
             body.innerHTML += `
-                <tr>
-                    <td><b>${escaparHTML(i.nombre)}</b></td>
-                    <td style="${colorCant}">${i.cantidad}</td>
+                <tr${esBajo ? ' style="background:rgba(220,38,38,0.04);"' : ''}>
+                    <td><b>${escaparHTML(i.nombre)}</b>${badgeBajo}</td>
+                    <td style="${colorCant}">${i.cantidad}${minimoTexto}</td>
                     <td>${fmt.format(i.costo || 0)}</td>
                     <td><b>${fmt.format(i.precioVenta || 0)}</b></td>
                     <td class="action-btns">
+                        <button onclick="abrirConfigStockMinimo('${i.id}')" title="Configurar stock mínimo de alerta" style="color:#d97706;">🔔</button>
                         <button onclick="editarStock('${i.id}')" style="color:#1e4d8c;">✏️</button>
                         <button onclick="confirmarBorrarStock('${i.id}')" style="color:#dc2626;">❌</button>
                     </td>
                 </tr>
             `;
+        });
+    }
+
+    // ====== MODAL CONFIGURAR STOCK MÍNIMO GLOBAL ======
+    // Carga el valor guardado en Firebase y permite cambiarlo para todos los artículos
+    function abrirConfigStockMinimoGlobal() {
+        const pathMin = isUserAdmin ? 'configuracion/admin/stockMinimoGlobal' : 'usuarios_registrados/' + currentUser + '/stockMinimoGlobal';
+
+        let modal = document.getElementById('modalStockMinGlobal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modalStockMinGlobal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.82);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);';
+            modal.innerHTML = `
+              <div style="background:#fff;border-radius:22px;width:88%;max-width:360px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.5);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+                <div style="background:linear-gradient(135deg,#06122a 0%,#1e4d8c 100%);padding:28px 24px 22px;text-align:center;">
+                  <div style="width:64px;height:64px;background:rgba(255,255,255,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;box-shadow:0 4px 18px rgba(0,0,0,0.3);">🔔</div>
+                  <h3 style="margin:0 0 6px;font-size:19px;font-weight:900;font-family:'Outfit',sans-serif;color:white;letter-spacing:-0.3px;">Stock Mínimo Global</h3>
+                  <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.7);font-family:'Outfit',sans-serif;line-height:1.5;">Definí el número de unidades mínimas para <b style="color:white;">todos los artículos</b> del inventario.<br>Los que tengan un mínimo propio configurado lo usarán en su lugar.</p>
+                </div>
+                <div style="padding:22px 22px 8px;">
+                  <label style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:10px;letter-spacing:0.5px;">Cantidad mínima de alerta</label>
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <button onclick="var v=parseInt(document.getElementById('inputStockMinGlobal').value)||0; if(v>0){document.getElementById('inputStockMinGlobal').value=v-1;}" style="width:44px;height:44px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#374151;flex-shrink:0;">−</button>
+                    <input type="number" id="inputStockMinGlobal" min="0" placeholder="2" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:28px;font-weight:900;box-sizing:border-box;font-family:'Outfit',sans-serif;text-align:center;color:#111827;">
+                    <button onclick="var v=parseInt(document.getElementById('inputStockMinGlobal').value)||0; document.getElementById('inputStockMinGlobal').value=v+1;" style="width:44px;height:44px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#374151;flex-shrink:0;">+</button>
+                  </div>
+                  <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;font-family:'Outfit',sans-serif;">Ponelo en <b>0</b> para desactivar las alertas de stock bajo globalmente.</p>
+                </div>
+                <div id="stockMinGlobalInfo" style="margin:0 22px 4px;padding:10px 12px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe;font-size:12px;color:#1e40af;font-family:'Outfit',sans-serif;display:none;"></div>
+                <div style="padding:16px 22px 22px;display:flex;flex-direction:column;gap:9px;">
+                  <button id="btnGuardarStockMinGlobal" style="width:100%;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#1e4d8c,#0e2a5e);color:white;box-shadow:0 4px 18px rgba(30,77,140,0.4);transition:all 0.18s;letter-spacing:0.2px;">💾 GUARDAR PARA TODOS</button>
+                  <button onclick="document.getElementById('modalStockMinGlobal').style.display='none'" style="width:100%;padding:11px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;color:#9ca3af;">Cancelar</button>
+                </div>
+              </div>`;
+            document.body.appendChild(modal);
+        }
+
+        // Cargar valor actual de Firebase
+        modal.style.display = 'flex';
+        const input = document.getElementById('inputStockMinGlobal');
+        const infoEl = document.getElementById('stockMinGlobalInfo');
+        input.value = window._stockMinimoGlobal || 2;
+        infoEl.style.display = 'none';
+
+        db.ref(pathMin).once('value', snap => {
+            const val = snap.val();
+            if (val !== null && val !== undefined) {
+                window._stockMinimoGlobal = val;
+                input.value = val;
+            }
+            // Mostrar cuántos artículos se ven afectados
+            const minimoActual = parseInt(input.value) || 2;
+            const afectados = stockData.filter(i => !(i.stockMinimo > 0)).length;
+            if (afectados > 0) {
+                infoEl.style.display = 'block';
+                infoEl.innerHTML = `ℹ️ Este valor se aplicará como alerta en <b>${afectados} artículo(s)</b> que no tienen mínimo personalizado.`;
+            }
+        });
+
+        // Actualizar contador al cambiar el input
+        input.oninput = function() {
+            const afectados = stockData.filter(i => !(i.stockMinimo > 0)).length;
+            if (afectados > 0) {
+                infoEl.style.display = 'block';
+                infoEl.innerHTML = `ℹ️ Este valor se aplicará como alerta en <b>${afectados} artículo(s)</b> que no tienen mínimo personalizado.`;
+            }
+        };
+
+        document.getElementById('btnGuardarStockMinGlobal').onclick = function() {
+            const nuevoMin = parseInt(input.value) || 0;
+            mostrarLoader('Guardando configuración...');
+            db.ref(pathMin).set(nuevoMin).then(() => {
+                window._stockMinimoGlobal = nuevoMin;
+                modal.style.display = 'none';
+                ocultarLoader();
+                showToast(`🔔 Stock mínimo global: ${nuevoMin} unidad${nuevoMin !== 1 ? 'es' : ''}`, '#1e4d8c');
+                renderStock();
+            }).catch(() => { ocultarLoader(); showToast('Error al guardar', '#dc2626'); });
+        };
+    }
+
+    // ====== MODAL CONFIGURAR STOCK MÍNIMO INDIVIDUAL (botón 🔔 por fila) ======
+    function abrirConfigStockMinimo(id) {
+        const item = stockData.find(x => x.id === id);
+        if (!item) return;
+        const valorActual = item.stockMinimo > 0 ? item.stockMinimo : '';
+        const nombre = item.nombre || '';
+        const minimoGlobal = window._stockMinimoGlobal || 2;
+
+        let modal = document.getElementById('modalConfigStockMin');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modalConfigStockMin';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.78);z-index:15000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);';
+            modal.innerHTML = `
+              <div style="background:#fff;border-radius:20px;width:88%;max-width:340px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+                <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);text-align:center;padding:22px 20px 14px;font-size:42px;line-height:1;">🔔</div>
+                <div style="padding:18px 22px 6px;">
+                  <h3 style="margin:0 0 4px;font-size:17px;font-weight:900;font-family:'Outfit',sans-serif;color:#111827;letter-spacing:-0.3px;">Stock Mínimo Personalizado</h3>
+                  <p id="configStockMinNombre" style="margin:0 0 4px;font-size:13px;color:#1e4d8c;font-weight:700;font-family:'Outfit',sans-serif;"></p>
+                  <p id="configStockMinGlobalInfo" style="margin:0 0 14px;font-size:11px;color:#9ca3af;font-family:'Outfit',sans-serif;"></p>
+                  <label style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;display:block;margin-bottom:6px;">Mínimo para este artículo</label>
+                  <input type="number" id="inputConfigStockMin" min="0" placeholder="Usar el global" style="width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:16px;font-weight:700;box-sizing:border-box;font-family:'Outfit',sans-serif;text-align:center;">
+                  <p style="margin:8px 0 0;font-size:11px;color:#94a3b8;font-family:'Outfit',sans-serif;">Dejalo vacío o en 0 para usar el mínimo global.</p>
+                </div>
+                <div style="padding:16px 22px 20px;display:flex;flex-direction:column;gap:9px;">
+                  <button id="btnGuardarConfigStockMin" style="width:100%;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#d97706,#b45309);color:white;box-shadow:0 4px 14px rgba(217,119,6,0.3);transition:all 0.18s;">💾 GUARDAR</button>
+                  <button onclick="document.getElementById('modalConfigStockMin').style.display='none'" style="width:100%;padding:11px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:transparent;color:#9ca3af;">Cancelar</button>
+                </div>
+              </div>`;
+            document.body.appendChild(modal);
+        }
+
+        document.getElementById('configStockMinNombre').textContent = '📦 ' + nombre;
+        document.getElementById('configStockMinGlobalInfo').textContent = `Mínimo global actual: ${minimoGlobal} unidad${minimoGlobal !== 1 ? 'es' : ''}`;
+        document.getElementById('inputConfigStockMin').value = valorActual;
+        modal.style.display = 'flex';
+        setTimeout(() => document.getElementById('inputConfigStockMin').focus(), 100);
+
+        document.getElementById('btnGuardarConfigStockMin').onclick = function() {
+            const nuevoMin = parseInt(document.getElementById('inputConfigStockMin').value) || 0;
+            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            mostrarLoader('Guardando...');
+            db.ref(pathStock).child(id).update({ stockMinimo: nuevoMin }).then(() => {
+                const idx = stockData.findIndex(x => x.id === id);
+                if (idx !== -1) stockData[idx].stockMinimo = nuevoMin;
+                modal.style.display = 'none';
+                ocultarLoader();
+                const msg = nuevoMin > 0 ? `🔔 Mínimo personalizado: ${nuevoMin}` : '🔔 Usando mínimo global';
+                showToast(msg, '#d97706');
+                renderStock();
+            }).catch(() => { ocultarLoader(); showToast('Error al guardar', '#dc2626'); });
+        };
+    }
+
+    // Cargar el mínimo global al iniciar stock
+    function cargarStockMinimoGlobal() {
+        const pathMin = isUserAdmin ? 'configuracion/admin/stockMinimoGlobal' : 'usuarios_registrados/' + currentUser + '/stockMinimoGlobal';
+        db.ref(pathMin).once('value', snap => {
+            const val = snap.val();
+            window._stockMinimoGlobal = (val !== null && val !== undefined) ? val : 2;
         });
     }
 
@@ -8140,7 +8302,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('btn-nav-' + pageId).classList.add('active');
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'stock') window.cargarStockData();
-        if (pageId === 'usuarios') { cargarUsuariosAdmin(); setTimeout(() => listarUsuarios(), 50); }
+        if (pageId === 'usuarios') {
+            // Si ya hay listener y datos, renderizar inmediatamente; si no, cargar desde Firebase
+            if (_usuariosListener && listadoUsuarios.length > 0) {
+                listarUsuarios();
+            } else {
+                // Forzar recarga limpia
+                if (_usuariosListener) {
+                    db.ref('usuarios_registrados').off('value', _usuariosListener);
+                    _usuariosListener = null;
+                }
+                cargarUsuariosAdmin();
+            }
+        }
         if (pageId === 'presupuesto') { cargarPresupuestos(); setTimeout(() => abrirFormPresupuesto(), 50); }
     }
 
@@ -8791,13 +8965,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
     function cargarUsuariosAdmin() {
         if (!isUserAdmin) return;
-        if (_usuariosListener) { listarUsuarios(); return; } // ya está escuchando — solo re-renderizar
+        if (_usuariosListener) {
+            // Ya hay listener activo — simplemente forzar re-render con datos actuales
+            listarUsuarios();
+            return;
+        }
         _usuariosListener = db.ref('usuarios_registrados').on('value', snap => {
             listadoUsuarios = [];
             if (snap.val()) {
                 listadoUsuarios = Object.keys(snap.val()).map(k => ({id: k, ...snap.val()[k]}));
             }
-            listarUsuarios(); // re-renderizar con el filtro actual
+            listarUsuarios();
         });
     }
 
@@ -9277,7 +9455,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if(isClientMode) return;
         
         document.getElementById('hcNombre').innerText = nombre;
-        document.getElementById('hcTel').innerText = `📱 ${tel || 'Sin teléfono'}`;
+        
+        const telLimpio = String(tel || '').replace(/\D/g, '');
+        let waNum = telLimpio;
+        if (waNum && !waNum.startsWith('54')) waNum = '549' + waNum;
+        else if (waNum && waNum.startsWith('54') && !waNum.startsWith('549')) waNum = waNum.replace(/^54/, '549');
+        
+        const waBtn = tel ? `<a href="https://api.whatsapp.com/send?phone=${waNum}" target="_blank" title="Enviar WhatsApp" style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:white;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none;font-family:'Outfit',sans-serif;flex-shrink:0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp</a>` : '';
+        
+        document.getElementById('hcTel').innerHTML = `<span>📱 ${tel || 'Sin teléfono'}</span>${waBtn}`;
         
         const body = document.getElementById('hcBody');
         body.innerHTML = '';
@@ -10912,65 +11100,6 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
     </div>
   </div>
 </div>
-
-<!-- MODAL EDITAR NOTAS DE REPARACIÓN -->
-<div id="modalEditarNotasRep" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.78);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);">
-  <div style="background:#fff;border-radius:20px;width:88%;max-width:360px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.45);">
-    <div style="background:linear-gradient(135deg,#059669,#047857);padding:18px 20px;display:flex;align-items:center;gap:10px;">
-      <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">🔧</div>
-      <div style="color:white;font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;">Notas de Reparación</div>
-    </div>
-    <div style="padding:20px;">
-      <textarea id="editarNotasRepInput" rows="4" placeholder="Ej: Cambié display, soldé pin de carga..." style="width:100%;padding:11px 13px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;font-family:'Outfit',sans-serif;resize:none;box-sizing:border-box;color:#374151;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#d1d5db'"></textarea>
-      <div style="display:flex;gap:10px;margin-top:14px;">
-        <button onclick="cerrarEditarNotasRep()" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;background:white;color:#6b7280;">Cancelar</button>
-        <button onclick="guardarNotasRep()" style="flex:2;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;background:linear-gradient(135deg,#059669,#047857);color:white;box-shadow:0 4px 14px rgba(5,150,105,0.3);">✓ Guardar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-    let _idNotasRep = null;
-
-    function abrirEditarNotasRep(id) {
-        _idNotasRep = id;
-        const r = getRegistro(id);
-        document.getElementById('editarNotasRepInput').value = r ? (r.notasReparacion || '') : '';
-        document.getElementById('modalEditarNotasRep').style.display = 'flex';
-        setTimeout(() => document.getElementById('editarNotasRepInput').focus(), 100);
-    }
-
-    function cerrarEditarNotasRep() {
-        document.getElementById('modalEditarNotasRep').style.display = 'none';
-        _idNotasRep = null;
-    }
-
-    function guardarNotasRep() {
-        if (!_idNotasRep) return;
-        const notas = (document.getElementById('editarNotasRepInput').value || '').trim();
-        const r = getRegistro(_idNotasRep);
-        if (!r) return;
-        const pathActivo   = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const nodo = r.archivado ? pathArchivado : pathActivo;
-        db.ref(nodo).child(_idNotasRep).update({ notasReparacion: notas || null }).then(() => {
-            // Actualizar en memoria
-            const arr = r.archivado ? registrosArchivados : registros;
-            const idx = arr.findIndex(x => x.id === _idNotasRep);
-            if (idx !== -1) arr[idx].notasReparacion = notas || null;
-            // Actualizar el texto visible en el historial sin cerrarlo
-            const textoEl = document.getElementById('notasRepTexto-' + _idNotasRep);
-            if (textoEl) {
-                textoEl.textContent = notas || 'Sin notas aún';
-                textoEl.style.color = notas ? '#059669' : '#9ca3af';
-                textoEl.style.fontStyle = notas ? 'normal' : 'italic';
-            }
-            cerrarEditarNotasRep();
-            showToast('Notas guardadas ✅', '#059669');
-        });
-    }
-</script>
 
  </body>
 </html>
