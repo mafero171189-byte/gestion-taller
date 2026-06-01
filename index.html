@@ -5218,21 +5218,23 @@ function showApp() {
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
 
-        // PASO 1: Pintar dashboard YA con lo que hay en caché local (instantáneo, sin Firebase)
+        // PASO 1: Pintar con caché local AL INSTANTE (sin esperar Firebase)
         const _cacheOrdenes = localStorage.getItem('st_cache_ordenes_' + u);
         if (_cacheOrdenes) {
-            try { registros = JSON.parse(_cacheOrdenes); } catch(e) {}
+            try {
+                registros = JSON.parse(_cacheOrdenes);
+                renderTable();           // ← muestra las órdenes de inmediato
+                actualizarListasAutocompletado();
+            } catch(e) {}
         }
         const _cacheStock = localStorage.getItem('st_cache_stock_' + u);
         if (_cacheStock) {
             try { stockData = JSON.parse(_cacheStock); } catch(e) {}
         }
-        // cargarDashboard se llama después de que cargarStockData esté definido (ver abajo)
 
-        // PASO 2: Cargar datos frescos de Firebase y refrescar dashboard
+        // PASO 2: Cargar solo registros activos y stock al inicio (archivados se cargan lazy)
         const _cargarTodo = () => {
             const _pathActivo2 = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
-            const _pathArch = isAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + u;
             db.ref(_pathActivo2).once('value').then(snap => {
                 const vr = snap.val();
                 registros = vr ? Object.keys(vr).map(k => ({id:k, ...vr[k]})) : [];
@@ -5242,13 +5244,7 @@ function showApp() {
                 ocultarLoader();
                 if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
             }).catch(() => { ocultarLoader(); });
-            db.ref(_pathArch).once('value').then(snap => {
-                const va = snap.val();
-                registrosArchivados = va ? Object.keys(va).map(k => ({id:k, ...va[k]})) : [];
-                historialDescargado = true;
-                if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
-            }).catch(() => {});
-            // El stock lo maneja cargarStockData() definido más abajo
+            // Archivados NO se cargan aquí — se cargan lazy en contabilidad/clientes/búsqueda
         };
 
         if (isStored) mostrarLoader("Actualizando...");
@@ -5407,19 +5403,31 @@ function showApp() {
             }
         });
 
-        // CORRECCIÓN: Desconectamos el Stock del "tiempo real" global
-        window.cargarStockData = () => {
+        // Stock: se lee de Firebase solo si el caché tiene más de 5 minutos
+        window.cargarStockData = (forzar = false) => {
+            const TTL = 5 * 60 * 1000; // 5 minutos
+            const tsKey = 'st_cache_stock_ts_' + u;
+            const ahora = Date.now();
+            const ultimaLectura = parseInt(localStorage.getItem(tsKey) || '0');
+            const cacheVigente = (ahora - ultimaLectura) < TTL;
+
+            if (!forzar && cacheVigente && stockData.length > 0) {
+                // Caché vigente — solo renderizar si hace falta, sin leer Firebase
+                if (document.getElementById('page-stock').style.display === 'block') renderStock();
+                if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
+                return;
+            }
             const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
             db.ref(pathStock).once('value', snap => {
                 const v = snap.val();
                 stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                 localStorage.setItem('st_cache_stock_' + u, JSON.stringify(stockData));
+                localStorage.setItem(tsKey, String(Date.now()));
                 if (document.getElementById('page-stock').style.display === 'block') renderStock();
                 if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
             });
         };
-        window.cargarStockData(); // Carga inicial desde Firebase
-        // Pintar dashboard con caché al instante (cargarStockData actualizará el KPI cuando llegue Firebase)
+        window.cargarStockData(); // Carga inicial
         if (typeof window.cargarDashboard === 'function') window.cargarDashboard();
         
         if(isAdmin) {
@@ -5833,14 +5841,14 @@ function showApp() {
             document.getElementById('modalVentaRapida').style.display = 'none';
             ocultarLoader();
             showToast("VENTA REGISTRADA ✅", "#059669");
-            cargarDatosContabilidad();
-            window.cargarStockData();
+            if (document.getElementById('page-contabilidad') && document.getElementById('page-contabilidad').style.display === 'block') cargarDatosContabilidad();
+            window.cargarStockData(true);
         }).catch((err) => {
             ocultarLoader();
             showToast("⚠️ Venta guardada pero error al descontar stock. Revisá el inventario.", "#f59e0b");
             console.error("Error al descontar stock en venta rápida:", err);
-            cargarDatosContabilidad();
-            window.cargarStockData();
+            if (document.getElementById('page-contabilidad') && document.getElementById('page-contabilidad').style.display === 'block') cargarDatosContabilidad();
+            window.cargarStockData(true);
         });
     }
 
@@ -7437,7 +7445,10 @@ function showApp() {
             ocultarLoader();
             showToast(msg, color);
             renderTable();
-            cargarDatosContabilidad();
+            // Solo refrescar contabilidad si la página está visible (evita lectura innecesaria)
+            if (document.getElementById('page-contabilidad') && document.getElementById('page-contabilidad').style.display === 'block') {
+                cargarDatosContabilidad();
+            }
         }
 
         if (fotosTemporales.length === 0) {
@@ -8166,7 +8177,7 @@ function showApp() {
         if (pageEl) pageEl.style.display = 'block';
         if (btnEl) btnEl.classList.add('active');
         if (pageId === 'contabilidad') cargarDatosContabilidad();
-        if (pageId === 'stock') window.cargarStockData();
+        if (pageId === 'stock') window.cargarStockData(true);
         if (pageId === 'usuarios') { cargarUsuariosAdmin(); setTimeout(() => listarUsuarios(), 50); }
         if (pageId === 'presupuesto') { cargarPresupuestos(); setTimeout(() => abrirFormPresupuesto(), 50); }
         // Nuevos módulos
@@ -8535,7 +8546,7 @@ function showApp() {
                         ocultarLoader();
                         showToast("Venta Anulada (Stock repuesto)", "#dc2626");
                         cargarDatosContabilidad();
-                        window.cargarStockData();
+                        window.cargarStockData(true);
                     });
                 } else {
                     // Fallback para ventas viejas sin stockId: buscar por nombre
@@ -8553,7 +8564,7 @@ function showApp() {
                         ocultarLoader();
                         showToast("Venta Anulada (Stock repuesto)", "#dc2626");
                         cargarDatosContabilidad();
-                        window.cargarStockData();
+                        window.cargarStockData(true);
                     });
                 }
             });
