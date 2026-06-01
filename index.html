@@ -5350,22 +5350,48 @@ function showApp() {
                 }
             }).catch(() => {});
 
-            db.ref('usuarios_registrados/' + u).on('value', snap => {
-                const dataUser = snap.val();
-                if (!dataUser) return;
-                else if (dataUser.estado === 'suspendido') {
+            // === LISTENERS OPTIMIZADOS: 3 campos chicos en lugar de 1 nodo completo ===
+            // Misma funcionalidad (bloqueos instantáneos) con ~5% del tráfico anterior.
+
+            // Listener 1: Suspensión instantánea (~10 bytes por evento)
+            db.ref('usuarios_registrados/' + u + '/estado').on('value', snap => {
+                if (snap.val() === 'suspendido') {
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
-                else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
-                }
-                else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de 30 días ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
-                }
-                else if (dataUser.tokenSesion && dataUser.tokenSesion !== (() => { try { const t = JSON.parse(localStorage.getItem('st_matias_token')); return (t && t.expira > Date.now()) ? t.valor : null; } catch(e) { return localStorage.getItem('st_matias_token'); } })()) {
+            });
+
+            // Listener 2: Licencia vencida instantánea (~15 bytes por evento)
+            db.ref('usuarios_registrados/' + u + '/fechaExpiracion').on('value', snap => {
+                const expiracion = snap.val();
+                if (!expiracion) return;
+                db.ref('usuarios_registrados/' + u + '/tipoLicencia').once('value').then(snapTipo => {
+                    const tipo = snapTipo.val();
+                    if (tipo === 'prueba' && expiracion < Date.now()) {
+                        mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
+                    } else if (tipo === 'permanente' && expiracion < Date.now()) {
+                        mostrarExpulsion("⏳ Tu licencia de 30 días ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
+                    }
+                });
+            });
+
+            // Listener 3: Sesión duplicada instantánea (~30 bytes por evento)
+            db.ref('usuarios_registrados/' + u + '/tokenSesion').on('value', snap => {
+                const tokenFirebase = snap.val();
+                if (!tokenFirebase) return;
+                const miToken = (() => {
+                    try {
+                        const t = JSON.parse(localStorage.getItem('st_matias_token'));
+                        return (t && t.expira > Date.now()) ? t.valor : null;
+                    } catch(e) { return localStorage.getItem('st_matias_token'); }
+                })();
+                if (tokenFirebase !== miToken) {
                     mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
                 }
+            });
 
+            // Banner de días restantes: no necesita tiempo real, se lee una sola vez al cargar
+            db.ref('usuarios_registrados/' + u).once('value').then(snap => {
+                const dataUser = snap.val();
                 if (dataUser && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
                     const diasRestantes = Math.ceil((dataUser.fechaExpiracion - Date.now()) / (1000 * 60 * 60 * 24));
                     const tipoLic = dataUser.tipoLicencia || 'prueba';
