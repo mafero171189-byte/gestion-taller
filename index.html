@@ -4392,11 +4392,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             } else {
                 saldoLabel = 'Estado de pago'; saldoColor = '#059669'; saldoValor = '✅ PAGADO';
             }
+            // FIX: mostrar desglose de descuento si existe
+            const descRowHtml = descMontoCliente > 0 ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;padding:6px 0;border-bottom:1px dashed #fca5a5;background:#fef2f2;border-radius:6px;padding:6px 10px;margin-bottom:4px;">
+                    <span style="color:#dc2626;font-weight:700;">🏷️ Descuento${regEncontrado.descuentoTipo === '%' ? ' ' + (regEncontrado.descuentoValor||'') + '%' : ''}${regEncontrado.descuentoEfectivo ? ' 💵 efectivo' : ''}</span>
+                    <span style="color:#dc2626;font-weight:700;">- ${fmt.format(descMontoCliente)}</span>
+                </div>` : '';
             finHtml = `
             <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;">
                 <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">Información de Pago</div>
                 <div style="display:flex;flex-direction:column;gap:10px;">
-                    ${row('Precio total', fmt.format(precioActual))}
+                    ${descMontoCliente > 0 ? row('Precio original', fmt.format(precioActual)) : row('Precio total', fmt.format(precioActual))}
+                    ${descRowHtml}
+                    ${descMontoCliente > 0 ? row('Total con descuento', fmt.format(precioEfectivoCliente)) : ''}
                     ${totalPagado > 0 ? row('Abonado', fmt.format(totalPagado)) : ''}
                     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px;font-weight:800;padding-top:10px;border-top:1px solid #e8ecf0;">
                         <span style="color:#1e293b;">${saldoLabel}</span>
@@ -4578,6 +4586,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     </div>
                 </div>` : ''}
                 ${vencimientoHtml}
+            </div>` : '';
+
+        // FIX: declarar obsHtml (igual que en generarHTMLCliente)
+        const obsTextoP = p.obs && p.obs.trim() !== '-' ? p.obs.trim() : '';
+        const obsHtml = obsTextoP ? `
+            <div style="padding:20px 24px;border-bottom:1px solid #e8ecf0;background:#fafbfc;">
+                <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Observaciones</div>
+                <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">${obsTextoP}</p>
             </div>` : '';
 
         // Guardar presupuesto en variable global para poder generar PDF
@@ -10972,6 +10988,9 @@ function abrirFormPresupuesto() {
     presupuestoEditandoId = null;
     presItemCount = 0;
     document.getElementById('form-presupuesto-titulo').textContent = '📝 Nuevo Presupuesto';
+    // FIX: restaurar texto del botón al cancelar/guardar
+    const btnGuardarPresReset = document.querySelector('[data-pres-action="guardar"]');
+    if (btnGuardarPresReset) btnGuardarPresReset.innerHTML = '💾 GUARDAR PRESUPUESTO';
     document.getElementById('pres-nro').value = '';
     document.getElementById('pres-fecha').value = new Date().toLocaleDateString('es-AR');
     autoNroPresupuesto(); // assign number immediately on open
@@ -11128,6 +11147,9 @@ function editarPresupuesto(id) {
     presupuestoEditandoId = id;
     presItemCount = 0;
     document.getElementById('form-presupuesto-titulo').textContent = '✏️ Editar Presupuesto';
+    // FIX: cambiar texto del botón a "ACTUALIZAR" cuando se edita
+    const btnGuardarPres = document.querySelector('[data-pres-action="guardar"]');
+    if (btnGuardarPres) btnGuardarPres.innerHTML = '💾 ACTUALIZAR PRESUPUESTO';
     document.getElementById('pres-nro').value = p.nro || '';
     document.getElementById('pres-fecha').value = p.fecha || '';
     document.getElementById('pres-cliente').value = p.cliente || '';
