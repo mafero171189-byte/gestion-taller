@@ -10950,9 +10950,23 @@ function renderListaPresupuestos() {
         return;
     }
     lista.innerHTML = items.map(p => {
-        const total = (p.items || []).reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const totalBruto = (p.items || []).reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const descMontoCarta = parseFloat(p.descuentoMonto) || 0;
+        const total = descMontoCarta > 0 ? Math.max(0, totalBruto - descMontoCarta) : totalBruto;
+        const tieneDescCarta = descMontoCarta > 0 && totalBruto > 0;
         const estadoColor = p.estado === 'Aprobado' ? '#059669' : p.estado === 'Rechazado' ? '#dc2626' : '#d97706';
         const estadoBg = p.estado === 'Aprobado' ? '#d1fae5' : p.estado === 'Rechazado' ? '#fee2e2' : '#fef3c7';
+        // Etiqueta del descuento: tipo + si es por efectivo
+        const dLabelCarta = p.descuentoTipo === '%'
+            ? `🏷️ -${p.descuentoValor || ''}%${p.descuentoEfectivo ? ' 💵' : ''}`
+            : `🏷️ -${fmt.format(descMontoCarta)}${p.descuentoEfectivo ? ' 💵' : ''}`;
+        const precioHtml = tieneDescCarta
+            ? `<div style="margin-bottom:10px;">
+                <span style="font-size:13px; color:#94a3b8; text-decoration:line-through; font-weight:600;">${fmt.format(totalBruto)}</span>
+                <span style="font-size:11px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:6px; padding:2px 7px; font-weight:700; margin-left:6px;">${dLabelCarta}</span>
+                <div style="font-size:17px; font-weight:900; color:#059669; margin-top:2px;">${fmt.format(total)}</div>
+               </div>`
+            : `<div style="font-size:15px; font-weight:800; color:#1e4d8c; margin-bottom:10px;">${fmt.format(total)}</div>`;
         return `<div style="background:white; border:1.5px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
                 <div>
@@ -10965,7 +10979,7 @@ function renderListaPresupuestos() {
             </div>
             <div style="font-size:16px; font-weight:800; color:#111827; margin-bottom:2px;">👤 ${p.cliente || '-'}</div>
             <div style="font-size:13px; color:#6b7280; margin-bottom:10px;">📱 ${[p.equipo, p.marca, p.modelo].filter(Boolean).join(' ') || '-'}</div>
-            <div style="font-size:15px; font-weight:800; color:#1e4d8c; margin-bottom:12px;">${fmt.format(total)}</div>
+            ${precioHtml}
             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
                 <button data-pres-action="editar" data-pres-id="${p.id}" style="background:#1e4d8c; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">✏️ EDITAR</button>
                 <button data-pres-action="pdf" data-pres-id="${p.id}" style="background:#7c3aed; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">🖨️ PDF</button>
