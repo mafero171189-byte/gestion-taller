@@ -4709,7 +4709,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const subHeader = conf.subtitulo || "";
         const wappHeader = conf.wappTicket || "";
         const textGarantia = conf.garantia || "";
-        const nroLimpio = String(r.orden).replace('ORD-', '');
+        const nroLimpio = String(r.orden || '').replace('ORD-', '');
         
         
         const { jsPDF } = window.jspdf;
@@ -6195,7 +6195,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
             
-            const nroLimpio = String(r.orden).replace('ORD-', '');
+            const nroLimpio = String(r.orden || '').replace('ORD-', '');
             const baseUrl = window.location.origin + window.location.pathname; 
             
             const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
@@ -6316,7 +6316,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     return db.ref(pathActivo).child(idParaEstado).remove();
                 }).then(() => {
                     registros = registros.filter(x => x.id !== idParaEstado);
-                    if (historialDescargado) registrosArchivados.push({id: idParaEstado, ...copia});
+                    if (historialDescargado) {
+                        registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
+                        registrosArchivados.push({id: idParaEstado, ...copia});
+                    }
                     renderTable();
                     ocultarLoader();
                     showToast("💰 COBRO REGISTRADO — GUARDADO EN HISTORIAL ✅", "#059669");
@@ -6330,6 +6333,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             document.getElementById('modalCobroEntregado').style.display = 'none';
             // Eliminamos ocultarLoader() de acá para que siga girando hasta que pase al historial
             ejecutarCambioEstado('Entregado');
+        }).catch(err => {
+            ocultarLoader();
+            showToast('Error al registrar entrega: ' + err.message, '#dc2626');
         });
     }
 
@@ -6380,7 +6386,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             });
         }).then(() => {
             registros = registros.filter(x => x.id !== idParaEstado);
-            if (historialDescargado) registrosArchivados.push({id: idParaEstado, ...r});
+            if (historialDescargado) {
+                registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
+                registrosArchivados.push({id: idParaEstado, ...r});
+            }
             renderTable();
             ocultarLoader();
             const costoRep = parseFloat(r.costoRepuesto) || 0;
@@ -6563,7 +6572,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 const equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
                 document.getElementById('modalGarantiaDesc').innerHTML =
                     `<b>${escaparHTML(r.cliente)}</b> — ${escaparHTML(equipoCompleto)}<br>
-                     <span style="color:#7c3aed;">Orden #${String(r.orden).replace('ORD-','')}</span><br><br>
+                     <span style="color:#7c3aed;">Orden #${String(r.orden || '').replace('ORD-','')}</span><br><br>
                      El estado cambiará a <b>Garantía</b> y el motivo quedará registrado en el historial.`;
             }
             document.getElementById('motivoGarantia').value = '';
@@ -6726,15 +6735,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             
             let copia = {...r, ...updates};
             db.ref(pathActivo).child(idParaEstado).set(copia).then(() => {
-                db.ref(pathArchivado).child(idParaEstado).remove();
-                
+                return db.ref(pathArchivado).child(idParaEstado).remove();
+            }).then(() => {
                 registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
-                registros.push({id: idParaEstado, ...copia}); // <--- CORRECCIÓN: Lo reinserta en pantalla
-                
+                historialMesesCargados = {}; // invalidar cache para que no reaparezca en historial
+                registros.push({id: idParaEstado, ...copia});
                 renderTable();
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#1e4d8c");
-            });    
+            }).catch(err => {
+                showToast('Error al reingresar: ' + err.message, '#dc2626');
+            });
         } else if (nuevo === 'Entregado' && !r.archivado) {
             updates.archivado = true;
 
@@ -6742,13 +6753,15 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             delete copia.id;
             
             db.ref(pathArchivado).child(idParaEstado).set(copia).then(() => {
-                db.ref(pathActivo).child(idParaEstado).remove();
-
+                return db.ref(pathActivo).child(idParaEstado).remove();
+            }).then(() => {
                 // Aplicar cambios locales SOLO después de confirmar Firebase
                 Object.assign(r, updates);
                 registros = registros.filter(x => x.id !== idParaEstado);
 
                 if (historialDescargado) {
+                    // Filtrar primero por si quedó una versión previa (ej: reingreso por garantía)
+                    registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
                     registrosArchivados.push({id: idParaEstado, ...copia});
                 }
                 
@@ -6757,6 +6770,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`ENTREGADO ✅ — GUARDADO EN HISTORIAL 🗄️`, '#6b7280');
+            }).catch(err => {
+                ocultarLoader();
+                showToast('Error al archivar la orden: ' + err.message, '#dc2626');
             });
         } else {
             db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
@@ -7134,8 +7150,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }
 
         const filtrados = listaFinal.filter(r => {
-            const ordenLimpia  = String(r.orden).replace('ORD-', '').toLowerCase();
-            const ordenConPref = String(r.orden).toLowerCase();
+            const ordenLimpia  = String(r.orden || '').replace('ORD-', '').toLowerCase();
+            const ordenConPref = String(r.orden || '').toLowerCase();
             // Normalizar búsqueda: si escribe "ORD-145" o "145" ambas encuentran la orden
             const busNorm = bus.replace(/^ord-?/i, '');
             let equipoLimpio = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim().toLowerCase();
@@ -7176,7 +7192,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 }
             }
             
-            const nroLimpio = String(r.orden).replace('ORD-', '');
+            const nroLimpio = String(r.orden || '').replace('ORD-', '');
             const fallaLimpia = (r.falla || 'Sin falla registrada').replace(/\s*\+\s*$/, '');
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
             
@@ -7304,7 +7320,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 // También comparar contra registros en memoria por si hay datos no persistidos aún
                 const enMemoria = [...registros, ...registrosArchivados];
                 enMemoria.forEach(function(r) {
-                    const val = parseInt(String(r.orden).replace(/[^\d]/g, ''), 10);
+                    const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
                     if (!isNaN(val) && val > maxNum) maxNum = val;
                 });
 
@@ -7317,7 +7333,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 const enMemoria = [...registros, ...registrosArchivados];
                 let maxNum = 0;
                 enMemoria.forEach(function(r) {
-                    const val = parseInt(String(r.orden).replace(/[^\d]/g, ''), 10);
+                    const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
                     if (!isNaN(val) && val > maxNum) maxNum = val;
                 });
                 if (!inputNro.value) inputNro.value = maxNum + 1;
@@ -7553,7 +7569,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
         document.getElementById('modalGarantiaDesc').innerHTML =
             `<b>${escaparHTML(r.cliente)}</b> — ${escaparHTML(equipoCompleto)}<br>
-             <span style="color:#7c3aed;">Orden #${String(r.orden).replace('ORD-','')}</span><br><br>
+             <span style="color:#7c3aed;">Orden #${String(r.orden || '').replace('ORD-','')}</span><br><br>
              La orden se moverá al listado activo con estado <b>Garantía</b> y quedará registrado en el historial de estados.`;
         document.getElementById('motivoGarantia').value = '';
         document.getElementById('modalReingresarGarantia').style.display = 'flex';
@@ -7583,7 +7599,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }];
 
         // Si viene de una orden activa (no archivada), solo actualizar estado
-        if (window._garantiaDesdeActivo || !r.archivado) {
+        // IMPORTANTE: si la orden está archivada, siempre hay que moverla aunque venga del modal de estado
+        if ((window._garantiaDesdeActivo || !r.archivado) && !r.archivado) {
             window._garantiaDesdeActivo = false;
             const updates = {
                 estado: 'Garantía',
@@ -7605,6 +7622,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }
 
         // Al reingresar por garantía desde archivo, marcar que el pago ya está completo
+        window._garantiaDesdeActivo = false;
         const precioOriginal = parseFloat(r.precio) || 0;
         const senaOriginal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
         const saldoCobradoOriginal = parseFloat(r.saldoCobrado) || 0;
@@ -8146,7 +8164,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let num = String(r.tel).replace(/\D/g, ''); 
             if (!num.startsWith('54')) num = '549' + num;
             
-            const nroLimpio = String(r.orden).replace('ORD-', '');
+            const nroLimpio = String(r.orden || '').replace('ORD-', '');
             
             const baseUrl = window.location.origin + window.location.pathname; 
             const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
