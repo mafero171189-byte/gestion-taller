@@ -2502,6 +2502,10 @@ function showApp() {
       <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
      </div>
      <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
+     <div style="margin-top: 14px; text-align: left;">
+      <label style="font-size: 12px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 5px;">🔧 Nota de Reparación <span style="font-weight:400; text-transform:none; color:#9ca3af;">(qué se hizo)</span></label>
+      <textarea id="notaReparacionModal" rows="2" placeholder="Ej: Cambio de pantalla + limpieza de placa..." style="width: 100%; padding: 9px 10px; border: 2px solid #a7f3d0; border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box; background: #f0fdf4; outline: none;"></textarea>
+     </div>
      <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
       <div style="display:flex; gap:10px;">
        <button onclick="procesarReparado(false, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (SOLO GUARDAR)</button>
@@ -2533,6 +2537,7 @@ function showApp() {
      <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;" id="tituloCobroEntregado">Cobrar Saldo Pendiente</p>
      
      <div id="cobroSaldoContainer">
+      <div id="cobroDescuentoInfo" style="display:none; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:13px; color:#dc2626; font-weight:700;"></div>
       <p style="font-size: 14px; color: #6b7280; margin-bottom: 15px;">El cliente debe abonar un saldo de <b id="cobroSaldoMonto" style="font-size:16px;"></b> al retirar.</p>
      </div>
      
@@ -2545,15 +2550,37 @@ function showApp() {
       <p id="cobroAvisoSaldo" style="font-size: 11px; color:#9ca3af; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
      </div>
 
+     <div id="descuentoEntregaContainer" style="text-align:left; margin-bottom:15px; background:#fff5f5; border-radius:10px; padding:10px 12px; border:1.5px solid #fca5a5;">
+      <label style="font-size:12px; font-weight:800; color:#dc2626; display:block; margin-bottom:6px;">🏷️ Descuento al entregar <span style="font-weight:400; color:#9ca3af;">(opcional)</span></label>
+      <div style="display:flex; gap:6px; align-items:center;">
+       <select id="descuentoEntregaTipo" onchange="recalcDescuentoEntrega()" style="width:60px; min-width:60px; padding:9px 6px; border:1.5px solid #fca5a5; border-radius:7px; background:#ffe4e4; color:#dc2626; font-weight:800; font-size:14px; cursor:pointer; text-align:center;">
+        <option value="$">$</option>
+        <option value="%" selected>%</option>
+       </select>
+       <input type="text" id="descuentoEntregaValor" placeholder="Ej: 10" oninput="recalcDescuentoEntrega()" inputmode="decimal" style="flex:1; padding:9px 10px; border:1.5px solid #fca5a5; border-radius:7px; font-size:14px; font-family:inherit; outline:none; background:white;">
+      </div>
+      <div id="descuentoEntregaResult" style="display:none; margin-top:7px; background:#dcfce7; border-radius:7px; padding:8px 10px; border:1.5px solid #86efac;">
+       <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Nuevo saldo a cobrar</div>
+       <div id="descuentoEntregaTotal" style="font-size:18px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
+       <div id="descuentoEntregaAhorra" style="font-size:12px; color:#6b7280; margin-top:1px;"></div>
+      </div>
+     </div>
+
      <div style="text-align: left; margin-bottom: 20px;">
-      <label style="font-size: 12px; font-weight: bold; color: #1e40af;">🛡️ Tiempo de Garantía</label>
-      <select id="selectGarantia" style="width: 100%; padding: 10px; border: 2px solid #bfdbfe; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px; background: #eff6ff; color: #1e40af; font-weight: bold;">
-       <option value="0">Sin garantía</option>
-       <option value="30">30 Días (1 Mes)</option>
-       <option value="60">60 Días (2 Meses)</option>
-       <option value="90">90 Días (3 Meses)</option>
-       <option value="180">180 Días (6 Meses)</option>
-      </select>
+      <label style="font-size: 12px; font-weight: bold; color: #1e40af;">🛡️ Tiempo de Garantía (días)</label>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
+       <input type="number" id="selectGarantia" min="0" placeholder="0 = sin garantía" inputmode="numeric"
+         style="flex:1; padding:10px 12px; border:2px solid #bfdbfe; border-radius:8px; font-size:15px; font-weight:700; background:#eff6ff; color:#1e40af; font-family:'Outfit',sans-serif; box-sizing:border-box;">
+       <div style="display:flex; flex-direction:column; gap:4px;">
+        <div style="display:flex; gap:4px;">
+         <button type="button" onclick="setGarantiaDias(30)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">30d</button>
+         <button type="button" onclick="setGarantiaDias(60)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">60d</button>
+         <button type="button" onclick="setGarantiaDias(90)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">90d</button>
+         <button type="button" onclick="setGarantiaDias(180)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">180d</button>
+        </div>
+       </div>
+      </div>
+      <p style="font-size:11px; color:#9ca3af; margin:5px 0 0; font-family:'Outfit',sans-serif;">Escribí los días o usá los botones de acceso rápido. 0 = sin garantía.</p>
      </div>
      
      <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -2868,7 +2895,7 @@ function showApp() {
           <label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()">
          </div>
          <div class="full">
-          <label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()">
+          <label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()" inputmode="tel">
          </div>
         </div>
        </div>
@@ -2970,10 +2997,31 @@ function showApp() {
         <div class="mobile-section-body">
          <div class="precio-sena-row">
           <div>
-           <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()">
+           <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); recalcDescuentoOrden(); saveDraft()">
           </div>
           <div class="sena-field">
            <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
+          </div>
+         </div>
+         <div id="descuento-orden-row" style="margin-top:10px;">
+          <label style="font-size:12px; color:#dc2626; font-weight:700; display:block; margin-bottom:5px;">🏷️ Descuento (opcional)</label>
+          <div style="display:flex; gap:8px; align-items:stretch;">
+           <div style="display:flex; gap:0; align-items:stretch; border:1.5px solid #fca5a5; border-radius:8px; overflow:hidden; background:#fff5f5; width:200px; flex-shrink:0;">
+            <select id="descuentoOrdenTipo" onchange="recalcDescuentoOrden(); saveDraft()" style="width:56px; min-width:56px; flex-shrink:0; padding:10px 6px; border:none; border-right:1.5px solid #fca5a5; background:#ffe4e4; color:#dc2626; font-weight:800; font-size:15px; cursor:pointer; text-align:center; -webkit-appearance:auto; appearance:auto;">
+             <option value="%">%</option>
+             <option value="$">$</option>
+            </select>
+            <input type="text" id="descuentoOrden" placeholder="Ej: 5000" oninput="recalcDescuentoOrden(); saveDraft()" style="flex:1; padding:10px 10px; border:none; background:#fff5f5; font-size:15px; font-family:inherit; outline:none; min-width:0;">
+           </div>
+           <div style="display:flex; align-items:center; gap:6px; padding:8px 12px; background:#fff7ed; border-radius:8px; border:1.5px solid #fed7aa; cursor:pointer; flex-shrink:0;" onclick="document.getElementById('descuentoOrdenEfectivo').click()" title="Descuento por pago en efectivo">
+            <input type="checkbox" id="descuentoOrdenEfectivo" onchange="recalcDescuentoOrden(); saveDraft()" style="width:17px; height:17px; accent-color:#d97706; cursor:pointer; flex-shrink:0;" onclick="event.stopPropagation()">
+            <span style="font-size:18px; line-height:1; pointer-events:none;">💵</span>
+           </div>
+          </div>
+          <div id="descuento-orden-total-wrap" style="display:none; margin-top:8px; background:#dcfce7; border-radius:8px; padding:10px 14px; border:1.5px solid #86efac;">
+           <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total a cobrar</div>
+           <div id="descuento-orden-total" style="font-size:20px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
+           <div id="descuento-orden-ahorra" style="font-size:12px; color:#6b7280; margin-top:2px;"></div>
           </div>
          </div>
          <div class="full sena-group-row" id="desktop-pago-row">
@@ -3007,7 +3055,7 @@ function showApp() {
      </form>
      <!-- Barra sticky mobile (oculta en desktop) -->
      <div id="sticky-submit-bar" style="display:none;">
-      <button type="button" class="btn btn-main" onclick="document.getElementById('repairForm').requestSubmit()">✅ REGISTRAR</button>
+      <button type="button" id="btnSubmitMobile" class="btn btn-main" onclick="document.getElementById('repairForm').requestSubmit()">✅ REGISTRAR</button>
       <button type="button" class="btn btn-limpiar" onclick="clickLimpiar()">🗑️ LIMPIAR</button>
      </div>
      <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
@@ -3028,6 +3076,7 @@ function showApp() {
       </div>
       <button class="btn btn-alerta-amarilla" id="btnAlertaAmarilla" onclick="abrirModalOlvidados()" style="display: none;">⚠️ 0 Equipos Olvidados</button>
      </div>
+     <div id="historial-mes-nav" style="display:none; align-items:center; justify-content:space-between; gap:10px; padding:10px 2px 12px; flex-wrap:wrap; border-bottom:1px solid #e8eaf5; margin-bottom:10px;"></div>
      <div class="table-wrapper" style="overflow-x:auto;">
       <table id="mainTable">
        <thead>
@@ -3060,7 +3109,7 @@ function showApp() {
           <div><label>N° Presupuesto</label><input type="text" id="pres-nro" readonly style="background:#f1f5f9;"></div>
           <div><label>Fecha</label><input type="text" id="pres-fecha" readonly style="background:#f1f5f9;"></div>
           <div><label>Cliente</label><input type="text" id="pres-cliente" placeholder="Nombre del cliente"></div>
-          <div><label>WhatsApp</label><input type="text" id="pres-tel" placeholder="549..."></div>
+          <div><label>WhatsApp</label><input type="tel" inputmode="numeric" id="pres-tel" placeholder="549..."></div>
           <div style="position:relative;">
             <label>Equipo / Dispositivo</label>
             <div class="custom-picker-btn" id="pres-equipo-btn" onclick="openPresPickerEquipo()">
@@ -3087,10 +3136,36 @@ function showApp() {
           </div>
           <div id="pres-items-container"></div>
           <div style="background:#1e4d8c; color:white; border-radius:10px; padding:12px 16px; text-align:right; margin-top:10px; font-size:16px; font-weight:800;">TOTAL: <span id="pres-total-display">$0</span></div>
+          <div style="margin-top:10px;">
+           <label style="font-size:12px; color:#dc2626; font-weight:700; display:block; margin-bottom:5px;">🏷️ Descuento (opcional)</label>
+           <!-- Fila: [select+input] [💵 checkbox] [Válido hasta] -->
+           <div style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
+            <div style="display:flex; gap:0; align-items:stretch; border:1.5px solid #fca5a5; border-radius:8px; overflow:hidden; background:#fff5f5; flex:1; min-width:120px; max-width:260px;">
+             <select id="pres-descuento-tipo" onchange="calcTotalPresupuesto()" style="width:56px; min-width:56px; flex-shrink:0; padding:10px 6px; border:none; border-right:1.5px solid #fca5a5; background:#ffe4e4; color:#dc2626; font-weight:800; font-size:15px; cursor:pointer; text-align:center; -webkit-appearance:auto; appearance:auto;">
+              <option value="%">%</option>
+              <option value="$">$</option>
+             </select>
+             <input type="text" id="pres-descuento" placeholder="Ej: 5000" oninput="calcTotalPresupuesto()" inputmode="decimal" style="flex:1; padding:10px 10px; border:none; background:#fff5f5; font-size:15px; font-family:inherit; outline:none; min-width:0;">
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; padding:8px 12px; background:#fff7ed; border-radius:8px; border:1.5px solid #fed7aa; cursor:pointer; flex-shrink:0;" onclick="document.getElementById('pres-descuento-efectivo').click()" title="Descuento por pago en efectivo">
+             <input type="checkbox" id="pres-descuento-efectivo" onchange="calcTotalPresupuesto()" style="width:17px; height:17px; accent-color:#d97706; cursor:pointer; flex-shrink:0;" onclick="event.stopPropagation()">
+             <span style="font-size:18px; line-height:1; pointer-events:none;">💵</span>
+            </div>
+            <div style="flex:1; min-width:130px;">
+             <label style="font-size:11px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.4px; display:block; margin-bottom:4px;">Válido hasta</label>
+             <input type="date" id="pres-vencimiento" style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; box-sizing:border-box; background:white; color:#1e293b; cursor:pointer;">
+            </div>
+           </div>
+           <div id="pres-descuento-total-wrap" style="display:none; margin-top:8px; background:#dcfce7; border-radius:8px; padding:10px 14px; border:1.5px solid #86efac;">
+            <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total con descuento</div>
+            <div id="pres-total-neto" style="font-size:20px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
+            <div id="pres-descuento-ahorra" style="font-size:12px; color:#6b7280; margin-top:2px;"></div>
+           </div>
+          </div>
         </div>
-        <div style="margin-top:10px; display:flex; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:160px;"><label>Válido hasta</label><input type="date" id="pres-vencimiento" style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; box-sizing:border-box; margin-top:4px;"></div>
-          <div style="flex:2; min-width:200px;"><label>Observaciones</label><textarea id="pres-obs" rows="2" placeholder="Condiciones, garantía, notas..." style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; margin-top:4px;"></textarea></div>
+        <div style="margin-top:10px;">
+          <label>Observaciones</label>
+          <textarea id="pres-obs" rows="2" placeholder="Condiciones, garantía, notas..." style="width:100%; padding:10px; border:1.5px solid #e2e8f0; border-radius:8px; font-family:inherit; font-size:14px; resize:vertical; box-sizing:border-box; margin-top:4px;"></textarea>
         </div>
         <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
           <button type="button" data-pres-action="guardar" class="btn btn-main" style="flex:2; min-width:140px;">&#128190; GUARDAR PRESUPUESTO</button>
@@ -3753,6 +3828,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     let registrosArchivados = [];
     let stockData = []; 
     let historialDescargado = false; 
+    // Historial por mes
+    let historialMesOffset = 0; // 0 = mes actual, -1 = mes anterior, etc.
+    let historialMesesCargados = {}; // cache por "YYYY-MM"
 
     let limiteTabla = 50;
     let logoTemporalBase64 = null; 
@@ -4291,8 +4369,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         let precioActual   = parseFloat(regEncontrado.precio) || 0;
         let senaAbonada    = regEncontrado.senaOriginal !== undefined ? parseFloat(regEncontrado.senaOriginal) : (parseFloat(regEncontrado.sena) || 0);
         let saldoCobrado   = parseFloat(regEncontrado.saldoCobrado) || 0;
-        let totalPagado    = senaAbonada + saldoCobrado;
-        let saldoPendiente = precioActual - totalPagado;
+        let descMontoCliente = parseFloat(regEncontrado.descuentoMonto) || 0; // FIX: considerar descuento de orden
+        let descEntregaCliente = parseFloat(regEncontrado.descuentoEntregaMonto) || 0; // FIX: considerar descuento de entrega
+        let precioEfectivoCliente = precioActual > 0 && descMontoCliente > 0 ? Math.max(0, precioActual - descMontoCliente) : precioActual;
+        let totalPagado    = senaAbonada + saldoCobrado + descEntregaCliente;
+        let saldoPendiente = precioEfectivoCliente - totalPagado;
 
         let equipoTexto = [regEncontrado.equipo, regEncontrado.marca, regEncontrado.modelo].filter(Boolean).join(' ');
         if (regEncontrado.color) equipoTexto += ` · ${regEncontrado.color}`;
@@ -4440,7 +4521,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const est = estadoMap[p.estado] || estadoMap['Pendiente'];
 
         const items = p.items || [];
-        const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const totalBruto = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+        const descuentoMontoHTML = parseFloat(p.descuentoMonto) || 0;
+        const total = descuentoMontoHTML > 0 ? Math.max(0, totalBruto - descuentoMontoHTML) : totalBruto;
         const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
 
         const row = (label, value) => (!value || value === '-') ? '' : `
@@ -4481,6 +4564,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     <span style="font-size:15px;font-weight:800;color:#1e293b;">TOTAL</span>
                     <span style="font-size:18px;font-weight:900;color:#1e4d8c;">${fmt.format(total)}</span>
                 </div>
+                ${descuentoMontoHTML > 0 ? `
+                <div style="margin-top:8px;padding:8px 12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280;">
+                        <span>Precio sin descuento</span><span>${fmt.format(totalBruto)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#dc2626;margin-top:4px;">
+                        <span>🏷️ Descuento${p.descuentoTipo === '%' ? ' ' + (p.descuentoValor||'') + '%' : ''}${p.descuentoEfectivo ? ' 💵 <span style="font-weight:800;color:#d97706;">por pago en efectivo</span>' : ''}</span>
+                        <span>- ${fmt.format(descuentoMontoHTML)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#15803d;margin-top:6px;padding-top:6px;border-top:1px solid #fca5a5;">
+                        <span>Total a pagar</span><span>${fmt.format(total)}</span>
+                    </div>
+                </div>` : ''}
                 ${vencimientoHtml}
             </div>` : '';
 
@@ -4677,11 +4773,28 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         let precioActual = parseFloat(r.precio) || 0;
         let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
         let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
-        let totalPagado = senaAbonada + saldoCobrado;
-        let saldoPendiente = precioActual - totalPagado;
+        let descuentoMontoPDF = parseFloat(r.descuentoMonto) || 0;
+        let descEntregaPDF = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento de entrega en PDF
+        let precioConDescuento = precioActual > 0 && descuentoMontoPDF > 0 ? Math.max(0, precioActual - descuentoMontoPDF) : precioActual;
+        let totalPagado = senaAbonada + saldoCobrado + descEntregaPDF;
+        let saldoPendiente = precioConDescuento - totalPagado;
 
         y += 3; doc.line(10, y, 70, y); y += 10;
-        doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(precioActual), col1, y); y += 7; 
+        if (descuentoMontoPDF > 0 && precioActual > 0) {
+            // Precio original (sin tachar)
+            doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(80,80,80);
+            doc.text("Precio: " + fmt.format(precioActual), col1, y); y += 6;
+            // Descuento con etiqueta "en efectivo" si aplica
+            doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+            const dLabel = r.descuentoTipo === '%' ? "Descuento " + (r.descuentoValor || '') + "%" : "Descuento";
+            const dEfectivo = r.descuentoEfectivo ? " (pago en efectivo)" : "";
+            doc.text(dLabel + dEfectivo + ": -" + fmt.format(descuentoMontoPDF), col1, y); y += 6;
+            doc.setTextColor(50, 50, 50);
+            doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+            doc.text("TOTAL: " + fmt.format(precioConDescuento), col1, y); y += 7;
+        } else {
+            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(precioActual), col1, y); y += 7;
+        }
         doc.text("ABONADO: " + fmt.format(totalPagado), col1, y); y += 10;
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
@@ -6019,6 +6132,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             return;
         }
 
+        // Guardar nota de reparación si fue ingresada
+        const notaRep = document.getElementById('notaReparacionModal').value.trim();
+        if (notaRep) {
+            const pathRep = (getRegistro(idParaEstado) && getRegistro(idParaEstado).archivado)
+                ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
+                : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+            const r = getRegistro(idParaEstado);
+            if (r) {
+                r.notaReparacion = notaRep;
+                db.ref(pathRep).child(idParaEstado).update({ notaReparacion: notaRep });
+            }
+        }
+
         cerrarModalStock();
         ejecutarCambioEstado('Reparado', repuestosParaGuardar);
         
@@ -6072,6 +6198,23 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         });
     }
 
+    function recalcDescuentoEntrega() {
+        const saldoBase = window._saldoBaseEntrega || 0;
+        const tipo = document.getElementById('descuentoEntregaTipo').value;
+        const val = parseMoney(document.getElementById('descuentoEntregaValor').value);
+        const resultDiv = document.getElementById('descuentoEntregaResult');
+        if (!val || val <= 0 || saldoBase <= 0) {
+            resultDiv.style.display = 'none';
+            return;
+        }
+        let descMonto = tipo === '%' ? Math.round(saldoBase * val / 100) : val;
+        descMonto = Math.min(descMonto, saldoBase);
+        const nuevoSaldo = Math.max(0, saldoBase - descMonto);
+        document.getElementById('descuentoEntregaTotal').innerText = fmt.format(nuevoSaldo);
+        document.getElementById('descuentoEntregaAhorra').innerText = `Ahorrás ${fmt.format(descMonto)}`;
+        resultDiv.style.display = 'block';
+    }
+
     function procesarCobroEntregado() {
         const metodo = document.getElementById('metodoCobroFinal').value;
         const selGar = document.getElementById('selectGarantia');
@@ -6083,8 +6226,20 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
         
         let precioActual = parseFloat(r.precio) || 0;
+        let descMontoCobro = parseFloat(r.descuentoMonto) || 0;
+        let precioEfectivoCobro = precioActual > 0 && descMontoCobro > 0 ? Math.max(0, precioActual - descMontoCobro) : precioActual;
         let senaPrevia = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
         let updates = {};
+
+        // Descuento aplicado al entregar
+        const descEntregaTipo = document.getElementById('descuentoEntregaTipo') ? document.getElementById('descuentoEntregaTipo').value : '$';
+        const descEntregaVal = document.getElementById('descuentoEntregaValor') ? parseMoney(document.getElementById('descuentoEntregaValor').value) : 0;
+        let descEntregaMonto = 0;
+        if (descEntregaVal > 0) {
+            const saldoBase = window._saldoBaseEntrega || 0;
+            descEntregaMonto = descEntregaTipo === '%' ? Math.round(saldoBase * descEntregaVal / 100) : descEntregaVal;
+            descEntregaMonto = Math.min(descEntregaMonto, saldoBase);
+        }
 
         if (precioActual === 0) {
             let nuevoPrecio = parseMoney(document.getElementById('cobroPrecioFinal').value);
@@ -6092,7 +6247,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 showToast("⚠️ Ingresá un precio válido mayor a 0", "#f59e0b");
                 return;
             }
-            let saldoFinal = nuevoPrecio - senaPrevia;
+            let saldoFinal = nuevoPrecio - senaPrevia - descEntregaMonto;
             if(saldoFinal < 0) {
                 showToast("⚠️ El precio no puede ser menor a la seña previa", "#dc2626");
                 return;
@@ -6101,9 +6256,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             updates.sena = nuevoPrecio; 
             updates.saldoCobrado = saldoFinal;
             updates.metodoPagoSaldo = saldoFinal > 0 ? metodo : '';
+            if (descEntregaMonto > 0) updates.descuentoEntregaMonto = descEntregaMonto;
         } else {
-            let saldoFinal = precioActual - senaPrevia;
-            updates.sena = precioActual; 
+            // Usar precio con descuento aplicado para calcular el saldo real
+            let saldoFinal = precioEfectivoCobro - senaPrevia - descEntregaMonto;
+            if (saldoFinal < 0) saldoFinal = 0;
+            updates.sena = precioEfectivoCobro - descEntregaMonto; 
             updates.saldoCobrado = saldoFinal;
             // Solo registrar método si realmente quedó saldo por cobrar
             updates.metodoPagoSaldo = saldoFinal > 0 ? metodo : (r.metodoPagoSaldo || '');
@@ -6261,19 +6419,48 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if(!r) return;
         let precio = parseFloat(r.precio) || 0;
         let sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-        // Bug 11 fix: descontar también lo que ya cobró en pagos anteriores
-        let yaAbonado = sena + (parseFloat(r.saldoCobrado) || 0);
-        let saldo = Math.max(0, precio - yaAbonado);
+        // Aplicar descuento si existe
+        let descMonto = parseFloat(r.descuentoMonto) || 0;
+        let descEntregaMonto = parseFloat(r.descuentoEntregaMonto) || 0;
+        let precioEfectivo = precio > 0 && descMonto > 0 ? Math.max(0, precio - descMonto) : precio;
+        // Para órdenes que ya tuvieron una entrega previa (reingreso garantía), usar r.sena directamente
+        const fueEntregadoAntesDeuda = r.historialEstados && r.historialEstados.some(h => h.estado === 'Entregado' || h.estado === 'Entregado (Cortesía)');
+        let yaAbonado = (fueEntregadoAntesDeuda || r.garantiaYaPagada)
+            ? (parseFloat(r.sena) || 0)
+            : sena + (parseFloat(r.saldoCobrado) || 0) + descEntregaMonto;
+        let saldo = Math.max(0, precioEfectivo - yaAbonado);
+
+        // Mostrar info de descuento en modal
+        const descInfo = document.getElementById('cobroDescuentoInfo');
+        if (descInfo) {
+            if (descMonto > 0 && precio > 0) {
+                descInfo.textContent = '🏷️ Descuento aplicado: -' + fmt.format(descMonto) + ' → Total: ' + fmt.format(precioEfectivo);
+                descInfo.style.display = 'block';
+            } else {
+                descInfo.style.display = 'none';
+            }
+        }
         
+        // Si no hay saldo real, no tiene sentido cobrar — la orden ya fue saldada
+        if (saldo <= 0) {
+            showToast("✅ Esta orden ya fue saldada completamente", "#059669");
+            return;
+        }
+
         window._modoCobroDeuda = true;
         
         document.getElementById('tituloCobroEntregado').innerText = "💰 Registrar Cobro de Deuda";
         document.getElementById('cobroSaldoContainer').style.display = 'block';
-        document.getElementById('cobroSaldoMonto').innerText = saldo > 0 ? `${fmt.format(saldo)} (deuda pendiente)` : "— (cotizar)";
-        document.getElementById('cobroCotizarContainer').style.display = precio === 0 ? 'block' : 'none';
+        document.getElementById('cobroSaldoMonto').innerText = fmt.format(saldo);
+        document.getElementById('cobroCotizarContainer').style.display = 'none';
         document.getElementById('metodoCobroContainer').style.display = 'block';
         document.getElementById('cobroAvisoSaldo').style.display = 'none';
         document.getElementById('metodoCobroFinal').selectedIndex = 0;
+        document.getElementById('descuentoEntregaValor').value = '';
+        document.getElementById('descuentoEntregaTipo').value = '%';
+        document.getElementById('descuentoEntregaResult').style.display = 'none';
+        document.getElementById('descuentoEntregaContainer').style.display = 'block';
+        window._saldoBaseEntrega = saldo;
         document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ARCHIVAR";
         document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
         
@@ -6328,12 +6515,18 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('statusModal').style.display = 'flex';
     }
 
+    function setGarantiaDias(dias) {
+        const el = document.getElementById('selectGarantia');
+        if (el) { el.value = dias; el.focus(); }
+    }
+
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
     function confirmarEstado(nuevo) {
         if(nuevo === 'Reparado') {
             document.getElementById('statusModal').style.display = 'none';
             document.getElementById('repuestoModalUsado').value = "";
+            document.getElementById('notaReparacionModal').value = "";
             repuestosSeleccionadosModal = [];
             renderRepuestosModal();
             document.getElementById('modalUsoStock').style.display = 'flex';
@@ -6346,12 +6539,62 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             return;
         }
 
+        if(nuevo === 'Garantía') {
+            // Mostrar modal de motivo también para órdenes activas
+            document.getElementById('statusModal').style.display = 'none';
+            const r = getRegistro(idParaEstado);
+            if (r) {
+                const equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+                document.getElementById('modalGarantiaDesc').innerHTML =
+                    `<b>${escaparHTML(r.cliente)}</b> — ${escaparHTML(equipoCompleto)}<br>
+                     <span style="color:#7c3aed;">Orden #${String(r.orden).replace('ORD-','')}</span><br><br>
+                     El estado cambiará a <b>Garantía</b> y el motivo quedará registrado en el historial.`;
+            }
+            document.getElementById('motivoGarantia').value = '';
+            _idGarantia = idParaEstado;
+            window._garantiaDesdeActivo = true; // flag para saber que NO viene del historial
+            document.getElementById('modalReingresarGarantia').style.display = 'flex';
+            return;
+        }
+
         if(nuevo === 'Entregado') {
             const r = getRegistro(idParaEstado);
             let precio = parseFloat(r.precio) || 0;
             let sena = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
             let yaCobrado = parseFloat(r.saldoCobrado) || 0;
-            let saldo = precio - (sena + yaCobrado);
+            // Aplicar descuento al precio para el saldo
+            let descMonto = parseFloat(r.descuentoMonto) || 0;
+            let descEntregaMonto = parseFloat(r.descuentoEntregaMonto) || 0;
+            let precioEfectivo = precio > 0 && descMonto > 0 ? Math.max(0, precio - descMonto) : precio;
+            // descuentoEntregaMonto es descuento aplicado al cobrar → equivale a pago
+            // Para órdenes reingresadas por garantía, usar r.sena como total ya abonado
+            // es más robusto que recalcular desde senaOriginal, porque r.sena se actualiza
+            // al momento de cada entrega para reflejar exactamente lo pagado hasta ese momento.
+            let totalYaAbonado;
+            const fueEntregadoAntes = r.historialEstados && r.historialEstados.some(h => h.estado === 'Entregado' || h.estado === 'Entregado (Cortesía)');
+            if (fueEntregadoAntes || r.garantiaYaPagada) {
+                // Reingreso por garantía: r.sena ya representa todo lo cobrado en la entrega anterior
+                totalYaAbonado = parseFloat(r.sena) || 0;
+                // Resetear descuentoEntregaMonto para no contarlo dos veces
+                descEntregaMonto = 0;
+            } else {
+                totalYaAbonado = sena + yaCobrado + descEntregaMonto;
+            }
+            let saldo = precioEfectivo - totalYaAbonado;
+
+            // Mostrar info de descuento en modal
+            const descInfo = document.getElementById('cobroDescuentoInfo');
+            if (descInfo) {
+                if (descMonto > 0 && precio > 0) {
+                    const dLabel = r.descuentoTipo === '%'
+                        ? '🏷️ Descuento ' + (r.descuentoValor || '') + '%: -' + fmt.format(descMonto) + ' → Total: ' + fmt.format(precioEfectivo)
+                        : '🏷️ Descuento aplicado: -' + fmt.format(descMonto) + ' → Total: ' + fmt.format(precioEfectivo);
+                    descInfo.textContent = dLabel;
+                    descInfo.style.display = 'block';
+                } else {
+                    descInfo.style.display = 'none';
+                }
+            }
             
             document.getElementById('statusModal').style.display = 'none';
             
@@ -6380,6 +6623,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 document.getElementById('metodoCobroContainer').style.display = 'block';
                 document.getElementById('cobroAvisoSaldo').style.display = 'block';
                 document.getElementById('metodoCobroFinal').selectedIndex = 0;
+                document.getElementById('descuentoEntregaValor').value = '';
+                document.getElementById('descuentoEntregaTipo').value = '%';
+                document.getElementById('descuentoEntregaResult').style.display = 'none';
+                document.getElementById('descuentoEntregaContainer').style.display = 'block';
+                window._saldoBaseEntrega = saldo;
                 document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ENTREGAR";
                 document.getElementById('btnConfirmarEntrega').style.display = '';
                 document.getElementById('btnEntregarSinCobrarContainer').style.display = 'block';
@@ -6399,6 +6647,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 document.getElementById('btnConfirmarEntrega').style.display = '';
                 document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
                 document.getElementById('btnCortesiaContainer').style.display = 'none';
+                document.getElementById('descuentoEntregaContainer').style.display = 'none';
                 window._modoCobroDeuda = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
@@ -6562,7 +6811,23 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         let h = fallaHtml;
         h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
-        if(r.historialEstados) r.historialEstados.forEach(ev => { h += `<div class="history-item"><b>${ev.estado}</b><span>${ev.fecha}</span></div>`; });
+        if(r.historialEstados) r.historialEstados.forEach((ev, evIdx) => {
+            const motivoHtml = ev.motivo ? `<div style="font-size:11px; color:#7c3aed; margin-top:2px; font-style:italic;">💬 ${escaparHTML(ev.motivo)}</div>` : '';
+            const editBtn = ev.estado === 'Garantía'
+                ? `<button onclick="editarMotivoGarantia('${id}', ${evIdx})" style="font-size:10px; background:#f5f3ff; border:1.5px solid #e9d5ff; color:#7c3aed; border-radius:5px; padding:2px 7px; cursor:pointer; font-weight:700; margin-top:3px; display:inline-block;">✏️ Editar motivo</button>`
+                : '';
+            h += `<div class="history-item" style="${ev.estado === 'Garantía' ? 'border-left-color:#7c3aed;' : ''}">
+                <b>${ev.estado}</b><span>${ev.fecha}</span>${motivoHtml}
+                <div id="motivoGarantiaDisplay_${id}_${evIdx}">${editBtn}</div>
+                <div id="motivoGarantiaEdit_${id}_${evIdx}" style="display:none; margin-top:5px;">
+                    <textarea id="motivoGarantiaInput_${id}_${evIdx}" rows="2" style="width:100%; padding:7px; border:2px solid #7c3aed; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box; resize:vertical;">${ev.motivo ? escaparHTML(ev.motivo) : ''}</textarea>
+                    <div style="display:flex; gap:6px; margin-top:5px;">
+                        <button onclick="cancelarEditarMotivo('${id}', ${evIdx})" style="flex:1; padding:5px; border-radius:6px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; font-size:12px; cursor:pointer;">Cancelar</button>
+                        <button onclick="guardarMotivoGarantia('${id}', ${evIdx})" style="flex:1; padding:5px; border-radius:6px; border:none; background:#7c3aed; color:white; font-weight:bold; font-size:12px; cursor:pointer;">Guardar</button>
+                    </div>
+                </div>
+            </div>`;
+        });
         
         // --- NUEVO: MOSTRAR REPUESTOS DESCONTADOS DE STOCK ---
         if(r.repuestosDescontados && r.repuestosDescontados.length > 0) {
@@ -6576,6 +6841,23 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             });
             h += `</div>`;
         }
+
+        // --- NOTA DE REPARACIÓN ---
+        h += `<div style="margin-top:15px; padding-top:12px; border-top:1px dashed #e5e7eb;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="font-size:11px; font-weight:bold; color:#059669; text-transform:uppercase;">🔧 Nota de Reparación</div>
+                <button onclick="editarNotaReparacion('${id}')" style="font-size:11px; background:#f0fdf4; border:1.5px solid #a7f3d0; color:#059669; border-radius:6px; padding:2px 8px; cursor:pointer; font-weight:700;">✏️ Editar</button>
+            </div>
+            <div id="notaReparacionDisplay_${id}" style="font-size:13px; color:#065f46; background:#f0fdf4; border-radius:8px; padding:8px 10px; border:1px solid #a7f3d0; min-height:36px; line-height:1.4;">${r.notaReparacion ? escaparHTML(r.notaReparacion) : '<span style="color:#9ca3af; font-style:italic;">Sin nota de reparación</span>'}</div>
+            <div id="notaReparacionEdit_${id}" style="display:none; margin-top:6px;">
+                <textarea id="notaReparacionInput_${id}" rows="2" style="width:100%; padding:8px; border:2px solid #059669; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box; resize:vertical;">${r.notaReparacion ? escaparHTML(r.notaReparacion) : ''}</textarea>
+                <div style="display:flex; gap:8px; margin-top:6px;">
+                    <button onclick="cancelarEditarNota('${id}')" style="flex:1; padding:6px; border-radius:7px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; font-size:12px; cursor:pointer;">Cancelar</button>
+                    <button onclick="guardarNotaReparacion('${id}')" style="flex:1; padding:6px; border-radius:7px; border:none; background:#059669; color:white; font-weight:bold; font-size:12px; cursor:pointer;">Guardar</button>
+                </div>
+            </div>
+        </div>`;
+        // --------------------------
       
             if(r.vencimientoGarantia) {
             h += `<div class="history-item" style="border-left-color:#1e40af;"><b>Garantía Válida Hasta</b><span style="color:#1e40af; font-weight:bold; font-size:15px;">${r.vencimientoGarantia}</span></div>`;
@@ -6596,6 +6878,83 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     }
 
     function closeHistory() { document.getElementById('historyModal').style.display = 'none'; }
+
+    function editarNotaReparacion(id) {
+        document.getElementById('notaReparacionDisplay_' + id).style.display = 'none';
+        document.getElementById('notaReparacionEdit_' + id).style.display = 'block';
+    }
+
+    function cancelarEditarNota(id) {
+        document.getElementById('notaReparacionDisplay_' + id).style.display = 'block';
+        document.getElementById('notaReparacionEdit_' + id).style.display = 'none';
+    }
+
+    function guardarNotaReparacion(id) {
+        const input = document.getElementById('notaReparacionInput_' + id);
+        if (!input) return;
+        const nuevaNota = input.value.trim();
+        const r = getRegistro(id);
+        if (!r) return;
+
+        const path = r.archivado
+            ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
+            : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+
+        db.ref(path).child(id).update({ notaReparacion: nuevaNota }).then(() => {
+            r.notaReparacion = nuevaNota;
+            const display = document.getElementById('notaReparacionDisplay_' + id);
+            if (display) {
+                display.innerHTML = nuevaNota
+                    ? escaparHTML(nuevaNota)
+                    : '<span style="color:#9ca3af; font-style:italic;">Sin nota de reparación</span>';
+            }
+            cancelarEditarNota(id);
+            showToast("🔧 Nota de reparación guardada", "#059669");
+        });
+    }
+
+    function editarMotivoGarantia(id, evIdx) {
+        document.getElementById('motivoGarantiaEdit_' + id + '_' + evIdx).style.display = 'block';
+        const editBtn = document.getElementById('motivoGarantiaDisplay_' + id + '_' + evIdx);
+        if (editBtn) editBtn.style.display = 'none';
+        const inp = document.getElementById('motivoGarantiaInput_' + id + '_' + evIdx);
+        if (inp) setTimeout(() => inp.focus(), 50);
+    }
+
+    function cancelarEditarMotivo(id, evIdx) {
+        document.getElementById('motivoGarantiaEdit_' + id + '_' + evIdx).style.display = 'none';
+        const editBtn = document.getElementById('motivoGarantiaDisplay_' + id + '_' + evIdx);
+        if (editBtn) editBtn.style.display = 'block';
+    }
+
+    function guardarMotivoGarantia(id, evIdx) {
+        const inp = document.getElementById('motivoGarantiaInput_' + id + '_' + evIdx);
+        if (!inp) return;
+        const nuevoMotivo = inp.value.trim();
+        const r = getRegistro(id);
+        if (!r || !r.historialEstados || !r.historialEstados[evIdx]) return;
+
+        const historialActualizado = [...r.historialEstados];
+        historialActualizado[evIdx] = { ...historialActualizado[evIdx], motivo: nuevoMotivo };
+
+        const path = r.archivado
+            ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
+            : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+
+        db.ref(path).child(id).update({ historialEstados: historialActualizado, motivoGarantia: nuevoMotivo }).then(() => {
+            r.historialEstados = historialActualizado;
+            r.motivoGarantia = nuevoMotivo;
+            cancelarEditarMotivo(id, evIdx);
+            // Actualizar texto visible
+            const displayEl = document.getElementById('motivoGarantiaDisplay_' + id + '_' + evIdx);
+            if (displayEl) {
+                displayEl.innerHTML = (nuevoMotivo ? `<div style="font-size:11px; color:#7c3aed; margin-bottom:3px; font-style:italic;">💬 ${escaparHTML(nuevoMotivo)}</div>` : '') +
+                    `<button onclick="editarMotivoGarantia('${id}', ${evIdx})" style="font-size:10px; background:#f5f3ff; border:1.5px solid #e9d5ff; color:#7c3aed; border-radius:5px; padding:2px 7px; cursor:pointer; font-weight:700; display:inline-block;">✏️ Editar motivo</button>`;
+                displayEl.style.display = 'block';
+            }
+            showToast("💬 Motivo de garantía guardado", "#7c3aed");
+        }).catch(err => showToast('Error: ' + err.message, '#dc2626'));
+    }
 
     function resetPaginacion() {
         clearTimeout(debounceTimer);
@@ -6715,7 +7074,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             if (itemPend) { itemPend.className='dropdown-filtro-item'; }
             if (itemCobro) { itemCobro.className='dropdown-filtro-item'; }
             if (itemHist) { itemHist.className='dropdown-filtro-item active-historial'; }
-        } else if (modoCobro) {
+            // Mostrar barra de navegación mensual
+            const navBar = document.getElementById('historial-mes-nav');
+            if (navBar) { navBar.style.display = 'flex'; renderNavHistorial(); }
+        } else {
+            const navBar = document.getElementById('historial-mes-nav');
+            if (navBar) navBar.style.display = 'none';
+        }
+        if (!modoArchivo && modoCobro) {
             table.classList.remove('modo-archivo-activo');
             if (btnFiltro) { btnFiltro.style.background='#ef4444'; btnFiltro.style.color='white'; }
             if (btnLabel) btnLabel.textContent = '💰 PENDIENTE DE COBRO';
@@ -6780,7 +7146,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         aMostrar.forEach(r => {
             const precioActual = parseFloat(r.precio) || 0;
             const senaActual = parseFloat(r.sena) || 0;
-            const saldo = precioActual - senaActual;
+            const descMonto = parseFloat(r.descuentoMonto) || 0;
+            const precioEfectivo = precioActual > 0 && descMonto > 0 ? Math.max(0, precioActual - descMonto) : precioActual;
+            const tieneDescuento = descMonto > 0 && precioActual > 0;
+            const saldo = precioEfectivo - senaActual;
             
             // Lógica para mostrar la última fecha de entrega si está en el historial
             let fechaMostrar = r.fecha || '';
@@ -6798,7 +7167,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let estadoPagoHTML = "";
             if (r.entregadoSinCobrar && !r.archivado) {
                 // Entregado pero sin cobrar — orden activa con deuda pendiente
-                let saldo = precioActual > 0 ? precioActual - (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0) : 0;
+                let descMontoBadge = parseFloat(r.descuentoMonto) || 0;
+                let descEntregaBadge = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento de entrega
+                let precioEfectivoBadge = precioActual > 0 && descMontoBadge > 0 ? Math.max(0, precioActual - descMontoBadge) : precioActual;
+                let saldoBadge = precioEfectivoBadge > 0 ? precioEfectivoBadge - (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0) - descEntregaBadge : 0;
+                let saldo = Math.max(0, saldoBadge);
                 estadoPagoHTML = `<div style="font-size:11px; line-height:1.5;">
                     <span style="color:#c2410c; font-weight:800;">⚠️ DEUDA: ${saldo > 0 ? fmt.format(saldo) : 'A COTIZAR'}</span><br>
                     <button onclick="cobrarDeudaPendiente('${r.id}')" style="margin-top:3px; background:#059669; color:white; border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">💰 COBRAR</button>
@@ -6817,9 +7190,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     estadoPagoHTML = `<span style="color:#f59e0b; font-weight:bold;">A COTIZAR</span>`; 
                 }
             } else if (saldo > 0) {
-                estadoPagoHTML = `<span style="color:red;">${fmt.format(saldo)}</span>`;
+                const iconDesc = tieneDescuento ? ` <span title="Precio con descuento aplicado" style="font-size:9px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:4px; padding:1px 4px; font-weight:700; vertical-align:middle;">🏷️desc</span>` : ``;
+                estadoPagoHTML = `<span style="color:red;">${fmt.format(saldo)}</span>${iconDesc}`;
             } else {
-                estadoPagoHTML = `<b style="color:green;">PAGADO</b>`;
+                const iconDescPag = tieneDescuento ? ` <span title="Precio con descuento aplicado" style="font-size:9px; background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; border-radius:4px; padding:1px 4px; font-weight:700; vertical-align:middle;">🏷️</span>` : ``;
+                estadoPagoHTML = `<b style="color:green;">PAGADO</b>${iconDescPag}`;
             }
 
             let badgeVentaRapida = r.esVentaRapida ? `<br><span style="background:#8e44ad; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:3px;">🛒 VENTA DIRECTA</span>` : '';
@@ -7015,25 +7390,103 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             modoArchivo = true;
             modoPendientes = false;
             modoCobro = false;
-            if (historialDescargado) {
-                showToast("MOSTRANDO HISTORIAL 📁", "#6b7280");
-                renderTable();
-                return;
-            }
-            mostrarLoader("Descargando Historial...");
-            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-            db.ref(pathArchivado).once('value').then(snap => {
-                const v = snap.val();
-                registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                historialDescargado = true;
-                migrarIndiceHistorial(registrosArchivados);
-                actualizarListasAutocompletado();
-                ocultarLoader();
-                showToast("HISTORIAL CARGADO 📁", "#6b7280");
-                renderTable();
-            });
+            historialMesOffset = 0; // Siempre arranca en el mes actual
+            cargarHistorialMes(0);
         }
     }
+
+    // ── FUNCIONES DE HISTORIAL POR MES ──────────────────────────────────────
+    function getHistorialMesKey(offset) {
+        var d = new Date();
+        d.setDate(1);
+        d.setMonth(d.getMonth() + offset);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0');
+    }
+
+    function getHistorialMesLabel(offset) {
+        var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        var d = new Date();
+        d.setDate(1);
+        d.setMonth(d.getMonth() + offset);
+        return meses[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function renderNavHistorial() {
+        var bar = document.getElementById('historial-mes-nav');
+        if (!bar) return;
+        var label = getHistorialMesLabel(historialMesOffset);
+        var esHoy = historialMesOffset === 0;
+        bar.style.display = 'flex';
+        bar.innerHTML =
+            '<button onclick="navegarHistorialMes(-1)" style="background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;color:#6b7280;font-family:\'Outfit\',sans-serif;" title="Mes anterior">◀ Anterior</button>' +
+            '<span style="font-size:14px;font-weight:800;color:#1e4d8c;font-family:\'Outfit\',sans-serif;">📅 ' + label + '</span>' +
+            '<button onclick="navegarHistorialMes(1)" ' + (esHoy ? 'disabled style="opacity:0.35;cursor:not-allowed;' : 'style="') + 'background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;color:#6b7280;font-family:\'Outfit\',sans-serif;" title="Mes siguiente">Siguiente ▶</button>';
+    }
+
+    function navegarHistorialMes(delta) {
+        if (historialMesOffset + delta > 0) return;
+        historialMesOffset += delta;
+        cargarHistorialMes(historialMesOffset);
+    }
+
+    function cargarHistorialMes(offset) {
+        var key = getHistorialMesKey(offset);
+        renderNavHistorial();
+
+        if (historialMesesCargados[key]) {
+            registrosArchivados = historialMesesCargados[key];
+            historialDescargado = true;
+            ocultarLoader();
+            renderTable();
+            return;
+        }
+
+        mostrarLoader("Cargando " + getHistorialMesLabel(offset) + "...");
+        var pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        var keyParts = key.split('-');
+        var year = parseInt(keyParts[0]);
+        var month = parseInt(keyParts[1]);
+
+        db.ref(pathArchivado).once('value').then(function(snap) {
+            var v = snap.val();
+            var todos = v ? Object.keys(v).map(function(k) { return Object.assign({id:k}, v[k]); }) : [];
+
+            var filtradosMes = todos.filter(function(r) {
+                var fechaStr = r.fecha || '';
+                if (r.historialEstados) {
+                    var estados = r.historialEstados;
+                    for (var i = estados.length - 1; i >= 0; i--) {
+                        if (estados[i].estado === 'Entregado' || estados[i].estado === 'Entregado (Cortesía)') {
+                            fechaStr = estados[i].fecha;
+                            break;
+                        }
+                    }
+                }
+                if (!fechaStr) return false;
+                var partes = fechaStr.split('/');
+                if (partes.length >= 3) {
+                    return parseInt(partes[1]) === month && parseInt(partes[2]) === year;
+                }
+                try {
+                    var dt = new Date(fechaStr);
+                    return dt.getMonth() + 1 === month && dt.getFullYear() === year;
+                } catch(e2) { return false; }
+            });
+
+            historialMesesCargados[key] = filtradosMes;
+            registrosArchivados = filtradosMes;
+            historialDescargado = true;
+            migrarIndiceHistorial(filtradosMes);
+            actualizarListasAutocompletado();
+            ocultarLoader();
+            showToast("HISTORIAL " + getHistorialMesLabel(offset).toUpperCase() + " 📁", "#6b7280");
+            renderTable();
+        }).catch(function() {
+            ocultarLoader();
+            showToast("Error al cargar historial", "#dc2626");
+        });
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     // Mantener compatibilidad con código antiguo que llame a estas funciones
     function togglePendientes() { setModoVista(modoPendientes ? 'todos' : 'pendientes'); }
@@ -7113,13 +7566,46 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             motivo: motivo || 'Reingreso por garantía'
         }];
 
+        // Si viene de una orden activa (no archivada), solo actualizar estado
+        if (window._garantiaDesdeActivo || !r.archivado) {
+            window._garantiaDesdeActivo = false;
+            const updates = {
+                estado: 'Garantía',
+                historialEstados: historialNuevo,
+                motivoGarantia: motivo || 'Reingreso por garantía'
+            };
+            mostrarLoader('Registrando cambio a Garantía...');
+            db.ref(pathActivo).child(_idGarantia).update(updates).then(() => {
+                Object.assign(r, updates);
+                cerrarModalGarantia();
+                ocultarLoader();
+                renderTable();
+                showToast('🔄 ESTADO: GARANTÍA ✅', '#7c3aed');
+            }).catch(err => {
+                ocultarLoader();
+                showToast('Error: ' + err.message, '#dc2626');
+            });
+            return;
+        }
+
+        // Al reingresar por garantía desde archivo, marcar que el pago ya está completo
+        const precioOriginal = parseFloat(r.precio) || 0;
+        const senaOriginal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        const saldoCobradoOriginal = parseFloat(r.saldoCobrado) || 0;
+        const descEntregaOriginal = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento aplicado al entregar
+        const totalCobrado = senaOriginal + saldoCobradoOriginal + descEntregaOriginal;
+        
         const copia = {
             ...r,
             archivado: false,
             estado: 'Garantía',
             historialEstados: historialNuevo,
             fechaReingreso: fechaActual,
-            motivoGarantia: motivo || 'Reingreso por garantía'
+            motivoGarantia: motivo || 'Reingreso por garantía',
+            sena: totalCobrado > 0 ? totalCobrado : senaOriginal,
+            senaOriginal: senaOriginal,
+            saldoCobrado: saldoCobradoOriginal,
+            garantiaYaPagada: precioOriginal > 0 && totalCobrado >= (precioOriginal - (parseFloat(r.descuentoMonto) || 0) - descEntregaOriginal - 1)
         };
         delete copia.id;
 
@@ -7129,7 +7615,6 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         .then(() => db.ref(pathArchivado).child(_idGarantia).remove())
         .then(() => {
             escribirIndice(_idGarantia, copia, false);
-            // Actualizar arrays locales
             registrosArchivados = registrosArchivados.filter(x => x.id !== _idGarantia);
             if (!registros.find(x => x.id === _idGarantia)) {
                 registros.push({ id: _idGarantia, ...copia });
@@ -7208,16 +7693,21 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#9ca3af"; }
         document.getElementById('repairForm').reset();
         
-        const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs', 'notaInterna'];
+        const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs', 'notaInterna', 'descuentoOrden'];
         inputs.forEach(id => {
             const el = document.getElementById(id);
             if(el) el.value = "";
         });
+        if (document.getElementById('descuentoOrdenTipo')) document.getElementById('descuentoOrdenTipo').value = '%';
+        if (document.getElementById('descuento-orden-total-wrap')) document.getElementById('descuento-orden-total-wrap').style.display = 'none';
+        if (document.getElementById('descuentoOrdenEfectivo')) document.getElementById('descuentoOrdenEfectivo').checked = false;
 
         document.getElementById('equipo').value = "Smartphone";
         document.getElementById('marca').value = "Samsung";
         if(typeof syncPickerDisplay === 'function') { syncPickerDisplay('equipo'); syncPickerDisplay('marca'); }
         document.getElementById('btnSubmit').innerText = "REGISTRAR";
+        const btnMobileReset = document.getElementById('btnSubmitMobile');
+        if (btnMobileReset) btnMobileReset.innerText = "✅ REGISTRAR";
         document.getElementById('costo-inner').style.display = "none";
         document.getElementById('autocomplete-falla').style.display = 'none';
 
@@ -7284,6 +7774,25 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         }
     }
 
+    function recalcDescuentoOrden() {
+        const precio = parseMoney(document.getElementById('precio').value) || 0;
+        const descVal = parseMoney(document.getElementById('descuentoOrden')?.value) || 0;
+        const tipo = document.getElementById('descuentoOrdenTipo')?.value || '%';
+        const wrap = document.getElementById('descuento-orden-total-wrap');
+        const totalEl = document.getElementById('descuento-orden-total');
+        const ahorraEl = document.getElementById('descuento-orden-ahorra');
+        if (!wrap) return;
+        if (precio > 0 && descVal > 0) {
+            const descMonto = tipo === '%' ? precio * descVal / 100 : descVal;
+            const total = Math.max(0, precio - descMonto);
+            wrap.style.display = 'block';
+            totalEl.textContent = fmt.format(total);
+            ahorraEl.textContent = 'Ahorra ' + fmt.format(descMonto) + (tipo === '%' ? ' (' + descVal + '%)' : '');
+        } else {
+            wrap.style.display = 'none';
+        }
+    }
+
     document.getElementById('repairForm').onsubmit = async function(e) {
         e.preventDefault();
         
@@ -7296,6 +7805,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         let precioActual = parseMoney(document.getElementById('precio').value);
         let senaActual = parseMoney(document.getElementById('sena').value);
         let costoRep = parseMoney(document.getElementById('costoRepuesto').value);
+        let descuentoVal = parseMoney(document.getElementById('descuentoOrden')?.value) || 0;
+        let descuentoTipo = document.getElementById('descuentoOrdenTipo')?.value || '%';
+        // Calcular monto de descuento real
+        let descuentoMonto = descuentoTipo === '%' ? precioActual * descuentoVal / 100 : descuentoVal;
+        if (descuentoMonto > precioActual) descuentoMonto = precioActual;
 
         if (senaActual > precioActual && precioActual > 0) { 
             showToast("⚠️ La seña no puede ser mayor al precio final", "#f59e0b"); 
@@ -7315,6 +7829,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             precio: precioActual,
             sena: senaActual,
             costoRepuesto: costoRep,
+            descuentoMonto: descuentoMonto,
+            descuentoTipo: descuentoTipo,
+            descuentoValor: descuentoVal,
+            descuentoEfectivo: document.getElementById('descuentoOrdenEfectivo')?.checked ? true : false,
             metodoPagoSena: document.getElementById('metodoPago').value,
             falla: document.getElementById('falla').value,
             obs: document.getElementById('obs').value,
@@ -7350,8 +7868,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
                 // --- saldoCobrado: para ordenes Entregadas+Archivadas, reflejar nuevo precio ---
                 if (r.archivado && r.estado === 'Entregado') {
-                    // saldoCobrado = lo que pagó al retirar = precio total - seña original
-                    data.saldoCobrado = Math.max(0, precioActual - data.senaOriginal);
+                    // FIX: considerar descuentoMonto y descuentoEntregaMonto para no sobreestimar saldoCobrado
+                    const descMotoEdit = parseFloat(data.descuentoMonto) || 0;
+                    const descEntregaEdit = parseFloat(r.descuentoEntregaMonto) || 0;
+                    const precioEfectivoEdit = descMotoEdit > 0 ? Math.max(0, precioActual - descMotoEdit) : precioActual;
+                    data.saldoCobrado = Math.max(0, precioEfectivoEdit - descEntregaEdit - data.senaOriginal);
+                    data.descuentoEntregaMonto = r.descuentoEntregaMonto || 0; // preservar descuento de entrega
                 } else {
                     data.saldoCobrado = r.saldoCobrado || 0;
                 }
@@ -7559,6 +8081,19 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         
         document.getElementById('precio').value = r.precio ? fmt.format(r.precio).replace('$ ', '') : "";
         
+        // Restaurar descuento
+        if (document.getElementById('descuentoOrden')) {
+            const dMonto = r.descuentoMonto || 0;
+            const dTipo = r.descuentoTipo || '$';
+            const dValor = r.descuentoValor || 0;
+            document.getElementById('descuentoOrdenTipo').value = dTipo;
+            document.getElementById('descuentoOrden').value = dValor > 0 ? (dTipo === '%' ? dValor : fmt.format(dValor).replace('$ ','')) : '';
+            if (document.getElementById('descuentoOrdenEfectivo')) {
+                document.getElementById('descuentoOrdenEfectivo').checked = r.descuentoEfectivo ? true : false;
+            }
+            recalcDescuentoOrden();
+        }
+        
         let senaReal = r.senaOriginal !== undefined ? r.senaOriginal : r.sena;
         document.getElementById('sena').value = senaReal ? fmt.format(senaReal).replace(/\D/g, '') : "";
         
@@ -7570,7 +8105,9 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('obs').value = r.obs || "";
         document.getElementById('notaInterna').value = r.notaInterna || "";
         
-        document.getElementById('btnSubmit').innerText = "ACTUALIZAR DATOS";
+        document.getElementById('btnSubmit').innerText = "✏️ ACTUALIZAR";
+        const btnMobile = document.getElementById('btnSubmitMobile');
+        if (btnMobile) btnMobile.innerText = "✏️ ACTUALIZAR";
         document.getElementById('btnLimpiar').innerText = "✖ CANCELAR";
         document.getElementById('btnLimpiar').style.background = "#dc2626";
         document.getElementById('costo-inner').style.display = "none"; 
@@ -7606,6 +8143,35 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
             
             msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${equipoCompleto}\n🛠️ *ESTADO ACTUAL:* ${r.estado}\n`;
+            
+            // Mostrar precio, seña y descuento si existen
+            const precioWA = parseFloat(r.precio) || 0;
+            const senaWA = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            const descMonto = parseFloat(r.descuentoMonto) || 0;
+            if (precioWA > 0) {
+                if (descMonto > 0) {
+                    const precioFinal = Math.max(0, precioWA - descMonto);
+                    const dLabelWA = r.descuentoTipo === '%' ? `Descuento ${r.descuentoValor}%` : 'Descuento';
+                    const efLabelWA = r.descuentoEfectivo ? ' (pago en efectivo)' : '';
+                    msjPlano += `\n💰 *Precio:* ${fmt.format(precioWA)}\n🏷️ *${dLabelWA}${efLabelWA}:* -${fmt.format(descMonto)}\n✅ *Total a pagar: ${fmt.format(precioFinal)}*`;
+                    if (senaWA > 0) {
+                        const saldoWA = Math.max(0, precioFinal - senaWA);
+                        msjPlano += `\n💵 *Seña abonada:* ${fmt.format(senaWA)}${r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' ? ' (' + r.metodoPagoSena + ')' : ''}`;
+                        if (saldoWA > 0) msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
+                        else msjPlano += `\n✅ *Saldo: Todo pagado*`;
+                    }
+                    msjPlano += '\n';
+                } else {
+                    msjPlano += `\n💰 *Total: ${fmt.format(precioWA)}*`;
+                    if (senaWA > 0) {
+                        const saldoWA = Math.max(0, precioWA - senaWA);
+                        msjPlano += `\n💵 *Seña abonada:* ${fmt.format(senaWA)}${r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' ? ' (' + r.metodoPagoSena + ')' : ''}`;
+                        if (saldoWA > 0) msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
+                        else msjPlano += `\n✅ *Saldo: Todo pagado*`;
+                    }
+                    msjPlano += '\n';
+                }
+            }
             
             if(r.estado === 'Reparado') {
                 msjPlano += `\n✅ *¡Tu equipo ya está listo y podés pasar a retirarlo!*`;
@@ -8459,11 +9025,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                         let precioActual = parseFloat(r.precio) || 0;
                         if (precioActual > 0) {
                             let cobroAnterior = parseFloat(r.saldoCobrado) || 0;
-                            let s = precioActual - (senaOrig + cobroAnterior);
+                            let descMontoCont = parseFloat(r.descuentoMonto) || 0;
+                            let descEntregaCont = parseFloat(r.descuentoEntregaMonto) || 0;
+                            let precioEfectivoCont = descMontoCont > 0 ? Math.max(0, precioActual - descMontoCont) : precioActual;
+                            let s = precioEfectivoCont - (senaOrig + cobroAnterior + descEntregaCont);
                             // Solo va a "por cobrar" si hay deuda real Y el adelanto no cubrió el total.
-                            // Así las órdenes pagadas completo al ingreso no figuran como pendientes,
-                            // aunque el estado todavía sea 'Pendiente' o 'En revisión'.
-                            const yaCubierto = (senaOrig + cobroAnterior) >= precioActual;
+                            const yaCubierto = (senaOrig + cobroAnterior + descEntregaCont) >= precioEfectivoCont;
                             if (s > 0 && !yaCubierto && (r.estado !== 'Entregado' || r.entregadoSinCobrar)) porCobrar += s;
                         }
                     }
@@ -10420,6 +10987,12 @@ function abrirFormPresupuesto() {
     document.getElementById('pres-vencimiento').value = '';
     document.getElementById('pres-items-container').innerHTML = '';
     document.getElementById('pres-total-display').textContent = '$0';
+    if (document.getElementById('pres-descuento')) {
+        document.getElementById('pres-descuento').value = '';
+        document.getElementById('pres-descuento-tipo').value = '%';
+        document.getElementById('pres-descuento-total-wrap').style.display = 'none';
+        if (document.getElementById('pres-descuento-efectivo')) document.getElementById('pres-descuento-efectivo').checked = false;
+    }
     agregarItemPresupuesto();
     document.getElementById('form-presupuesto-container').style.display = 'block';
 }
@@ -10450,8 +11023,8 @@ function agregarItemPresupuesto(desc = '', precio = '', cant = 1) {
     div.style.cssText = 'display:grid; grid-template-columns:1fr 90px 60px 36px; gap:6px; margin-bottom:6px; align-items:center;';
     div.innerHTML = `
         <input type="text" placeholder="Descripción del trabajo/repuesto" value="${desc}" id="pres-item-desc-${idx}" style="padding:9px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; font-family:inherit;">
-        <input type="text" placeholder="Precio" value="${precio}" id="pres-item-precio-${idx}" style="padding:9px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; text-align:right; font-family:inherit;">
-        <input type="number" min="1" value="${cant}" id="pres-item-cant-${idx}" style="padding:9px 8px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; text-align:center; font-family:inherit;">
+        <input type="text" placeholder="Precio" value="${precio}" id="pres-item-precio-${idx}" inputmode="decimal" style="padding:9px 10px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; text-align:right; font-family:inherit;">
+        <input type="number" min="1" value="${cant}" id="pres-item-cant-${idx}" inputmode="numeric" style="padding:9px 8px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:13px; text-align:center; font-family:inherit;">
         <button type="button" data-pres-action="quitar-item" data-pres-id="${idx}" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; padding:8px; font-size:14px; cursor:pointer; line-height:1;">✕</button>`;
     document.getElementById('pres-items-container').appendChild(div);
     calcTotalPresupuesto();
@@ -10472,6 +11045,25 @@ function calcTotalPresupuesto() {
     });
     const disp = document.getElementById('pres-total-display');
     if (disp) disp.textContent = fmt.format(total);
+
+    // Descuento
+    const descInput = document.getElementById('pres-descuento');
+    const descTipo = document.getElementById('pres-descuento-tipo')?.value || '%';
+    const descVal = parseMoney(descInput?.value) || 0;
+    const wrap = document.getElementById('pres-descuento-total-wrap');
+    const netoEl = document.getElementById('pres-total-neto');
+    const ahorraEl = document.getElementById('pres-descuento-ahorra');
+    if (wrap) {
+        if (total > 0 && descVal > 0) {
+            const descMonto = descTipo === '%' ? total * descVal / 100 : descVal;
+            const neto = Math.max(0, total - descMonto);
+            wrap.style.display = 'block';
+            netoEl.textContent = fmt.format(neto);
+            ahorraEl.textContent = 'Ahorra ' + fmt.format(descMonto) + (descTipo === '%' ? ' (' + descVal + '%)' : '');
+        } else {
+            wrap.style.display = 'none';
+        }
+    }
 }
 
 function recolectarItemsPresupuesto() {
@@ -10492,6 +11084,10 @@ function guardarPresupuesto() {
     autoNroPresupuesto();
     const items = recolectarItemsPresupuesto();
     if (!items.length) { showToast('⚠️ Agregá al menos un ítem', '#f59e0b'); return; }
+    const totalBruto = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+    const descuentoValPres = parseMoney(document.getElementById('pres-descuento')?.value) || 0;
+    const descuentoTipoPres = document.getElementById('pres-descuento-tipo')?.value || '%';
+    const descuentoMontoPres = descuentoTipoPres === '%' ? totalBruto * descuentoValPres / 100 : descuentoValPres;
     const data = {
         nro: document.getElementById('pres-nro').value,
         fecha: document.getElementById('pres-fecha').value,
@@ -10504,6 +11100,10 @@ function guardarPresupuesto() {
         obs: document.getElementById('pres-obs').value.trim(),
         vencimiento: document.getElementById('pres-vencimiento').value || '',
         items,
+        descuentoValor: descuentoValPres,
+        descuentoTipo: descuentoTipoPres,
+        descuentoMonto: descuentoMontoPres,
+        descuentoEfectivo: document.getElementById('pres-descuento-efectivo')?.checked ? true : false,
         estado: 'Pendiente',
         timestamp: Date.now()
     };
@@ -10545,6 +11145,17 @@ function editarPresupuesto(id) {
     document.getElementById('pres-vencimiento').value = p.vencimiento || '';
     document.getElementById('pres-items-container').innerHTML = '';
     (p.items || []).forEach(i => agregarItemPresupuesto(i.descripcion || '', i.precio || '', i.cantidad || 1));
+    // Restaurar descuento
+    if (document.getElementById('pres-descuento')) {
+        const dTipo = p.descuentoTipo || '$';
+        const dValor = p.descuentoValor || 0;
+        document.getElementById('pres-descuento-tipo').value = dTipo;
+        document.getElementById('pres-descuento').value = dValor > 0 ? (dTipo === '%' ? dValor : fmt.format(dValor).replace('$ ', '')) : '';
+        if (document.getElementById('pres-descuento-efectivo')) {
+            document.getElementById('pres-descuento-efectivo').checked = p.descuentoEfectivo ? true : false;
+        }
+        calcTotalPresupuesto();
+    }
     document.getElementById('form-presupuesto-container').style.display = 'block';
     document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -10656,7 +11267,9 @@ function _buildPDFPresupuestoCore(p, conf) {
     const subtitulo = conf.subtitulo || '';
     const wapp = conf.wappTicket || '';
     const items = p.items || [];
-    const total = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+    const totalBruto = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+    const descuentoMontoPDF = parseFloat(p.descuentoMonto) || 0;
+    const total = descuentoMontoPDF > 0 ? Math.max(0, totalBruto - descuentoMontoPDF) : totalBruto;
     const fmtARS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
     // Estado
@@ -10682,8 +11295,9 @@ function _buildPDFPresupuestoCore(p, conf) {
     const altoVenc   = p.vencimiento ? 12 : 0;
     const altoDatos  = 6 + (p.fecha ? 7 : 0) + (p.cliente ? 7 : 0) + (equipoStr ? 7 : 0) + (p.descripcion ? descLines.length * 5 + 12 : 0) + 4;
     const altoItems  = 10 + extraH + 14;
+    const altoDesc   = (p.descuentoMonto > 0) ? 18 : 0;
     const altoObs    = obsLines.length > 0 ? obsLines.length * 5 + 10 : 0;
-    const altoTotal2 = altoHeader + altoNro + altoEstado + altoDatos + altoItems + altoVenc + altoObs + 16;
+    const altoTotal2 = altoHeader + altoNro + altoEstado + altoDatos + altoItems + altoDesc + altoVenc + altoObs + 16;
 
     const doc = new jsPDF({ unit: 'mm', format: [80, Math.max(altoTotal2, 180)] });
 
@@ -10777,6 +11391,26 @@ function _buildPDFPresupuestoCore(p, conf) {
     // Línea antes del total
     y += 2;
     doc.setLineWidth(0.5); doc.setDrawColor(30, 77, 140); doc.line(5, y, 75, y); y += 2;
+
+    // Fila SUBTOTAL + DESCUENTO (solo si hay descuento)
+    if (descuentoMontoPDF > 0) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
+        doc.text('Subtotal', 5, y + 5);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+        doc.text(fmtARS.format(totalBruto), 75, y + 5, { align: 'right' });
+        y += 8;
+        // Línea descuento en rojo
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(220, 38, 38);
+        const dLabelPDF = (p.descuentoTipo === '%'
+            ? 'Descuento ' + (p.descuentoValor || '') + '%'
+            : 'Descuento')
+            + (p.descuentoEfectivo ? ' (efectivo)' : '');
+        doc.text(dLabelPDF, 5, y + 5);
+        doc.text('- ' + fmtARS.format(descuentoMontoPDF), 75, y + 5, { align: 'right' });
+        y += 8;
+        doc.setLineWidth(0.3); doc.setDrawColor(220, 38, 38); doc.line(5, y, 75, y); y += 2;
+    }
+
     // Fila TOTAL
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
     doc.text('TOTAL', 5, y + 6);
@@ -10860,12 +11494,19 @@ function enviarWappPresupuesto(id) {
         const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
         const baseUrl = window.location.origin + window.location.pathname;
         const presLink = `${baseUrl}?presid=${id}&u=${currentUser}`;
+        const descMontoPres = parseFloat(p.descuentoMonto) || 0;
+        const totalConDesc = descMontoPres > 0 ? Math.max(0, total - descMontoPres) : total;
         const msj = '¡Hola ' + (p.cliente || '') + '! 👋 Te envío el presupuesto de *' + nombreTaller + '*.'
             + '\n\n📋 *PRESUPUESTO N° ' + (p.nro || '') + '*'
             + '\n📅 Fecha: ' + (p.fecha || '')
             + (equipoStr ? '\n📱 Equipo: ' + equipoStr : '')
             + (p.descripcion ? '\n🔧 ' + p.descripcion : '')
-            + '\n\n💰 *TOTAL: ' + fmt.format(total) + '*'
+            + (descMontoPres > 0
+                ? '\n\n💰 Precio: ' + fmt.format(total)
+                  + '\n🏷️ ' + (p.descuentoTipo === '%' ? 'Descuento ' + (p.descuentoValor || '') + '%' : 'Descuento')
+                  + (p.descuentoEfectivo ? ' (pago en efectivo)' : '') + ': -' + fmt.format(descMontoPres)
+                  + '\n✅ *TOTAL A PAGAR: ' + fmt.format(totalConDesc) + '*'
+                : '\n\n💰 *TOTAL: ' + fmt.format(total) + '*')
             + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR') + '*' : '')
             + (p.obs ? '\n\n📌 ' + p.obs : '')
             + '\n\n🔎 *VER Y DESCARGAR PRESUPUESTO PDF AQUÍ:*\n' + presLink;
@@ -10978,6 +11619,33 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
 // ===================================================
 // ============= FIN MÓDULO PRESUPUESTOS =============
 // ===================================================
+
+// ===================================================
+// TECLADO NUMÉRICO EN MÓVIL para campos de precio y WhatsApp
+// ===================================================
+(function() {
+    function aplicarInputmodeMobile() {
+        if (window.innerWidth >= 600) return; // Solo en móvil
+        var camposPrecio = ['precio','sena','costoRepuesto','newPriceInput','cobroPrecioFinal','descuentoOrden','descuentoEntregaValor','inputStockMinGlobal','inputConfigStockMin'];
+        camposPrecio.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && !el.getAttribute('inputmode')) el.setAttribute('inputmode','decimal');
+        });
+        // Campos numéricos de stock
+        document.querySelectorAll('#stock-form-grid input[type="number"], #stock-form-grid input[type="text"]').forEach(function(el) {
+            if (!el.getAttribute('inputmode')) el.setAttribute('inputmode','decimal');
+        });
+        // Campos de venta rápida
+        ['ventaPrecio','ventaCantidad'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && !el.getAttribute('inputmode')) el.setAttribute('inputmode','decimal');
+        });
+    }
+    document.addEventListener('DOMContentLoaded', aplicarInputmodeMobile);
+    window.addEventListener('resize', aplicarInputmodeMobile);
+    // También al cargar la app (después del login)
+    setTimeout(aplicarInputmodeMobile, 2000);
+})();
 
 // ===================================================
 // === NAVEGACIÓN POR TECLADO EN PC ==================
