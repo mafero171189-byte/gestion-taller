@@ -6325,6 +6325,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
                         registrosArchivados.push({id: idParaEstado, ...copia});
                     }
+                    historialMesesCargados = {};
                     renderTable();
                     ocultarLoader();
                     showToast("💰 COBRO REGISTRADO — GUARDADO EN HISTORIAL ✅", "#059669");
@@ -6779,10 +6780,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 registros = registros.filter(x => x.id !== idParaEstado);
 
                 if (historialDescargado) {
-                    // Filtrar primero por si quedó una versión previa (ej: reingreso por garantía)
                     registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
                     registrosArchivados.push({id: idParaEstado, ...copia});
                 }
+                // Limpiar caché de historial para que aparezca sin recargar la página
+                historialMesesCargados = {};
                 
                 ocultarLoader();
                 renderTable();
