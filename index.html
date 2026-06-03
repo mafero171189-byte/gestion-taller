@@ -8221,28 +8221,39 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             
             // Mostrar precio, seña y descuento si existen
             const precioWA = parseFloat(r.precio) || 0;
-            const senaWA = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            const senaOriginalWA = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            const saldoCobradoWA = parseFloat(r.saldoCobrado) || 0;
             const descMonto = parseFloat(r.descuentoMonto) || 0;
+            const descEntregaWA = parseFloat(r.descuentoEntregaMonto) || 0;
+            // Detectar si la orden tuvo una entrega previa (reingreso por garantía)
+            const fueEntregadoAntesWA = r.garantiaYaPagada ||
+                (r.historialEstados && r.historialEstados.some(h => h.estado === 'Entregado' || h.estado === 'Entregado (Cortesía)'));
+            // Total ya abonado: misma lógica que el modal de cobro
+            const totalAbonadoWA = fueEntregadoAntesWA
+                ? (parseFloat(r.sena) || 0)
+                : senaOriginalWA + saldoCobradoWA + descEntregaWA;
             if (precioWA > 0) {
                 if (descMonto > 0) {
                     const precioFinal = Math.max(0, precioWA - descMonto);
                     const dLabelWA = r.descuentoTipo === '%' ? `Descuento ${r.descuentoValor}%` : 'Descuento';
                     const efLabelWA = r.descuentoEfectivo ? ' (pago en efectivo)' : '';
-                    msjPlano += `\n💰 *Precio:* ${fmt.format(precioWA)}\n🏷️ *${dLabelWA}${efLabelWA}:* -${fmt.format(descMonto)}\n✅ *Total a pagar: ${fmt.format(precioFinal)}*`;
-                    if (senaWA > 0) {
-                        const saldoWA = Math.max(0, precioFinal - senaWA);
-                        msjPlano += `\n💵 *Seña abonada:* ${fmt.format(senaWA)}${r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' ? ' (' + r.metodoPagoSena + ')' : ''}`;
-                        if (saldoWA > 0) msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
-                        else msjPlano += `\n✅ *Saldo: Todo pagado*`;
+                    msjPlano += `\n💰 *Precio:* ${fmt.format(precioWA)}\n🏷️ *${dLabelWA}${efLabelWA}:* -${fmt.format(descMonto)}\n✅ *Total: ${fmt.format(precioFinal)}*`;
+                    const saldoWA = Math.max(0, precioFinal - totalAbonadoWA);
+                    if (totalAbonadoWA > 0 && totalAbonadoWA < precioFinal) {
+                        msjPlano += `\n💵 *Abonado:* ${fmt.format(totalAbonadoWA)}`;
+                        msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
+                    } else if (saldoWA <= 0) {
+                        msjPlano += `\n✅ *Saldo: Todo pagado*`;
                     }
                     msjPlano += '\n';
                 } else {
                     msjPlano += `\n💰 *Total: ${fmt.format(precioWA)}*`;
-                    if (senaWA > 0) {
-                        const saldoWA = Math.max(0, precioWA - senaWA);
-                        msjPlano += `\n💵 *Seña abonada:* ${fmt.format(senaWA)}${r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' ? ' (' + r.metodoPagoSena + ')' : ''}`;
-                        if (saldoWA > 0) msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
-                        else msjPlano += `\n✅ *Saldo: Todo pagado*`;
+                    const saldoWA = Math.max(0, precioWA - totalAbonadoWA);
+                    if (totalAbonadoWA > 0 && totalAbonadoWA < precioWA) {
+                        msjPlano += `\n💵 *Abonado:* ${fmt.format(totalAbonadoWA)}`;
+                        msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
+                    } else if (saldoWA <= 0) {
+                        msjPlano += `\n✅ *Saldo: Todo pagado*`;
                     }
                     msjPlano += '\n';
                 }
