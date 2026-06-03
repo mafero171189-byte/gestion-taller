@@ -6312,9 +6312,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 r.archivado = true;
                 let copia = {...r};
                 delete copia.id;
+                const loaderTimeoutDeuda = setTimeout(() => {
+                    ocultarLoader();
+                    showToast('⚠️ Operación tardó demasiado. Verificá la conexión.', '#f59e0b');
+                }, 12000);
                 return db.ref(pathArchivadoDeuda).child(idParaEstado).set(copia).then(() => {
                     return db.ref(pathActivo).child(idParaEstado).remove();
                 }).then(() => {
+                    clearTimeout(loaderTimeoutDeuda);
                     registros = registros.filter(x => x.id !== idParaEstado);
                     if (historialDescargado) {
                         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
@@ -6323,7 +6328,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     renderTable();
                     ocultarLoader();
                     showToast("💰 COBRO REGISTRADO — GUARDADO EN HISTORIAL ✅", "#059669");
+                }).catch(err => {
+                    clearTimeout(loaderTimeoutDeuda);
+                    ocultarLoader();
+                    showToast('Error al archivar: ' + err.message, '#dc2626');
                 });
+            }).catch(err => {
+                ocultarLoader();
+                showToast('Error al registrar cobro: ' + err.message, '#dc2626');
             });
             return;
         }
@@ -6751,10 +6763,17 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
             let copia = {...r, ...updates};
             delete copia.id;
-            
+
+            // Timeout de seguridad: si Firebase tarda más de 12s, ocultar loader igual
+            const loaderTimeout = setTimeout(() => {
+                ocultarLoader();
+                showToast('⚠️ Operación tardó demasiado. Verificá la conexión.', '#f59e0b');
+            }, 12000);
+
             db.ref(pathArchivado).child(idParaEstado).set(copia).then(() => {
                 return db.ref(pathActivo).child(idParaEstado).remove();
             }).then(() => {
+                clearTimeout(loaderTimeout);
                 // Aplicar cambios locales SOLO después de confirmar Firebase
                 Object.assign(r, updates);
                 registros = registros.filter(x => x.id !== idParaEstado);
@@ -6771,6 +6790,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`ENTREGADO ✅ — GUARDADO EN HISTORIAL 🗄️`, '#6b7280');
             }).catch(err => {
+                clearTimeout(loaderTimeout);
                 ocultarLoader();
                 showToast('Error al archivar la orden: ' + err.message, '#dc2626');
             });
@@ -6845,11 +6865,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         h += `<div class="history-item"><b>Ingreso</b><span>${r.fecha || '-'}</span></div>`;
         if(r.historialEstados) r.historialEstados.forEach((ev, evIdx) => {
             const motivoHtml = ev.motivo ? `<div style="font-size:11px; color:#7c3aed; margin-top:2px; font-style:italic;">💬 ${escaparHTML(ev.motivo)}</div>` : '';
+            const notaAntHtml = ev.notaReparacionAnterior
+                ? `<div style="font-size:11px; color:#065f46; background:#f0fdf4; border-radius:6px; padding:5px 8px; border:1px solid #a7f3d0; margin-top:4px;">🔧 <b>Nota reparación anterior:</b> ${escaparHTML(ev.notaReparacionAnterior)}</div>`
+                : '';
             const editBtn = ev.estado === 'Garantía'
                 ? `<button onclick="editarMotivoGarantia('${id}', ${evIdx})" style="font-size:10px; background:#f5f3ff; border:1.5px solid #e9d5ff; color:#7c3aed; border-radius:5px; padding:2px 7px; cursor:pointer; font-weight:700; margin-top:3px; display:inline-block;">✏️ Editar motivo</button>`
                 : '';
             h += `<div class="history-item" style="${ev.estado === 'Garantía' ? 'border-left-color:#7c3aed;' : ''}">
-                <b>${ev.estado}</b><span>${ev.fecha}</span>${motivoHtml}
+                <b>${ev.estado}</b><span>${ev.fecha}</span>${motivoHtml}${notaAntHtml}
                 <div id="motivoGarantiaDisplay_${id}_${evIdx}">${editBtn}</div>
                 <div id="motivoGarantiaEdit_${id}_${evIdx}" style="display:none; margin-top:5px;">
                     <textarea id="motivoGarantiaInput_${id}_${evIdx}" rows="2" style="width:100%; padding:7px; border:2px solid #7c3aed; border-radius:7px; font-size:13px; font-family:inherit; box-sizing:border-box; resize:vertical;">${ev.motivo ? escaparHTML(ev.motivo) : ''}</textarea>
@@ -7629,13 +7652,27 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const descEntregaOriginal = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento aplicado al entregar
         const totalCobrado = senaOriginal + saldoCobradoOriginal + descEntregaOriginal;
         
+        // Al reingresar, guardar la nota de reparación anterior dentro del historial
+        // para no perderla, y resetear la nota para la nueva reparación
+        const notaReparacionAnterior = r.notaReparacion ? String(r.notaReparacion) : '';
+        const historialNuevoConNota = [...historialNuevo];
+        // Si había nota de reparación, inyectarla como campo en el último evento de Garantía
+        if (notaReparacionAnterior) {
+            const idxGar = historialNuevoConNota.length - 1;
+            historialNuevoConNota[idxGar] = {
+                ...historialNuevoConNota[idxGar],
+                notaReparacionAnterior: notaReparacionAnterior
+            };
+        }
+
         const copia = {
             ...r,
             archivado: false,
             estado: 'Garantía',
-            historialEstados: historialNuevo,
+            historialEstados: historialNuevoConNota,
             fechaReingreso: fechaActual,
             motivoGarantia: motivo || 'Reingreso por garantía',
+            notaReparacion: '',   // resetear para la nueva reparación
             sena: totalCobrado > 0 ? totalCobrado : senaOriginal,
             senaOriginal: senaOriginal,
             saldoCobrado: saldoCobradoOriginal,
@@ -7649,6 +7686,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         .then(() => db.ref(pathArchivado).child(_idGarantia).remove())
         .then(() => {
             escribirIndice(_idGarantia, copia, false);
+            // Limpiar caché de historial para que no siga apareciendo en "Historial de Reparaciones"
+            historialMesesCargados = {};
             registrosArchivados = registrosArchivados.filter(x => x.id !== _idGarantia);
             if (!registros.find(x => x.id === _idGarantia)) {
                 registros.push({ id: _idGarantia, ...copia });
@@ -11253,6 +11292,11 @@ function crearOrdenDesdePresupuesto(id) {
     // Armar descripción de falla desde items + descripción del presupuesto
     const itemsStr = (p.items || []).map(i => i.descripcion).filter(Boolean).join(' + ');
     const fallaFinal = itemsStr || p.descripcion || '';
+    // Calcular precio bruto y descuento del presupuesto
+    const items = p.items || [];
+    const totalBruto = items.reduce((s, i) => s + (parseFloat(i.precio) || 0) * (parseInt(i.cantidad) || 1), 0);
+    const descuentoMonto = parseFloat(p.descuentoMonto) || 0;
+    const totalFinal = descuentoMonto > 0 ? Math.max(0, totalBruto - descuentoMonto) : totalBruto;
     // Navegar a gestión y pre-rellenar
     showPage('gestion');
     setTimeout(function() {
@@ -11267,6 +11311,26 @@ function crearOrdenDesdePresupuesto(id) {
         document.getElementById('obs').value = p.obs || '';
         if (p.descripcion && p.descripcion !== fallaFinal) {
             document.getElementById('obs').value = (p.obs ? p.obs + ' | ' : '') + p.descripcion;
+        }
+        // Cargar precio bruto — el descuento se aplica por separado para no descontarlo dos veces
+        const precioBase = totalBruto > 0 ? totalBruto : totalFinal;
+        if (precioBase > 0) {
+            const precioEl = document.getElementById('precio');
+            if (precioEl) {
+                precioEl.value = fmt.format(precioBase).replace('$ ', '');
+                if (typeof formatInput === 'function') formatInput(precioEl);
+            }
+            if (descuentoMonto > 0) {
+                const descTipoEl = document.getElementById('descuentoOrdenTipo');
+                const descValEl  = document.getElementById('descuentoOrden');
+                const descEfecEl = document.getElementById('descuentoOrdenEfectivo');
+                if (descTipoEl && descValEl) {
+                    descTipoEl.value = p.descuentoTipo || '$';
+                    descValEl.value  = p.descuentoTipo === '%' ? (p.descuentoValor || '') : fmt.format(descuentoMonto).replace('$ ', '');
+                    if (descEfecEl) descEfecEl.checked = !!p.descuentoEfectivo;
+                    if (typeof recalcDescuentoOrden === 'function') recalcDescuentoOrden();
+                }
+            }
         }
         // Disparar autoOrden para asignar número
         if (typeof autoOrden === 'function') autoOrden();
