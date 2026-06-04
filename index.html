@@ -170,6 +170,7 @@
         .sena-group-row { display: flex; flex-direction: column; gap: 8px; }
         .sena-group-top .sena-field { max-width: 50%; }
         .sena-group-top .sena-metodo { margin-top: 10px; }
+
         @media (min-width: 600px) {
             .sena-group-row { gap: 6px; }
             .sena-group-top { display: flex; align-items: flex-end; gap: 12px; }
@@ -746,6 +747,11 @@
             #pago-total-inline {
                 margin-top: 14px !important;
                 flex-direction: row !important;
+                flex-wrap: wrap !important;
+            }
+            #costo-inner {
+                width: 100% !important;
+                flex: 0 0 100% !important;
             }
 
             /* Stock: mantener padding y gap propios */
@@ -1031,44 +1037,31 @@
                 display: contents !important;
             }
 
-            /* sena-group-row: ocupa el resto de la fila, flex horizontal */
+            /* desktop-pago-row: solo contiene PAGO TOTAL + candado + costo */
             #desktop-pago-row {
-                display: flex !important;
-                flex-direction: row !important;
-                align-items: flex-end !important;
-                gap: 14px !important;
-                flex-wrap: nowrap !important;
+                display: block !important;
                 grid-column: auto !important;
-                flex: 1 1 auto !important;
-            }
-            #desktop-pago-row .sena-group-top {
-                display: flex !important;
-                flex-direction: row !important;
-                align-items: flex-end !important;
-                flex: 0 0 auto !important;
-            }
-            #desktop-pago-row .sena-metodo {
-                flex: 0 0 180px !important;
-                margin-top: 0 !important;
             }
             #pago-total-inline {
                 display: flex !important;
                 flex-direction: row !important;
                 align-items: center !important;
                 gap: 10px !important;
-                margin-top: 0 !important;
-                flex: 0 0 auto !important;
-                padding-bottom: 2px !important;
+                flex-wrap: nowrap !important;
+            }
+            #pago-total-inline #costo-inner {
+                width: auto !important;
+                flex: 1 1 auto !important;
             }
 
-            /* Contenedor de precio+seña+metodo+pagototal: misma fila via flex wrapper */
-            /* mobile-section-body de Precio y Pagos → flex row en desktop */
+            /* Contenedor de precio+seña+metodo+pagototal: precio/seña/metodo en fila, pago-row en fila nueva */
+            /* mobile-section-body de Precio y Pagos → flex wrap en desktop */
             .mobile-section-body:has(.precio-sena-row) {
                 display: flex !important;
                 flex-direction: row !important;
                 align-items: flex-end !important;
                 gap: 14px !important;
-                flex-wrap: nowrap !important;
+                flex-wrap: wrap !important;
                 grid-column: 1 / -1 !important;
             }
             .mobile-section-body:has(.precio-sena-row) .precio-sena-row {
@@ -1076,9 +1069,19 @@
                 flex-direction: row !important;
                 gap: 14px !important;
                 flex: 0 0 auto !important;
+                align-items: flex-end !important;
             }
             .mobile-section-body:has(.precio-sena-row) .precio-sena-row > div {
                 flex: 0 0 120px !important;
+            }
+            /* Método de pago dentro de precio-sena-row: más ancho */
+            #metodo-pago-wrapper {
+                flex: 0 0 180px !important;
+            }
+            /* desktop-pago-row ocupa fila completa debajo */
+            .mobile-section-body:has(.precio-sena-row) #desktop-pago-row {
+                flex: 1 1 100% !important;
+                width: 100% !important;
             }
 
             .sena-field { max-width: none !important; }
@@ -3002,6 +3005,9 @@ function showApp() {
           <div class="sena-field">
            <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
           </div>
+          <div class="sena-metodo" id="metodo-pago-wrapper">
+           <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
+          </div>
          </div>
          <div id="descuento-orden-row" style="margin-top:10px;">
           <label style="font-size:12px; color:#dc2626; font-weight:700; display:block; margin-bottom:5px;">🏷️ Descuento (opcional)</label>
@@ -3024,21 +3030,16 @@ function showApp() {
            <div id="descuento-orden-ahorra" style="font-size:12px; color:#6b7280; margin-top:2px;"></div>
           </div>
          </div>
-         <div class="full sena-group-row" id="desktop-pago-row">
-          <div class="sena-group-top">
-           <div class="sena-metodo">
-            <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
-           </div>
-          </div>
-          <div id="pago-total-inline" style="display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;">
-           <label class="pago-total-toggle-wrap" for="checkPagoTotal" style="flex:1; min-width:160px;">
+         <div class="full" id="desktop-pago-row">
+          <div id="pago-total-inline" style="display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; width:100%;">
+           <label class="pago-total-toggle-wrap" for="checkPagoTotal" style="flex:0 0 auto;">
             <input type="checkbox" id="checkPagoTotal" onchange="togglePagoForm()">
             <span class="toggle-pill"></span>
             <span class="toggle-pill-label">PAGO TOTAL</span>
            </label>
-           <span id="btn-lock" style="cursor:pointer; font-size:22px;" onclick="revelarCosto()">🔒</span>
-           <div id="costo-inner" style="display:none;">
-            <label style="display:inline; margin:0;">Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
+           <span id="btn-lock" style="cursor:pointer; font-size:22px; flex:0 0 auto;" onclick="revelarCosto()">🔒</span>
+           <div id="costo-inner" style="display:none; align-items:center; gap:6px; flex:1 1 auto;">
+            <label style="display:inline; margin:0; white-space:nowrap;">Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
            </div>
           </div>
          </div>
