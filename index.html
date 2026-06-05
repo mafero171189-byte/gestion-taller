@@ -11225,8 +11225,14 @@ function guardarPresupuesto() {
     ref.set(data).then(() => {
         ocultarLoader();
         showToast(presupuestoEditandoId ? '✅ Presupuesto actualizado' : '✅ Presupuesto guardado', '#059669');
-        cerrarFormPresupuesto();
-        cargarPresupuestos();
+        // Primero recargar el cache desde Firebase, y recién después resetear el form
+        // para que autoNroPresupuesto() calcule el siguiente número con datos frescos
+        db.ref(presPathActivo()).orderByChild('timestamp').once('value', snap => {
+            const v = snap.val() || {};
+            presupuestosCache = Object.keys(v).map(k => ({ id: k, ...v[k] })).reverse();
+            renderListaPresupuestos();
+            cerrarFormPresupuesto();
+        });
     }).catch(() => { ocultarLoader(); showToast('❌ Error al guardar', '#dc2626'); });
 }
 
