@@ -7351,6 +7351,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                 });
 
                 if (!inputNro.value) {
+                    // Para usuarios (no admin): si no hay ordenes previas, arrancar desde 100
+                    if (!isUserAdmin && maxNum === 0) maxNum = 99;
                     inputNro.value = maxNum + 1;
                 }
                 inputNro.placeholder = '';
@@ -7362,6 +7364,8 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
                     const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
                     if (!isNaN(val) && val > maxNum) maxNum = val;
                 });
+                // Para usuarios (no admin): si no hay ordenes previas, arrancar desde 100
+                if (!isUserAdmin && maxNum === 0) maxNum = 99;
                 if (!inputNro.value) inputNro.value = maxNum + 1;
                 inputNro.placeholder = '';
             });
