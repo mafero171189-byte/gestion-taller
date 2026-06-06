@@ -6156,9 +6156,12 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
 
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
         
-        db.ref(pathActivo).push(dataVenta).then(() => {
+        const nuevaRefVR = db.ref(pathActivo).push();
+        nuevaRefVR.set(dataVenta).then(() => {
+            // Actualizar array local inmediatamente, sin esperar al listener de Firebase
+            registros.push({ id: nuevaRefVR.key, ...dataVenta });
+
             const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
-            // Transacción atómica de Firebase para evitar choques
             const refStockCant = db.ref(pathStock).child(sId).child('cantidad');
             return refStockCant.transaction((cantActual) => {
                 return (cantActual || 0) - cant;
