@@ -3914,7 +3914,10 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             }
 
             if (dbRef) {
+                // No recargar si hay un borrado en curso para evitar que la orden "reaparezca"
+                if (window._deletingOrder) return;
                 dbRef.once('value').then(snap => {
+                    if (window._deletingOrder) return; // doble chequeo al resolver
                     const v = snap.val();
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                     localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
@@ -7838,8 +7841,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const cloudName    = "dsbiva6k0";
 
         mostrarLoader("Eliminando orden...");
-
-        // 1. Intentar borrar fotos de Cloudinary
+        window._deletingOrder = true;
         try {
             const snapFotos = await db.ref(pathFotos).once('value');
             const fotoData  = snapFotos.val();
@@ -7865,14 +7867,27 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         await db.ref(pathFotos).remove().catch(() => {});
 
         // 3. Borrar orden e índice
-        db.ref(pathActivo).child(idParaBorrar).remove();
-        db.ref(pathArchivado).child(idParaBorrar).remove();
+        await Promise.all([
+            db.ref(pathActivo).child(idParaBorrar).remove().catch(() => {}),
+            db.ref(pathArchivado).child(idParaBorrar).remove().catch(() => {})
+        ]);
         borrarIndice(idParaBorrar);
         
         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
         registros = registros.filter(x => x.id !== idParaBorrar);
+
+        // Actualizar caché para que el visibilitychange no restaure la orden borrada
+        try {
+            const cacheKey = 'st_cache_ordenes_' + currentUser;
+            const cacheActual = localStorage.getItem(cacheKey);
+            if (cacheActual) {
+                const cacheArr = JSON.parse(cacheActual).filter(x => x.id !== idParaBorrar);
+                localStorage.setItem(cacheKey, JSON.stringify(cacheArr));
+            }
+        } catch(e) {}
         
         ocultarLoader();
+        window._deletingOrder = false;
         renderTable();
         actualizarListasAutocompletado();
         
