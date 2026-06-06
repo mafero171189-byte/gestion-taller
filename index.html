@@ -35,6 +35,99 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+  <style>
+    /* === SCANNER DE CÓDIGO DE BARRAS === */
+    #scannerModal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(8,12,24,0.92); z-index: 20000;
+        display: none; align-items: center; justify-content: center;
+        flex-direction: column; backdrop-filter: blur(6px);
+    }
+    #scannerModal.active { display: flex; }
+    .scanner-box {
+        background: #111827; border-radius: 20px; padding: 20px;
+        width: 92%; max-width: 380px; text-align: center;
+        box-shadow: 0 30px 70px rgba(0,0,0,0.8);
+        border: 1.5px solid rgba(255,255,255,0.08);
+    }
+    .scanner-title {
+        color: white; font-family: 'Outfit', sans-serif;
+        font-size: 17px; font-weight: 800; margin-bottom: 6px;
+    }
+    .scanner-subtitle {
+        color: rgba(255,255,255,0.45); font-family: 'Outfit', sans-serif;
+        font-size: 12px; margin-bottom: 16px;
+    }
+    .scanner-tabs {
+        display: flex; gap: 6px; margin-bottom: 16px; justify-content: center;
+    }
+    .scanner-tab {
+        flex: 1; padding: 8px 6px; border: 1.5px solid rgba(255,255,255,0.15);
+        border-radius: 10px; background: transparent; color: rgba(255,255,255,0.5);
+        font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .scanner-tab.active { background: #1e4d8c; border-color: #1e4d8c; color: white; }
+    #scannerPanelManual { display: none; }
+    #scannerPanelManual.active { display: block; }
+    #scannerInputField {
+        width: 100%; padding: 14px 16px; border-radius: 12px;
+        border: 2px solid #1e4d8c; background: #1a2035; color: white;
+        font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600;
+        box-sizing: border-box; outline: none; text-align: center; letter-spacing: 2px;
+    }
+    #scannerInputField::placeholder { color: rgba(255,255,255,0.25); letter-spacing: 0; font-size: 13px; }
+    #scannerInputField:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+    .scanner-usb-hint {
+        margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.35);
+        font-family: 'Outfit', sans-serif; line-height: 1.5;
+    }
+    #scannerPanelCam { display: none; }
+    #scannerPanelCam.active { display: block; }
+    #scannerVideoWrap {
+        position: relative; border-radius: 12px; overflow: hidden;
+        background: #000; margin-bottom: 10px;
+    }
+    #scannerVideo { width: 100%; height: 220px; object-fit: cover; display: block; }
+    .scanner-crosshair {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+        width: 180px; height: 100px; border: 2px solid rgba(59,130,246,0.8);
+        border-radius: 8px; pointer-events: none;
+        box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
+    }
+    .scanner-line {
+        position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        animation: scanLine 1.8s ease-in-out infinite;
+    }
+    @keyframes scanLine { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
+    #scannerCamStatus {
+        font-size: 12px; color: rgba(255,255,255,0.4);
+        font-family: 'Outfit', sans-serif; margin-bottom: 10px; min-height: 18px;
+    }
+    .scanner-result-preview {
+        background: #0f2a1a; border: 1.5px solid #059669; border-radius: 10px;
+        padding: 10px 14px; margin-bottom: 12px; display: none; font-family: 'Outfit', sans-serif;
+    }
+    .scanner-result-preview b { color: #34d399; font-size: 14px; display: block; margin-bottom: 2px; }
+    .scanner-result-preview span { color: rgba(255,255,255,0.5); font-size: 11px; }
+    .btn-scanner-close {
+        width: 100%; padding: 12px; border-radius: 12px; border: none;
+        background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.5);
+        font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700;
+        cursor: pointer; margin-top: 10px; transition: all 0.2s;
+    }
+    .btn-scanner-close:hover { background: rgba(255,255,255,0.12); color: white; }
+    .btn-scan-inline {
+        background: #1e3a5f; border: 1.5px solid #1e4d8c; color: #60a5fa;
+        border-radius: 8px; padding: 8px 12px; cursor: pointer;
+        font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700;
+        white-space: nowrap; transition: all 0.2s; display: inline-flex;
+        align-items: center; gap: 5px;
+    }
+    .btn-scan-inline:hover { background: #1e4d8c; color: white; }
+  </style>
   <style>
         /* ESTILOS DEL LOGIN MODERNIZADO */
         #login-overlay {
@@ -2351,7 +2444,10 @@ function showApp() {
     <p style="color: #8e44ad; font-weight: bold; font-size: 18px; margin-top: 0;">Venta Rápida de Mostrador</p>
     <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">Ideal para vender cables, fundas o repuestos sin crear orden.</p>
     <div style="position: relative; text-align: left;">
-     <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" onblur="hideVrAutocomplete()" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
+     <div style="display:flex; gap:8px; align-items:center;">
+      <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..." oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" onblur="hideVrAutocomplete()" autocomplete="off" style="flex:1; padding: 10px; border: 2px solid #8e44ad; border-radius: 8px; box-sizing: border-box;">
+      <button type="button" class="btn-scan-inline" onclick="abrirScanner('venta-rapida')" title="Escanear código de barras" style="background:#4a1a6b; border-color:#8e44ad; color:#c084fc;">📷</button>
+     </div>
      <div id="vrAutocomplete" class="autocomplete-list" style="width: 100%;"></div>
     </div>
     <div id="vrDetalle" style="display:none; text-align:left; margin-top:15px; background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
@@ -3197,8 +3293,9 @@ function showApp() {
     </div>
     <div id="page-stock" class="page" style="display:none;">
      <h2 style="margin-top:0; display:flex; align-items:center; gap:10px;">📦 Control de Stock <span id="campana-stock" title="Configurar stock mínimo de alerta" onclick="abrirConfigStockMinimoGlobal()" style="cursor:pointer; font-size:22px; display:inline;">🔔</span></h2>
-     <div style="margin-bottom: 15px; margin-top: 10px;">
-      <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
+     <div style="margin-bottom: 15px; margin-top: 10px; display:flex; gap:8px; align-items:center;">
+      <input type="text" id="search-stock" placeholder="🔎 Buscar repuesto en inventario..." onkeyup="renderStock()" style="flex:1; padding:12px; border-radius:8px; border:1px solid #e5e7eb; box-sizing: border-box; font-size:15px;">
+      <button type="button" class="btn-scan-inline" onclick="abrirScanner('stock-buscar')" title="Escanear código de barras">📷 Scan</button>
      </div>
      <div class="form-grid" id="stock-form-grid">
       <input type="hidden" id="stockId">
@@ -3208,6 +3305,10 @@ function showApp() {
       </div>
       <div>
        <label>Cantidad (Und)</label><input type="number" id="stockCantidad" placeholder="0" min="0" required>
+      </div>
+      <div>
+       <label style="display:flex; align-items:center; justify-content:space-between;">Código de barras <button type="button" class="btn-scan-inline" style="padding:4px 9px; font-size:11px;" onclick="abrirScanner('stock-codigo')" title="Escanear código">📷 Scan</button></label>
+       <input type="text" id="stockCodigo" placeholder="Ej: 7798010922148" inputmode="text" autocomplete="off" style="letter-spacing:1px;">
       </div>
       <div>
        <label>Costo Unitario $</label><input type="text" id="stockCosto" placeholder="0" oninput="formatInput(this)">
@@ -6041,7 +6142,16 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             estado: "Entregado",
             esVentaRapida: true,
             archivado: false, 
-            fecha: new Date().toLocaleString('es-AR', { hour12: false })
+            fecha: (function() {
+                var n = new Date();
+                var dd = String(n.getDate()).padStart(2,'0');
+                var mm = String(n.getMonth()+1).padStart(2,'0');
+                var aaaa = n.getFullYear();
+                var hh = String(n.getHours()).padStart(2,'0');
+                var mi = String(n.getMinutes()).padStart(2,'0');
+                var ss = String(n.getSeconds()).padStart(2,'0');
+                return dd+'/'+mm+'/'+aaaa+', '+hh+':'+mi+':'+ss;
+            })()
         };
 
         const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -8607,10 +8717,11 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         const costo = parseMoney(document.getElementById('stockCosto').value);
         const precio = parseMoney(document.getElementById('stockPrecio').value);
         const minimo = parseInt(document.getElementById('stockMinimo').value) || 0;
+        const codigo = (document.getElementById('stockCodigo').value || '').trim();
 
         if(!n || isNaN(c)) { showToast("Nombre y cantidad requeridos", "#dc2626"); return; }
 
-        const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio, stockMinimo: minimo };
+        const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio, stockMinimo: minimo, codigo: codigo };
         const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
         
         mostrarLoader("Guardando stock...");
@@ -8644,6 +8755,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('stockCosto').value = "";
         document.getElementById('stockPrecio').value = "";
         document.getElementById('stockMinimo').value = "";
+        document.getElementById('stockCodigo').value = "";
         document.getElementById('search-stock').value = "";
         
         // Resetear botón de Guardar
@@ -8668,6 +8780,7 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
         document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
         document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
         document.getElementById('stockMinimo').value = item.stockMinimo || "";
+        document.getElementById('stockCodigo').value = item.codigo || "";
         
         // Cambiar a modo Actualizar
         const btnGuardar = document.getElementById('btnGuardarStock');
@@ -10670,6 +10783,110 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
     // CUSTOM PICKER (Equipo y Marca)
     // ==========================================
     (function() {
+        // Marcas por tipo de equipo
+        const MARCAS_POR_EQUIPO = {
+            'Smartphone': [
+                { value: 'Apple',    label: 'Apple' },
+                { value: 'Huawei',   label: 'Huawei' },
+                { value: 'LG',       label: 'LG' },
+                { value: 'Motorola', label: 'Motorola' },
+                { value: 'Nokia',    label: 'Nokia' },
+                { value: 'Nubia',    label: 'Nubia' },
+                { value: 'Oppo',     label: 'Oppo' },
+                { value: 'Samsung',  label: 'Samsung' },
+                { value: 'TCL',      label: 'TCL' },
+                { value: 'Xiaomi',   label: 'Xiaomi' },
+                { value: 'ZTE',      label: 'ZTE' },
+                { value: '__otra__', label: 'Otra' },
+            ],
+            'Tablet': [
+                { value: 'Alcatel',        label: 'Alcatel' },
+                { value: 'Apple',          label: 'Apple (iPad)' },
+                { value: 'Banghó',         label: 'Banghó' },
+                { value: 'BGH / Positivo BGH', label: 'BGH / Positivo BGH' },
+                { value: 'EXO',            label: 'EXO' },
+                { value: 'Gadnic',         label: 'Gadnic' },
+                { value: 'Honor',          label: 'Honor' },
+                { value: 'Huawei',         label: 'Huawei' },
+                { value: 'Lenovo',         label: 'Lenovo' },
+                { value: 'Motorola',       label: 'Motorola' },
+                { value: 'Noblex',         label: 'Noblex' },
+                { value: 'PCBOX',          label: 'PCBOX' },
+                { value: 'Philco',         label: 'Philco' },
+                { value: 'Samsung',        label: 'Samsung (Galaxy Tab)' },
+                { value: 'TCL',            label: 'TCL' },
+                { value: 'Xiaomi',         label: 'Xiaomi' },
+                { value: '__otra__', label: 'Otra' },
+            ],
+            'PC/Notebook': [
+                { value: 'Acer',           label: 'Acer' },
+                { value: 'Apple',          label: 'Apple' },
+                { value: 'Asus',           label: 'Asus' },
+                { value: 'Banghó',         label: 'Banghó' },
+                { value: 'Coradir',        label: 'Coradir' },
+                { value: 'CX',             label: 'CX' },
+                { value: 'Dell',           label: 'Dell' },
+                { value: 'EXO',            label: 'EXO' },
+                { value: 'Gadnic',         label: 'Gadnic' },
+                { value: 'Gigabyte',       label: 'Gigabyte' },
+                { value: 'HP',             label: 'HP' },
+                { value: 'Lenovo',         label: 'Lenovo' },
+                { value: 'LG',             label: 'LG' },
+                { value: 'MSI',            label: 'MSI' },
+                { value: 'PCBOX',          label: 'PCBOX' },
+                { value: 'Positivo BGH',   label: 'Positivo BGH' },
+                { value: 'Samsung',        label: 'Samsung' },
+                { value: 'Toshiba',        label: 'Toshiba' },
+                { value: '__otra__', label: 'Otra' },
+            ],
+            'Consola': [
+                { value: 'PlayStation (PS1)',  label: 'PlayStation (PS1)' },
+                { value: 'PlayStation 2 (PS2)',label: 'PlayStation 2 (PS2)' },
+                { value: 'PlayStation 3 (PS3)',label: 'PlayStation 3 (PS3)' },
+                { value: 'PlayStation 4',      label: 'PlayStation 4' },
+                { value: 'PlayStation 5',      label: 'PlayStation 5' },
+                { value: 'PlayStation Portable (PSP)', label: 'PlayStation Portable (PSP)' },
+                { value: 'Xbox 360',           label: 'Xbox 360' },
+                { value: 'Xbox One',           label: 'Xbox One' },
+                { value: 'Xbox Series S',      label: 'Xbox Series S' },
+                { value: 'Xbox Series X',      label: 'Xbox Series X' },
+                { value: '__otra__', label: 'Otra' },
+            ],
+            'Otro': [
+                { value: '__otra__', label: 'Otra' },
+            ]
+        };
+
+        // ── Marcas custom guardadas en localStorage ──────────────────
+        function _keyMarcasCustom(equipo) { return 'marcas_custom_' + equipo.replace(/\W/g,'_'); }
+
+        function getMarcasCustom(equipo) {
+            try { return JSON.parse(localStorage.getItem(_keyMarcasCustom(equipo))) || []; }
+            catch(e) { return []; }
+        }
+
+        function guardarMarcaCustom(equipo, marca) {
+            var lista = getMarcasCustom(equipo);
+            if (!lista.includes(marca)) {
+                lista.push(marca);
+                localStorage.setItem(_keyMarcasCustom(equipo), JSON.stringify(lista));
+            }
+        }
+
+        function borrarMarcaCustom(equipo, marca) {
+            var lista = getMarcasCustom(equipo).filter(function(m) { return m !== marca; });
+            localStorage.setItem(_keyMarcasCustom(equipo), JSON.stringify(lista));
+        }
+
+        function getMarcasParaEquipo(equipo) {
+            var predefinidas = MARCAS_POR_EQUIPO[equipo] || MARCAS_POR_EQUIPO['Smartphone'];
+            var custom = getMarcasCustom(equipo).map(function(m) { return { value: m, label: m, custom: true }; });
+            // Intercalar custom antes de __otra__, al final de las predefinidas
+            var sinOtra = predefinidas.filter(function(o) { return o.value !== '__otra__'; });
+            var otra = predefinidas.filter(function(o) { return o.value === '__otra__'; });
+            return sinOtra.concat(custom).concat(otra);
+        }
+
         const PICKERS = {
             equipo: {
                 title: 'Tipo de equipo',
@@ -10683,22 +10900,14 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             },
             marca: {
                 title: 'Marca del equipo',
-                options: [
-                    { value: 'Apple',    label: 'Apple' },
-                    { value: 'Huawei',   label: 'Huawei' },
-                    { value: 'LG',       label: 'LG' },
-                    { value: 'Motorola', label: 'Motorola' },
-                    { value: 'Nokia',    label: 'Nokia' },
-                    { value: 'Nubia',    label: 'Nubia' },
-                    { value: 'Oppo',     label: 'Oppo' },
-                    { value: 'Samsung',  label: 'Samsung' },
-                    { value: 'TCL',      label: 'TCL' },
-                    { value: 'Xiaomi',   label: 'Xiaomi' },
-                    { value: 'ZTE',      label: 'ZTE' },
-                    { value: 'Otra',     label: 'Otra' },
-                ]
+                get options() {
+                    var eq = (document.getElementById('equipo') || {}).value || 'Smartphone';
+                    return getMarcasParaEquipo(eq);
+                }
             }
         };
+
+        window._getMarcasParaEquipo = getMarcasParaEquipo;
 
         let currentPicker = null;
 
@@ -10734,24 +10943,83 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             }
         });
 
+        // Input inline para escribir marca personalizada
+        function mostrarInputOtraMarca(type, container, equipoId) {
+            if (container.querySelector('.picker-otra-input-wrap')) return;
+            var equipo = (document.getElementById(equipoId || 'equipo') || {}).value || 'Smartphone';
+            var wrap = document.createElement('div');
+            wrap.className = 'picker-otra-input-wrap';
+            wrap.style.cssText = 'padding:10px 14px; display:flex; gap:8px; align-items:center; border-top:1px solid rgba(255,255,255,0.08);';
+            wrap.innerHTML = '<input type="text" placeholder="Escribir marca..." inputmode="text" autocomplete="off" style="flex:1; padding:8px 10px; border-radius:8px; border:1.5px solid #3b82f6; background:#0f172a; color:white; font-size:14px; font-family:inherit; outline:none;"><button style="background:#3b82f6; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;">✓ OK</button>';
+            var input = wrap.querySelector('input');
+            var btn   = wrap.querySelector('button');
+            var confirmar = function() {
+                var val = input.value.trim();
+                if (!val) { input.focus(); return; }
+                guardarMarcaCustom(equipo, val);
+                selectPickerValue(type, val, val);
+            };
+            btn.addEventListener('click', function(e) { e.stopPropagation(); confirmar(); });
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); confirmar(); } });
+            container.appendChild(wrap);
+            setTimeout(function() { input.focus(); }, 80);
+        }
+
+        function buildPickerOptions(type, opciones, currentVal, container, clickHandler, equipoId) {
+            container.innerHTML = '';
+            var equipo = (document.getElementById(equipoId || 'equipo') || {}).value || 'Smartphone';
+            opciones.forEach(function(opt) {
+                var div = document.createElement('div');
+                div.className = 'picker-option';
+                if (opt.value === '__otra__') {
+                    div.innerHTML = '<span class="picker-option-label" style="color:#93c5fd;">✏️ Otra (escribir)...</span><div class="picker-radio" data-val="__otra__"></div>';
+                    div.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        mostrarInputOtraMarca(type, container, equipoId);
+                    });
+                } else if (opt.custom) {
+                    // Marca custom: label + × para borrar
+                    div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:17px 22px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s;';
+                    div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span>'
+                        + '<div style="display:flex;align-items:center;gap:10px;">'
+                        + '<div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '" data-val="' + opt.value + '"></div>'
+                        + '<button data-borrar-marca="' + opt.value + '" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;border-radius:4px;transition:color 0.15s;" title="Borrar marca">✕</button>'
+                        + '</div>';
+                    // Click en × borra la marca y reconstruye
+                    var btnBorrar = div.querySelector('[data-borrar-marca]');
+                    btnBorrar.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        borrarMarcaCustom(equipo, opt.value);
+                        // Reconstruir opciones
+                        var nuevasOpciones = getMarcasParaEquipo(equipo);
+                        buildPickerOptions(type, nuevasOpciones, currentVal, container, clickHandler, equipoId);
+                    });
+                    // Click en el resto selecciona
+                    div.addEventListener('click', function(e) {
+                        if (e.target.closest('[data-borrar-marca]')) return;
+                        if (clickHandler) clickHandler(e, opt);
+                    });
+                } else {
+                    div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span>'
+                        + '<div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '" data-val="' + opt.value + '"></div>';
+                    div.addEventListener('click', function(e) { if (clickHandler) clickHandler(e, opt); });
+                }
+                container.appendChild(div);
+            });
+        }
+
         function openDropdown(type, btnEl) {
             currentPicker = type;
             const cfg = PICKERS[type];
             const currentVal = document.getElementById(type).value;
+            const opciones = (type === 'marca')
+                ? getMarcasParaEquipo(document.getElementById('equipo').value || 'Smartphone')
+                : cfg.options;
 
-            dropdown.innerHTML = '';
-            cfg.options.forEach(function(opt) {
-                const div = document.createElement('div');
-                div.className = 'picker-option';
-                div.innerHTML = `
-                    <span class="picker-option-label">${opt.label}</span>
-                    <div class="picker-radio ${opt.value === currentVal ? 'selected' : ''}" data-val="${opt.value}"></div>`;
-                div.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    selectPickerValue(type, opt.value, opt.label);
-                });
-                dropdown.appendChild(div);
-            });
+            buildPickerOptions(type, opciones, currentVal, dropdown, function(e, opt) {
+                e.stopPropagation();
+                selectPickerValue(type, opt.value, opt.label);
+            }, 'equipo');
 
             // Position SIEMPRE abajo del botón (position:fixed usa viewport, no necesita scrollY)
             const rect = btnEl.getBoundingClientRect();
@@ -10791,22 +11059,16 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             currentPicker = type;
             const cfg = PICKERS[type];
             const currentVal = document.getElementById(type).value;
+            const opciones = (type === 'marca')
+                ? getMarcasParaEquipo(document.getElementById('equipo').value || 'Smartphone')
+                : cfg.options;
 
             document.getElementById('picker-title').textContent = cfg.title;
             const container = document.getElementById('picker-options');
-            container.innerHTML = '';
 
-            cfg.options.forEach(function(opt) {
-                const div = document.createElement('div');
-                div.className = 'picker-option';
-                div.innerHTML = `
-                    <span class="picker-option-label">${opt.label}</span>
-                    <div class="picker-radio ${opt.value === currentVal ? 'selected' : ''}" data-val="${opt.value}"></div>`;
-                div.addEventListener('click', function() {
-                    selectPickerValue(type, opt.value, opt.label);
-                });
-                container.appendChild(div);
-            });
+            buildPickerOptions(type, opciones, currentVal, container, function(e, opt) {
+                selectPickerValue(type, opt.value, opt.label);
+            }, 'equipo');
 
             backdrop.classList.add('open');
             document.body.style.overflow = 'hidden';
@@ -10823,6 +11085,15 @@ Consulta de PIN: Si se ingresó una clave numérica, estará disponible bajo el 
             document.getElementById(type).value = value;
             document.getElementById(type + '-display').textContent = label;
             closePicker();
+            // Si cambió el equipo, resetear la marca al primer valor del nuevo listado
+            if (type === 'equipo') {
+                const nuevasMarcas = getMarcasParaEquipo(value);
+                const primeraM = nuevasMarcas[0];
+                if (primeraM) {
+                    document.getElementById('marca').value = primeraM.value;
+                    document.getElementById('marca-display').textContent = primeraM.label;
+                }
+            }
             if (typeof saveDraft === 'function') saveDraft();
         };
 
@@ -11659,25 +11930,9 @@ function enviarWappPresupuesto(id) {
 }
 
 // Picker helpers for presupuesto equipo/marca
-function openPresPickerEquipo() {
-    // Reuse PICKERS config via a proxy approach
-    const currentVal = document.getElementById('pres-equipo').value;
-    const options = [
-        { value: 'Smartphone', label: '📱 Smartphone' },
-        { value: 'Tablet',     label: '📳 Tablet' },
-        { value: 'PC/Notebook',label: '💻 PC/Notebook' },
-        { value: 'Consola',    label: '🎮 Consola' },
-        { value: 'Otro',       label: '🔧 Otro' },
-    ];
-    showPresPickerModal('Tipo de equipo', options, currentVal, function(val, label) {
-        document.getElementById('pres-equipo').value = val;
-        document.getElementById('pres-equipo-display').textContent = label;
-    }, document.getElementById('pres-equipo-btn'));
-}
-
-function openPresPickerMarca() {
-    const currentVal = document.getElementById('pres-marca').value;
-    const options = [
+// Marcas compartidas por tipo (mismo criterio que el picker de órdenes)
+var MARCAS_PRES_POR_EQUIPO = {
+    'Smartphone': [
         { value: 'Apple',    label: 'Apple' },
         { value: 'Huawei',   label: 'Huawei' },
         { value: 'LG',       label: 'LG' },
@@ -11689,32 +11944,184 @@ function openPresPickerMarca() {
         { value: 'TCL',      label: 'TCL' },
         { value: 'Xiaomi',   label: 'Xiaomi' },
         { value: 'ZTE',      label: 'ZTE' },
-        { value: 'Otra',     label: 'Otra' },
+        { value: '__otra__', label: 'Otra' },
+    ],
+    'Tablet': [
+        { value: 'Alcatel',        label: 'Alcatel' },
+        { value: 'Apple',          label: 'Apple (iPad)' },
+        { value: 'Banghó',         label: 'Banghó' },
+        { value: 'BGH / Positivo BGH', label: 'BGH / Positivo BGH' },
+        { value: 'EXO',            label: 'EXO' },
+        { value: 'Gadnic',         label: 'Gadnic' },
+        { value: 'Honor',          label: 'Honor' },
+        { value: 'Huawei',         label: 'Huawei' },
+        { value: 'Lenovo',         label: 'Lenovo' },
+        { value: 'Motorola',       label: 'Motorola' },
+        { value: 'Noblex',         label: 'Noblex' },
+        { value: 'PCBOX',          label: 'PCBOX' },
+        { value: 'Philco',         label: 'Philco' },
+        { value: 'Samsung',        label: 'Samsung (Galaxy Tab)' },
+        { value: 'TCL',            label: 'TCL' },
+        { value: 'Xiaomi',         label: 'Xiaomi' },
+        { value: '__otra__', label: 'Otra' },
+    ],
+    'PC/Notebook': [
+        { value: 'Acer',           label: 'Acer' },
+        { value: 'Apple',          label: 'Apple' },
+        { value: 'Asus',           label: 'Asus' },
+        { value: 'Banghó',         label: 'Banghó' },
+        { value: 'Coradir',        label: 'Coradir' },
+        { value: 'CX',             label: 'CX' },
+        { value: 'Dell',           label: 'Dell' },
+        { value: 'EXO',            label: 'EXO' },
+        { value: 'Gadnic',         label: 'Gadnic' },
+        { value: 'Gigabyte',       label: 'Gigabyte' },
+        { value: 'HP',             label: 'HP' },
+        { value: 'Lenovo',         label: 'Lenovo' },
+        { value: 'LG',             label: 'LG' },
+        { value: 'MSI',            label: 'MSI' },
+        { value: 'PCBOX',          label: 'PCBOX' },
+        { value: 'Positivo BGH',   label: 'Positivo BGH' },
+        { value: 'Samsung',        label: 'Samsung' },
+        { value: 'Toshiba',        label: 'Toshiba' },
+        { value: '__otra__', label: 'Otra' },
+    ],
+    'Consola': [
+        { value: 'PlayStation (PS1)',  label: 'PlayStation (PS1)' },
+        { value: 'PlayStation 2 (PS2)',label: 'PlayStation 2 (PS2)' },
+        { value: 'PlayStation 3 (PS3)',label: 'PlayStation 3 (PS3)' },
+        { value: 'PlayStation 4',      label: 'PlayStation 4' },
+        { value: 'PlayStation 5',      label: 'PlayStation 5' },
+        { value: 'PlayStation Portable (PSP)', label: 'PlayStation Portable (PSP)' },
+        { value: 'Xbox 360',           label: 'Xbox 360' },
+        { value: 'Xbox One',           label: 'Xbox One' },
+        { value: 'Xbox Series S',      label: 'Xbox Series S' },
+        { value: 'Xbox Series X',      label: 'Xbox Series X' },
+        { value: '__otra__', label: 'Otra' },
+    ],
+    'Otro': [
+        { value: '__otra__', label: 'Otra' },
+    ]
+};
+
+function openPresPickerEquipo() {
+    const currentVal = document.getElementById('pres-equipo').value;
+    const options = [
+        { value: 'Smartphone', label: '📱 Smartphone' },
+        { value: 'Tablet',     label: '📳 Tablet' },
+        { value: 'PC/Notebook',label: '💻 PC/Notebook' },
+        { value: 'Consola',    label: '🎮 Consola' },
+        { value: 'Otro',       label: '🔧 Otro' },
     ];
+    showPresPickerModal('Tipo de equipo', options, currentVal, function(val, label) {
+        document.getElementById('pres-equipo').value = val;
+        document.getElementById('pres-equipo-display').textContent = label;
+        // Resetear marca al primer valor del nuevo listado
+        const nuevasMarcas = _getPresMarcastParaEquipo(val);
+        const primeraM = nuevasMarcas[0];
+        if (primeraM) {
+            document.getElementById('pres-marca').value = primeraM.value;
+            document.getElementById('pres-marca-display').textContent = primeraM.label;
+        }
+    }, document.getElementById('pres-equipo-btn'), false);
+}
+
+function openPresPickerMarca() {
+    const equipo = document.getElementById('pres-equipo').value || 'Smartphone';
+    const currentVal = document.getElementById('pres-marca').value;
+    const options = _getPresMarcastParaEquipo(equipo);
     showPresPickerModal('Marca del equipo', options, currentVal, function(val, label) {
         document.getElementById('pres-marca').value = val;
         document.getElementById('pres-marca-display').textContent = label;
-    }, document.getElementById('pres-marca-btn'));
+    }, document.getElementById('pres-marca-btn'), true);
 }
 
-function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
+// Combina predefinidas + custom para presupuesto (comparte localStorage con órdenes)
+function _getPresMarcastParaEquipo(equipo) {
+    var predefinidas = MARCAS_PRES_POR_EQUIPO[equipo] || MARCAS_PRES_POR_EQUIPO['Smartphone'];
+    var key = 'marcas_custom_' + equipo.replace(/\W/g,'_');
+    var customArr = [];
+    try { customArr = JSON.parse(localStorage.getItem(key)) || []; } catch(e) {}
+    var custom = customArr.map(function(m) { return { value: m, label: m, custom: true }; });
+    var sinOtra = predefinidas.filter(function(o) { return o.value !== '__otra__'; });
+    var otra = predefinidas.filter(function(o) { return o.value === '__otra__'; });
+    return sinOtra.concat(custom).concat(otra);
+}
+
+function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarca) {
+
+    function buildOpts(container, opts, equipo, cerrar) {
+        container.innerHTML = '';
+        opts.forEach(function(opt) {
+            var div = document.createElement('div');
+            div.className = 'picker-option';
+            if (opt.value === '__otra__') {
+                div.innerHTML = '<span class="picker-option-label" style="color:#93c5fd;">✏️ Otra (escribir)...</span><div class="picker-radio"></div>';
+                div.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (container.querySelector('.picker-otra-input-wrap')) return;
+                    var wrap = document.createElement('div');
+                    wrap.className = 'picker-otra-input-wrap';
+                    wrap.style.cssText = 'padding:10px 14px; display:flex; gap:8px; align-items:center; border-top:1px solid rgba(255,255,255,0.08);';
+                    wrap.innerHTML = '<input type="text" placeholder="Escribir marca..." inputmode="text" autocomplete="off" style="flex:1; padding:8px 10px; border-radius:8px; border:1.5px solid #3b82f6; background:#0f172a; color:white; font-size:14px; font-family:inherit; outline:none;"><button style="background:#3b82f6; color:white; border:none; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;">✓ OK</button>';
+                    var input = wrap.querySelector('input');
+                    var btn = wrap.querySelector('button');
+                    var confirmar = function() {
+                        var val = input.value.trim();
+                        if (!val) { input.focus(); return; }
+                        // Guardar en localStorage
+                        var key = 'marcas_custom_' + equipo.replace(/\W/g,'_');
+                        var lista = [];
+                        try { lista = JSON.parse(localStorage.getItem(key)) || []; } catch(e) {}
+                        if (!lista.includes(val)) { lista.push(val); localStorage.setItem(key, JSON.stringify(lista)); }
+                        onSelect(val, val);
+                        cerrar();
+                    };
+                    btn.addEventListener('click', function(e) { e.stopPropagation(); confirmar(); });
+                    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); confirmar(); } });
+                    container.appendChild(wrap);
+                    setTimeout(function() { input.focus(); }, 80);
+                });
+            } else if (opt.custom && esMarca) {
+                div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:17px 22px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s;';
+                div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span>'
+                    + '<div style="display:flex;align-items:center;gap:10px;">'
+                    + '<div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '"></div>'
+                    + '<button data-bm="' + opt.value + '" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;border-radius:4px;" title="Borrar">✕</button>'
+                    + '</div>';
+                div.querySelector('[data-bm]').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var key = 'marcas_custom_' + equipo.replace(/\W/g,'_');
+                    var lista = [];
+                    try { lista = JSON.parse(localStorage.getItem(key)) || []; } catch(ex) {}
+                    lista = lista.filter(function(m) { return m !== opt.value; });
+                    localStorage.setItem(key, JSON.stringify(lista));
+                    buildOpts(container, _getPresMarcastParaEquipo(equipo), equipo, cerrar);
+                });
+                div.addEventListener('click', function(e) {
+                    if (e.target.closest('[data-bm]')) return;
+                    onSelect(opt.value, opt.label); cerrar();
+                });
+            } else {
+                div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span><div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '"></div>';
+                div.addEventListener('click', function() { onSelect(opt.value, opt.label); cerrar(); });
+            }
+            container.appendChild(div);
+        });
+    }
+
+    var equipo = (document.getElementById('pres-equipo') || {}).value || 'Smartphone';
+
     // Desktop: dropdown SIEMPRE abajo del botón
     if (window.innerWidth >= 600 && btnEl) {
         const existing = document.getElementById('pres-picker-dropdown');
-        if (existing) { existing.remove(); return; } // toggle si ya estaba abierto
+        if (existing) { existing.remove(); return; }
         const dd = document.createElement('div');
         dd.id = 'pres-picker-dropdown';
         dd.style.cssText = 'position:fixed; z-index:9000; background:#1e2537; border-radius:14px; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,0.55); min-width:200px;';
-        options.forEach(opt => {
-            const div = document.createElement('div');
-            div.className = 'picker-option';
-            div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span><div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '"></div>';
-            div.addEventListener('click', function(e) { e.stopPropagation(); onSelect(opt.value, opt.label); dd.remove(); });
-            dd.appendChild(div);
-        });
+        buildOpts(dd, options, equipo, function() { dd.remove(); });
         document.body.appendChild(dd);
 
-        // Posicionar SIEMPRE abajo del botón, limitando la altura si el espacio es justo
         const rect = btnEl.getBoundingClientRect();
         dd.style.left = rect.left + 'px';
         dd.style.minWidth = Math.max(btnEl.offsetWidth, 200) + 'px';
@@ -11722,38 +12129,27 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
         const maxH = Math.min(spaceBelow > 80 ? spaceBelow : window.innerHeight * 0.5, 320);
         dd.style.maxHeight = maxH + 'px';
         dd.style.top = (rect.bottom + 4) + 'px';
-
-        // Si el borde derecho sale de la pantalla, ajustar
         const ddW = dd.offsetWidth || parseInt(dd.style.minWidth);
-        if (rect.left + ddW > window.innerWidth - 8) {
-            dd.style.left = (window.innerWidth - ddW - 8) + 'px';
-        }
+        if (rect.left + ddW > window.innerWidth - 8) dd.style.left = (window.innerWidth - ddW - 8) + 'px';
 
         setTimeout(() => {
             document.addEventListener('click', function h(e) {
                 if (!dd.contains(e.target) && e.target !== btnEl && !btnEl.contains(e.target)) {
-                    dd.remove();
-                    document.removeEventListener('click', h);
+                    dd.remove(); document.removeEventListener('click', h);
                 }
             });
         }, 0);
         return;
     }
 
-    // Mobile: bottom sheet (mismo estilo que el picker de gestión)
+    // Mobile: bottom sheet
     const bd = document.createElement('div');
     bd.className = 'picker-backdrop open';
     bd.innerHTML = '<div class="picker-sheet"><div class="picker-sheet-handle"></div><div class="picker-sheet-title">' + title + '</div><div id="pres-picker-opts"></div><button class="picker-cancel">Cancelar</button></div>';
     bd.querySelector('.picker-cancel').addEventListener('click', function() { bd.remove(); document.body.style.overflow = ''; });
     bd.addEventListener('click', function(e) { if (e.target === bd) { bd.remove(); document.body.style.overflow = ''; } });
     const container = bd.querySelector('#pres-picker-opts');
-    options.forEach(opt => {
-        const div = document.createElement('div');
-        div.className = 'picker-option';
-        div.innerHTML = '<span class="picker-option-label">' + opt.label + '</span><div class="picker-radio ' + (opt.value === currentVal ? 'selected' : '') + '"></div>';
-        div.addEventListener('click', function() { onSelect(opt.value, opt.label); bd.remove(); document.body.style.overflow = ''; });
-        container.appendChild(div);
-    });
+    buildOpts(container, options, equipo, function() { bd.remove(); document.body.style.overflow = ''; });
     document.body.appendChild(bd);
     document.body.style.overflow = 'hidden';
 }
@@ -11917,6 +12313,369 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
     });
 })();
 
+// ===== SISTEMA SCANNER CÓDIGO DE BARRAS =====
+(function() {
+    var _scannerContext = null;     // 'stock-buscar' | 'stock-nombre' | 'venta-rapida'
+    var _codeBuffer = '';
+    var _codeTimer = null;
+    var _cameraCodeReader = null;
+    var _cameraStream = null;
+    var _cameraTrack = null;
+    var _linternaActiva = false;
+    var _scannerTab = 'usb';        // 'usb' | 'cam'
+    var _lastScanned = '';
+
+    // Abrir scanner
+    window.abrirScanner = function(ctx) {
+        _scannerContext = ctx;
+        _lastScanned = '';
+
+        // Label de contexto
+        var labels = {
+            'stock-buscar':  'Buscar artículo en inventario',
+            'stock-nombre':  'Agregar / identificar artículo',
+            'venta-rapida':  'Seleccionar artículo para venta'
+        };
+        var el = document.getElementById('scannerContextLabel');
+        if (el) el.textContent = labels[ctx] || 'Escaneá el artículo';
+
+        // Reset preview
+        document.getElementById('scannerResultPreview').style.display = 'none';
+
+        // Mostrar modal
+        document.getElementById('scannerModal').classList.add('active');
+
+        // Activar tab USB por defecto
+        switchScannerTab('usb');
+    };
+
+    window.cerrarScanner = function() {
+        document.getElementById('scannerModal').classList.remove('active');
+        _pararCamara();
+        _scannerContext = null;
+        _lastScanned = '';
+        document.getElementById('scannerInputField').value = '';
+        document.getElementById('scannerResultPreview').style.display = 'none';
+    };
+
+    window.switchScannerTab = function(tab) {
+        _scannerTab = tab;
+        document.getElementById('tabUSB').classList.toggle('active', tab === 'usb');
+        document.getElementById('tabCAM').classList.toggle('active', tab === 'cam');
+        document.getElementById('scannerPanelManual').classList.toggle('active', tab === 'usb');
+        document.getElementById('scannerPanelCam').classList.toggle('active', tab === 'cam');
+
+        if (tab === 'usb') {
+            _pararCamara();
+            setTimeout(function() {
+                var inp = document.getElementById('scannerInputField');
+                inp.value = '';
+                inp.focus();
+            }, 80);
+        } else {
+            _iniciarCamara();
+        }
+    };
+
+    // ---- Procesamiento del código escaneado ----
+    function _procesarCodigo(codigo) {
+        codigo = (codigo || '').trim();
+        if (!codigo || codigo === _lastScanned) return;
+        _lastScanned = codigo;
+
+        // Buscar en stockData por código o por nombre parcial
+        var found = null;
+        if (typeof stockData !== 'undefined') {
+            // Busca primero coincidencia exacta en campo 'codigo' (si existe)
+            found = stockData.find(function(item) {
+                return item.codigo && item.codigo === codigo;
+            });
+            // Si no, busca en nombre
+            if (!found) {
+                found = stockData.find(function(item) {
+                    return (item.nombre || '').toLowerCase() === codigo.toLowerCase();
+                });
+            }
+        }
+
+        // Mostrar preview
+        var prevEl = document.getElementById('scannerResultPreview');
+        var prevNombre = document.getElementById('scannerResultNombre');
+        var prevExtra = document.getElementById('scannerResultExtra');
+
+        if (found) {
+            prevNombre.textContent = found.nombre;
+            prevExtra.textContent = 'Stock: ' + found.cantidad + '  |  Venta: ' + (typeof fmt !== 'undefined' ? fmt.format(found.precioVenta) : found.precioVenta);
+            prevEl.style.display = 'block';
+            prevEl.style.background = '#0f2a1a';
+            prevEl.style.borderColor = '#059669';
+            prevNombre.style.color = '#34d399';
+            if (typeof showToast === 'function') showToast('✅ ' + found.nombre, '#059669');
+        } else {
+            prevNombre.textContent = codigo;
+            if (_scannerContext === 'stock-nombre' || _scannerContext === 'stock-codigo') {
+                prevExtra.textContent = 'Código listo para agregar como nuevo artículo';
+                prevEl.style.background = '#0f1f3a';
+                prevEl.style.borderColor = '#1e4d8c';
+                prevNombre.style.color = '#60a5fa';
+            } else {
+                prevExtra.textContent = 'Código no encontrado en inventario';
+                prevEl.style.background = '#2a0f0f';
+                prevEl.style.borderColor = '#dc2626';
+                prevNombre.style.color = '#f87171';
+            }
+            prevEl.style.display = 'block';
+        }
+
+        // Aplicar según contexto
+        switch (_scannerContext) {
+            case 'stock-buscar':
+                var searchEl = document.getElementById('search-stock');
+                if (searchEl) {
+                    searchEl.value = found ? found.nombre : codigo;
+                    if (typeof renderStock === 'function') renderStock();
+                }
+                break;
+
+            case 'stock-codigo':
+                var codigoEl = document.getElementById('stockCodigo');
+                if (codigoEl) {
+                    codigoEl.value = codigo;
+                    if (found && typeof editarStock === 'function') {
+                        // Artículo existente con ese código: abrir en modo edición
+                        cerrarScanner();
+                        editarStock(found.id);
+                        return;
+                    } else {
+                        // Código nuevo: cerrar scanner, dejar en campo y enfocar nombre si está vacío
+                        setTimeout(function() {
+                            cerrarScanner();
+                            var nombreEl = document.getElementById('stockNombre');
+                            var codigoElPost = document.getElementById('stockCodigo');
+                            if (nombreEl && !nombreEl.value.trim()) {
+                                nombreEl.focus();
+                                if (typeof showToast === 'function') showToast('📝 Código cargado — completá el nombre', '#1e4d8c');
+                            } else {
+                                if (codigoElPost) codigoElPost.focus();
+                                if (typeof showToast === 'function') showToast('✅ Código cargado', '#059669');
+                            }
+                        }, 900);
+                        return;
+                    }
+                }
+                break;
+
+            case 'stock-nombre':
+                // Este contexto ya no se usa activamente pero lo mantenemos por compatibilidad
+                var nombreElLegacy = document.getElementById('stockNombre');
+                if (nombreElLegacy && !nombreElLegacy.value.trim()) {
+                    nombreElLegacy.value = found ? found.nombre : '';
+                }
+                if (found && typeof editarStock === 'function') {
+                    cerrarScanner();
+                    editarStock(found.id);
+                    return;
+                }
+                break;
+
+            case 'venta-rapida':
+                if (found) {
+                    // Simular selección del artículo en venta rápida
+                    var vrInput = document.getElementById('vrBusqueda');
+                    if (vrInput) vrInput.value = '';
+                    document.getElementById('vrStockId').value = found.id;
+                    document.getElementById('vrNombre').innerText = '📦 ' + found.nombre;
+                    document.getElementById('vrPrecioUni').value = found.precioVenta;
+                    document.getElementById('vrCostoUni').value = found.costo;
+                    document.getElementById('vrMaxCant').value = found.cantidad;
+                    document.getElementById('vrCant').value = 1;
+                    if (typeof calcVrTotal === 'function') calcVrTotal();
+                    document.getElementById('vrDetalle').style.display = 'block';
+                    var listDiv = document.getElementById('vrAutocomplete');
+                    if (listDiv) listDiv.style.display = 'none';
+                    cerrarScanner();
+                    return;
+                } else {
+                    // No encontrado: poner en búsqueda manual
+                    var vrBus = document.getElementById('vrBusqueda');
+                    if (vrBus) {
+                        vrBus.value = codigo;
+                        if (typeof filtrarVentaRapida === 'function') filtrarVentaRapida();
+                    }
+                }
+                break;
+        }
+
+        // Cerrar scanner luego de 1.2s si encontró
+        if (found) {
+            setTimeout(function() { cerrarScanner(); }, 1200);
+        }
+    }
+
+    // ---- Detección USB / Bluetooth (lector actúa como teclado) ----
+    // El lector "escribe" rápido y manda Enter — detectamos por velocidad o Enter
+    document.addEventListener('keydown', function(e) {
+        var modal = document.getElementById('scannerModal');
+        if (!modal || !modal.classList.contains('active')) return;
+        if (_scannerTab !== 'usb') return;
+
+        var inp = document.getElementById('scannerInputField');
+        if (document.activeElement !== inp) inp.focus();
+
+        if (e.key === 'Enter') {
+            var val = inp.value.trim();
+            if (val) {
+                _procesarCodigo(val);
+                inp.value = '';
+            }
+            e.preventDefault();
+            return;
+        }
+        if (e.key === 'Escape') {
+            cerrarScanner();
+            return;
+        }
+    });
+
+    // También escuchar input para lectores que no mandan Enter (poco común)
+    document.addEventListener('DOMContentLoaded', function() {
+        var inp = document.getElementById('scannerInputField');
+        if (!inp) return;
+        inp.addEventListener('input', function() {
+            clearTimeout(_codeTimer);
+            var val = inp.value.trim();
+            if (!val) return;
+            // Si el código tiene 6+ chars y llegó muy rápido (lector), procesar
+            _codeTimer = setTimeout(function() {
+                if (inp.value.trim().length >= 4) {
+                    _procesarCodigo(inp.value.trim());
+                    inp.value = '';
+                }
+            }, 120);
+        });
+    });
+
+    // ---- Cámara (ZXing) ----
+    function _iniciarCamara() {
+        var statusEl = document.getElementById('scannerCamStatus');
+        var video = document.getElementById('scannerVideo');
+        statusEl.textContent = 'Iniciando cámara...';
+
+        // ZXing
+        if (typeof ZXing === 'undefined') {
+            statusEl.textContent = '⚠️ Librería de cámara no disponible. Usá USB/BT.';
+            return;
+        }
+
+        try {
+            _cameraCodeReader = new ZXing.BrowserMultiFormatReader();
+            _cameraCodeReader.listVideoInputDevices().then(function(devices) {
+                if (!devices || devices.length === 0) {
+                    statusEl.textContent = '⚠️ No se encontró cámara disponible.';
+                    return;
+                }
+                // Preferir cámara trasera
+                var device = devices.find(function(d) {
+                    return d.label && d.label.toLowerCase().includes('back');
+                }) || devices[devices.length - 1];
+
+                statusEl.textContent = 'Cámara activa — apuntá al código';
+
+                // Guardar track para linterna y verificar soporte
+                navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: device.deviceId, facingMode: 'environment' }
+                }).then(function(stream) {
+                    _cameraStream = stream;
+                    _cameraTrack = stream.getVideoTracks()[0];
+                    var caps = _cameraTrack.getCapabilities ? _cameraTrack.getCapabilities() : {};
+                    var btnLinterna = document.getElementById('btnLinterna');
+                    if (caps.torch && btnLinterna) {
+                        btnLinterna.style.display = 'block';
+                    }
+                }).catch(function() {});
+
+                _cameraCodeReader.decodeFromVideoDevice(device.deviceId, video, function(result, err) {
+                    if (result) {
+                        var codigo = result.getText();
+                        if (codigo !== _lastScanned) {
+                            _pararCamara();
+                            document.getElementById('scannerCamStatus').textContent = '✅ Código detectado';
+                            _procesarCodigo(codigo);
+                        }
+                    }
+                    // Ignorar errores de frame (son normales en ZXing)
+                });
+            }).catch(function(err) {
+                statusEl.textContent = '⚠️ Sin acceso a la cámara. Permitilo en el navegador.';
+            });
+        } catch(err) {
+            statusEl.textContent = '⚠️ Error al iniciar cámara.';
+        }
+    }
+
+    function _pararCamara() {
+        try {
+            if (_linternaActiva && _cameraTrack) {
+                _cameraTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(function(){});
+                _linternaActiva = false;
+            }
+            _cameraTrack = null;
+            if (_cameraStream) {
+                _cameraStream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
+                _cameraStream = null;
+            }
+            if (_cameraCodeReader) {
+                _cameraCodeReader.reset();
+                _cameraCodeReader = null;
+            }
+            var btnLinterna = document.getElementById('btnLinterna');
+            if (btnLinterna) {
+                btnLinterna.style.display = 'none';
+                btnLinterna.textContent = '🔦 Activar linterna';
+                btnLinterna.style.background = 'rgba(255,255,255,0.07)';
+                btnLinterna.style.color = 'rgba(255,255,255,0.7)';
+                btnLinterna.style.borderColor = 'rgba(255,255,255,0.15)';
+            }
+        } catch(e) {}
+    }
+
+    window.toggleLinterna = function() {
+        if (!_cameraTrack) return;
+        _linternaActiva = !_linternaActiva;
+        _cameraTrack.applyConstraints({ advanced: [{ torch: _linternaActiva }] })
+            .then(function() {
+                var btn = document.getElementById('btnLinterna');
+                if (!btn) return;
+                if (_linternaActiva) {
+                    btn.textContent = '🔦 Apagar linterna';
+                    btn.style.background = 'rgba(251,191,36,0.18)';
+                    btn.style.color = '#fbbf24';
+                    btn.style.borderColor = '#fbbf24';
+                } else {
+                    btn.textContent = '🔦 Activar linterna';
+                    btn.style.background = 'rgba(255,255,255,0.07)';
+                    btn.style.color = 'rgba(255,255,255,0.7)';
+                    btn.style.borderColor = 'rgba(255,255,255,0.15)';
+                }
+            })
+            .catch(function() {
+                if (typeof showToast === 'function') showToast('⚠️ No se pudo controlar la linterna', '#f59e0b');
+                _linternaActiva = !_linternaActiva; // revertir
+            });
+    };
+
+    // Cerrar scanner al presionar Escape globalmente
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var modal = document.getElementById('scannerModal');
+            if (modal && modal.classList.contains('active')) cerrarScanner();
+        }
+    });
+
+})();
+// ===== FIN SCANNER =====
+
+
 
 </script>
 
@@ -11936,5 +12695,54 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl) {
   </div>
 </div>
 
+
+<!-- ===== MODAL SCANNER CÓDIGO DE BARRAS ===== -->
+<div id="scannerModal">
+  <div class="scanner-box">
+    <div class="scanner-title">📷 Lector de Código de Barras</div>
+    <div class="scanner-subtitle" id="scannerContextLabel">Escaneá el artículo</div>
+    <div class="scanner-tabs">
+      <button class="scanner-tab active" id="tabUSB" onclick="switchScannerTab('usb')">🔌 USB / BT</button>
+      <button class="scanner-tab" id="tabCAM" onclick="switchScannerTab('cam')">📱 Cámara</button>
+    </div>
+
+    <!-- Panel USB / Bluetooth -->
+    <div id="scannerPanelManual" class="active">
+      <div style="color:rgba(255,255,255,0.7); font-size:13px; font-family:'Outfit',sans-serif; margin-bottom:12px;">
+        Apuntá el lector al código. Se detecta solo.
+      </div>
+      <div class="scanner-input-wrap">
+        <input type="text" id="scannerInputField" placeholder="Esperando escaneo..." autocomplete="off" inputmode="text">
+      </div>
+      <div class="scanner-usb-hint">
+        ✅ USB: enchufá y escaneá directamente<br>
+        ✅ Bluetooth: vinculá el lector al dispositivo<br>
+        ✅ También podés escribir el código manualmente
+      </div>
+    </div>
+
+    <!-- Panel Cámara -->
+    <div id="scannerPanelCam">
+      <div id="scannerVideoWrap">
+        <video id="scannerVideo" playsinline muted></video>
+        <div class="scanner-crosshair">
+          <div class="scanner-line"></div>
+        </div>
+      </div>
+      <div id="scannerCamStatus">Iniciando cámara...</div>
+      <button type="button" id="btnLinterna" onclick="toggleLinterna()" style="display:none; width:100%; margin-top:8px; padding:10px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.7); font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.3px;">
+        🔦 Activar linterna
+      </button>
+    </div>
+
+    <!-- Preview resultado -->
+    <div class="scanner-result-preview" id="scannerResultPreview">
+      <b id="scannerResultNombre">-</b>
+      <span id="scannerResultExtra"></span>
+    </div>
+
+    <button class="btn-scanner-close" onclick="cerrarScanner()">✕ Cancelar</button>
+  </div>
+</div>
  </body>
 </html>
