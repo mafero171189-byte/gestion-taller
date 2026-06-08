@@ -234,12 +234,12 @@
         :root { --primary: #06122a; --secondary: #1e4d8c; --success: #059669; --danger: #dc2626; --wapp: #25d366; --warning: #d97706; }
         html, body { overflow-x: hidden; width: 100%; background: #f4f5fb; margin: 0; padding: 0; color: #1a1a2e; font-family: 'Outfit', 'Segoe UI', sans-serif; touch-action: pan-y; transition: background-color 0.3s ease; }
         
-        nav { background: linear-gradient(90deg, #0a0e20 0%, #111630 100%); padding: 6px 12px; display: flex; gap: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4), 0 1px 0 rgba(45,58,140,0.3); flex-wrap: nowrap; align-items: center; overflow: hidden; }
-        .nav-scroll-area { display: flex; gap: 2px; flex: 1; align-items: center; overflow: hidden; min-width: 0; }
-        .nav-fixed-right { display: flex; gap: 2px; align-items: center; flex-shrink: 0; border-left: 1px solid rgba(255,255,255,0.08); margin-left: 6px; padding-left: 6px; }
-        nav button { background: none; border: 1px solid transparent; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: clamp(5px,0.6vw,9px) clamp(5px,0.9vw,14px); border-radius: 8px; transition: 0.25s; flex-shrink: 1; min-width: 0; font-family: 'Outfit', sans-serif; font-size: clamp(9px,1vw,13px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        nav { background: linear-gradient(90deg, #0a0e20 0%, #111630 100%); padding: 6px 12px; display: flex; gap: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4), 0 1px 0 rgba(45,58,140,0.3); flex-wrap: nowrap; align-items: center; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        nav::-webkit-scrollbar { display: none; }
+        .nav-scroll-area { display: contents; }
+        .nav-fixed-right { display: contents; }
+        nav button { background: none; border: 1px solid transparent; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: clamp(5px,0.6vw,9px) clamp(5px,0.9vw,14px); border-radius: 8px; transition: 0.25s; flex-shrink: 0; font-family: 'Outfit', sans-serif; font-size: clamp(9px,1vw,13px); white-space: nowrap; }
         nav button.active { color: white; background: rgba(45,58,140,0.18); border-color: rgba(45,58,140,0.35); }
-        .nav-fixed-right button { flex-shrink: 0; }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e8eaf5; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
         
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; border-top: 3px solid #1e4d8c; }
@@ -249,6 +249,8 @@
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(8,12,24,0.75); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
         .modal-box { background: white; padding: 28px; border-radius: 18px; width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); transition: background-color 0.3s, border-color 0.3s; }
+        /* El modal de cobro/entrega puede ser alto: scroll interno para que entre en pantalla (PC y mobile) */
+        #modalCobroEntregado .modal-box { max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         
         .status-option { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #e5e7eb; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
         .opt-pendiente { background: #fff9c4; color: #856404; }
@@ -379,6 +381,9 @@
         .bm-efectivo { background: #d1fae5; color: #065f46; }
         .bm-transferencia { background: #dbeafe; color: #1e3a8a; }
         .bm-tarjeta { background: #fef3c7; color: #92400e; }
+        .bm-debito { background: #e0e7ff; color: #3730a3; }
+        .bm-credito { background: #fae8ff; color: #86198f; }
+        .bm-mercado-pago { background: #cffafe; color: #155e75; }
         .tabla-contabilidad-row { background: white; transition: background-color 0.2s; }
         .tabla-contabilidad-row:hover { background: #f5f6fc; }
 
@@ -469,6 +474,9 @@
         body.dark-mode .badge-metodo.bm-efectivo { background-color: #052e16 !important; color: #86efac !important; }
         body.dark-mode .badge-metodo.bm-transferencia { background-color: #0c1a4d !important; color: #93c5fd !important; }
         body.dark-mode .badge-metodo.bm-tarjeta { background-color: #431407 !important; color: #fdba74 !important; }
+        body.dark-mode .badge-metodo.bm-debito { background-color: #1e1b4b !important; color: #a5b4fc !important; }
+        body.dark-mode .badge-metodo.bm-credito { background-color: #4a044e !important; color: #f0abfc !important; }
+        body.dark-mode .badge-metodo.bm-mercado-pago { background-color: #083344 !important; color: #67e8f9 !important; }
         
         body.dark-mode .modo-archivo-activo { background-color: #080c18 !important; }
 
@@ -2522,7 +2530,9 @@ function showApp() {
           <select id="vrMetodo" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid #e5e7eb;font-family:'Outfit',sans-serif;font-size:14px;margin-top:4px;cursor:pointer;">
             <option value="Efectivo">💵 Efectivo</option>
             <option value="Transferencia">📲 Transferencia</option>
-            <option value="Tarjeta">💳 Tarjeta</option>
+            <option value="Débito">💳 Débito</option>
+            <option value="Crédito">💳 Crédito</option>
+            <option value="Mercado Pago">🔵 Mercado Pago</option>
           </select>
         </div>
         <div style="text-align:right;">
@@ -2742,11 +2752,11 @@ function showApp() {
      </div>
      
      <div id="cobroCotizarContainer" style="display:none; text-align: left; margin-bottom: 15px;">
-      <label id="cobroAvisoCotizar" style="font-size: 13px; color: #6b7280; font-weight:bold;"></label> <input type="text" id="cobroPrecioFinal" placeholder="0" oninput="formatInput(this)" style="width: 100%; padding: 10px; border: 2px solid var(--success); border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 5px; text-align:center;">
+      <label id="cobroAvisoCotizar" style="font-size: 13px; color: #6b7280; font-weight:bold;"></label> <input type="text" id="cobroPrecioFinal" placeholder="0" oninput="formatInput(this); recalcDescuentoEntrega();" style="width: 100%; padding: 10px; border: 2px solid var(--success); border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 5px; text-align:center;">
      </div>
      
      <div id="metodoCobroContainer" style="text-align: left; margin-bottom: 15px;">
-      <label style="font-size: 12px; font-weight: bold; color: #6b7280;">¿Cómo paga este saldo restante?</label> <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #1e4d8c; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;"> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
+      <label style="font-size: 12px; font-weight: bold; color: #6b7280;">¿Cómo paga este saldo restante?</label> <select id="metodoCobroFinal" style="width: 100%; padding: 10px; border: 2px solid #1e4d8c; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 5px;"> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Débito">💳 Débito</option> <option value="Crédito">💳 Crédito</option> <option value="Mercado Pago">🔵 Mercado Pago</option> </select>
       <p id="cobroAvisoSaldo" style="font-size: 11px; color:#9ca3af; margin-top:5px; line-height:1.3;">La contabilidad registrará el método de la seña y este método de saldo por separado.</p>
      </div>
 
@@ -2766,7 +2776,7 @@ function showApp() {
       </div>
      </div>
 
-     <div style="text-align: left; margin-bottom: 20px;">
+     <div id="garantiaCompartidaContainer" style="text-align: left; margin-bottom: 20px;">
       <label style="font-size: 12px; font-weight: bold; color: #1e40af;">🛡️ Tiempo de Garantía (días)</label>
       <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
        <input type="number" id="selectGarantia" min="0" placeholder="0 = sin garantía" inputmode="numeric"
@@ -2776,7 +2786,6 @@ function showApp() {
          <button type="button" onclick="setGarantiaDias(30)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">30d</button>
          <button type="button" onclick="setGarantiaDias(60)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">60d</button>
          <button type="button" onclick="setGarantiaDias(90)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">90d</button>
-         <button type="button" onclick="setGarantiaDias(180)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">180d</button>
         </div>
        </div>
       </div>
@@ -2784,14 +2793,90 @@ function showApp() {
      </div>
      
      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button onclick="document.getElementById('modalCobroEntregado').style.display='none'; window._modoCobroDeuda=false;" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
+      <button id="btnCancelarEntrega" onclick="document.getElementById('modalCobroEntregado').style.display='none'; window._modoCobroDeuda=false;" style="flex:1; padding:10px; border-radius:8px; border:none; background:#f3f4f6; color:#6b7280; font-weight:bold; cursor:pointer;">CANCELAR</button>
       <button id="btnConfirmarEntrega" onclick="procesarCobroEntregado()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer;">COBRAR Y ENTREGAR</button>
       <div id="btnEntregarSinCobrarContainer" style="display:none; flex-basis:100%;">
        <button onclick="procesarEntregaSinCobrar()" style="width:100%; padding:10px; border-radius:8px; border:none; background:#f59e0b; color:white; font-weight:bold; cursor:pointer; font-family:'Outfit',sans-serif;">⚠️ ENTREGAR SIN COBRAR</button>
       </div>
       <div id="btnCortesiaContainer" style="display:none; flex-basis:100%;">
-       <button onclick="procesarEntregaCortesia()" style="width:100%; padding:10px; border-radius:8px; border:none; background:#7c3aed; color:white; font-weight:bold; cursor:pointer; font-family:'Outfit',sans-serif;">🎁 ENTREGAR SIN CARGO (CORTESÍA)</button>
-       <p style="font-size:11px; color:#9ca3af; margin:6px 0 0; text-align:center;">No se registra ingreso. El costo del repuesto queda como egreso.</p>
+
+       <!-- 1. PRECIO -->
+       <div style="margin-bottom:10px;">
+        <label style="font-size:12px; font-weight:800; color:#374151; display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px;">💰 Precio <span style="font-weight:400; color:#9ca3af;">(opcional — dejá vacío para cortesía)</span></label>
+        <div style="display:flex; align-items:center; gap:6px;">
+         <span style="font-size:15px; font-weight:800; color:#374151; padding:9px 10px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px;">$</span>
+         <input type="number" id="cortesiaPrecioInput" placeholder="0" inputmode="decimal" min="0"
+           oninput="recalcCortesia()"
+           style="flex:1; padding:9px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:16px; font-weight:700; font-family:'Outfit',sans-serif; outline:none; background:white; color:#111827;">
+        </div>
+       </div>
+
+       <!-- 2. DESCUENTO (aparece cuando hay precio) -->
+       <div id="cortesiaDescuentoContainer" style="display:none; margin-bottom:10px; background:#fff5f5; border:1.5px solid #fca5a5; border-radius:10px; padding:10px 12px;">
+        <label style="font-size:12px; font-weight:800; color:#dc2626; display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px;">🏷️ Descuento <span style="font-weight:400; color:#9ca3af;">(opcional)</span></label>
+        <div style="display:flex; gap:6px; align-items:center;">
+         <select id="cortesiaDescTipo" onchange="recalcCortesia()" style="width:62px; min-width:62px; padding:9px 6px; border:1.5px solid #fca5a5; border-radius:7px; background:#ffe4e4; color:#dc2626; font-weight:800; font-size:14px; cursor:pointer; text-align:center; font-family:'Outfit',sans-serif;">
+          <option value="%">%</option>
+          <option value="$">$</option>
+         </select>
+         <input type="number" id="cortesiaDescValor" placeholder="Ej: 10" inputmode="decimal" min="0"
+           oninput="recalcCortesia()"
+           style="flex:1; padding:9px 10px; border:1.5px solid #fca5a5; border-radius:7px; font-size:14px; font-family:'Outfit',sans-serif; outline:none; background:white;">
+        </div>
+       </div>
+
+       <!-- 3. TOTAL A COBRAR -->
+       <div id="cortesiaTotalContainer" style="display:none; margin-bottom:10px; background:#dcfce7; border:1.5px solid #86efac; border-radius:10px; padding:10px 14px;">
+        <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total a cobrar</div>
+        <div id="cortesiaTotalMonto" style="font-size:22px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
+        <div id="cortesiaTotalDetalle" style="font-size:11px; color:#6b7280; margin-top:1px;"></div>
+       </div>
+
+       <!-- 4. MÉTODO DE PAGO (aparece cuando hay precio) -->
+       <div id="cortesiaMetodoPagoContainer" style="display:none; margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:800; color:#374151; display:block; margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;">💳 Método de pago</label>
+        <select id="cortesiaMetodoPago" style="width:100%; padding:9px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-size:14px; font-family:'Outfit',sans-serif; background:white; color:#374151;">
+         <option value="Efectivo">💵 Efectivo</option>
+         <option value="Transferencia">📲 Transferencia</option>
+         <option value="Débito">💳 Débito</option>
+         <option value="Crédito">💳 Crédito</option>
+         <option value="Mercado Pago">🔵 Mercado Pago</option>
+        </select>
+       </div>
+
+       <!-- 5. TIEMPO DE GARANTÍA -->
+       <div id="cortesiaGarantiaContainer" style="margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:800; color:#1e40af; display:block; margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;">🛡️ Tiempo de garantía (días)</label>
+        <div style="display:flex; align-items:center; gap:8px;">
+         <input type="number" id="cortesiaGarantiaInput" min="0" placeholder="0 = sin garantía" inputmode="numeric"
+           style="flex:1; padding:10px 12px; border:1.5px solid #bfdbfe; border-radius:7px; font-size:15px; font-weight:700; background:#eff6ff; color:#1e40af; font-family:'Outfit',sans-serif; box-sizing:border-box;">
+         <div style="display:flex; gap:4px;">
+          <button type="button" onclick="setGarantiaCortesia(30)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">30d</button>
+          <button type="button" onclick="setGarantiaCortesia(60)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">60d</button>
+          <button type="button" onclick="setGarantiaCortesia(90)" style="padding:5px 9px; border:1.5px solid #bfdbfe; border-radius:6px; background:#eff6ff; color:#1e40af; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif; white-space:nowrap;">90d</button>
+         </div>
+        </div>
+        <p style="font-size:11px; color:#9ca3af; margin:5px 0 0; font-family:'Outfit',sans-serif;">Escribí los días o usá los botones. 0 = sin garantía.</p>
+       </div>
+
+       <!-- 6. BOTÓN PRINCIPAL (cobrar ahora / regalar) -->
+       <button id="btnCortesiaAccion" onclick="procesarEntregaCortesia()" style="width:100%; padding:12px; border-radius:8px; border:none; background:#7c3aed; color:white; font-weight:bold; cursor:pointer; font-family:'Outfit',sans-serif; font-size:14px;">🎁 REGALAR (GRATIS / CORTESÍA)</button>
+       <p id="btnCortesiaAviso" style="font-size:11px; color:#9ca3af; margin:6px 0 0; text-align:center;">No entra plata. El costo del repuesto queda como egreso.</p>
+
+       <!-- separador -->
+       <div style="display:flex; align-items:center; gap:8px; margin:14px 0 10px;">
+        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+        <span style="font-size:11px; color:#9ca3af; font-weight:700; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap;">o si todavía no paga</span>
+        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+       </div>
+
+       <!-- 7. ENTREGAR Y COBRAR DESPUÉS -->
+       <button id="btnCortesiaSinCobrar" onclick="procesarEntregaSinCobrar()" style="width:100%; padding:12px; border-radius:8px; border:2px solid #f59e0b; background:#fffbeb; color:#b45309; font-weight:bold; cursor:pointer; font-family:'Outfit',sans-serif; font-size:14px;">🕒 ENTREGAR Y COBRAR DESPUÉS</button>
+       <p style="font-size:11px; color:#9ca3af; margin:6px 0 0; text-align:center;">Se lleva el equipo y queda como <b>📦 Entregado s/c</b> en Pendiente de Cobro hasta que pague.</p>
+
+       <!-- 8. CANCELAR (al fondo) -->
+       <button onclick="document.getElementById('modalCobroEntregado').style.display='none'; window._modoCobroDeuda=false;" style="width:100%; margin-top:14px; border:none; background:none; color:#9ca3af; cursor:pointer; font-size:13px; font-weight:700; text-decoration:underline; font-family:'Outfit',sans-serif;">Cancelar</button>
+
       </div>
      </div>
     </div>
@@ -3261,7 +3346,7 @@ function showApp() {
            <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
           </div>
           <div class="sena-metodo" id="metodo-pago-wrapper">
-           <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Tarjeta">💳 Tarjeta</option> </select>
+           <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Débito">💳 Débito</option> <option value="Crédito">💳 Crédito</option> <option value="Mercado Pago">🔵 Mercado Pago</option> </select>
           </div>
          </div>
          <div id="descuento-orden-row" style="margin-top:10px;">
@@ -3501,7 +3586,9 @@ function showApp() {
             <select id="pvMetodo" style="flex:1;min-width:140px;padding:10px 12px;border-radius:10px;border:2px solid rgba(255,255,255,0.3);font-family:'Outfit',sans-serif;font-size:14px;background:rgba(255,255,255,0.12);color:white;outline:none;cursor:pointer;">
               <option value="Efectivo" style="color:#111;">💵 Efectivo</option>
               <option value="Transferencia" style="color:#111;">📲 Transferencia</option>
-              <option value="Tarjeta" style="color:#111;">💳 Tarjeta</option>
+              <option value="Débito" style="color:#111;">💳 Débito</option>
+              <option value="Crédito" style="color:#111;">💳 Crédito</option>
+              <option value="Mercado Pago" style="color:#111;">🔵 Mercado Pago</option>
             </select>
             <div style="text-align:right;min-width:80px;">
               <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);">TOTAL</div>
@@ -3660,10 +3747,10 @@ function showApp() {
       <table style="min-width: 100%;">
        <thead>
         <tr>
-         <th style="padding:15px;">Usuario / WhatsApp</th>
-         <th style="padding:15px;">Licencia</th>
-         <th style="padding:15px;">Vence / Alta</th>
-         <th style="padding:15px;">Acciones</th>
+         <th style="padding:10px 8px; font-size:11px;">Usuario / WhatsApp</th>
+         <th style="padding:10px 8px; font-size:11px;">Licencia</th>
+         <th style="padding:10px 8px; font-size:11px;">Vence / Alta</th>
+         <th style="padding:10px 8px; font-size:11px;">Acc.</th>
         </tr>
        </thead>
        <tbody id="userTableBody"></tbody>
@@ -3797,7 +3884,7 @@ function showApp() {
         <ul>
          <li>Desde acá realizás ventas de mostrador de artículos del stock. Buscá el artículo por nombre o escaneá su código de barras con el botón 📷.</li>
          <li>Podés agregar varios artículos al carrito antes de confirmar. Ajustá la cantidad de cada uno con los botones + y −.</li>
-         <li>Elegí el método de pago (Efectivo, Transferencia o Tarjeta) y tocá <b>REGISTRAR VENTA</b>. El stock se descuenta automáticamente y el movimiento queda en Contabilidad.</li>
+         <li>Elegí el método de pago (Efectivo, Transferencia, Débito, Crédito o Mercado Pago) y tocá <b>REGISTRAR VENTA</b>. El stock se descuenta automáticamente y el movimiento queda en Contabilidad.</li>
          <li>Debajo del formulario de venta aparece el <b>historial de ventas de mostrador</b> con buscador, donde podés ver y anular ventas anteriores.</li>
         </ul>
         <b>📁 Historial de Reparaciones</b>
@@ -3855,7 +3942,7 @@ function showApp() {
         </ul>
         <b>Tabla de Movimientos</b>
         <ul>
-         <li>Cada fila es un ingreso: muestra fecha, cliente, equipo, método de pago y monto. Los métodos se distinguen visualmente: 💵 Efectivo, 📲 Transferencia, 💳 Tarjeta.</li>
+         <li>Cada fila es un ingreso: muestra fecha, cliente, equipo, método de pago y monto. Los métodos se distinguen visualmente: 💵 Efectivo, 📲 Transferencia, 💳 Débito, 💳 Crédito, 🔵 Mercado Pago.</li>
          <li>Las ventas rápidas de mostrador también aparecen acá, identificadas como "Venta de Stock".</li>
          <li>Las órdenes entregadas sin cobrar se marcan como deuda pendiente hasta que se registre el pago.</li>
         </ul>
@@ -7037,7 +7124,11 @@ function showApp() {
     }
 
     function recalcDescuentoEntrega() {
-        const saldoBase = window._saldoBaseEntrega || 0;
+        // En modo "cotizar" (cobro de deuda sin precio previo) el descuento se aplica
+        // sobre el precio que se está tipeando ahora, no sobre un saldo base fijo.
+        const saldoBase = window._cobroCotizarMode
+            ? parseMoney(document.getElementById('cobroPrecioFinal').value)
+            : (window._saldoBaseEntrega || 0);
         const tipo = document.getElementById('descuentoEntregaTipo').value;
         const val = parseMoney(document.getElementById('descuentoEntregaValor').value);
         const resultDiv = document.getElementById('descuentoEntregaResult');
@@ -7085,6 +7176,11 @@ function showApp() {
                 showToast("⚠️ Ingresá un precio válido mayor a 0", "#f59e0b");
                 return;
             }
+            // Modo cotizar: el descuento se calcula sobre el precio recién ingresado
+            if (window._cobroCotizarMode && descEntregaVal > 0) {
+                descEntregaMonto = descEntregaTipo === '%' ? Math.round(nuevoPrecio * descEntregaVal / 100) : descEntregaVal;
+                descEntregaMonto = Math.min(descEntregaMonto, nuevoPrecio);
+            }
             let saldoFinal = nuevoPrecio - senaPrevia - descEntregaMonto;
             if(saldoFinal < 0) {
                 showToast("⚠️ El precio no puede ser menor a la seña previa", "#dc2626");
@@ -7121,7 +7217,7 @@ function showApp() {
 
         // Modo "cobrar deuda": la orden ya fue entregada sin cobrar, ahora se registra el pago y se archiva
         if (window._modoCobroDeuda) {
-            window._modoCobroDeuda = false;
+            window._modoCobroDeuda = false; window._cobroCotizarMode = false;
             updates.entregadoSinCobrar = false;
             
             const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
@@ -7175,25 +7271,101 @@ function showApp() {
     }
 
     // ── ENTREGAR SIN CARGO (CORTESÍA) ───────────────────────────────────────
+    function recalcCortesia() {
+        const precio = parseFloat(document.getElementById('cortesiaPrecioInput').value) || 0;
+        const tieneP = precio > 0;
+
+        document.getElementById('cortesiaDescuentoContainer').style.display = 'block';
+        document.getElementById('cortesiaMetodoPagoContainer').style.display = 'block';
+
+        const btn = document.getElementById('btnCortesiaAccion');
+        const aviso = document.getElementById('btnCortesiaAviso');
+
+        if (tieneP) {
+            // Calcular descuento
+            const tipo = document.getElementById('cortesiaDescTipo').value;
+            const descVal = parseFloat(document.getElementById('cortesiaDescValor').value) || 0;
+            let descMonto = 0;
+            if (descVal > 0) {
+                descMonto = tipo === '%' ? Math.round(precio * descVal / 100) : descVal;
+                descMonto = Math.min(descMonto, precio);
+            }
+            const total = Math.max(0, precio - descMonto);
+
+            // Mostrar total
+            document.getElementById('cortesiaTotalContainer').style.display = 'block';
+            document.getElementById('cortesiaTotalMonto').textContent = fmt.format(total);
+            if (descMonto > 0) {
+                const label = tipo === '%' ? `Descuento ${descVal}%: -${fmt.format(descMonto)}` : `Descuento: -${fmt.format(descMonto)}`;
+                document.getElementById('cortesiaTotalDetalle').textContent = label;
+            } else {
+                document.getElementById('cortesiaTotalDetalle').textContent = '';
+            }
+
+            btn.textContent = '💰 COBRAR Y ENTREGAR';
+            btn.style.background = '#16a34a';
+            aviso.style.display = 'none';
+        } else {
+            document.getElementById('cortesiaTotalContainer').style.display = 'none';
+            btn.textContent = '🎁 REGALAR (GRATIS / CORTESÍA)';
+            btn.style.background = '#7c3aed';
+            aviso.style.display = 'block';
+        }
+    }
+
     function procesarEntregaCortesia() {
         const r = getRegistro(idParaEstado);
         if(!r) return;
-        const selGar = document.getElementById('selectGarantia');
-        const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
+        const diasGarantia = getDiasGarantiaActiva();
+
+        // Precio y descuento ingresados
+        const precioInput = parseFloat(document.getElementById('cortesiaPrecioInput')?.value) || 0;
+        const metodoPago = document.getElementById('cortesiaMetodoPago')?.value || 'Efectivo';
+
+        // Calcular descuento
+        const descTipo = document.getElementById('cortesiaDescTipo')?.value || '%';
+        const descVal = parseFloat(document.getElementById('cortesiaDescValor')?.value) || 0;
+        let descMonto = 0;
+        if (precioInput > 0 && descVal > 0) {
+            descMonto = descTipo === '%' ? Math.round(precioInput * descVal / 100) : descVal;
+            descMonto = Math.min(descMonto, precioInput);
+        }
+        const totalACobrar = Math.max(0, precioInput - descMonto);
 
         const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
         let historialActual = [...(r.historialEstados || [])];
-        historialActual.push({ estado: 'Entregado (Cortesía)', fecha: fechaActual });
 
-        let updates = {
-            estado: 'Entregado',
-            esCortesia: true,
-            precio: 0,
-            sena: 0,
-            saldoCobrado: 0,
-            entregadoSinCobrar: false,
-            historialEstados: historialActual
-        };
+        let updates;
+        if (precioInput > 0) {
+            // Se cobró un precio → registrar como cobro normal, sin marcar cortesía
+            historialActual.push({ estado: 'Entregado', fecha: fechaActual });
+            updates = {
+                estado: 'Entregado',
+                esCortesia: false,
+                precio: precioInput,
+                sena: totalACobrar,
+                saldoCobrado: totalACobrar,
+                metodoPagoSaldo: metodoPago,
+                entregadoSinCobrar: false,
+                historialEstados: historialActual
+            };
+            if (descMonto > 0) {
+                updates.descuentoMonto = descMonto;
+                updates.descuentoTipo = descTipo;
+                updates.descuentoValor = descVal;
+            }
+        } else {
+            historialActual.push({ estado: 'Entregado (Cortesía)', fecha: fechaActual });
+            updates = {
+                estado: 'Entregado',
+                esCortesia: true,
+                precio: 0,
+                sena: 0,
+                saldoCobrado: 0,
+                entregadoSinCobrar: false,
+                historialEstados: historialActual
+            };
+        }
 
         if (diasGarantia > 0) {
             let hoy = new Date();
@@ -7227,9 +7399,13 @@ function showApp() {
             }
             renderTable();
             ocultarLoader();
-            const costoRep = parseFloat(r.costoRepuesto) || 0;
-            const msgCosto = costoRep > 0 ? ` Costo de ${fmt.format(costoRep)} quedó en contabilidad.` : '';
-            showToast('🎁 ENTREGADO SIN CARGO — ARCHIVADO ✅' + msgCosto, '#7c3aed');
+            if (precioInput > 0) {
+                showToast('💰 COBRADO ' + fmt.format(precioInput) + ' Y ENTREGADO — ARCHIVADO ✅', '#16a34a');
+            } else {
+                const costoRep = parseFloat(r.costoRepuesto) || 0;
+                const msgCosto = costoRep > 0 ? ` Costo de ${fmt.format(costoRep)} quedó en contabilidad.` : '';
+                showToast('🎁 ENTREGADO SIN CARGO — ARCHIVADO ✅' + msgCosto, '#7c3aed');
+            }
         }).catch(err => {
             ocultarLoader();
             showToast(mensajeFirebaseAmigable(err), '#dc2626');
@@ -7240,8 +7416,7 @@ function showApp() {
     function procesarEntregaSinCobrar() {
         const r = getRegistro(idParaEstado);
         if(!r) return;
-        const selGar = document.getElementById('selectGarantia');
-        const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
+        const diasGarantia = getDiasGarantiaActiva();
         
         const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
         let historialActual = [...(r.historialEstados || [])];
@@ -7253,6 +7428,29 @@ function showApp() {
             historialEstados: historialActual
         };
         if (r.senaOriginal === undefined) updates.senaOriginal = parseFloat(r.sena) || 0;
+
+        // Si estamos en el modal de cortesía y se tipeó un precio, lo guardamos para que la
+        // deuda muestre el monto (en vez de "A COTIZAR"). El descuento queda registrado también.
+        const cortContSC = document.getElementById('btnCortesiaContainer');
+        if (cortContSC && cortContSC.style.display !== 'none') {
+            const precioSC = parseFloat(document.getElementById('cortesiaPrecioInput')?.value) || 0;
+            if (precioSC > 0) {
+                const descTipoSC = document.getElementById('cortesiaDescTipo')?.value || '%';
+                const descValSC = parseFloat(document.getElementById('cortesiaDescValor')?.value) || 0;
+                let descMontoSC = 0;
+                if (descValSC > 0) {
+                    descMontoSC = descTipoSC === '%' ? Math.round(precioSC * descValSC / 100) : descValSC;
+                    descMontoSC = Math.min(descMontoSC, precioSC);
+                }
+                updates.precio = precioSC;
+                if (descMontoSC > 0) {
+                    updates.descuentoMonto = descMontoSC;
+                    updates.descuentoTipo = descTipoSC;
+                    updates.descuentoValor = descValSC;
+                }
+            }
+        }
+
         if (diasGarantia > 0) {
             let hoy = new Date();
             hoy.setDate(hoy.getDate() + diasGarantia);
@@ -7301,6 +7499,36 @@ function showApp() {
             }
         }
         
+        // Caso: orden entregada sin cobrar que NUNCA tuvo precio (A COTIZAR).
+        // Abrimos el modo cotizar para ingresar lo que el cliente paga ahora.
+        if (precio === 0) {
+            window._modoCobroDeuda = true;
+            window._cobroCotizarMode = true;
+            document.getElementById('tituloCobroEntregado').innerText = "💰 Cobrar";
+            document.getElementById('cobroSaldoContainer').style.display = 'none';
+            document.getElementById('cobroCotizarContainer').style.display = 'block';
+            document.getElementById('cobroAvisoCotizar').innerText = "💲 Precio a cobrar:";
+            document.getElementById('cobroPrecioFinal').value = '';
+            document.getElementById('metodoCobroContainer').style.display = 'block';
+            document.getElementById('cobroAvisoSaldo').style.display = 'none';
+            document.getElementById('metodoCobroFinal').selectedIndex = 0;
+            document.getElementById('descuentoEntregaValor').value = '';
+            document.getElementById('descuentoEntregaTipo').value = '%';
+            document.getElementById('descuentoEntregaResult').style.display = 'none';
+            document.getElementById('descuentoEntregaContainer').style.display = 'block';
+            window._saldoBaseEntrega = 0;
+            document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ARCHIVAR";
+            document.getElementById('btnConfirmarEntrega').style.display = '';
+            document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
+            document.getElementById('btnCortesiaContainer').style.display = 'none';
+            document.getElementById('garantiaCompartidaContainer').style.display = 'block';
+            var _bc = document.getElementById('btnCancelarEntrega'); if (_bc) _bc.style.display = '';
+            const selGar0 = document.getElementById('selectGarantia');
+            if (selGar0) selGar0.value = "0";
+            document.getElementById('modalCobroEntregado').style.display = 'flex';
+            return;
+        }
+
         // Si no hay saldo real, no tiene sentido cobrar — la orden ya fue saldada
         if (saldo <= 0) {
             showToast("✅ Esta orden ya fue saldada completamente", "#059669");
@@ -7308,6 +7536,7 @@ function showApp() {
         }
 
         window._modoCobroDeuda = true;
+        window._cobroCotizarMode = false;
         
         document.getElementById('tituloCobroEntregado').innerText = "💰 Registrar Cobro de Deuda";
         document.getElementById('cobroSaldoContainer').style.display = 'block';
@@ -7322,7 +7551,11 @@ function showApp() {
         document.getElementById('descuentoEntregaContainer').style.display = 'block';
         window._saldoBaseEntrega = saldo;
         document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ARCHIVAR";
+        document.getElementById('btnConfirmarEntrega').style.display = '';
         document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
+        document.getElementById('btnCortesiaContainer').style.display = 'none';
+        document.getElementById('garantiaCompartidaContainer').style.display = 'block';
+            var _bc = document.getElementById('btnCancelarEntrega'); if (_bc) _bc.style.display = '';
         
         const selGar = document.getElementById('selectGarantia');
         if(selGar) selGar.value = r.vencimientoGarantia ? "0" : "0";
@@ -7525,6 +7758,37 @@ function showApp() {
         if (el) { el.value = dias; el.focus(); }
     }
 
+    function setGarantiaCortesia(dias) {
+        const el = document.getElementById('cortesiaGarantiaInput');
+        if (el) { el.value = dias; el.focus(); }
+    }
+
+    // Setea el valor de un <select> y, si el valor guardado ya no existe como opción
+    // (ej: registros viejos con "Tarjeta"), lo agrega como opción "(anterior)" para no perder el dato.
+    function setSelectValueSafe(id, val) {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.value = val;
+        if (sel.value !== val && val) {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val + ' (anterior)';
+            sel.appendChild(opt);
+            sel.value = val;
+        }
+    }
+
+    // Devuelve los días de garantía del bloque visible (cortesía vs compartido)
+    function getDiasGarantiaActiva() {
+        const cortCont = document.getElementById('btnCortesiaContainer');
+        if (cortCont && cortCont.style.display !== 'none') {
+            const c = document.getElementById('cortesiaGarantiaInput');
+            return c ? (parseInt(c.value) || 0) : 0;
+        }
+        const s = document.getElementById('selectGarantia');
+        return s ? (parseInt(s.value) || 0) : 0;
+    }
+
     function closeStatusModal() { document.getElementById('statusModal').style.display = 'none'; }
     
     function confirmarEstado(nuevo) {
@@ -7608,15 +7872,39 @@ function showApp() {
             if(selectGar) selectGar.value = "0"; 
             
             if(precio === 0) {
-                document.getElementById('tituloCobroEntregado').innerText = "Entregar sin cargo";
+                document.getElementById('tituloCobroEntregado').innerText = "Entregar equipo";
                 document.getElementById('cobroSaldoContainer').style.display = 'none';
                 document.getElementById('cobroCotizarContainer').style.display = 'none';
                 document.getElementById('metodoCobroContainer').style.display = 'none';
                 document.getElementById('cobroAvisoSaldo').style.display = 'none';
                 document.getElementById('btnConfirmarEntrega').style.display = 'none';
                 document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
+                document.getElementById('descuentoEntregaContainer').style.display = 'none';
+                // CANCELAR compartido se oculta: el modo cortesía tiene su propio "Cancelar" al fondo
+                const btnCancCort = document.getElementById('btnCancelarEntrega');
+                if (btnCancCort) btnCancCort.style.display = 'none';
+                // La garantía compartida se oculta: el modo cortesía tiene su propio campo de garantía
+                const garCompCort = document.getElementById('garantiaCompartidaContainer');
+                if (garCompCort) garCompCort.style.display = 'none';
                 document.getElementById('btnCortesiaContainer').style.display = 'block';
-                window._modoCobroDeuda = false;
+                // Limpiar campos y resetear estado visual
+                const cpInput = document.getElementById('cortesiaPrecioInput');
+                if (cpInput) cpInput.value = '';
+                const cpDescValor = document.getElementById('cortesiaDescValor');
+                if (cpDescValor) cpDescValor.value = '';
+                const cpDescTipo = document.getElementById('cortesiaDescTipo');
+                if (cpDescTipo) cpDescTipo.value = '%';
+                const cpGarInput = document.getElementById('cortesiaGarantiaInput');
+                if (cpGarInput) cpGarInput.value = '';
+                // Orden visible: precio → descuento → método → garantía (todo visible)
+                document.getElementById('cortesiaDescuentoContainer').style.display = 'block';
+                document.getElementById('cortesiaTotalContainer').style.display = 'none';
+                document.getElementById('cortesiaMetodoPagoContainer').style.display = 'block';
+                const cpBtn = document.getElementById('btnCortesiaAccion');
+                if (cpBtn) { cpBtn.textContent = '🎁 REGALAR (GRATIS / CORTESÍA)'; cpBtn.style.background = '#7c3aed'; }
+                const cpAviso = document.getElementById('btnCortesiaAviso');
+                if (cpAviso) cpAviso.style.display = 'block';
+                window._modoCobroDeuda = false; window._cobroCotizarMode = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             } else if(saldo > 0) {
@@ -7637,7 +7925,9 @@ function showApp() {
                 document.getElementById('btnConfirmarEntrega').style.display = '';
                 document.getElementById('btnEntregarSinCobrarContainer').style.display = 'block';
                 document.getElementById('btnCortesiaContainer').style.display = 'none';
-                window._modoCobroDeuda = false;
+                document.getElementById('garantiaCompartidaContainer').style.display = 'block';
+            var _bc = document.getElementById('btnCancelarEntrega'); if (_bc) _bc.style.display = '';
+                window._modoCobroDeuda = false; window._cobroCotizarMode = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             } else {
@@ -7653,7 +7943,9 @@ function showApp() {
                 document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
                 document.getElementById('btnCortesiaContainer').style.display = 'none';
                 document.getElementById('descuentoEntregaContainer').style.display = 'none';
-                window._modoCobroDeuda = false;
+                document.getElementById('garantiaCompartidaContainer').style.display = 'block';
+            var _bc = document.getElementById('btnCancelarEntrega'); if (_bc) _bc.style.display = '';
+                window._modoCobroDeuda = false; window._cobroCotizarMode = false;
                 document.getElementById('modalCobroEntregado').style.display = 'flex';
                 return;
             }
@@ -8198,7 +8490,7 @@ function showApp() {
                 let saldo = Math.max(0, saldoBadge);
                 estadoPagoHTML = `<div style="font-size:11px; line-height:1.5;">
                     <span style="color:#c2410c; font-weight:800;">⚠️ DEUDA: ${saldo > 0 ? fmt.format(saldo) : 'A COTIZAR'}</span><br>
-                    <button onclick="cobrarDeudaPendiente('${r.id}')" style="margin-top:3px; background:#059669; color:white; border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">💰 COBRAR</button>
+                    <button onclick="event.stopPropagation(); cobrarDeudaPendiente('${r.id}')" style="margin-top:3px; background:#059669; color:white; border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:800; cursor:pointer; font-family:'Outfit',sans-serif;">💰 COBRAR</button>
                 </div>`;
             } else if (r.archivado && r.estado === 'Entregado') {
                 let sVal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
@@ -9000,7 +9292,7 @@ function showApp() {
                     document.getElementById('falla').value = d.falla || "";
                     document.getElementById('obs').value = d.obs || "";
                     document.getElementById('notaInterna').value = d.notaInterna || "";
-                    document.getElementById('metodoPago').value = d.metodoPago || "A Cotizar";
+                    setSelectValueSafe('metodoPago', d.metodoPago || "A Cotizar");
                 }
             } catch(e) {
                 localStorage.removeItem('st_matias_draft'); 
@@ -9334,7 +9626,7 @@ function showApp() {
         
         document.getElementById('costoRepuesto').value = r.costoRepuesto ? fmt.format(r.costoRepuesto).replace('$ ', '') : "";
         
-        document.getElementById('metodoPago').value = r.metodoPagoSena || "A Cotizar";
+        setSelectValueSafe('metodoPago', r.metodoPagoSena || "A Cotizar");
         
         document.getElementById('falla').value = r.falla || "";
         document.getElementById('obs').value = r.obs || "";
@@ -10373,6 +10665,17 @@ function showApp() {
         }
 
         let ingresoEfectivo = 0, ingresoTransf = 0, ingresoTarjeta = 0;
+        let ingresoDebito = 0, ingresoCredito = 0, ingresoMP = 0;
+        // Rutea un ingreso al bucket correcto según el método de pago.
+        // "Tarjeta" se mantiene por compatibilidad con registros viejos.
+        function addIngreso(metodo, monto) {
+            if (metodo === 'Transferencia') ingresoTransf += monto;
+            else if (metodo === 'Tarjeta') ingresoTarjeta += monto;
+            else if (metodo === 'Débito') ingresoDebito += monto;
+            else if (metodo === 'Crédito') ingresoCredito += monto;
+            else if (metodo === 'Mercado Pago') ingresoMP += monto;
+            else ingresoEfectivo += monto;
+        }
         let gastosRepuestos = 0, porCobrar = 0;
         let movsMap = {};
 
@@ -10435,9 +10738,7 @@ function showApp() {
                             mov.desc.add('Venta Directa');
                             if(r.metodoPagoSena && r.metodoPagoSena !== '-') mov.metodo.add(r.metodoPagoSena);
                             
-                            if (r.metodoPagoSena === 'Transferencia') ingresoTransf += pActual;
-                            else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += pActual;
-                            else ingresoEfectivo += pActual;
+                            addIngreso(r.metodoPagoSena, pActual);
                         }
                     } else {
                         let senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
@@ -10446,9 +10747,7 @@ function showApp() {
                             mov.desc.add('Seña');
                             if(r.metodoPagoSena && r.metodoPagoSena !== '-' && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') mov.metodo.add(r.metodoPagoSena);
                             
-                            if (r.metodoPagoSena === 'Transferencia') ingresoTransf += senaOrig;
-                            else if (r.metodoPagoSena === 'Tarjeta') ingresoTarjeta += senaOrig;
-                            else ingresoEfectivo += senaOrig;
+                            addIngreso(r.metodoPagoSena, senaOrig);
                         }
                         
                         let precioActual = parseFloat(r.precio) || 0;
@@ -10473,9 +10772,7 @@ function showApp() {
                         if(r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
                         mov.fechaRaw = estadoEntregado.fecha; 
                         
-                        if (r.metodoPagoSaldo === 'Transferencia') ingresoTransf += cobro;
-                        else if (r.metodoPagoSaldo === 'Tarjeta') ingresoTarjeta += cobro;
-                        else ingresoEfectivo += cobro;
+                        addIngreso(r.metodoPagoSaldo, cobro);
                     } else if (r.entregadoSinCobrar) {
                         // Entregado sin cobrar: aparece en contabilidad como deuda pendiente
                         let precio = parseFloat(r.precio) || 0;
@@ -10489,13 +10786,20 @@ function showApp() {
             }
         });
 
-        let ingresosTotales = ingresoEfectivo + ingresoTransf + ingresoTarjeta;
+        let ingresosTotales = ingresoEfectivo + ingresoTransf + ingresoTarjeta + ingresoDebito + ingresoCredito + ingresoMP;
         let gananciaNeta = ingresosTotales - gastosRepuestos;
+        // Desglose: siempre EF y TR; los demás solo si tienen monto, para no recargar la tarjeta
+        let desgloseParts = [`EF: <b>${fmt.format(ingresoEfectivo)}</b>`, `TR: <b>${fmt.format(ingresoTransf)}</b>`];
+        if (ingresoDebito > 0) desgloseParts.push(`DB: <b>${fmt.format(ingresoDebito)}</b>`);
+        if (ingresoCredito > 0) desgloseParts.push(`CR: <b>${fmt.format(ingresoCredito)}</b>`);
+        if (ingresoMP > 0) desgloseParts.push(`MP: <b>${fmt.format(ingresoMP)}</b>`);
+        if (ingresoTarjeta > 0) desgloseParts.push(`TJ: <b>${fmt.format(ingresoTarjeta)}</b>`);
+        let desgloseHTML = desgloseParts.join(' | ');
 
         document.getElementById('stats-container').innerHTML = `
             <div class="card-stats caja-success"><b>💵 INGRESOS COBRADOS</b><p style="color:var(--success);">${fmt.format(ingresosTotales)}</p><span class="stat-icon">💰</span>
                 <div style="font-size:11px; margin-top:10px; color:#6b7280; border-top:1px solid #e2e8f0; padding-top:5px;">
-                    EF: <b>${fmt.format(ingresoEfectivo)}</b> | TR: <b>${fmt.format(ingresoTransf)}</b><br>TJ: <b>${fmt.format(ingresoTarjeta)}</b>
+                    ${desgloseHTML}
                 </div>
             </div>
             <div class="card-stats caja-warning"><b>⏳ SALDOS POR COBRAR</b><p style="color:var(--warning);">${fmt.format(porCobrar)}</p><span class="stat-icon">🕒</span></div>
@@ -10599,7 +10903,7 @@ function showApp() {
                 </thead><tbody>`;
             
             arr.forEach(v => {
-                let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#9ca3af; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase()}">${v.metodoStr}</span>`;
+                let badgeMetodo = v.metodoStr === '-' ? '<span style="color:#9ca3af; font-weight:bold;">-</span>' : `<span class="badge-metodo bm-${(v.metodoStr.split(' / ')[0] || 'efectivo').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-')}">${v.metodoStr}</span>`;
                 let ordenTxt = v.esVentaRapida ? `<span style="color:#8e44ad; font-weight:bold;">${v.orden}</span>` : v.orden;
                 
                 let fechaDisplay = v.fechaRaw ? v.fechaRaw : '-';
@@ -11048,27 +11352,29 @@ function showApp() {
                 }
 
                 const btnSuspender = u.estado !== 'suspendido'
-                    ? `<button onclick="openSuspendModal('${u.id}')" style="background:#f59e0b; color:#856404; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">⏸️ Suspender</button>`
-                    : `<button onclick="reactivarLicencia('${u.id}')" style="background:#059669; color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">▶️ Reactivar</button>`;
+                    ? `<button onclick="openSuspendModal('${u.id}')" title="Suspender" style="background:#f59e0b; color:#856404; font-weight:bold; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:15px; line-height:1;">⏸️</button>`
+                    : `<button onclick="reactivarLicencia('${u.id}')" title="Reactivar" style="background:#059669; color:white; font-weight:bold; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:15px; line-height:1;">▶️</button>`;
 
                 const btnPermanente = (!estaSuspendida)
-                    ? `<button onclick="abrirLicenciaModal('${u.id}')" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">🔑 Licencia</button>`
+                    ? `<button onclick="abrirLicenciaModal('${u.id}')" title="Gestionar Licencia" style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; font-weight:bold; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:15px; line-height:1;">🔑</button>`
                     : '';
 
                 body.innerHTML += `
                     <tr>
-                        <td>
-                            <b>${u.whatsapp || u.id}</b>
+                        <td style="padding:10px 8px;">
+                            <b style="font-size:12px;">${u.whatsapp || u.id}</b>
                             ${u.authEmail ? `<div style="font-size:10px;color:#9ca3af;">${u.authEmail}</div>` : ''}
-                            <div style="font-size:11px;color:#9ca3af;margin-top:4px;">📅 Alta: ${u.fechaAlta ? u.fechaAlta.split(',')[0] : '—'}</div>
-                            <div style="font-size:11px;color:${u.ultimoIngreso ? '#4b5563' : '#d1d5db'};">🕐 ${u.ultimoIngreso ? tiempoRelativo(u.ultimoIngreso) : 'Sin registro aún'}</div>
+                            <div style="font-size:10px;color:#9ca3af;margin-top:2px;">📅 ${u.fechaAlta ? u.fechaAlta.split(',')[0] : '—'}</div>
+                            <div style="font-size:10px;color:${u.ultimoIngreso ? '#4b5563' : '#d1d5db'};">🕐 ${u.ultimoIngreso ? tiempoRelativo(u.ultimoIngreso) : 'Sin registro'}</div>
                         </td>
-                        <td>${badgeHtml}</td>
-                        <td>${venceHtml}</td>
-                        <td class="action-btns" style="flex-wrap:wrap; gap:4px;">
-                            ${btnSuspender}
-                            ${btnPermanente}
-                            <button onclick="openDeleteLicenseModal('${u.id}')" style="background:var(--danger); color:white; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:11px;">❌ Borrar</button>
+                        <td style="padding:10px 8px;">${badgeHtml}</td>
+                        <td style="padding:10px 8px;">${venceHtml}</td>
+                        <td style="padding:10px 8px; white-space:nowrap;">
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                ${btnSuspender}
+                                ${btnPermanente}
+                                <button onclick="openDeleteLicenseModal('${u.id}')" title="Borrar" style="background:var(--danger); color:white; font-weight:bold; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:15px; line-height:1;">❌</button>
+                            </div>
                         </td>
                     </tr>
                 `;
