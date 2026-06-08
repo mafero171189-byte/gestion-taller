@@ -234,10 +234,12 @@
         :root { --primary: #06122a; --secondary: #1e4d8c; --success: #059669; --danger: #dc2626; --wapp: #25d366; --warning: #d97706; }
         html, body { overflow-x: hidden; width: 100%; background: #f4f5fb; margin: 0; padding: 0; color: #1a1a2e; font-family: 'Outfit', 'Segoe UI', sans-serif; touch-action: pan-y; transition: background-color 0.3s ease; }
         
-        nav { background: linear-gradient(90deg, #0a0e20 0%, #111630 100%); padding: 10px 15px; display: flex; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4), 0 1px 0 rgba(45,58,140,0.3); overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
-        nav::-webkit-scrollbar { display: none; }
-        nav button { background: none; border: none; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: 9px 18px; border-radius: 8px; transition: 0.25s; flex-shrink: 0; font-family: 'Outfit', sans-serif; font-size: 13px; letter-spacing: 0.2px; }
-        nav button.active { color: white; background: rgba(45,58,140,0.18); border: 1px solid rgba(45,58,140,0.35); }
+        nav { background: linear-gradient(90deg, #0a0e20 0%, #111630 100%); padding: 6px 12px; display: flex; gap: 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.4), 0 1px 0 rgba(45,58,140,0.3); flex-wrap: nowrap; align-items: center; overflow: hidden; }
+        .nav-scroll-area { display: flex; gap: 2px; flex: 1; align-items: center; overflow: hidden; min-width: 0; }
+        .nav-fixed-right { display: flex; gap: 2px; align-items: center; flex-shrink: 0; border-left: 1px solid rgba(255,255,255,0.08); margin-left: 6px; padding-left: 6px; }
+        nav button { background: none; border: 1px solid transparent; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: clamp(5px,0.6vw,9px) clamp(5px,0.9vw,14px); border-radius: 8px; transition: 0.25s; flex-shrink: 1; min-width: 0; font-family: 'Outfit', sans-serif; font-size: clamp(9px,1vw,13px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        nav button.active { color: white; background: rgba(45,58,140,0.18); border-color: rgba(45,58,140,0.35); }
+        .nav-fixed-right button { flex-shrink: 0; }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e8eaf5; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
         
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; border-top: 3px solid #1e4d8c; }
@@ -3057,6 +3059,7 @@ function showApp() {
     </div>
    </div>
 <nav>
+    <div class="nav-scroll-area">
     <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
     <button onclick="showPage('ventas')" id="btn-nav-ventas">🛒 VENTAS Y REPARACIONES</button>
     <button onclick="showPage('presupuesto')" id="btn-nav-presupuesto">📋 PRESUPUESTO</button>
@@ -3064,9 +3067,12 @@ function showApp() {
     <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
     <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
     <button onclick="showPage('mantenimiento')" id="btn-nav-mantenimiento" style="display:none;">⚙️ MANTENIMIENTO</button>
+   </div>
+   <div class="nav-fixed-right">
     <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: #f59e0b;">👤 MI PERFIL</button>
-    <button onclick="toggleDarkMode()" id="btn-dark-mode" style="margin-left: auto; font-size: 16px; background: none; border: none; cursor: pointer;">🌙</button>
+    <button onclick="toggleDarkMode()" id="btn-dark-mode" style="font-size: 16px; background: none; border: none; cursor: pointer;">🌙</button>
     <button onclick="logout()" style="color: #ff7675; font-size: 12px; font-weight: bold; background: none; border: none; cursor: pointer;">✖ SALIR</button>
+   </div>
    </nav>
    <div id="gesture-zone-top">
     <div style="display:flex; justify-content: space-between; align-items: center;">
