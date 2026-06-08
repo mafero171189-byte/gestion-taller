@@ -4183,6 +4183,8 @@ function showApp() {
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                     localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
                     renderTable();
+                    // Re-evaluar onboarding al volver a la pestaña (por si es usuario nuevo)
+                    setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 300);
                 });
             }
         }
@@ -10125,6 +10127,7 @@ function showApp() {
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).style.display = 'block';
         document.getElementById('btn-nav-' + pageId).classList.add('active');
+        if (pageId === 'gestion' && typeof iniciarOnboarding === 'function' && currentUser) iniciarOnboarding();
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'ventas') {
             if (stockData.length === 0 && typeof window.cargarStockData === 'function') window.cargarStockData();
