@@ -169,6 +169,15 @@
         }
         .btn-login:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(45,58,140,0.3); }
         
+        @keyframes splashFadeIn {
+            from { opacity: 0; transform: scale(0.7) translateY(10px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes splashPulse {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.12); }
+        }
+        
         .toggle-pass-icon { 
             position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
             cursor: pointer; font-size: 18px; user-select: none; opacity: 0.5; transition: 0.2s; 
@@ -202,7 +211,7 @@
         @keyframes fadeInCard { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 
         .btn-soporte-wapp {
-            position: absolute;
+            position: fixed;
             bottom: 25px;
             right: 25px;
             background-color: #25D366;
@@ -215,12 +224,18 @@
             display: flex;
             align-items: center; gap: 8px;
             box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            z-index: 10001; 
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.5s ease;
+            z-index: 20050;
+            opacity: 0;
+            pointer-events: none;
         }
         .btn-soporte-wapp:hover {
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+        }
+        .btn-soporte-wapp.visible {
+            opacity: 1;
+            pointer-events: all;
         }
 
         #app-content { display: none; }
@@ -238,7 +253,7 @@
         nav::-webkit-scrollbar { display: none; }
         .nav-scroll-area { display: contents; }
         .nav-fixed-right { display: contents; }
-        nav button { background: none; border: 1px solid transparent; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: clamp(5px,0.6vw,9px) clamp(5px,0.9vw,14px); border-radius: 8px; transition: 0.25s; flex-shrink: 0; font-family: 'Outfit', sans-serif; font-size: clamp(9px,1vw,13px); white-space: nowrap; }
+        nav button { background: none; border: 1px solid transparent; color: rgba(255,255,255,0.55); font-weight: 700; cursor: pointer; padding: clamp(5px,0.6vw,9px) clamp(5px,0.9vw,14px); border-radius: 8px; transition: 0.25s; flex-shrink: 0; font-family: 'Outfit', sans-serif; font-size: clamp(11px,1.2vw,15px); white-space: nowrap; }
         nav button.active { color: white; background: rgba(45,58,140,0.18); border-color: rgba(45,58,140,0.35); }
         #gesture-zone-top { padding: 20px 25px 5px 25px; background: #fff; border-bottom: 1px solid #e8eaf5; touch-action: none; transition: background-color 0.3s, border-color 0.3s; }
         
@@ -1462,25 +1477,26 @@
             display: flex; align-items: center; gap: 11px;
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-weight: 800; font-size: 18px; color: var(--white);
-            text-decoration: none; letter-spacing: -0.3px;
+            text-decoration: none; letter-spacing: -0.3px; white-space: nowrap;
         }
 
         #landing-page .nav-logo-icon{
-            width: 36px; height: 36px;
+            width: 52px; height: 36px;
             background: linear-gradient(135deg, var(--blue), var(--blue-bright));
             border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             box-shadow: 0 0 18px var(--blue-glow);
+            gap: 1px;
         }
 
         #landing-page .nav-cta{
-            padding: 9px 22px;
+            padding: 9px 16px;
             background: linear-gradient(135deg, var(--blue), var(--blue-bright));
             color: white; border: none; border-radius: 8px;
             font-family: 'DM Sans', sans-serif;
-            font-weight: 700; font-size: 14px; cursor: pointer;
-            text-decoration: none;
+            font-weight: 700; font-size: 13px; cursor: pointer;
+            text-decoration: none; white-space: nowrap;
             box-shadow: 0 4px 18px var(--blue-glow);
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -2122,7 +2138,7 @@ function showApp() {
    <!-- NAV -->
    <nav>
     <a class="nav-logo" href="#"> 
-     <div class="nav-logo-icon">🔧</div> Mi Taller Web 
+     <div class="nav-logo-icon">💻📱</div> Mi Taller Web 
     </a> <a class="nav-cta" href="#" onclick="showApp(); return false;">Ingresar al Sistema →</a>
    </nav>
    <!-- HERO -->
@@ -2135,7 +2151,7 @@ function showApp() {
     <h1>Gestioná tu taller
      <br>
      <span>sin papel, sin caos.</span></h1>
-    <p class="hero-sub">Órdenes de reparación, stock, contabilidad, seguimiento de clientes y mucho más. Todo en un solo lugar, desde cualquier dispositivo.</p>
+    <p class="hero-sub">Órdenes de reparación, ventas rápidas, presupuestos, stock con escáner de código de barras, contabilidad y seguimiento de clientes. Todo en un solo lugar, desde cualquier dispositivo.</p>
     <div class="hero-actions">
      <a href="#" onclick="showApp(); return false;" class="btn-primary">🚀 Empezar ahora</a> <a href="#features" class="btn-ghost">Ver funcionalidades ↓</a>
     </div>
@@ -2158,7 +2174,7 @@ function showApp() {
      </div>
      <div class="stat">
       <div class="stat-num">0</div>
-      <div class="stat-label">Instalación</div>
+      <div class="stat-label">Instalación requerida</div>
      </div>
     </div>
    </section>
@@ -2241,6 +2257,30 @@ function showApp() {
        <div class="feature-desc">Tablero con las métricas más importantes: órdenes activas, reparaciones del mes, ganancias, equipos olvidados y más.</div>
        <div class="feature-tags">
         <span class="tag">Métricas clave</span><span class="tag">Exportar</span><span class="tag">Filtros</span>
+       </div>
+      </div>
+      <div class="feature-card reveal reveal-d2">
+       <div class="feature-icon">📝</div>
+       <div class="feature-title">Presupuestos</div>
+       <div class="feature-desc">Generá presupuestos profesionales con PDF descargable y link de seguimiento para el cliente. Con estado, vencimiento y descuentos.</div>
+       <div class="feature-tags">
+        <span class="tag">PDF descargable</span><span class="tag">Link al cliente</span><span class="tag">Descuentos</span>
+       </div>
+      </div>
+      <div class="feature-card reveal reveal-d3">
+       <div class="feature-icon">⚡</div>
+       <div class="feature-title">Venta Rápida</div>
+       <div class="feature-desc">Vendé productos del stock directamente desde el mostrador sin crear una orden de reparación. Carrito multi-ítem y comprobante al instante.</div>
+       <div class="feature-tags">
+        <span class="tag">Carrito multi-ítem</span><span class="tag">Desde stock</span><span class="tag">Comprobante</span>
+       </div>
+      </div>
+      <div class="feature-card reveal">
+       <div class="feature-icon">🔍</div>
+       <div class="feature-title">Escáner de Código de Barras</div>
+       <div class="feature-desc">Escaneá productos del stock con la cámara del celular, un lector USB o ingreso manual. Ideal para agilizar ventas y control de inventario sin tipear.</div>
+       <div class="feature-tags">
+        <span class="tag">Cámara del celular</span><span class="tag">Lector USB</span><span class="tag">Linterna integrada</span>
        </div>
       </div>
      </div>
@@ -2360,7 +2400,9 @@ function showApp() {
         <li>Estados y seguimiento</li>
         <li>WhatsApp integrado</li>
         <li>Fotos por orden</li>
-        <li>Stock avanzado</li>
+        <li>Stock con escáner de barras</li>
+        <li>Presupuestos con PDF</li>
+        <li>Venta Rápida de mostrador</li>
         <li>Contabilidad completa</li>
         <li>Tickets y PDF</li>
        </ul>
@@ -2451,11 +2493,11 @@ function showApp() {
    </section>
    <!-- FOOTER -->
    <footer>
-    <div class="footer-logo">🔧 Mi Taller Web</div>
+    <div class="footer-logo">💻📱 Mi Taller Web</div>
     <div class="footer-links">
      <a href="#features">Funcionalidades</a> <a href="#planes">Planes</a> <a href="#faq">FAQ</a> <a href="#" onclick="showApp(); return false;">Ingresar</a>
     </div>
-    <div class="footer-copy">© 2025 Mi Taller Web — Todos los derechos reservados</div>
+    <div class="footer-copy">© 2026 Mi Taller Web — Todos los derechos reservados</div>
    </footer>
    <!-- WAPP FLOTANTE -->
    <a href="https://wa.me/5491135654094" target="_blank" class="wapp-float"> 
@@ -2594,7 +2636,7 @@ function showApp() {
   </div>
   <div id="login-overlay">
    <div class="login-card" id="panelLogin">
-    <div style="font-size: 45px; margin-bottom: -10px;">📱</div>
+    <div style="font-size: 45px; margin-bottom: -10px; animation: splashFadeIn 0.6s ease both, splashPulse 2.5s ease 0.6s infinite;">📱</div>
     <h2>Mi Taller Web</h2>
     <p>Inicia sesión para continuar</p>
     <div class="phone-row" id="phoneRowLogin">
@@ -3145,7 +3187,7 @@ function showApp() {
    </div>
 <nav>
     <div class="nav-scroll-area">
-    <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🛠️ GESTIÓN</button>
+    <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🖥️ GESTIÓN</button>
     <button onclick="showPage('ventas')" id="btn-nav-ventas">🛒 VENTAS Y REPARACIONES</button>
     <button onclick="showPage('presupuesto')" id="btn-nav-presupuesto">📋 PRESUPUESTO</button>
     <button onclick="showPage('contabilidad')" id="btn-nav-contabilidad">💰 CONTABILIDAD</button>
@@ -3441,6 +3483,7 @@ function showApp() {
     <div id="page-presupuesto" class="page" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
         <h2 style="margin:0; font-size:22px;">📋 Presupuestos</h2>
+        <button onclick="abrirFormPresupuesto()" style="background:linear-gradient(135deg,#1e4d8c,#2d63b8); color:white; border:none; border-radius:10px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(30,77,140,0.3);">+ NUEVO PRESUPUESTO</button>
       </div>
       <div id="form-presupuesto-container" style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:18px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -3781,10 +3824,10 @@ function showApp() {
      </div>
 
      <!-- BACKUPS -->
-     <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb;">
+     <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; box-sizing: border-box;">
       <h3 style="margin:0 0 10px 0; font-size:16px; color:#111827;">💾 Copias de Seguridad</h3>
       <button id="btnBackupGlobal" onclick="ejecutarBackup(true)" class="btn" style="background:#27ae60; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">💾 BACKUP TOTAL (Recomendado para PC)</button>
-      <button id="btnBackupLigero" onclick="ejecutarBackup(false)" class="btn btn-alerta-amarilla" style="font-size:13px; padding:15px; border-radius:8px; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #856404; background: #FFD700; border: none; font-weight: bold; width: 100%;">📱 BACKUP LIGERO (Sin fotos - Ideal Celular)</button>
+      <button id="btnBackupLigero" onclick="ejecutarBackup(false)" class="btn" style="font-size:13px; padding:15px; border-radius:8px; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #856404; background: #FFD700; border: none; font-weight: bold; width: 100%;">📱 BACKUP LIGERO (Sin fotos - Ideal Celular)</button>
       <button onclick="limpiarFotosAntiguas(true)" class="btn" style="background:#6b7280; color:white; font-size:13px; padding:15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%;">🧹 LIMPIEZA GLOBAL DE FOTOS Viejas (+45 días)</button>
       
       <div style="border-top:1px dashed #e5e7eb; padding-top:15px; margin-top:5px;">
@@ -4259,8 +4302,15 @@ function showApp() {
             if (registros.length === 0) {
                 const cache = localStorage.getItem('st_cache_ordenes_' + currentUser);
                 if (cache) {
-                    registros = JSON.parse(cache);
-                    renderTable();
+                    try {
+                        const cacheObj = JSON.parse(cache);
+                        const TTL = 24 * 60 * 60 * 1000;
+                        const guardadoEn = cacheObj._ts || 0;
+                        if (Date.now() - guardadoEn < TTL) {
+                            registros = cacheObj.data || cacheObj;
+                            renderTable();
+                        }
+                    } catch(e) {}
                 }
             }
 
@@ -4268,7 +4318,7 @@ function showApp() {
                 dbRef.once('value').then(snap => {
                     const v = snap.val();
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
+                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
                     renderTable();
                     // Re-evaluar onboarding al volver a la pestaña (por si es usuario nuevo)
                     setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 300);
@@ -4281,6 +4331,21 @@ function showApp() {
     let currentUser = null;
     Object.defineProperty(window, 'isUserAdmin',  { get: () => isUserAdmin,  set: v => { isUserAdmin = v; } });
     Object.defineProperty(window, 'currentUser',  { get: () => currentUser,  set: v => { currentUser = v; } });
+
+    // ── HELPERS DE PATHS DE FIREBASE ─────────────────────────────────────────
+    // Centralizan la lógica admin/usuario. Si algún día cambia la estructura
+    // de datos, se modifica acá y no en 45 lugares distintos.
+    function fbPathActivo()    { return isUserAdmin ? 'reparaciones'            : 'reparaciones_usuarios/' + currentUser; }
+    function fbPathArchivado() { return isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser; }
+    function fbPathStock()     { return isUserAdmin ? 'stock'                   : 'stock_usuarios/' + currentUser; }
+    function fbPathIndice()    { return isUserAdmin ? 'indices/admin'           : 'indices/' + currentUser; }
+    function fbPathPerfil()    { return isUserAdmin ? 'configuracion/admin'     : 'usuarios_registrados/' + currentUser; }
+    window.fbPathActivo = fbPathActivo;
+    window.fbPathArchivado = fbPathArchivado;
+    window.fbPathStock = fbPathStock;
+    window.fbPathIndice = fbPathIndice;
+    window.fbPathPerfil = fbPathPerfil;
+    // ─────────────────────────────────────────────────────────────────────────
 
     let registros = [];
     let registrosArchivados = [];
@@ -4305,6 +4370,7 @@ function showApp() {
     let repuestosSeleccionadosModal = []; 
     
     let debounceTimer;
+    let _autoOrdenTimer;
 
     const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
 
@@ -4565,7 +4631,7 @@ function showApp() {
         const r = listaOlvidados.find(x => x.id === id);
         if (!r) return;
 
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {};
             const nombreTaller = conf.nombreTaller || "nuestro taller";
@@ -4578,13 +4644,15 @@ function showApp() {
             
             window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msj)}`, '_blank');
 
-            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            const pathActivo = fbPathActivo();
             db.ref(pathActivo).child(id).update({ recordatorioEnviado: true }).then(() => {
                 const regOriginal = getRegistro(id);
                 if(regOriginal) regOriginal.recordatorioEnviado = true;
-                
                 calcularOlvidados();
                 abrirModalOlvidados(); 
+            }).catch(() => {
+                calcularOlvidados();
+                abrirModalOlvidados();
             });
         });
     }
@@ -5131,7 +5199,7 @@ function showApp() {
     function imprimir(id) {
         const r = getRegistro(id); 
         if(!r) return;
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
             generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
@@ -5205,7 +5273,7 @@ function showApp() {
         const id = window._ultimaVentaRapidaId;
         // Si se ingresó nombre, actualizarlo en Firebase y en memoria
         if (nombre && id) {
-            const pathAct = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+            const pathAct = fbPathActivo();
             db.ref(pathAct).child(id).update({ cliente: nombre }).catch(() => {});
             const reg = registros.find(x => x.id === id);
             if (reg) reg.cliente = nombre;
@@ -5216,7 +5284,7 @@ function showApp() {
     function imprimirVentaRapida(id, nombreCliente) {
         const r = getRegistro(id);
         if (!r) return;
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         mostrarLoader("Generando recibo...");
         db.ref(path).once('value').then(snap => {
             ocultarLoader();
@@ -6098,8 +6166,15 @@ function showApp() {
         const cache = localStorage.getItem('st_cache_ordenes_' + u);
         if (cache) {
             try {
-                registros = JSON.parse(cache);
-                setTimeout(() => renderTable(), 100); // Dibujamos la tabla enseguida
+                const cacheObj = JSON.parse(cache);
+                const TTL = 24 * 60 * 60 * 1000; // 24 horas
+                const guardadoEn = cacheObj._ts || 0;
+                if (Date.now() - guardadoEn < TTL) {
+                    registros = cacheObj.data || cacheObj; // compatible con caché viejo sin _ts
+                    setTimeout(() => renderTable(), 100); // Dibujamos la tabla enseguida
+                } else {
+                    localStorage.removeItem('st_cache_ordenes_' + u); // expiró, limpiar
+                }
             } catch(e) { console.error("Error en caché"); }
         }
         // --------------------------------------------------------------------
@@ -6275,7 +6350,7 @@ function showApp() {
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                     
                     // --- NUEVO: Guardar en el caché para la próxima entrada ---
-                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify(registros));
+                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
                     
                     renderTable(); 
                     actualizarListasAutocompletado();
@@ -6394,7 +6469,7 @@ function showApp() {
     }
 
     function openPassModal() { 
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         db.ref(path).once('value', snap => {
             const d = snap.val() || {};
             document.getElementById('confNombreTaller').value = d.nombreTaller || "";
@@ -6495,7 +6570,7 @@ function showApp() {
         const nWapp = document.getElementById('confWappTicket').value.trim();
         const nGarantia = document.getElementById('confGarantia').value.trim();
 
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64;
 
@@ -6868,8 +6943,8 @@ function showApp() {
         if (_vrCarrito.length === 0) return;
         mostrarLoader("Registrando venta...");
         const metodo    = document.getElementById('vrMetodo').value;
-        const pathAct   = isUserAdmin ? 'reparaciones'  : 'reparaciones_usuarios/' + currentUser;
-        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+        const pathAct   = fbPathActivo();
+        const pathStock = fbPathStock();
         const fecha     = (function() {
             const n  = new Date();
             const dd = String(n.getDate()).padStart(2,'0');
@@ -6887,8 +6962,8 @@ function showApp() {
         const nombresStr = _vrCarrito.map(x => `${x.cantidad > 1 ? x.cantidad + 'x ' : ''}${x.nombre}`).join(', ');
 
         // Número correlativo real: máximo entre todas las órdenes + 1
-        const _pathActVR    = isUserAdmin ? 'reparaciones'             : 'reparaciones_usuarios/' + currentUser;
-        const _pathArchVR   = isUserAdmin ? 'reparaciones_archivadas'  : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const _pathActVR    = fbPathActivo();
+        const _pathArchVR   = fbPathArchivado();
         let nroVta;
         try {
             const snaps = await Promise.all([
@@ -7043,7 +7118,7 @@ function showApp() {
         let repuestosParaGuardar = null;
 
         if(descontar && repuestosSeleccionadosModal.length > 0) {
-            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            const pathStock = fbPathStock();
             repuestosSeleccionadosModal.forEach(rep => {
                 // Transacción atómica de Firebase para evitar choques
                 const refStockCant = db.ref(pathStock).child(rep.id).child('cantidad');
@@ -7061,8 +7136,8 @@ function showApp() {
         const notaRep = document.getElementById('notaReparacionModal').value.trim();
         if (notaRep) {
             const pathRep = (getRegistro(idParaEstado) && getRegistro(idParaEstado).archivado)
-                ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
-                : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+                ? (fbPathArchivado())
+                : (fbPathActivo());
             const r = getRegistro(idParaEstado);
             if (r) {
                 r.notaReparacion = notaRep;
@@ -7096,7 +7171,7 @@ function showApp() {
     function enviarWhatsAppNoReparado(id) {
         const r = getRegistro(id); if(!r) return;
         
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {}; 
             const nombreHeader = conf.nombreTaller || "";
@@ -7150,8 +7225,8 @@ function showApp() {
         const diasGarantia = selGar ? (parseInt(selGar.value) || 0) : 0;
         const r = getRegistro(idParaEstado);
         
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
         const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
         
         let precioActual = parseFloat(r.precio) || 0;
@@ -7220,8 +7295,8 @@ function showApp() {
             window._modoCobroDeuda = false; window._cobroCotizarMode = false;
             updates.entregadoSinCobrar = false;
             
-            const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-            const pathArchivadoDeuda = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const pathActivo = fbPathActivo();
+            const pathArchivadoDeuda = fbPathArchivado();
             
             db.ref(pathActivo).child(idParaEstado).update(updates).then(() => {
                 Object.assign(r, updates);
@@ -7377,8 +7452,8 @@ function showApp() {
 
         mostrarLoader("Registrando entrega sin cargo...");
 
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
 
         db.ref(pathActivo).child(idParaEstado).update(updates).then(() => {
             Object.assign(r, updates);
@@ -7459,7 +7534,7 @@ function showApp() {
             updates.vencimientoGarantia = "";
         }
         // Queda en nodo activo (NO se archiva)
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
         mostrarLoader("Registrando entrega...");
         db.ref(pathActivo).child(idParaEstado).update(updates).then(() => {
             Object.assign(r, updates);
@@ -7467,6 +7542,9 @@ function showApp() {
             renderTable();
             ocultarLoader();
             showToast("📦 ENTREGADO — DEUDA PENDIENTE ⚠️", "#f59e0b");
+        }).catch(err => {
+            ocultarLoader();
+            showToast(mensajeFirebaseAmigable(err), '#dc2626');
         });
     }
 
@@ -7580,12 +7658,18 @@ function showApp() {
     const selectMes = document.getElementById('selectMes');
     const mesActual = new Date().getMonth();
     if(selectMes) {
-        mesesNombres.forEach((m, i) => {
-            let opt = document.createElement('option');
-            opt.value = i; opt.text = m;
-            if(i === mesActual) opt.selected = true;
+        const hoyInit = new Date();
+        // Generar últimos 24 meses con value="YYYY-MM" para que el año sea explícito
+        for (let i = 0; i < 24; i++) {
+            const d = new Date(hoyInit.getFullYear(), hoyInit.getMonth() - i, 1);
+            const yyyy = d.getFullYear();
+            const mm = d.getMonth();
+            const opt = document.createElement('option');
+            opt.value = yyyy + '-' + String(mm + 1).padStart(2, '0');
+            opt.text = mesesNombres[mm] + ' ' + yyyy;
+            if (i === 0) opt.selected = true;
             selectMes.appendChild(opt);
-        });
+        }
     }
 
 
@@ -7608,7 +7692,7 @@ function showApp() {
         // Caso especial: perfil y stock ok pero registrosArchivados aún no se descargó.
         // Consulta mínima para saber si existe al menos una orden archivada.
         if (perfilOk && tieneStock && !tieneOrdenes) {
-            const pathArch = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const pathArch = fbPathArchivado();
             db.ref(pathArch).limitToFirst(1).once('value').then(snap => {
                 if (snap.exists()) {
                     localStorage.setItem('ob_cerrado_' + currentUser, '1');
@@ -7662,9 +7746,11 @@ function showApp() {
 
         // Si completó todo, cerrar con delay
         if (completados === 3) {
+            const yaEstabaCerrado = !!localStorage.getItem('ob_cerrado_' + currentUser);
             setTimeout(() => {
                 cerrarOnboarding();
-                showToast('¡Taller configurado! 🎉', '#059669');
+                // Solo mostrar el toast la primera vez que completa el onboarding
+                if (!yaEstabaCerrado) showToast('¡Taller configurado! 🎉', '#059669');
             }, 1200);
         }
     }
@@ -7967,7 +8053,7 @@ function showApp() {
         }
 
         if ((nuevo === 'Pendiente' || nuevo === 'No reparado') && r.repuestosDescontados) {
-            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            const pathStock = fbPathStock();
             r.repuestosDescontados.forEach(rep => {
                 // Transacción atómica de Firebase para evitar choques
                 const refStockCant = db.ref(pathStock).child(rep.id).child('cantidad');
@@ -7998,8 +8084,8 @@ function showApp() {
             r.repuestosDescontados = repuestosUsados;
         }
         
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
         const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
 
                 if (nuevo === 'Garantía' && r.archivado) {
@@ -8057,12 +8143,11 @@ function showApp() {
             });
         } else {
             db.ref(nodoActualizar).child(idParaEstado).update(updates).then(() => {
-                // Actualizamos la memoria local y redibujamos la tabla SIEMPRE (Cero lecturas)
                 Object.assign(r, updates);
                 renderTable();
-                
                 document.getElementById('statusModal').style.display = 'none';
-
+            }).catch(err => {
+                showToast(mensajeFirebaseAmigable(err), '#dc2626');
             });
         }
     }
@@ -8084,8 +8169,8 @@ function showApp() {
         const r = getRegistro(idParaPrecio);
         if(!r) return;
 
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
         const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
 
         const precioAnterior = parseFloat(r.precio) || 0;
@@ -8098,11 +8183,10 @@ function showApp() {
             renderTable();
             closePriceModal();
             showToast("PRECIO ACTUALIZADO ✅", "#059669");
-            // Si la orden está archivada/entregada, refrescar contabilidad
             if (r.archivado && document.getElementById("page-contabilidad").style.display === "block") {
                 cargarDatosContabilidad();
             }
-        });
+        }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
     };
 
     async function openHistory(id) {
@@ -8213,8 +8297,8 @@ function showApp() {
         if (!r) return;
 
         const path = r.archivado
-            ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
-            : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+            ? (fbPathArchivado())
+            : (fbPathActivo());
 
         db.ref(path).child(id).update({ notaReparacion: nuevaNota }).then(() => {
             r.notaReparacion = nuevaNota;
@@ -8226,7 +8310,7 @@ function showApp() {
             }
             cancelarEditarNota(id);
             showToast("🔧 Nota de reparación guardada", "#059669");
-        });
+        }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
     }
 
     function editarMotivoGarantia(id, evIdx) {
@@ -8254,8 +8338,8 @@ function showApp() {
         historialActualizado[evIdx] = { ...historialActualizado[evIdx], motivo: nuevoMotivo };
 
         const path = r.archivado
-            ? (isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser)
-            : (isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser);
+            ? (fbPathArchivado())
+            : (fbPathActivo());
 
         db.ref(path).child(id).update({ historialEstados: historialActualizado, motivoGarantia: nuevoMotivo }).then(() => {
             r.historialEstados = historialActualizado;
@@ -8295,8 +8379,8 @@ function showApp() {
                 return;
             }
             if (!historialDescargado) {
-                const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-                const pathIndice    = isUserAdmin ? 'indices/admin' : 'indices/' + currentUser;
+                const pathArchivado = fbPathArchivado();
+                const pathIndice    = fbPathIndice();
 
                 // Intentar buscar primero por índice (liviano)
                 db.ref(pathIndice).once('value').then(snapIdx => {
@@ -8579,59 +8663,67 @@ function showApp() {
     
     function parseMoney(s) { 
         if (!s) return 0;
-        const cleanValue = String(s).replace(/\D/g, "");
-        return parseFloat(cleanValue) || 0; 
+        let str = String(s).trim();
+        // Detectar si usa coma como decimal (ej: "1.500,50") o punto como decimal (ej: "1,500.50")
+        const tieneComaDecimal = /,\d{1,2}$/.test(str);
+        const tienePuntoDecimal = /\.\d{1,2}$/.test(str) && !tieneComaDecimal;
+        if (tieneComaDecimal) {
+            // Formato europeo/argentino: "1.500,50" → quitar puntos de miles, reemplazar coma por punto
+            str = str.replace(/\./g, '').replace(',', '.');
+        } else if (tienePuntoDecimal) {
+            // Formato inglés: "1,500.50" → quitar comas de miles
+            str = str.replace(/,/g, '');
+        } else {
+            // Sin decimal: eliminar todo separador de miles
+            str = str.replace(/[.,]/g, '');
+        }
+        return parseFloat(str) || 0;
     }
     
     function autoOrden() {
-        if (!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) {
-            const inputNro = document.getElementById('nroOrden');
-            inputNro.placeholder = '⏳ calculando...';
+        clearTimeout(_autoOrdenTimer);
+        _autoOrdenTimer = setTimeout(function() {
+            if (!idEditando && document.getElementById('cliente').value.length > 2 && !document.getElementById('nroOrden').value) {
+                const inputNro = document.getElementById('nroOrden');
+                inputNro.placeholder = '⏳ calculando...';
 
-            const pathActivo   = isUserAdmin ? 'reparaciones'           : 'reparaciones_usuarios/' + currentUser;
-            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+                const pathActivo   = fbPathActivo();
+                const pathArchivado = fbPathArchivado();
 
-            // Consulta ambas ramas de Firebase para obtener el máximo número de orden real
-            Promise.all([
-                db.ref(pathActivo).orderByChild('orden').limitToLast(1).once('value'),
-                db.ref(pathArchivado).orderByChild('orden').limitToLast(1).once('value')
-            ]).then(function(snaps) {
-                let maxNum = 0;
-
-                snaps.forEach(function(snap) {
-                    snap.forEach(function(child) {
-                        const val = parseInt(String(child.val().orden).replace(/[^\d]/g, ''), 10);
+                Promise.all([
+                    db.ref(pathActivo).orderByChild('orden').limitToLast(1).once('value'),
+                    db.ref(pathArchivado).orderByChild('orden').limitToLast(1).once('value')
+                ]).then(function(snaps) {
+                    let maxNum = 0;
+                    snaps.forEach(function(snap) {
+                        snap.forEach(function(child) {
+                            const val = parseInt(String(child.val().orden).replace(/[^\d]/g, ''), 10);
+                            if (!isNaN(val) && val > maxNum) maxNum = val;
+                        });
+                    });
+                    const enMemoria = [...registros, ...registrosArchivados];
+                    enMemoria.forEach(function(r) {
+                        const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
                         if (!isNaN(val) && val > maxNum) maxNum = val;
                     });
-                });
-
-                // También comparar contra registros en memoria por si hay datos no persistidos aún
-                const enMemoria = [...registros, ...registrosArchivados];
-                enMemoria.forEach(function(r) {
-                    const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
-                    if (!isNaN(val) && val > maxNum) maxNum = val;
-                });
-
-                if (!inputNro.value) {
-                    // Para usuarios (no admin): si no hay ordenes previas, arrancar desde 100
+                    if (!inputNro.value) {
+                        if (!isUserAdmin && maxNum === 0) maxNum = 99;
+                        inputNro.value = maxNum + 1;
+                    }
+                    inputNro.placeholder = '';
+                }).catch(function() {
+                    const enMemoria = [...registros, ...registrosArchivados];
+                    let maxNum = 0;
+                    enMemoria.forEach(function(r) {
+                        const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
+                        if (!isNaN(val) && val > maxNum) maxNum = val;
+                    });
                     if (!isUserAdmin && maxNum === 0) maxNum = 99;
-                    inputNro.value = maxNum + 1;
-                }
-                inputNro.placeholder = '';
-            }).catch(function() {
-                // Fallback: solo memoria local
-                const enMemoria = [...registros, ...registrosArchivados];
-                let maxNum = 0;
-                enMemoria.forEach(function(r) {
-                    const val = parseInt(String(r.orden || '').replace(/[^\d]/g, ''), 10);
-                    if (!isNaN(val) && val > maxNum) maxNum = val;
+                    if (!inputNro.value) inputNro.value = maxNum + 1;
+                    inputNro.placeholder = '';
                 });
-                // Para usuarios (no admin): si no hay ordenes previas, arrancar desde 100
-                if (!isUserAdmin && maxNum === 0) maxNum = 99;
-                if (!inputNro.value) inputNro.value = maxNum + 1;
-                inputNro.placeholder = '';
-            });
-        }
+            }
+        }, 600);
     }
 
     function revelarCosto() { 
@@ -8766,45 +8858,70 @@ function showApp() {
         }
 
         mostrarLoader("Cargando " + getHistorialMesLabel(offset) + "...");
-        var pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        var pathArchivado = fbPathArchivado();
+        var pathIndice    = fbPathIndice();
         var keyParts = key.split('-');
-        var year = parseInt(keyParts[0]);
+        var year  = parseInt(keyParts[0]);
         var month = parseInt(keyParts[1]);
 
-        db.ref(pathArchivado).once('value').then(function(snap) {
-            var v = snap.val();
-            var todos = v ? Object.keys(v).map(function(k) { return Object.assign({id:k}, v[k]); }) : [];
+        // Intentar filtrar por índice solo si las entradas ya tienen fechaEntrega
+        db.ref(pathIndice).once('value').then(function(snapIdx) {
+            var indice = snapIdx.val() || {};
+            var entradas = Object.values(indice).filter(function(e) { return e.archivado; });
+            var tienesFechaEntrega = entradas.length > 0 && entradas.every(function(e) { return !!e.fechaEntrega; });
 
-            var filtradosMes = todos.filter(function(r) {
-                var fechaStr = r.fecha || '';
-                if (r.historialEstados) {
-                    var estados = r.historialEstados;
-                    for (var i = estados.length - 1; i >= 0; i--) {
-                        if (estados[i].estado === 'Entregado' || estados[i].estado === 'Entregado (Cortesía)') {
-                            fechaStr = estados[i].fecha;
-                            break;
+            if (tienesFechaEntrega) {
+                // Índice completo — filtrar por fechaEntrega y bajar solo esas órdenes
+                var idsDelMes = Object.keys(indice).filter(function(id) {
+                    var entrada = indice[id];
+                    if (!entrada.archivado || !entrada.fechaEntrega) return false;
+                    var partes = entrada.fechaEntrega.split('/');
+                    return partes.length >= 3 && parseInt(partes[1]) === month && parseInt(partes[2]) === year;
+                });
+                var promesas = idsDelMes.map(function(id) {
+                    return db.ref(pathArchivado).child(id).once('value').then(function(s) {
+                        return s.val() ? Object.assign({ id: id }, s.val()) : null;
+                    });
+                });
+                return Promise.all(promesas).then(function(resultados) {
+                    var filtradosMes = resultados.filter(Boolean);
+                    historialMesesCargados[key] = filtradosMes;
+                    registrosArchivados = filtradosMes;
+                    historialDescargado = true;
+                    actualizarListasAutocompletado();
+                    ocultarLoader();
+                    renderTable();
+                });
+            }
+
+            // Índice sin fechaEntrega (órdenes viejas) — descargar todo y filtrar en cliente
+            return db.ref(pathArchivado).once('value').then(function(snap) {
+                var v = snap.val();
+                var todos = v ? Object.keys(v).map(function(k) { return Object.assign({id:k}, v[k]); }) : [];
+                var filtradosMes = todos.filter(function(r) {
+                    var fechaStr = r.fecha || '';
+                    if (r.historialEstados) {
+                        var estados = r.historialEstados;
+                        for (var i = estados.length - 1; i >= 0; i--) {
+                            if (estados[i].estado === 'Entregado' || estados[i].estado === 'Entregado (Cortesía)') {
+                                fechaStr = estados[i].fecha; break;
+                            }
                         }
                     }
-                }
-                if (!fechaStr) return false;
-                var partes = fechaStr.split('/');
-                if (partes.length >= 3) {
-                    return parseInt(partes[1]) === month && parseInt(partes[2]) === year;
-                }
-                try {
-                    var dt = new Date(fechaStr);
-                    return dt.getMonth() + 1 === month && dt.getFullYear() === year;
-                } catch(e2) { return false; }
+                    if (!fechaStr) return false;
+                    var partes = fechaStr.split('/');
+                    if (partes.length >= 3) return parseInt(partes[1]) === month && parseInt(partes[2]) === year;
+                    try { var dt = new Date(fechaStr); return dt.getMonth() + 1 === month && dt.getFullYear() === year; }
+                    catch(e2) { return false; }
+                });
+                historialMesesCargados[key] = filtradosMes;
+                registrosArchivados = filtradosMes;
+                historialDescargado = true;
+                migrarIndiceHistorial(todos); // migrar índice con fechaEntrega para próximas veces
+                actualizarListasAutocompletado();
+                ocultarLoader();
+                renderTable();
             });
-
-            historialMesesCargados[key] = filtradosMes;
-            registrosArchivados = filtradosMes;
-            historialDescargado = true;
-            migrarIndiceHistorial(filtradosMes);
-            actualizarListasAutocompletado();
-            ocultarLoader();
-
-            renderTable();
         }).catch(function() {
             ocultarLoader();
             showToast("Error al cargar historial", "#dc2626");
@@ -9002,8 +9119,8 @@ function showApp() {
         const r = getRegistro(id);
         if(!r) return;
 
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
 
         if (r.archivado) {
             r.archivado = false;
@@ -9014,20 +9131,17 @@ function showApp() {
                 registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
                 registros.push({id: id, ...copia});
                 renderTable();
-
-            });
+            }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
         } else {
             r.archivado = true;
             let copia = {...r}; delete copia.id;
-
             db.ref(pathArchivado).child(id).set(copia).then(() => {
                 db.ref(pathActivo).child(id).remove();
                 escribirIndice(id, copia, true);
                 registros = registros.filter(x => x.id !== id);
                 if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
                 renderTable();
-
-            });
+            }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
         }
     }
 
@@ -9062,8 +9176,8 @@ function showApp() {
         const motivo = document.getElementById('motivoGarantia').value.trim();
         const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
 
-        const pathActivo   = isUserAdmin ? 'reparaciones'           : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo   = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
 
         // Construir historial actualizado
         const historialNuevo = [...(r.historialEstados || []), {
@@ -9163,8 +9277,8 @@ function showApp() {
     document.getElementById('confirmDeleteBtn').onclick = async () => { 
         if(!idParaBorrar) return;
         
-        const pathActivo   = isUserAdmin ? 'reparaciones'           : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo   = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
         const pathFotos    = 'fotos_ordenes/' + currentUser + '/' + idParaBorrar;
         const cloudName    = "dsbiva6k0";
 
@@ -9196,8 +9310,10 @@ function showApp() {
         await db.ref(pathFotos).remove().catch(() => {});
 
         // 3. Borrar orden e índice
-        db.ref(pathActivo).child(idParaBorrar).remove();
-        db.ref(pathArchivado).child(idParaBorrar).remove();
+        await Promise.all([
+            db.ref(pathActivo).child(idParaBorrar).remove(),
+            db.ref(pathArchivado).child(idParaBorrar).remove()
+        ]).catch(() => {});
         borrarIndice(idParaBorrar);
         
         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
@@ -9322,7 +9438,7 @@ function showApp() {
     document.getElementById('repairForm').onsubmit = async function(e) {
         e.preventDefault();
         
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
         
         let c = document.getElementById('cliente').value.trim();
         let eq = document.getElementById('equipo').value;
@@ -9419,7 +9535,7 @@ function showApp() {
 
         if (idEditando) {
             const rEdit = getRegistro(idEditando);
-            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const pathArchivado = fbPathArchivado();
             const pathParaUpdate = (rEdit && rEdit.archivado) ? pathArchivado : pathActivo;
             const esOrdenArchivada = !!(rEdit && rEdit.archivado);
 
@@ -9543,6 +9659,12 @@ function showApp() {
         const pathIndice = isUserAdmin
             ? 'indices/admin'
             : 'indices/' + currentUser;
+        // Extraer fecha de entrega del historialEstados si existe
+        let fechaEntrega = '';
+        if (archivado && data.historialEstados) {
+            const evEnt = data.historialEstados.find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+            if (evEnt) fechaEntrega = evEnt.fecha || '';
+        }
         const entrada = {
             cliente:  (data.cliente  || '').toLowerCase(),
             modelo:   (data.modelo   || '').toLowerCase(),
@@ -9552,25 +9674,31 @@ function showApp() {
             orden:    String(data.orden || '').replace(/[^\d]/g, ''),
             falla:    (data.falla    || '').toLowerCase(),
             archivado: archivado ? true : false,
-            fecha:    data.fecha || ''
+            fecha:    data.fecha || '',
+            fechaEntrega: fechaEntrega
         };
         db.ref(pathIndice).child(id).set(entrada).catch(() => {});
     }
 
     function borrarIndice(id) {
-        const pathIndice = isUserAdmin ? 'indices/admin' : 'indices/' + currentUser;
+        const pathIndice = fbPathIndice();
         db.ref(pathIndice).child(id).remove().catch(() => {});
     }
 
     // Migración silenciosa: la primera vez que el historial se descarga,
     // construye el índice para las órdenes que aún no lo tienen.
     function migrarIndiceHistorial(ordenes) {
-        const pathIndice = isUserAdmin ? 'indices/admin' : 'indices/' + currentUser;
+        const pathIndice = fbPathIndice();
         db.ref(pathIndice).once('value').then(snap => {
             const existentes = snap.val() || {};
             const batch = {};
             ordenes.forEach(r => {
                 if (!existentes[r.id]) {
+                    let fechaEntradaMigrar = '';
+                    if (r.historialEstados) {
+                        const evE = r.historialEstados.find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+                        if (evE) fechaEntradaMigrar = evE.fecha || '';
+                    }
                     batch[r.id] = {
                         cliente:  (r.cliente  || '').toLowerCase(),
                         modelo:   (r.modelo   || '').toLowerCase(),
@@ -9580,7 +9708,8 @@ function showApp() {
                         orden:    String(r.orden || '').replace(/[^\d]/g, ''),
                         falla:    (r.falla    || '').toLowerCase(),
                         archivado: r.archivado ? true : false,
-                        fecha:    r.fecha || ''
+                        fecha:    r.fecha || '',
+                        fechaEntrega: fechaEntradaMigrar
                     };
                 }
             });
@@ -9649,7 +9778,7 @@ function showApp() {
     function enviarWhatsApp(id) {
         const r = getRegistro(id); if(!r) return;
         
-        const path = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const path = fbPathPerfil();
         db.ref(path).once('value', snap => {
             const conf = snap.val() || {}; 
             const nombreHeader = conf.nombreTaller || "";
@@ -9781,17 +9910,18 @@ function showApp() {
             c.innerHTML = "<p style='grid-column: 1 / -1; color:#9ca3af;'>No hay fotos para esta orden.</p>";
             return;
         }
-        // guardamos srcs para navegación con flechas
         const srcs = fotosArray.slice();
+        window._viewerSrcs = srcs;
         fotosArray.forEach((b64, index) => {
+            // Escapar la URL para usarla en atributo onclick
+            const urlEscapada = b64.replace(/'/g, "\\'");
             c.innerHTML += `
                 <div style="position:relative;">
-                    <img src="${b64}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer;" onclick="openViewer('${b64}', window._viewerSrcs, ${index})">
-                    <button onclick="eliminarFotoExistente(${index})" style="position:absolute; top:5px; right:5px; background:var(--danger); color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer;">🗑️</button>
+                    <img src="${b64}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer;" onclick="openViewer('${urlEscapada}', window._viewerSrcs, ${index})">
+                    <button onclick="eliminarFotoExistente('${urlEscapada}')" style="position:absolute; top:5px; right:5px; background:var(--danger); color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer;">🗑️</button>
                 </div>
             `;
         });
-        window._viewerSrcs = srcs;
     }
 
     function subirFotoDirecta(input) {
@@ -9803,7 +9933,6 @@ function showApp() {
             comprimirImagen(input.files[0], 800, 0.7, (base64) => {
                 const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
                 refFotos.once('value').then(snap => {
-                    // Leemos el conteo real desde Firebase, no desde la memoria local
                     let fotosActuales = (snap.val() || {}).fotos || [];
                     if(fotosActuales.length >= 5) {
                         ocultarLoader();
@@ -9815,23 +9944,36 @@ function showApp() {
                     refFotos.update({fotos: fotosActuales}).then(() => {
                         renderGaleria(fotosActuales);
                         ocultarLoader();
+                        input.value = "";
+                    }).catch(() => {
+                        ocultarLoader();
+                        showToast("⚠️ Error al guardar la foto. Intentá de nuevo.", "#dc2626");
                     });
+                }).catch(() => {
+                    ocultarLoader();
+                    showToast("⚠️ Error al conectar con Firebase. Revisá tu conexión.", "#dc2626");
                 });
             });
         }
     }
 
-    function eliminarFotoExistente(index) {
+    function eliminarFotoExistente(urlFoto) {
         if(!idParaFotos) return;
         if(!confirm("¿Seguro que querés eliminar esta foto?")) return;
         
         const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
+        mostrarLoader("Eliminando foto...");
         refFotos.once('value').then(snap => {
             let fotosActuales = (snap.val() || {}).fotos || [];
-            fotosActuales.splice(index, 1);
-            refFotos.update({fotos: fotosActuales}).then(() => {
+            // Borrar por URL para evitar desincronía de índices entre sesiones
+            fotosActuales = fotosActuales.filter(f => f !== urlFoto);
+            return refFotos.update({fotos: fotosActuales}).then(() => {
                 renderGaleria(fotosActuales);
+                ocultarLoader();
             });
+        }).catch(() => {
+            ocultarLoader();
+            showToast("⚠️ Error al eliminar la foto. Intentá de nuevo.", "#dc2626");
         });
     }
 
@@ -10059,28 +10201,32 @@ function showApp() {
         if(!n || isNaN(c)) { showToast("Nombre y cantidad requeridos", "#dc2626"); return; }
 
         const data = { nombre: n, cantidad: c, costo: costo, precioVenta: precio, stockMinimo: minimo, codigo: codigo };
-        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+        const pathStock = fbPathStock();
         
         mostrarLoader("Guardando stock...");
         if(id) {
             db.ref(pathStock).child(id).update(data).then(() => { 
                 const index = stockData.findIndex(x => x.id === id);
                 if(index !== -1) stockData[index] = { id: id, ...data };
-                
                 limpiarStock(); 
                 ocultarLoader(); 
                 showToast("STOCK ACTUALIZADO", "#059669"); 
                 renderStock();
+            }).catch(err => {
+                ocultarLoader();
+                showToast(mensajeFirebaseAmigable(err), '#dc2626');
             });
         } else {
             const nuevaRef = db.ref(pathStock).push();
             nuevaRef.set(data).then(() => { 
                 stockData.push({ id: nuevaRef.key, ...data });
-                
                 limpiarStock(); 
                 ocultarLoader(); 
                 showToast("ARTÍCULO CREADO", "#059669"); if (typeof actualizarOnboarding === "function") actualizarOnboarding();
                 renderStock();
+            }).catch(err => {
+                ocultarLoader();
+                showToast(mensajeFirebaseAmigable(err), '#dc2626');
             });
         }
     }
@@ -10142,18 +10288,19 @@ function showApp() {
 
     function ejecutarBorradoStock() {
         if(!idStockParaBorrar) return;
-        const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+        const pathStock = fbPathStock();
         
         mostrarLoader("Eliminando...");
         db.ref(pathStock).child(idStockParaBorrar).remove().then(() => {
-            // Actualización local sin gastar cuota
             stockData = stockData.filter(item => item.id !== idStockParaBorrar);
-            
             idStockParaBorrar = null;
             document.getElementById('deleteStockModal').style.display = 'none';
             ocultarLoader();
             showToast("ARTÍCULO ELIMINADO", "#dc2626");
             renderStock();
+        }).catch(err => {
+            ocultarLoader();
+            showToast(mensajeFirebaseAmigable(err), '#dc2626');
         });
     }
 
@@ -10211,7 +10358,7 @@ function showApp() {
     // ====== MODAL CONFIGURAR STOCK MÍNIMO GLOBAL ======
     // Carga el valor guardado en Firebase y permite cambiarlo para todos los artículos
     function abrirConfigStockMinimoGlobal() {
-        const pathMin = isUserAdmin ? 'configuracion/admin/stockMinimoGlobal' : 'usuarios_registrados/' + currentUser + '/stockMinimoGlobal';
+        const pathMin = fbPathPerfil() + '/stockMinimoGlobal';
 
         let modal = document.getElementById('modalStockMinGlobal');
         if (!modal) {
@@ -10327,7 +10474,7 @@ function showApp() {
 
         document.getElementById('btnGuardarConfigStockMin').onclick = function() {
             const nuevoMin = parseInt(document.getElementById('inputConfigStockMin').value) || 0;
-            const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+            const pathStock = fbPathStock();
             mostrarLoader('Guardando...');
             db.ref(pathStock).child(id).update({ stockMinimo: nuevoMin }).then(() => {
                 const idx = stockData.findIndex(x => x.id === id);
@@ -10343,7 +10490,7 @@ function showApp() {
 
     // Cargar el mínimo global al iniciar stock
     function cargarStockMinimoGlobal() {
-        const pathMin = isUserAdmin ? 'configuracion/admin/stockMinimoGlobal' : 'usuarios_registrados/' + currentUser + '/stockMinimoGlobal';
+        const pathMin = fbPathPerfil() + '/stockMinimoGlobal';
         db.ref(pathMin).once('value', snap => {
             const val = snap.val();
             window._stockMinimoGlobal = (val !== null && val !== undefined) ? val : 2;
@@ -10367,6 +10514,11 @@ function showApp() {
         const savedDark = localStorage.getItem('st_matias_darkmode');
         if (savedDark === 'on') { document.body.classList.add('dark-mode'); }
         document.documentElement.classList.remove('dark-mode-early');
+        // Mostrar botón soporte con delay
+        setTimeout(() => {
+            const btnSoporte = document.querySelector('.btn-soporte-wapp');
+            if (btnSoporte) btnSoporte.classList.add('visible');
+        }, 3000);
     });
 
     // Aviso al cerrar/recargar la pestaña con datos sin guardar
@@ -10425,7 +10577,7 @@ function showApp() {
             if (stockData.length === 0 && typeof window.cargarStockData === 'function') window.cargarStockData();
             if (!historialDescargado) {
                 mostrarLoader('Cargando ventas...');
-                const pathArch = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+                const pathArch = fbPathArchivado();
                 db.ref(pathArch).once('value').then(snap => {
                     const v = snap.val();
                     registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
@@ -10451,7 +10603,7 @@ function showApp() {
                 cargarUsuariosAdmin();
             }
         }
-        if (pageId === 'presupuesto') { cargarPresupuestos(); setTimeout(() => abrirFormPresupuesto(), 50); }
+        if (pageId === 'presupuesto') { cargarPresupuestos(); }
     }
 
     function showPage(pageId) {
@@ -10475,9 +10627,9 @@ function showApp() {
         const r = registros.find(x => x.id === idOrden) || (registrosArchivados || []).find(x => x.id === idOrden);
         if (!r) return;
         mostrarLoader("Anulando venta...");
-        const pathActivo   = isUserAdmin ? 'reparaciones'             : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
-        const pathStock    = isUserAdmin ? 'stock'                    : 'stock_usuarios/' + currentUser;
+        const pathActivo   = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
+        const pathStock    = fbPathStock();
         const nodo = (r.archivado === true) ? pathArchivado : pathActivo;
 
         db.ref(nodo).child(idOrden).remove().then(() => {
@@ -10626,16 +10778,17 @@ function showApp() {
         // --- INICIO DEL FIX: Descargar historial si no existe ---
         if (!historialDescargado) {
             mostrarLoader("Calculando finanzas...");
-            const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+            const pathArchivado = fbPathArchivado();
             
             db.ref(pathArchivado).once('value').then(snap => {
                 const v = snap.val();
                 registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                 historialDescargado = true;
                 ocultarLoader();
-                
-                // Una vez descargado, volvemos a llamar a la función para que ahora sí calcule todo
                 cargarDatosContabilidad();
+            }).catch(err => {
+                ocultarLoader();
+                showToast('⚠️ Error al cargar datos de contabilidad. Revisá tu conexión.', '#dc2626');
             });
             
             return; // Cortamos la ejecución acá para esperar a que Firebase traiga los datos
@@ -10645,7 +10798,7 @@ function showApp() {
         const mesObj = document.getElementById('selectMes');
         const diaObj = document.getElementById('inputDia');
         
-        const mesFiltro = mesObj ? mesObj.value : mesActual;
+        const mesFiltro = mesObj ? mesObj.value : (new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'));
         const diaFiltro = diaObj ? diaObj.value : "";
         
         let targetMonthStr = "";
@@ -10656,12 +10809,10 @@ function showApp() {
             targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
             targetYearStr = String(dObj.getFullYear());
         } else {
-            const mesSel = parseInt(mesFiltro);
-            const hoy = new Date();
-            // Si el mes seleccionado es mayor al mes actual, pertenece al año anterior
-            const anio = mesSel > hoy.getMonth() ? hoy.getFullYear() - 1 : hoy.getFullYear();
-            targetMonthStr = String(mesSel + 1).padStart(2, '0');
-            targetYearStr = String(anio);
+            // mesFiltro es "YYYY-MM" — año explícito, sin adivinanzas
+            const partesMes = mesFiltro.split('-');
+            targetYearStr  = partesMes[0];
+            targetMonthStr = partesMes[1] ? partesMes[1].padStart(2, '0') : '01';
         }
 
         let ingresoEfectivo = 0, ingresoTransf = 0, ingresoTarjeta = 0;
@@ -10952,13 +11103,13 @@ function showApp() {
         if(!r) return;
 
         mostrarLoader("Anulando movimientos...");
-        const pathActivo = isUserAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + currentUser;
-        const pathArchivado = isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + currentUser;
+        const pathActivo = fbPathActivo();
+        const pathArchivado = fbPathArchivado();
         const nodoActualizar = (r.archivado === true) ? pathArchivado : pathActivo;
 
         if (r.esVentaRapida) {
             db.ref(nodoActualizar).child(idOrden).remove().then(() => {
-                const pathStock = isUserAdmin ? 'stock' : 'stock_usuarios/' + currentUser;
+                const pathStock = fbPathStock();
 
                 // Multi-ítem: usar itemsVenta JSON
                 let stockPromesas = [];
@@ -11033,7 +11184,7 @@ function showApp() {
         const diaFiltro = diaObj ? diaObj.value : "";
         let archivoNombre = `Contabilidad_${diaFiltro || mesFiltro}.csv`;
 
-        const m = mesObj ? mesObj.value : mesActual;
+        const m = mesObj ? mesObj.value : (new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'));
         const d = diaFiltro;
 
         let targetMonthStr = "", targetYearStr = "";
@@ -11042,11 +11193,9 @@ function showApp() {
             targetMonthStr = String(dObj.getMonth() + 1).padStart(2, '0');
             targetYearStr = String(dObj.getFullYear());
         } else {
-            const mesSel = parseInt(m);
-            const hoy = new Date();
-            const anio = mesSel > hoy.getMonth() ? hoy.getFullYear() - 1 : hoy.getFullYear();
-            targetMonthStr = String(mesSel + 1).padStart(2, '0');
-            targetYearStr = String(anio);
+            const partesMesEx = m.split('-');
+            targetYearStr  = partesMesEx[0];
+            targetMonthStr = partesMesEx[1] ? partesMesEx[1].padStart(2, '0') : '01';
         }
 
         const mapaOrdenes = {};
@@ -11526,7 +11675,14 @@ function showApp() {
     }
 
     function reactivarLicencia(wa) {
-        db.ref('usuarios_registrados/' + wa).update({ estado: 'activo' }).then(() => { showToast("Licencia reactivada", "#059669"); });
+        mostrarLoader('Reactivando...');
+        db.ref('usuarios_registrados/' + wa).update({ estado: 'activo' }).then(() => {
+            ocultarLoader();
+            showToast("Licencia reactivada", "#059669");
+        }).catch(err => {
+            ocultarLoader();
+            showToast('❌ Error: ' + err.message, '#dc2626');
+        });
     }
 
     function openSuspendModal(wa) { idParaSuspender = wa; document.getElementById('suspendModal').style.display='flex'; }
@@ -11543,6 +11699,9 @@ function showApp() {
             closeSuspendModal();
             ocultarLoader();
             showToast("Licencia Suspendida", "#dc2626");
+        }).catch(err => {
+            ocultarLoader();
+            showToast('❌ Error: ' + err.message, '#dc2626');
         });
     };
 
@@ -12033,7 +12192,7 @@ function showApp() {
             } else {
                 showToast("Mensaje ocultado", "#6b7280");
             }
-        });
+        }).catch(err => showToast('❌ Error: ' + err.message, '#dc2626'));
     }
 
 
@@ -12673,9 +12832,12 @@ function showApp() {
         ctx.font = `${28 * base}px serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🔧', size * 0.5, size * 0.35);
-        ctx.fillText('📱', size * 0.25, size * 0.72);
-        ctx.fillText('💻', size * 0.75, size * 0.72);
+        ctx.fillText('💻', size * 0.32, size * 0.48);
+        ctx.fillText('📱', size * 0.68, size * 0.48);
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = `bold ${11 * base}px sans-serif`;
+        ctx.fillText('Mi Taller Web', size * 0.5, size * 0.78);
+        ctx.fillStyle = '#06122a';
         return canvas.toDataURL('image/png');
     }
     const iconoPNG192 = generarIconoPNG(192);
@@ -12771,6 +12933,7 @@ function showApp() {
 // ===================================================
 
 var presupuestosCache = [];
+var presupuestoDescargado = false;
 var presupuestoEditandoId = null;
 var presItemCount = 0;
 
@@ -12806,9 +12969,22 @@ function presPathActivo() {
 }
 
 function cargarPresupuestos() {
+    if (presupuestoDescargado && presupuestosCache.length > 0) {
+        // Ya tenemos los datos en memoria, solo renderizar
+        document.getElementById('form-presupuesto-container').style.display = 'none';
+        renderListaPresupuestos();
+        return;
+    }
     db.ref(presPathActivo()).orderByChild('timestamp').once('value', snap => {
         const v = snap.val() || {};
         presupuestosCache = Object.keys(v).map(k => ({ id: k, ...v[k] })).reverse();
+        presupuestoDescargado = true;
+        // Solo abrir el form vacío si no hay presupuestos aún (onboarding)
+        if (presupuestosCache.length === 0) {
+            abrirFormPresupuesto();
+        } else {
+            document.getElementById('form-presupuesto-container').style.display = 'none';
+        }
         renderListaPresupuestos();
     });
 }
@@ -12924,11 +13100,41 @@ function abrirFormPresupuesto() {
     }
     agregarItemPresupuesto();
     document.getElementById('form-presupuesto-container').style.display = 'block';
+    document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function cerrarFormPresupuesto() {
     presupuestoEditandoId = null;
-    abrirFormPresupuesto();
+    document.getElementById('form-presupuesto-container').style.display = 'none';
+    // Dejar el form limpio y listo para la próxima apertura
+    setTimeout(() => {
+        presItemCount = 0;
+        document.getElementById('form-presupuesto-titulo').textContent = '📝 Nuevo Presupuesto';
+        const btnReset = document.querySelector('[data-pres-action="guardar"]');
+        if (btnReset) btnReset.innerHTML = '💾 GUARDAR PRESUPUESTO';
+        document.getElementById('pres-nro').value = '';
+        document.getElementById('pres-fecha').value = new Date().toLocaleDateString('es-AR');
+        document.getElementById('pres-cliente').value = '';
+        document.getElementById('pres-tel').value = '';
+        document.getElementById('pres-equipo').value = 'Smartphone';
+        document.getElementById('pres-equipo-display').textContent = '📱 Smartphone';
+        document.getElementById('pres-marca').value = 'Samsung';
+        document.getElementById('pres-marca-display').textContent = 'Samsung';
+        document.getElementById('pres-modelo').value = '';
+        document.getElementById('pres-descripcion').value = '';
+        document.getElementById('pres-obs').value = '';
+        document.getElementById('pres-vencimiento').value = '';
+        document.getElementById('pres-items-container').innerHTML = '';
+        document.getElementById('pres-total-display').textContent = '$0';
+        if (document.getElementById('pres-descuento')) {
+            document.getElementById('pres-descuento').value = '';
+            document.getElementById('pres-descuento-tipo').value = '%';
+            document.getElementById('pres-descuento-total-wrap').style.display = 'none';
+            if (document.getElementById('pres-descuento-efectivo')) document.getElementById('pres-descuento-efectivo').checked = false;
+        }
+        autoNroPresupuesto();
+        agregarItemPresupuesto();
+    }, 50);
 }
 
 function autoNroPresupuesto() {
@@ -13111,6 +13317,7 @@ function eliminarPresupuesto(id) {
             modal.style.display = 'none';
             db.ref(presPathActivo()).child(id).remove().then(() => {
                 showToast('🗑️ Presupuesto eliminado', '#6b7280');
+                presupuestoDescargado = false;
                 cargarPresupuestos();
             });
         };
@@ -13124,10 +13331,10 @@ function cambiarEstadoPresupuesto(id, estado) {
     if (!estado) return;
     db.ref(presPathActivo()).child(id).update({ estado }).then(() => {
         showToast('Estado: ' + estado, estado === 'Aprobado' ? '#059669' : estado === 'Rechazado' ? '#dc2626' : '#d97706');
-        // Actualizar color del select sin re-renderizar toda la lista
-        const sel = document.querySelector(`[data-pres-estado="${id}"]`);
-        if (sel) sel.style.background = estado === 'Aprobado' ? 'linear-gradient(135deg,#059669,#047857)' : estado === 'Rechazado' ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'linear-gradient(135deg,#d97706,#b45309)';
-        cargarPresupuestos();
+        // Actualizar el cache en memoria para que el botón CREAR ORDEN aparezca/desaparezca
+        const pInCache = presupuestosCache.find(x => x.id === id);
+        if (pInCache) pInCache.estado = estado;
+        renderListaPresupuestos();
     });
 }
 
@@ -13188,7 +13395,7 @@ function generarPDFPresupuesto(id) {
     const p = presupuestosCache.find(x => x.id === id);
     if (!p) return;
     mostrarLoader('Generando PDF...');
-    const confPath = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+    const confPath = fbPathPerfil();
     db.ref(confPath).once('value', snap => {
         const conf = snap.val() || {};
         ocultarLoader();
@@ -13443,7 +13650,7 @@ function enviarWappPresupuesto(id) {
     else                               { num = '549' + rawTel; }
 
     mostrarLoader('Generando PDF...');
-    const confPath = isUserAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+    const confPath = fbPathPerfil();
     db.ref(confPath).once('value', snap => {
         const conf = snap.val() || {};
         ocultarLoader();
@@ -14675,8 +14882,8 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
 
     function _guardarNroReciboEnOrden(id, nro) {
         // Actualizar en Firebase y en el array local
-        const pathActivo    = window.isUserAdmin ? 'reparaciones'            : 'reparaciones_usuarios/'            + window.currentUser;
-        const pathArchivado = window.isUserAdmin ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + window.currentUser;
+        const pathActivo    = window.fbPathActivo();
+        const pathArchivado = window.fbPathArchivado();
 
         const enActivos = (window.registros || []).find(x => x.id === id);
         const enArch    = (window.registrosArchivados || []).find(x => x.id === id);
