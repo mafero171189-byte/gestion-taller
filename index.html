@@ -3732,7 +3732,7 @@ function showApp() {
               </div>
             </div>
             <!-- Total con recargo -->
-            <div id="pvRecargoTotalWrap" style="display:none;margin-top:8px;background:rgba(254,243,199,0.12);border:1.5px solid rgba(252,211,77,0.4);border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <div id="pvRecargoTotalWrap" style="display:none;margin-top:8px;background:rgba(254,243,199,0.12);border:1.5px solid rgba(252,211,77,0.4);border-radius:8px;padding:9px 12px;justify-content:space-between;align-items:center;">
               <div>
                 <div style="font-size:10px;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:.5px;">Total a cobrar</div>
                 <div id="pvRecargoTotalMonto" style="font-size:20px;font-weight:900;color:white;margin-top:1px;">$0</div>
@@ -5456,10 +5456,35 @@ function showApp() {
         doc.setDrawColor(229,231,235);
         doc.line(margen, y, margen + ancho, y); y += 6;
 
-        items.forEach(item => {
-            const subtotal = (item.precioUni || 0) * (item.cantidad || 1);
-            const linea1   = `${item.cantidad > 1 ? item.cantidad + 'x  ' : ''}${item.nombre}`;
-            const linea2   = item.cantidad > 1 ? `$${(item.precioUni||0).toLocaleString('es-AR')} c/u` : '';
+        // Si hay recargo sin desglose (no crédito), repartir r.precio entre los ítems
+        const _recargoMontoItems = parseFloat(r.recargoMonto) || 0;
+        const _metodoItems = (r.metodoPagoSena || '').toLowerCase();
+        const _esMetodoCredito = m => m.includes('cr') && m.includes('dito');
+        const _recargoSinDetalle = _recargoMontoItems > 0 && !_esMetodoCredito(_metodoItems);
+        const _subtotalItems = items.reduce((s, x) => s + (x.precioUni||0)*(x.cantidad||1), 0);
+        // Total real a mostrar (con recargo ya incluido en r.precio)
+        const _totalConRecargo = parseFloat(r.precio) || 0;
+
+        items.forEach((item, idx) => {
+            let subtotal;
+            if (_recargoSinDetalle && _subtotalItems > 0) {
+                // Último ítem se lleva el residuo para que cuadre exacto
+                if (idx === items.length - 1) {
+                    const yaMostrado = items.slice(0, idx).reduce((s, x) => {
+                        const prop = ((x.precioUni||0)*(x.cantidad||1)) / _subtotalItems;
+                        return s + Math.round(_totalConRecargo * prop);
+                    }, 0);
+                    subtotal = _totalConRecargo - yaMostrado;
+                } else {
+                    const prop = ((item.precioUni||0)*(item.cantidad||1)) / _subtotalItems;
+                    subtotal = Math.round(_totalConRecargo * prop);
+                }
+            } else {
+                subtotal = (item.precioUni || 0) * (item.cantidad || 1);
+            }
+            const precioUniMostrar = subtotal / (item.cantidad || 1);
+            const linea1 = `${item.cantidad > 1 ? item.cantidad + 'x  ' : ''}${item.nombre}`;
+            const linea2 = item.cantidad > 1 ? `$${Math.round(precioUniMostrar).toLocaleString('es-AR')} c/u` : '';
             doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(55,65,81);
             doc.text(linea1, margen, y + 5);
             if (linea2) { doc.setFontSize(8); doc.setTextColor(156,163,175); doc.text(linea2, margen, y + 10); }
@@ -5474,7 +5499,10 @@ function showApp() {
         // Descuento / Recargo (si aplica)
         const _descMonto   = parseFloat(r.descuentoEntregaMonto) || 0;
         const _recargoMonto = parseFloat(r.recargoMonto) || 0;
-        if (_descMonto > 0 || _recargoMonto > 0) {
+        const _metodoRecibo = (r.metodoPagoSena || '').toLowerCase();
+        const _recargoEsCredito = _metodoRecibo.includes('cr') && _metodoRecibo.includes('dito');
+        // Mostrar bloque solo si hay descuento, o si hay recargo con crédito
+        if (_descMonto > 0 || (_recargoMonto > 0 && _recargoEsCredito)) {
             const subtotalItems = items.reduce((s, x) => s + (x.precioUni||0)*(x.cantidad||1), 0);
             // Fila subtotal
             doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
@@ -5494,14 +5522,20 @@ function showApp() {
                 y += 8;
             }
             if (_recargoMonto > 0) {
-                const _recargoTipo  = r.recargoTipo  || '%';
-                const _recargoValor = parseFloat(r.recargoValor) || 0;
-                const labelRec = 'Recargo tarjeta' +
-                    (_recargoTipo === '%' ? ' (' + _recargoValor + '%)' : '');
-                doc.setTextColor(180,83,9);
-                doc.text(labelRec, margen, y + 5);
-                doc.text('+ ' + fmt.format(_recargoMonto), margen + ancho, y + 5, { align:'right' });
-                y += 8;
+                const _metodo = (r.metodoPagoSena || '').toLowerCase();
+                const _esCredito = _metodo.includes('cr') && _metodo.includes('dito');
+                if (_esCredito) {
+                    // Con crédito: muestra el desglose naranja
+                    const _recargoTipo  = r.recargoTipo  || '%';
+                    const _recargoValor = parseFloat(r.recargoValor) || 0;
+                    const labelRec = 'Recargo tarjeta' +
+                        (_recargoTipo === '%' ? ' (' + _recargoValor + '%)' : '');
+                    doc.setTextColor(180,83,9);
+                    doc.text(labelRec, margen, y + 5);
+                    doc.text('+ ' + fmt.format(_recargoMonto), margen + ancho, y + 5, { align:'right' });
+                    y += 8;
+                }
+                // Otro método: no muestra desglose, el total ya tiene el recargo incluido
             }
             doc.setDrawColor(229,231,235);
             doc.line(margen, y, margen + ancho, y);
@@ -5547,27 +5581,28 @@ function showApp() {
             const a = document.createElement('a'); a.href = blobUrl; a.download = nombre; a.click();
             modal.style.display = 'none';
         };
-        if (navigator.share) {
-            btnComp.style.display = 'block';
-            btnComp.onclick = () => {
-                const file = new File([blob], nombre, { type:'application/pdf' });
-                // WhatsApp: mensaje + PDF
-                const tel  = '';
-                const wMsg = encodeURIComponent(
-                    `Hola! 👋 Te adjunto el recibo de tu compra en ${conf.nombreTaller || 'el taller'}.\n` +
-                    `📄 Comprobante: ${nro}\n` +
-                    `📦 ${items.map(x=>`${x.cantidad>1?x.cantidad+'x ':''}${x.nombre}`).join(', ')}\n` +
-                    `💰 Total: ${fmt.format(total)}\n\nGracias! 🙌`
-                );
-                // Descargar PDF + abrir WhatsApp
-                const a2 = document.createElement('a'); a2.href = blobUrl; a2.download = nombre; a2.click();
-                setTimeout(() => window.open(`https://wa.me/?text=${wMsg}`, '_blank'), 400);
-                modal.style.display = 'none';
-            };
-            btnComp.textContent = '📲 WhatsApp + PDF';
-        } else {
-            btnComp.style.display = 'none';
-        }
+        btnComp.style.display = 'block';
+        btnComp.textContent = '📲 WhatsApp + PDF';
+        btnComp.onclick = async () => {
+            modal.style.display = 'none';
+            const file = new File([blob], nombre, { type: 'application/pdf' });
+            const wMsg = `Hola! 👋 Te adjunto el recibo de tu compra en ${conf.nombreTaller || 'el taller'}.\n` +
+                `📄 Comprobante: ${nro}\n` +
+                `📦 ${items.map(x=>`${x.cantidad>1?x.cantidad+'x ':''}${x.nombre}`).join(', ')}\n` +
+                `💰 Total: ${fmt.format(total)}\n\nGracias! 🙌`;
+            // Intentar compartir con archivo (Android Chrome — abre selector nativo con PDF adjunto)
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], text: wMsg });
+                    return;
+                } catch(e) {
+                    if (e.name === 'AbortError') return; // usuario canceló
+                }
+            }
+            // Fallback: descargar PDF + abrir WhatsApp con texto
+            const a2 = document.createElement('a'); a2.href = blobUrl; a2.download = nombre; a2.click();
+            setTimeout(() => window.open(`https://wa.me/?text=${encodeURIComponent(wMsg)}`, '_blank'), 400);
+        };
         if (btnRec) btnRec.style.display = 'none';
 
         modal._vtaRapidaActive = true;
@@ -7285,28 +7320,24 @@ function showApp() {
 
         const cantItems  = _vrCarrito.length;
         const subtotalVenta = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
-        // Descuento aplicado en el panel de ventas
-        // Leer descuento/recargo: del modal VR si está abierto, sino del panel inline PV
-        const _vrModalAbierto = document.getElementById('modalVentaRapida')?.style.display !== 'none';
-        const _pvDescVal  = _vrModalAbierto
-            ? (parseFloat(document.getElementById('vrDescValor')?.value) || 0)
-            : (parseFloat(document.getElementById('pvDescValor')?.value) || 0);
-        const _pvDescTipo = _vrModalAbierto
-            ? (document.getElementById('vrDescTipo')?.value || '%')
-            : (document.getElementById('pvDescTipo')?.value || '%');
-        const _pvDescEfec = _vrModalAbierto
-            ? (document.getElementById('vrDescEfectivo')?.checked || false)
-            : (document.getElementById('pvDescEfectivo')?.checked || false);
+        // Leer descuento/recargo — tomar el que tenga valor (panel inline o modal VR)
+        const _pvDescVal  = (parseFloat(document.getElementById('pvDescValor')?.value) || 0)
+                         || (parseFloat(document.getElementById('vrDescValor')?.value) || 0);
+        const _pvDescTipo = document.getElementById('pvDescValor')?.value
+            ? (document.getElementById('pvDescTipo')?.value || '%')
+            : (document.getElementById('vrDescTipo')?.value || '%');
+        const _pvDescEfec = document.getElementById('pvDescValor')?.value
+            ? (document.getElementById('pvDescEfectivo')?.checked || false)
+            : (document.getElementById('vrDescEfectivo')?.checked || false);
         const _pvDescMonto = _pvDescVal > 0
             ? (_pvDescTipo === '%' ? subtotalVenta * _pvDescVal / 100 : _pvDescVal)
             : 0;
         // Recargo
-        const _pvRecargoVal  = _vrModalAbierto
-            ? (parseFloat(document.getElementById('vrRecargoValor')?.value) || 0)
-            : (parseFloat(document.getElementById('pvRecargoValor')?.value) || 0);
-        const _pvRecargoTipo = _vrModalAbierto
-            ? (document.getElementById('vrRecargoTipo')?.value || '%')
-            : (document.getElementById('pvRecargoTipo')?.value || '%');
+        const _pvRecargoVal  = (parseFloat(document.getElementById('pvRecargoValor')?.value) || 0)
+                            || (parseFloat(document.getElementById('vrRecargoValor')?.value) || 0);
+        const _pvRecargoTipo = document.getElementById('pvRecargoValor')?.value
+            ? (document.getElementById('pvRecargoTipo')?.value || '%')
+            : (document.getElementById('vrRecargoTipo')?.value || '%');
         const _pvRecargoMonto = _pvRecargoVal > 0
             ? (_pvRecargoTipo === '%' ? subtotalVenta * _pvRecargoVal / 100 : _pvRecargoVal)
             : 0;
