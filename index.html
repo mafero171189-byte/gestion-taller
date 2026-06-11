@@ -2644,7 +2644,7 @@ function showApp() {
       <div style="font-size:44px;margin-bottom:8px;">✅</div>
       <p style="font-family:'Outfit',sans-serif;font-weight:800;font-size:17px;color:#111827;margin:0 0 4px;">¡Venta registrada!</p>
       <p id="modalVentaOK_detalle" style="font-family:'Outfit',sans-serif;font-size:13px;color:#6b7280;margin:0 0 22px;"></p>
-      <button onclick="document.getElementById('modalVentaOK').style.display='none'; document.getElementById('modalNombreRecibo').style.display='flex';"
+      <button onclick="document.getElementById('modalVentaOK').style.display='none'; abrirModalNombreRecibo(window._ultimaVentaRapidaId);"
         style="width:100%;padding:13px;border-radius:11px;border:none;background:linear-gradient(135deg,#4a1a6b,#8e44ad);color:white;font-family:'Outfit',sans-serif;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:10px;">
         📄 Imprimir Recibo
       </button>
@@ -5355,17 +5355,10 @@ function showApp() {
     }
 
     function abrirModalNombreRecibo(id) {
-        window._ultimaVentaRapidaId = id;
-        // Pre-llenar con el nombre si ya tiene uno distinto al default
+        // Ir directo al recibo sin pedir nombre
         const reg = registros.find(x => x.id === id);
-        const inputEl = document.getElementById('inputNombreRecibo');
-        if (inputEl && reg && reg.cliente && reg.cliente !== 'Venta de Mostrador') {
-            inputEl.value = reg.cliente;
-        } else if (inputEl) {
-            inputEl.value = '';
-        }
-        document.getElementById('modalNombreRecibo').style.display = 'flex';
-        setTimeout(() => { if (inputEl) inputEl.focus(); }, 100);
+        const nombre = (reg && reg.cliente && reg.cliente !== 'Venta de Mostrador') ? reg.cliente : '';
+        imprimirVentaRapida(id, nombre);
     }
 
     function confirmarImprimirRecibo() {
