@@ -13852,24 +13852,13 @@ function crearOrdenDesdePresupuesto(id) {
         if (p.descripcion && p.descripcion !== fallaFinal) {
             document.getElementById('obs').value = (p.obs ? p.obs + ' | ' : '') + p.descripcion;
         }
-        // Cargar precio bruto — el descuento se aplica por separado para no descontarlo dos veces
-        const precioBase = totalBruto > 0 ? totalBruto : totalFinal;
+        // Cargar precio final ya con descuento aplicado
+        const precioBase = totalFinal > 0 ? totalFinal : totalBruto;
         if (precioBase > 0) {
             const precioEl = document.getElementById('precio');
             if (precioEl) {
-                precioEl.value = fmt.format(precioBase).replace('$ ', '');
+                precioEl.value = String(precioBase);
                 if (typeof formatInput === 'function') formatInput(precioEl);
-            }
-            if (descuentoMonto > 0) {
-                const descTipoEl = document.getElementById('descuentoOrdenTipo');
-                const descValEl  = document.getElementById('descuentoOrden');
-                const descEfecEl = document.getElementById('descuentoOrdenEfectivo');
-                if (descTipoEl && descValEl) {
-                    descTipoEl.value = p.descuentoTipo || '$';
-                    descValEl.value  = p.descuentoTipo === '%' ? (p.descuentoValor || '') : fmt.format(descuentoMonto).replace('$ ', '');
-                    if (descEfecEl) descEfecEl.checked = !!p.descuentoEfectivo;
-                    if (typeof recalcDescuentoOrden === 'function') recalcDescuentoOrden();
-                }
             }
         }
         // Disparar autoOrden para asignar número
@@ -14075,6 +14064,14 @@ function _buildPDFPresupuestoCore(p, conf) {
     doc.setFontSize(12); doc.setTextColor(30, 77, 140);
     doc.text(fmtARS.format(total), 75, y + 6, { align: 'right' });
     y += 14;
+    // Nota aclaratoria si el descuento es por pago en efectivo
+    if (descuentoMontoPDF > 0 && p.descuentoEfectivo) {
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); doc.setTextColor(180, 83, 9);
+        const notaEfec = '* Precio final de ' + fmtARS.format(total) + ' válido únicamente con pago en efectivo.';
+        const notaLines = doc.splitTextToSize(notaEfec, 68);
+        doc.text(notaLines, 5, y);
+        y += notaLines.length * 5 + 4;
+    }
 
     // ── VÁLIDO HASTA ──
     if (p.vencimiento) {
@@ -14164,6 +14161,7 @@ function enviarWappPresupuesto(id) {
                   + '\n🏷️ ' + (p.descuentoTipo === '%' ? 'Descuento ' + (p.descuentoValor || '') + '%' : 'Descuento')
                   + (p.descuentoEfectivo ? ' (pago en efectivo)' : '') + ': -' + fmt.format(descMontoPres)
                   + '\n✅ *TOTAL A PAGAR: ' + fmt.format(totalConDesc) + '*'
+                  + (p.descuentoEfectivo ? '\n⚠️ _Precio válido únicamente con pago en efectivo._' : '')
                 : '\n\n💰 *TOTAL: ' + fmt.format(total) + '*')
             + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual) + '*' : '')
             + (p.obs ? '\n\n📌 ' + p.obs : '')
