@@ -2578,6 +2578,58 @@ function showApp() {
           <div id="vrTotalCarrito" style="font-size:22px;font-weight:900;color:#8e44ad;font-family:'Outfit',sans-serif;">$0</div>
         </div>
       </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button type="button" id="vrBtnDescuento" onclick="vrToggleDescuento()" style="display:none;flex:1;padding:9px;border-radius:8px;border:1.5px solid #fca5a5;background:#fff5f5;color:#dc2626;font-weight:800;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.2s;">
+          🏷️ Descuento
+        </button>
+        <button type="button" id="vrBtnRecargo" onclick="vrToggleRecargo()" style="display:none;flex:1;padding:9px;border-radius:8px;border:1.5px solid #fcd34d;background:#fffbeb;color:#b45309;font-weight:800;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.2s;">
+          💳 Recargo
+        </button>
+      </div>
+    </div>
+    <!-- Descuento venta rápida -->
+    <div id="vrDescuentoWrap" style="display:none;padding:0 18px 12px;">
+      <div style="display:flex;gap:6px;align-items:stretch;">
+        <div style="display:flex;gap:0;align-items:stretch;border:1.5px solid #e5e7eb;border-radius:8px;overflow:hidden;flex:1;background:#fff5f5;border-color:#fca5a5;">
+          <select id="vrDescTipo" onchange="vrRecalcDesc()" style="width:56px;min-width:56px;flex-shrink:0;padding:9px 6px;border:none;border-right:1.5px solid #fca5a5;background:#ffe4e4;color:#dc2626;font-weight:800;font-size:14px;cursor:pointer;text-align:center;font-family:'Outfit',sans-serif;">
+            <option value="%">%</option>
+            <option value="$">$</option>
+          </select>
+          <input type="number" id="vrDescValor" placeholder="Descuento..." oninput="vrRecalcDesc()" min="0" inputmode="decimal"
+            style="flex:1;padding:9px 10px;border:none;background:#fff5f5;color:#111;font-size:14px;font-family:'Outfit',sans-serif;outline:none;min-width:0;">
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;padding:8px 10px;background:#fff7ed;border-radius:8px;border:1.5px solid #fed7aa;cursor:pointer;flex-shrink:0;" onclick="document.getElementById('vrDescEfectivo').click()" title="Descuento por pago en efectivo">
+          <input type="checkbox" id="vrDescEfectivo" onchange="vrRecalcDesc()" style="width:16px;height:16px;accent-color:#d97706;cursor:pointer;" onclick="event.stopPropagation()">
+          <span style="font-size:17px;line-height:1;pointer-events:none;">💵</span>
+        </div>
+      </div>
+      <div id="vrDescTotalWrap" style="display:none;margin-top:8px;background:#dcfce7;border:1.5px solid #86efac;border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.5px;">Total a cobrar</div>
+          <div id="vrDescTotalMonto" style="font-size:20px;font-weight:900;color:#15803d;margin-top:1px;">$0</div>
+        </div>
+        <div id="vrDescAhorra" style="font-size:11px;color:#6b7280;text-align:right;"></div>
+      </div>
+    </div>
+    <!-- Recargo venta rápida -->
+    <div id="vrRecargoWrap" style="display:none;padding:0 18px 12px;">
+      <div style="display:flex;gap:6px;align-items:stretch;">
+        <div style="display:flex;gap:0;align-items:stretch;border:1.5px solid #fcd34d;border-radius:8px;overflow:hidden;flex:1;background:#fffbeb;">
+          <select id="vrRecargoTipo" onchange="vrRecalcDesc()" style="width:56px;min-width:56px;flex-shrink:0;padding:9px 6px;border:none;border-right:1.5px solid #fcd34d;background:#fef3c7;color:#b45309;font-weight:800;font-size:14px;cursor:pointer;text-align:center;font-family:'Outfit',sans-serif;">
+            <option value="%">%</option>
+            <option value="$">$</option>
+          </select>
+          <input type="number" id="vrRecargoValor" placeholder="Recargo..." oninput="vrRecalcDesc()" min="0" inputmode="decimal"
+            style="flex:1;padding:9px 10px;border:none;background:#fffbeb;color:#111;font-size:14px;font-family:'Outfit',sans-serif;outline:none;min-width:0;">
+        </div>
+      </div>
+      <div id="vrRecargoTotalWrap" style="display:none;margin-top:8px;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.5px;">Total a cobrar</div>
+          <div id="vrRecargoTotalMonto" style="font-size:20px;font-weight:900;color:#92400e;margin-top:1px;">$0</div>
+        </div>
+        <div id="vrRecargoDetalle" style="font-size:11px;color:#b45309;text-align:right;"></div>
+      </div>
     </div>
     <!-- Botones -->
     <div style="padding:0 18px 18px;display:flex;gap:10px;">
@@ -3629,9 +3681,63 @@ function showApp() {
               <option value="Crédito" style="color:#111;">💳 Crédito</option>
               <option value="Mercado Pago" style="color:#111;">🔵 Mercado Pago</option>
             </select>
+            <button type="button" id="pvBtnDescuento" onclick="pvToggleDescuento()" title="Aplicar descuento"
+              style="padding:10px 12px;border-radius:10px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;transition:all 0.2s;flex-shrink:0;">
+              🏷️ Desc.
+            </button>
+            <button type="button" id="pvBtnRecargo" onclick="pvToggleRecargo()" title="Aplicar recargo (tarjeta)"
+              style="padding:10px 12px;border-radius:10px;border:2px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);color:white;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:'Outfit',sans-serif;transition:all 0.2s;flex-shrink:0;">
+              💳 Rec.
+            </button>
             <div style="text-align:right;min-width:80px;">
               <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);">TOTAL</div>
               <div id="pvTotal" style="font-size:24px;font-weight:900;color:white;font-family:'Outfit',sans-serif;">$0</div>
+            </div>
+          </div>
+          <!-- Descuento -->
+          <div id="pvDescuentoWrap" style="display:none; margin-bottom:10px;">
+            <div style="display:flex;gap:6px;align-items:stretch;">
+              <div style="display:flex;gap:0;align-items:stretch;border:1.5px solid rgba(255,255,255,0.35);border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.08);flex:1;">
+                <select id="pvDescTipo" onchange="pvRecalcDesc()" style="width:56px;min-width:56px;flex-shrink:0;padding:9px 6px;border:none;border-right:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.12);color:white;font-weight:800;font-size:14px;cursor:pointer;text-align:center;font-family:'Outfit',sans-serif;">
+                  <option value="%">%</option>
+                  <option value="$">$</option>
+                </select>
+                <input type="number" id="pvDescValor" placeholder="Descuento..." oninput="pvRecalcDesc()" min="0" inputmode="decimal"
+                  style="flex:1;padding:9px 10px;border:none;background:transparent;color:white;font-size:14px;font-family:'Outfit',sans-serif;outline:none;min-width:0;">
+              </div>
+              <div id="pvDescEfectivoWrap" style="display:flex;align-items:center;gap:5px;padding:8px 10px;background:rgba(255,255,255,0.08);border-radius:8px;border:1.5px solid rgba(255,255,255,0.2);cursor:pointer;flex-shrink:0;" onclick="document.getElementById('pvDescEfectivo').click()" title="Descuento por pago en efectivo">
+                <input type="checkbox" id="pvDescEfectivo" onchange="pvRecalcDesc()" style="width:16px;height:16px;accent-color:#d97706;cursor:pointer;" onclick="event.stopPropagation()">
+                <span style="font-size:17px;line-height:1;pointer-events:none;">💵</span>
+              </div>
+            </div>
+            <!-- Total con descuento -->
+            <div id="pvDescTotalWrap" style="display:none;margin-top:8px;background:rgba(220,252,231,0.15);border:1.5px solid rgba(134,239,172,0.4);border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:rgba(134,239,172,0.9);text-transform:uppercase;letter-spacing:.5px;">Total a cobrar</div>
+                <div id="pvDescTotalMonto" style="font-size:20px;font-weight:900;color:white;margin-top:1px;">$0</div>
+              </div>
+              <div id="pvDescAhorra" style="font-size:11px;color:rgba(255,255,255,0.55);text-align:right;"></div>
+            </div>
+          </div>
+          <!-- Recargo -->
+          <div id="pvRecargoWrap" style="display:none; margin-bottom:10px;">
+            <div style="display:flex;gap:6px;align-items:stretch;">
+              <div style="display:flex;gap:0;align-items:stretch;border:1.5px solid rgba(255,200,100,0.5);border-radius:8px;overflow:hidden;background:rgba(255,200,50,0.08);flex:1;">
+                <select id="pvRecargoTipo" onchange="pvRecalcDesc()" style="width:56px;min-width:56px;flex-shrink:0;padding:9px 6px;border:none;border-right:1.5px solid rgba(255,200,100,0.4);background:rgba(255,200,50,0.15);color:#fcd34d;font-weight:800;font-size:14px;cursor:pointer;text-align:center;font-family:'Outfit',sans-serif;">
+                  <option value="%">%</option>
+                  <option value="$">$</option>
+                </select>
+                <input type="number" id="pvRecargoValor" placeholder="Recargo..." oninput="pvRecalcDesc()" min="0" inputmode="decimal"
+                  style="flex:1;padding:9px 10px;border:none;background:transparent;color:white;font-size:14px;font-family:'Outfit',sans-serif;outline:none;min-width:0;">
+              </div>
+            </div>
+            <!-- Total con recargo -->
+            <div id="pvRecargoTotalWrap" style="display:none;margin-top:8px;background:rgba(254,243,199,0.12);border:1.5px solid rgba(252,211,77,0.4);border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:.5px;">Total a cobrar</div>
+                <div id="pvRecargoTotalMonto" style="font-size:20px;font-weight:900;color:white;margin-top:1px;">$0</div>
+              </div>
+              <div id="pvRecargoDetalle" style="font-size:11px;color:rgba(255,255,255,0.55);text-align:right;"></div>
             </div>
           </div>
           <button onclick="pvRegistrar()" id="pvBtnRegistrar" disabled
@@ -5372,6 +5478,43 @@ function showApp() {
             y += 3;
         });
 
+        // Descuento / Recargo (si aplica)
+        const _descMonto   = parseFloat(r.descuentoEntregaMonto) || 0;
+        const _recargoMonto = parseFloat(r.recargoMonto) || 0;
+        if (_descMonto > 0 || _recargoMonto > 0) {
+            const subtotalItems = items.reduce((s, x) => s + (x.precioUni||0)*(x.cantidad||1), 0);
+            // Fila subtotal
+            doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
+            doc.text('Subtotal', margen, y + 5);
+            doc.text(fmt.format(subtotalItems), margen + ancho, y + 5, { align:'right' });
+            y += 8;
+            if (_descMonto > 0) {
+                const _descTipo  = r.descuentoEntregaTipo  || '%';
+                const _descValor = parseFloat(r.descuentoEntregaValor) || 0;
+                const _descEfec  = r.descuentoEfectivo;
+                const labelDesc = 'Descuento' +
+                    (_descTipo === '%' ? ' (' + _descValor + '%)' : '') +
+                    (_descEfec ? ' - Efectivo' : '');
+                doc.setTextColor(220,38,38);
+                doc.text(labelDesc, margen, y + 5);
+                doc.text('- ' + fmt.format(_descMonto), margen + ancho, y + 5, { align:'right' });
+                y += 8;
+            }
+            if (_recargoMonto > 0) {
+                const _recargoTipo  = r.recargoTipo  || '%';
+                const _recargoValor = parseFloat(r.recargoValor) || 0;
+                const labelRec = 'Recargo tarjeta' +
+                    (_recargoTipo === '%' ? ' (' + _recargoValor + '%)' : '');
+                doc.setTextColor(180,83,9);
+                doc.text(labelRec, margen, y + 5);
+                doc.text('+ ' + fmt.format(_recargoMonto), margen + ancho, y + 5, { align:'right' });
+                y += 8;
+            }
+            doc.setDrawColor(229,231,235);
+            doc.line(margen, y, margen + ancho, y);
+            y += 4;
+        }
+
         // Total
         y += 4;
         doc.setFillColor(74,26,107);
@@ -6779,17 +6922,35 @@ function showApp() {
 
         if (!lista) return;
 
+        const btnDesc = document.getElementById('vrBtnDescuento');
+        const btnRec  = document.getElementById('vrBtnRecargo');
         if (_vrCarrito.length === 0) {
             wrap.style.display = 'none';
             btnReg.disabled = true;
             btnReg.style.opacity = '0.5';
             totalEl.textContent = '$0';
+            if (btnDesc) btnDesc.style.display = 'none';
+            if (btnRec)  btnRec.style.display  = 'none';
+            const dw = document.getElementById('vrDescuentoWrap');
+            if (dw) dw.style.display = 'none';
+            const rw = document.getElementById('vrRecargoWrap');
+            if (rw) rw.style.display = 'none';
+            const dtw = document.getElementById('vrDescTotalWrap');
+            if (dtw) dtw.style.display = 'none';
+            const rtw = document.getElementById('vrRecargoTotalWrap');
+            if (rtw) rtw.style.display = 'none';
+            const dv = document.getElementById('vrDescValor');
+            if (dv) dv.value = '';
+            const rv = document.getElementById('vrRecargoValor');
+            if (rv) rv.value = '';
             return;
         }
 
         wrap.style.display = 'block';
         btnReg.disabled = false;
         btnReg.style.opacity = '1';
+        if (btnDesc) btnDesc.style.display = 'block';
+        if (btnRec)  btnRec.style.display  = 'block';
 
         lista.innerHTML = _vrCarrito.map((item, idx) => `
             <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;">
@@ -6809,6 +6970,7 @@ function showApp() {
 
         const total = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
         totalEl.textContent = fmt.format(total);
+        vrRecalcDesc();
     }
 
     function vrCambiarCant(idx, delta) {
@@ -6874,11 +7036,30 @@ function showApp() {
             btnReg.disabled     = true;
             btnReg.style.opacity = '0.4';
             totalEl.textContent = '$0';
+            // Ocultar descuento/recargo al vaciar carrito
+            const descWrap = document.getElementById('pvDescuentoWrap');
+            if (descWrap) descWrap.style.display = 'none';
+            const descTotalWrap = document.getElementById('pvDescTotalWrap');
+            if (descTotalWrap) descTotalWrap.style.display = 'none';
+            const descValorEl = document.getElementById('pvDescValor');
+            if (descValorEl) descValorEl.value = '';
+            const recargoWrap = document.getElementById('pvRecargoWrap');
+            if (recargoWrap) recargoWrap.style.display = 'none';
+            const recargoTotalWrap = document.getElementById('pvRecargoTotalWrap');
+            if (recargoTotalWrap) recargoTotalWrap.style.display = 'none';
+            const recargoValorEl = document.getElementById('pvRecargoValor');
+            if (recargoValorEl) recargoValorEl.value = '';
+            const pvBtnDesc = document.getElementById('pvBtnDescuento');
+            if (pvBtnDesc) pvBtnDesc.style.display = 'none';
+            const pvBtnRec = document.getElementById('pvBtnRecargo');
+            if (pvBtnRec) pvBtnRec.style.display = 'none';
             return;
         }
         wrap.style.display   = 'block';
         btnReg.disabled      = false;
         btnReg.style.opacity = '1';
+        document.getElementById('pvBtnDescuento').style.display = 'block';
+        document.getElementById('pvBtnRecargo').style.display = 'block';
 
         lista.innerHTML = _vrCarrito.map((item, idx) => `
             <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 12px;">
@@ -6898,6 +7079,7 @@ function showApp() {
 
         const total = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
         totalEl.textContent = fmt.format(total);
+        pvRecalcDesc();
     }
 
     function pvCambiarCant(idx, delta) {
@@ -6915,6 +7097,76 @@ function showApp() {
         pvSyncCarrito();
     }
 
+    function pvToggleDescuento() {
+        const wrap = document.getElementById('pvDescuentoWrap');
+        if (!wrap) return;
+        const visible = wrap.style.display !== 'none';
+        wrap.style.display = visible ? 'none' : 'block';
+        if (visible) {
+            // Al cerrar, limpiar descuento
+            const v = document.getElementById('pvDescValor');
+            if (v) v.value = '';
+            const dtw = document.getElementById('pvDescTotalWrap');
+            if (dtw) dtw.style.display = 'none';
+        } else {
+            setTimeout(() => document.getElementById('pvDescValor')?.focus(), 50);
+        }
+    }
+
+    function pvRecalcDesc() {
+        const total = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
+        // Descuento
+        const descVal = parseFloat(document.getElementById('pvDescValor')?.value) || 0;
+        const descTipo = document.getElementById('pvDescTipo')?.value || '%';
+        const descWrap = document.getElementById('pvDescTotalWrap');
+        if (descWrap) {
+            if (total > 0 && descVal > 0) {
+                const descMonto = descTipo === '%' ? total * descVal / 100 : descVal;
+                const totalFinal = Math.max(0, total - descMonto);
+                descWrap.style.display = 'flex';
+                document.getElementById('pvDescTotalMonto').textContent = fmt.format(totalFinal);
+                document.getElementById('pvDescAhorra').textContent = 'Ahorra ' + fmt.format(descMonto) + (descTipo === '%' ? ' (' + descVal + '%)' : '');
+            } else {
+                descWrap.style.display = 'none';
+            }
+        }
+        // Recargo
+        const recargoVal = parseFloat(document.getElementById('pvRecargoValor')?.value) || 0;
+        const recargoTipo = document.getElementById('pvRecargoTipo')?.value || '%';
+        const recargoWrap = document.getElementById('pvRecargoTotalWrap');
+        if (recargoWrap) {
+            if (total > 0 && recargoVal > 0) {
+                const recargoMonto = recargoTipo === '%' ? total * recargoVal / 100 : recargoVal;
+                const totalFinal = total + recargoMonto;
+                recargoWrap.style.display = 'flex';
+                document.getElementById('pvRecargoTotalMonto').textContent = fmt.format(totalFinal);
+                document.getElementById('pvRecargoDetalle').textContent = '+ ' + fmt.format(recargoMonto) + (recargoTipo === '%' ? ' (' + recargoVal + '%)' : '');
+            } else {
+                recargoWrap.style.display = 'none';
+            }
+        }
+    }
+
+    function pvToggleRecargo() {
+        const wrap = document.getElementById('pvRecargoWrap');
+        if (!wrap) return;
+        const visible = wrap.style.display !== 'none';
+        wrap.style.display = visible ? 'none' : 'block';
+        if (visible) {
+            const v = document.getElementById('pvRecargoValor');
+            if (v) v.value = '';
+            const rtw = document.getElementById('pvRecargoTotalWrap');
+            if (rtw) rtw.style.display = 'none';
+        } else {
+            // Cerrar descuento si estaba abierto (mutuamente excluyentes)
+            document.getElementById('pvDescuentoWrap').style.display = 'none';
+            const dv = document.getElementById('pvDescValor');
+            if (dv) dv.value = '';
+            document.getElementById('pvDescTotalWrap').style.display = 'none';
+            setTimeout(() => document.getElementById('pvRecargoValor')?.focus(), 50);
+        }
+    }
+
     async function pvRegistrar() {
         if (_vrCarrito.length === 0) return;
         // Leer método del select del panel inline
@@ -6927,11 +7179,97 @@ function showApp() {
         pvSyncCarrito();
     }
 
+    function vrToggleDescuento() {
+        const wrap = document.getElementById('vrDescuentoWrap');
+        const btn  = document.getElementById('vrBtnDescuento');
+        if (!wrap) return;
+        const visible = wrap.style.display !== 'none';
+        wrap.style.display = visible ? 'none' : 'block';
+        if (btn) btn.textContent = visible ? '🏷️ Descuento' : '✕ Quitar descuento';
+        if (visible) {
+            const v = document.getElementById('vrDescValor');
+            if (v) v.value = '';
+            const dtw = document.getElementById('vrDescTotalWrap');
+            if (dtw) dtw.style.display = 'none';
+        } else {
+            // Cerrar recargo (mutuamente excluyentes)
+            document.getElementById('vrRecargoWrap').style.display = 'none';
+            const rv = document.getElementById('vrRecargoValor');
+            if (rv) rv.value = '';
+            document.getElementById('vrRecargoTotalWrap').style.display = 'none';
+            const btnR = document.getElementById('vrBtnRecargo');
+            if (btnR) btnR.textContent = '💳 Recargo';
+            setTimeout(() => document.getElementById('vrDescValor')?.focus(), 50);
+        }
+    }
+
+    function vrRecalcDesc() {
+        const total = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
+        // Descuento
+        const descVal = parseFloat(document.getElementById('vrDescValor')?.value) || 0;
+        const descTipo = document.getElementById('vrDescTipo')?.value || '%';
+        const descWrap = document.getElementById('vrDescTotalWrap');
+        if (descWrap) {
+            if (total > 0 && descVal > 0) {
+                const descMonto = descTipo === '%' ? total * descVal / 100 : descVal;
+                const totalFinal = Math.max(0, total - descMonto);
+                descWrap.style.display = 'flex';
+                document.getElementById('vrDescTotalMonto').textContent = fmt.format(totalFinal);
+                document.getElementById('vrDescAhorra').textContent = 'Ahorra ' + fmt.format(descMonto) + (descTipo === '%' ? ' (' + descVal + '%)' : '');
+            } else {
+                descWrap.style.display = 'none';
+            }
+        }
+        // Recargo
+        const recargoVal = parseFloat(document.getElementById('vrRecargoValor')?.value) || 0;
+        const recargoTipo = document.getElementById('vrRecargoTipo')?.value || '%';
+        const recargoWrap = document.getElementById('vrRecargoTotalWrap');
+        if (recargoWrap) {
+            if (total > 0 && recargoVal > 0) {
+                const recargoMonto = recargoTipo === '%' ? total * recargoVal / 100 : recargoVal;
+                const totalFinal = total + recargoMonto;
+                recargoWrap.style.display = 'flex';
+                document.getElementById('vrRecargoTotalMonto').textContent = fmt.format(totalFinal);
+                document.getElementById('vrRecargoDetalle').textContent = '+ ' + fmt.format(recargoMonto) + (recargoTipo === '%' ? ' (' + recargoVal + '%)' : '');
+            } else {
+                recargoWrap.style.display = 'none';
+            }
+        }
+    }
+
+    function vrToggleRecargo() {
+        const wrap = document.getElementById('vrRecargoWrap');
+        const btn  = document.getElementById('vrBtnRecargo');
+        if (!wrap) return;
+        const visible = wrap.style.display !== 'none';
+        wrap.style.display = visible ? 'none' : 'block';
+        if (btn) btn.textContent = visible ? '💳 Recargo' : '✕ Quitar recargo';
+        if (visible) {
+            const v = document.getElementById('vrRecargoValor');
+            if (v) v.value = '';
+            const rtw = document.getElementById('vrRecargoTotalWrap');
+            if (rtw) rtw.style.display = 'none';
+        } else {
+            // Cerrar descuento (mutuamente excluyentes)
+            document.getElementById('vrDescuentoWrap').style.display = 'none';
+            const dv = document.getElementById('vrDescValor');
+            if (dv) dv.value = '';
+            document.getElementById('vrDescTotalWrap').style.display = 'none';
+            const btnD = document.getElementById('vrBtnDescuento');
+            if (btnD) btnD.textContent = '🏷️ Descuento';
+            setTimeout(() => document.getElementById('vrRecargoValor')?.focus(), 50);
+        }
+    }
+
     function cerrarVentaRapida() {
         document.getElementById('modalVentaRapida').style.display = 'none';
         _vrCarrito = [];
         const busqueda = document.getElementById('vrBusqueda');
         if (busqueda) busqueda.value = '';
+        const btn = document.getElementById('vrBtnDescuento');
+        if (btn) btn.textContent = '🏷️ Descuento';
+        const btnR = document.getElementById('vrBtnRecargo');
+        if (btnR) btnR.textContent = '💳 Recargo';
         vrRenderCarrito();
     }
 
@@ -6953,7 +7291,33 @@ function showApp() {
         })();
 
         const cantItems  = _vrCarrito.length;
-        const totalVenta = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
+        const subtotalVenta = _vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0);
+        // Descuento aplicado en el panel de ventas
+        // Leer descuento/recargo: del modal VR si está abierto, sino del panel inline PV
+        const _vrModalAbierto = document.getElementById('modalVentaRapida')?.style.display !== 'none';
+        const _pvDescVal  = _vrModalAbierto
+            ? (parseFloat(document.getElementById('vrDescValor')?.value) || 0)
+            : (parseFloat(document.getElementById('pvDescValor')?.value) || 0);
+        const _pvDescTipo = _vrModalAbierto
+            ? (document.getElementById('vrDescTipo')?.value || '%')
+            : (document.getElementById('pvDescTipo')?.value || '%');
+        const _pvDescEfec = _vrModalAbierto
+            ? (document.getElementById('vrDescEfectivo')?.checked || false)
+            : (document.getElementById('pvDescEfectivo')?.checked || false);
+        const _pvDescMonto = _pvDescVal > 0
+            ? (_pvDescTipo === '%' ? subtotalVenta * _pvDescVal / 100 : _pvDescVal)
+            : 0;
+        // Recargo
+        const _pvRecargoVal  = _vrModalAbierto
+            ? (parseFloat(document.getElementById('vrRecargoValor')?.value) || 0)
+            : (parseFloat(document.getElementById('pvRecargoValor')?.value) || 0);
+        const _pvRecargoTipo = _vrModalAbierto
+            ? (document.getElementById('vrRecargoTipo')?.value || '%')
+            : (document.getElementById('pvRecargoTipo')?.value || '%');
+        const _pvRecargoMonto = _pvRecargoVal > 0
+            ? (_pvRecargoTipo === '%' ? subtotalVenta * _pvRecargoVal / 100 : _pvRecargoVal)
+            : 0;
+        const totalVenta = Math.max(0, subtotalVenta - _pvDescMonto) + _pvRecargoMonto;
         const totalCosto = _vrCarrito.reduce((s, x) => s + x.costoUni  * x.cantidad, 0);
         const nombresStr = _vrCarrito.map(x => `${x.cantidad > 1 ? x.cantidad + 'x ' : ''}${x.nombre}`).join(', ');
 
@@ -7002,6 +7366,17 @@ function showApp() {
             senaOriginal:   totalVenta,
             metodoPagoSena: metodo,
             costoRepuesto:  totalCosto,
+            ...(_pvDescMonto > 0 ? {
+                descuentoEntregaTipo:  _pvDescTipo,
+                descuentoEntregaValor: _pvDescVal,
+                descuentoEntregaMonto: _pvDescMonto,
+                descuentoEfectivo:     _pvDescEfec,
+            } : {}),
+            ...(_pvRecargoMonto > 0 ? {
+                recargoTipo:  _pvRecargoTipo,
+                recargoValor: _pvRecargoVal,
+                recargoMonto: _pvRecargoMonto,
+            } : {}),
             // Items individuales para anulación y recibo
             itemsVenta:     itemsJSON,
             cantItems:      cantItems,
