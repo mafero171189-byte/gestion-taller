@@ -890,14 +890,14 @@
                 flex-direction: column !important;
                 gap: 0 !important;
             }
-            #pago-total-inline {
-                margin-top: 14px !important;
-                flex-direction: row !important;
-                flex-wrap: wrap !important;
-            }
+
+            #btn-lock { display: inline !important; }
             #costo-inner {
+                margin-top: 10px !important;
+            }
+            #costo-inner input {
                 width: 100% !important;
-                flex: 0 0 100% !important;
+                max-width: 220px !important;
             }
 
             /* Stock: mantener padding y gap propios */
@@ -1244,7 +1244,7 @@
             #metodo-pago-wrapper {
                 flex: 0 0 180px !important;
             }
-            /* desktop-pago-row ocupa fila completa debajo */
+            /* desktop-pago-row: fila completa */
             .mobile-section-body:has(.precio-sena-row) #desktop-pago-row {
                 flex: 1 1 100% !important;
                 width: 100% !important;
@@ -3447,7 +3447,7 @@ function showApp() {
         <div class="mobile-section-body">
          <div class="precio-sena-row">
           <div>
-           <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); recalcDescuentoOrden(); saveDraft()">
+           <label>Precio Final $</label><input type="text" id="precio" placeholder="0" oninput="formatInput(this); saveDraft()">
           </div>
           <div class="sena-field">
            <label>Seña $</label><input type="text" id="sena" placeholder="0" oninput="formatInput(this); saveDraft()">
@@ -3456,38 +3456,18 @@ function showApp() {
            <label>Método de Pago (Seña)</label> <select id="metodoPago" style="cursor:pointer;" onchange="saveDraft()"> <option value="A Cotizar">🔍 A Cotizar</option> <option value="No pagó">❌ No pagó aún</option> <option value="Efectivo">💵 Efectivo</option> <option value="Transferencia">📲 Transferencia</option> <option value="Débito">💳 Débito</option> <option value="Crédito">💳 Crédito</option> <option value="Mercado Pago">🔵 Mercado Pago</option> </select>
           </div>
          </div>
-         <div id="descuento-orden-row" style="margin-top:10px;">
-          <label style="font-size:12px; color:#dc2626; font-weight:700; display:block; margin-bottom:5px;">🏷️ Descuento (opcional)</label>
-          <div style="display:flex; gap:8px; align-items:stretch;">
-           <div style="display:flex; gap:0; align-items:stretch; border:1.5px solid #fca5a5; border-radius:8px; overflow:hidden; background:#fff5f5; width:200px; flex-shrink:0;">
-            <select id="descuentoOrdenTipo" onchange="recalcDescuentoOrden(); saveDraft()" style="width:56px; min-width:56px; flex-shrink:0; padding:10px 6px; border:none; border-right:1.5px solid #fca5a5; background:#ffe4e4; color:#dc2626; font-weight:800; font-size:15px; cursor:pointer; text-align:center; -webkit-appearance:auto; appearance:auto;">
-             <option value="%">%</option>
-             <option value="$">$</option>
-            </select>
-            <input type="text" id="descuentoOrden" placeholder="Ej: 5000" oninput="recalcDescuentoOrden(); saveDraft()" style="flex:1; padding:10px 10px; border:none; background:#fff5f5; font-size:15px; font-family:inherit; outline:none; min-width:0;">
-           </div>
-           <div style="display:flex; align-items:center; gap:6px; padding:8px 12px; background:#fff7ed; border-radius:8px; border:1.5px solid #fed7aa; cursor:pointer; flex-shrink:0;" onclick="document.getElementById('descuentoOrdenEfectivo').click()" title="Descuento por pago en efectivo">
-            <input type="checkbox" id="descuentoOrdenEfectivo" onchange="recalcDescuentoOrden(); saveDraft()" style="width:17px; height:17px; accent-color:#d97706; cursor:pointer; flex-shrink:0;" onclick="event.stopPropagation()">
-            <span style="font-size:18px; line-height:1; pointer-events:none;">💵</span>
-           </div>
-          </div>
-         </div>
-         <div id="descuento-orden-total-wrap" class="full" style="display:none; margin-top:8px; background:#dcfce7; border-radius:8px; padding:10px 14px; border:1.5px solid #86efac;">
-          <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total a cobrar</div>
-          <div id="descuento-orden-total" style="font-size:20px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
-          <div id="descuento-orden-ahorra" style="font-size:12px; color:#6b7280; margin-top:2px;"></div>
-         </div>
          <div class="full" id="desktop-pago-row">
-          <div id="pago-total-inline" style="display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; width:100%;">
-           <label class="pago-total-toggle-wrap" for="checkPagoTotal" style="flex:0 0 auto;">
+          <div style="display:flex; align-items:center; gap:12px; margin-top:10px;">
+           <label class="pago-total-toggle-wrap" for="checkPagoTotal">
             <input type="checkbox" id="checkPagoTotal" onchange="togglePagoForm()">
             <span class="toggle-pill"></span>
             <span class="toggle-pill-label">PAGO TOTAL</span>
            </label>
-           <span id="btn-lock" style="cursor:pointer; font-size:22px; flex:0 0 auto;" onclick="revelarCosto()">🔒</span>
-           <div id="costo-inner" style="display:none; align-items:center; gap:6px; flex:1 1 auto;">
-            <label style="display:inline; margin:0; white-space:nowrap;">Costo de Repuesto $</label> <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width: 120px;">
-           </div>
+           <span id="btn-lock" style="cursor:pointer; font-size:22px;" onclick="revelarCosto()">🔒</span>
+          </div>
+          <div id="costo-inner" style="display:none; align-items:center; gap:10px; margin-top:8px;">
+           <label style="margin:0; white-space:nowrap;">Costo de Repuesto $</label>
+           <input type="text" id="costoRepuesto" oninput="formatInput(this); saveDraft()" onblur="ocultarCosto()" style="width:160px;">
           </div>
          </div>
         </div>
@@ -5057,13 +5037,16 @@ function showApp() {
         const st = statusMap[regEncontrado.estado] || { color:'#d97706', bg:'#fffbeb', icon:'🔧' };
 
         let precioActual   = parseFloat(regEncontrado.precio) || 0;
-        let senaAbonada    = regEncontrado.senaOriginal !== undefined ? parseFloat(regEncontrado.senaOriginal) : (parseFloat(regEncontrado.sena) || 0);
+        let senaAbonada    = parseFloat(regEncontrado.senaOriginal !== undefined ? regEncontrado.senaOriginal : regEncontrado.sena) || 0;
         let saldoCobrado   = parseFloat(regEncontrado.saldoCobrado) || 0;
-        let descMontoCliente = parseFloat(regEncontrado.descuentoMonto) || 0; // FIX: considerar descuento de orden
-        let descEntregaCliente = parseFloat(regEncontrado.descuentoEntregaMonto) || 0; // FIX: considerar descuento de entrega
+        let descMontoCliente   = parseFloat(regEncontrado.descuentoMonto) || 0;
+        let descEntregaCliente = parseFloat(regEncontrado.descuentoEntregaMonto) || 0;
         let precioEfectivoCliente = precioActual > 0 && descMontoCliente > 0 ? Math.max(0, precioActual - descMontoCliente) : precioActual;
-        let totalPagado    = senaAbonada + saldoCobrado + descEntregaCliente;
-        let saldoPendiente = precioEfectivoCliente - totalPagado;
+        let precioFinalCliente = Math.max(0, precioEfectivoCliente - descEntregaCliente);
+        let totalPagado = regEncontrado.senaOriginal !== undefined
+            ? senaAbonada + saldoCobrado
+            : Math.max(senaAbonada, senaAbonada + saldoCobrado);
+        let saldoPendiente = Math.max(0, precioFinalCliente - totalPagado);
 
         let equipoTexto = [regEncontrado.equipo, regEncontrado.marca, regEncontrado.modelo].filter(Boolean).join(' ');
         if (regEncontrado.color) equipoTexto += ` · ${regEncontrado.color}`;
@@ -5759,13 +5742,18 @@ function showApp() {
         }
         
         let precioActual = parseFloat(r.precio) || 0;
-        let senaAbonada = r.senaOriginal !== undefined ? parseFloat(r.senaOriginal) : (parseFloat(r.sena) || 0);
-        let saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+        let senaAbonada      = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        let saldoCobrado     = parseFloat(r.saldoCobrado) || 0;
         let descuentoMontoPDF = parseFloat(r.descuentoMonto) || 0;
-        let descEntregaPDF = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento de entrega en PDF
+        let descEntregaPDF   = parseFloat(r.descuentoEntregaMonto) || 0;
         let precioConDescuento = precioActual > 0 && descuentoMontoPDF > 0 ? Math.max(0, precioActual - descuentoMontoPDF) : precioActual;
-        let totalPagado = senaAbonada + saldoCobrado + descEntregaPDF;
-        let saldoPendiente = precioConDescuento - totalPagado;
+        let precioEfectivo   = Math.max(0, precioConDescuento - descEntregaPDF);
+        // totalPagado = seña inicial + saldo cobrado después
+        // Si no hay senaOriginal, usar r.sena como referencia completa
+        let totalPagado = r.senaOriginal !== undefined
+            ? senaAbonada + saldoCobrado
+            : Math.max(senaAbonada, senaAbonada + saldoCobrado);
+        let saldoPendiente = Math.max(0, precioEfectivo - totalPagado);
 
         y += 3; doc.line(10, y, 70, y); y += 10;
         if (descuentoMontoPDF > 0 && precioActual > 0) {
@@ -5783,7 +5771,20 @@ function showApp() {
         } else {
             doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(precioActual), col1, y); y += 7;
         }
-        doc.text("ABONADO: " + fmt.format(totalPagado), col1, y); y += 10;
+        // Mostrar descuento de entrega si aplica
+        if (descEntregaPDF > 0) {
+            const dEntregaLabel = (r.descuentoEntregaTipo === '%')
+                ? 'Desc. entrega ' + (r.descuentoEntregaValor || '') + '%'
+                : 'Desc. entrega';
+            const dEntregaEfec = r.descuentoEfectivo ? ' (efectivo)' : '';
+            doc.setTextColor(220,38,38); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+            doc.text(dEntregaLabel + dEntregaEfec + ': -' + fmt.format(descEntregaPDF), col1, y); y += 6;
+            doc.setTextColor(50,50,50);
+        }
+        doc.setFont('helvetica','normal'); doc.setFontSize(10);
+        // ABONADO no puede superar el precio efectivo (evita mostrar más de lo que costó)
+        const abonadoMostrar = Math.min(totalPagado, precioEfectivo || totalPagado);
+        doc.text("ABONADO: " + fmt.format(abonadoMostrar), col1, y); y += 10;
         doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
         doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
         
@@ -7664,20 +7665,23 @@ function showApp() {
     }
 
     function recalcDescuentoEntrega() {
-        // En modo "cotizar" (cobro de deuda sin precio previo) el descuento se aplica
-        // sobre el precio que se está tipeando ahora, no sobre un saldo base fijo.
-        const saldoBase = window._cobroCotizarMode
-            ? parseMoney(document.getElementById('cobroPrecioFinal').value)
-            : (window._saldoBaseEntrega || 0);
         const tipo = document.getElementById('descuentoEntregaTipo').value;
         const val = parseMoney(document.getElementById('descuentoEntregaValor').value);
         const resultDiv = document.getElementById('descuentoEntregaResult');
+        // En modo cotizar: base = precio que se está tipeando
+        // En modo normal: para %, usar precio total; para $, limitar al saldo
+        const saldoBase  = window._cobroCotizarMode
+            ? parseMoney(document.getElementById('cobroPrecioFinal').value)
+            : (window._saldoBaseEntrega || 0);
+        const precioBase = window._cobroCotizarMode
+            ? saldoBase
+            : (window._precioBaseEntrega || saldoBase);
         if (!val || val <= 0 || saldoBase <= 0) {
             resultDiv.style.display = 'none';
             return;
         }
-        let descMonto = tipo === '%' ? Math.round(saldoBase * val / 100) : val;
-        descMonto = Math.min(descMonto, saldoBase);
+        let descMonto = tipo === '%' ? Math.round(precioBase * val / 100) : val;
+        descMonto = Math.min(descMonto, saldoBase); // no puede superar lo que debe
         const nuevoSaldo = Math.max(0, saldoBase - descMonto);
         document.getElementById('descuentoEntregaTotal').innerText = fmt.format(nuevoSaldo);
         document.getElementById('descuentoEntregaAhorra').innerText = `Ahorrás ${fmt.format(descMonto)}`;
@@ -7705,9 +7709,12 @@ function showApp() {
         const descEntregaVal = document.getElementById('descuentoEntregaValor') ? parseMoney(document.getElementById('descuentoEntregaValor').value) : 0;
         let descEntregaMonto = 0;
         if (descEntregaVal > 0) {
-            const saldoBase = window._saldoBaseEntrega || 0;
-            descEntregaMonto = descEntregaTipo === '%' ? Math.round(saldoBase * descEntregaVal / 100) : descEntregaVal;
-            descEntregaMonto = Math.min(descEntregaMonto, saldoBase);
+            const saldoBase  = window._saldoBaseEntrega  || 0;
+            const precioBase = window._precioBaseEntrega || saldoBase; // usar precio total para %
+            descEntregaMonto = descEntregaTipo === '%'
+                ? Math.round(precioBase * descEntregaVal / 100)
+                : descEntregaVal;
+            descEntregaMonto = Math.min(descEntregaMonto, saldoBase); // no puede superar lo que debe
         }
 
         if (precioActual === 0) {
@@ -7737,8 +7744,8 @@ function showApp() {
             if (saldoFinal < 0) saldoFinal = 0;
             updates.sena = precioEfectivoCobro - descEntregaMonto; 
             updates.saldoCobrado = saldoFinal;
-            // Solo registrar método si realmente quedó saldo por cobrar
             updates.metodoPagoSaldo = saldoFinal > 0 ? metodo : (r.metodoPagoSaldo || '');
+            if (descEntregaMonto > 0) updates.descuentoEntregaMonto = descEntregaMonto;
         }
 
         if (r.senaOriginal === undefined) updates.senaOriginal = senaPrevia;
@@ -8026,10 +8033,11 @@ function showApp() {
         let precioEfectivo = precio > 0 && descMonto > 0 ? Math.max(0, precio - descMonto) : precio;
         // Para órdenes que ya tuvieron una entrega previa (reingreso garantía), usar r.sena directamente
         const fueEntregadoAntesDeuda = r.historialEstados && r.historialEstados.some(h => h.estado === 'Entregado' || h.estado === 'Entregado (Cortesía)');
+        let precioEfectivoDeuda = Math.max(0, precioEfectivo - descEntregaMonto);
         let yaAbonado = (fueEntregadoAntesDeuda || r.garantiaYaPagada)
             ? (parseFloat(r.sena) || 0)
-            : sena + (parseFloat(r.saldoCobrado) || 0) + descEntregaMonto;
-        let saldo = Math.max(0, precioEfectivo - yaAbonado);
+            : sena + (parseFloat(r.saldoCobrado) || 0);
+        let saldo = Math.max(0, precioEfectivoDeuda - yaAbonado);
 
         // Mostrar info de descuento en modal
         const descInfo = document.getElementById('cobroDescuentoInfo');
@@ -8093,6 +8101,7 @@ function showApp() {
         document.getElementById('descuentoEntregaResult').style.display = 'none';
         document.getElementById('descuentoEntregaContainer').style.display = 'block';
         window._saldoBaseEntrega = saldo;
+        window._precioBaseEntrega = precioEfectivo; // precio total para calcular % sobre él
         document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ARCHIVAR";
         document.getElementById('btnConfirmarEntrega').style.display = '';
         document.getElementById('btnEntregarSinCobrarContainer').style.display = 'none';
@@ -8386,6 +8395,7 @@ function showApp() {
             let descMonto = parseFloat(r.descuentoMonto) || 0;
             let descEntregaMonto = parseFloat(r.descuentoEntregaMonto) || 0;
             let precioEfectivo = precio > 0 && descMonto > 0 ? Math.max(0, precio - descMonto) : precio;
+            precioEfectivo = Math.max(0, precioEfectivo - descEntregaMonto);
             // descuentoEntregaMonto es descuento aplicado al cobrar → equivale a pago
             // Para órdenes reingresadas por garantía, usar r.sena como total ya abonado
             // es más robusto que recalcular desde senaOriginal, porque r.sena se actualiza
@@ -8398,7 +8408,7 @@ function showApp() {
                 // Resetear descuentoEntregaMonto para no contarlo dos veces
                 descEntregaMonto = 0;
             } else {
-                totalYaAbonado = sena + yaCobrado + descEntregaMonto;
+                totalYaAbonado = sena + yaCobrado;
             }
             let saldo = precioEfectivo - totalYaAbonado;
 
@@ -8472,6 +8482,7 @@ function showApp() {
                 document.getElementById('descuentoEntregaResult').style.display = 'none';
                 document.getElementById('descuentoEntregaContainer').style.display = 'block';
                 window._saldoBaseEntrega = saldo;
+                window._precioBaseEntrega = precioEfectivo; // precio total para calcular % sobre él
                 document.getElementById('btnConfirmarEntrega').innerText = "COBRAR Y ENTREGAR";
                 document.getElementById('btnConfirmarEntrega').style.display = '';
                 document.getElementById('btnEntregarSinCobrarContainer').style.display = 'block';
@@ -9012,9 +9023,12 @@ function showApp() {
             const precioActual = parseFloat(r.precio) || 0;
             const senaActual = parseFloat(r.sena) || 0;
             const descMonto = parseFloat(r.descuentoMonto) || 0;
-            const precioEfectivo = precioActual > 0 && descMonto > 0 ? Math.max(0, precioActual - descMonto) : precioActual;
+            const descEntregaMonto = parseFloat(r.descuentoEntregaMonto) || 0;
+            const precioEfectivo = Math.max(0, (precioActual > 0 && descMonto > 0 ? Math.max(0, precioActual - descMonto) : precioActual) - descEntregaMonto);
             const tieneDescuento = descMonto > 0 && precioActual > 0;
-            const saldo = precioEfectivo - senaActual;
+            const senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+            const saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+            const saldo = Math.max(0, precioEfectivo - senaOrig - saldoCobrado);
             
             // Lógica para mostrar la última fecha de entrega si está en el historial
             let fechaMostrar = r.fecha || '';
@@ -9033,9 +9047,10 @@ function showApp() {
             if (r.entregadoSinCobrar && !r.archivado) {
                 // Entregado pero sin cobrar — orden activa con deuda pendiente
                 let descMontoBadge = parseFloat(r.descuentoMonto) || 0;
-                let descEntregaBadge = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento de entrega
+                let descEntregaBadge = parseFloat(r.descuentoEntregaMonto) || 0;
                 let precioEfectivoBadge = precioActual > 0 && descMontoBadge > 0 ? Math.max(0, precioActual - descMontoBadge) : precioActual;
-                let saldoBadge = precioEfectivoBadge > 0 ? precioEfectivoBadge - (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0) - descEntregaBadge : 0;
+                let precioFinalBadge = Math.max(0, precioEfectivoBadge - descEntregaBadge);
+                let saldoBadge = precioFinalBadge > 0 ? precioFinalBadge - (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0) - (parseFloat(r.saldoCobrado) || 0) : 0;
                 let saldo = Math.max(0, saldoBadge);
                 estadoPagoHTML = `<div style="font-size:11px; line-height:1.5;">
                     <span style="color:#c2410c; font-weight:800;">⚠️ DEUDA: ${saldo > 0 ? fmt.format(saldo) : 'A COTIZAR'}</span><br>
@@ -9194,8 +9209,8 @@ function showApp() {
     function revelarCosto() { 
         let c = document.getElementById('costo-inner');
         let input = document.getElementById('costoRepuesto');
-        if (c.style.display === "none") {
-            c.style.display = "block";
+        if (c.style.display === "none" || c.style.display === "") {
+            c.style.display = "flex";
             input.focus();
         } else {
             c.style.display = "none";
@@ -9680,7 +9695,7 @@ function showApp() {
         const senaOriginal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
         const saldoCobradoOriginal = parseFloat(r.saldoCobrado) || 0;
         const descEntregaOriginal = parseFloat(r.descuentoEntregaMonto) || 0; // FIX: incluir descuento aplicado al entregar
-        const totalCobrado = senaOriginal + saldoCobradoOriginal + descEntregaOriginal;
+        const totalCobrado = senaOriginal + saldoCobradoOriginal; // descuento no es plata cobrada
         
         // Al reingresar, guardar la nota de reparación anterior dentro del historial
         // para no perderla, y resetear la nota para la nueva reparación
@@ -9800,14 +9815,13 @@ function showApp() {
         if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#9ca3af"; }
         document.getElementById('repairForm').reset();
         
-        const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs', 'notaInterna', 'descuentoOrden'];
+        const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs', 'notaInterna'];
         inputs.forEach(id => {
             const el = document.getElementById(id);
             if(el) el.value = "";
         });
-        if (document.getElementById('descuentoOrdenTipo')) document.getElementById('descuentoOrdenTipo').value = '%';
-        if (document.getElementById('descuento-orden-total-wrap')) document.getElementById('descuento-orden-total-wrap').style.display = 'none';
-        if (document.getElementById('descuentoOrdenEfectivo')) document.getElementById('descuentoOrdenEfectivo').checked = false;
+
+
 
         document.getElementById('equipo').value = "Smartphone";
         document.getElementById('marca').value = "Samsung";
@@ -9882,6 +9896,7 @@ function showApp() {
     }
 
     function recalcDescuentoOrden() {
+        return; // descuento removido del formulario de gestión
         const precio = parseMoney(document.getElementById('precio').value) || 0;
         const descVal = parseMoney(document.getElementById('descuentoOrden')?.value) || 0;
         const tipo = document.getElementById('descuentoOrdenTipo')?.value || '%';
@@ -9912,8 +9927,8 @@ function showApp() {
         let precioActual = parseMoney(document.getElementById('precio').value);
         let senaActual = parseMoney(document.getElementById('sena').value);
         let costoRep = parseMoney(document.getElementById('costoRepuesto').value);
-        let descuentoVal = parseMoney(document.getElementById('descuentoOrden')?.value) || 0;
-        let descuentoTipo = document.getElementById('descuentoOrdenTipo')?.value || '%';
+        let descuentoVal = 0;
+        let descuentoTipo = '%';
         // Calcular monto de descuento real
         let descuentoMonto = descuentoTipo === '%' ? precioActual * descuentoVal / 100 : descuentoVal;
         if (descuentoMonto > precioActual) descuentoMonto = precioActual;
@@ -9939,7 +9954,7 @@ function showApp() {
             descuentoMonto: descuentoMonto,
             descuentoTipo: descuentoTipo,
             descuentoValor: descuentoVal,
-            descuentoEfectivo: document.getElementById('descuentoOrdenEfectivo')?.checked ? true : false,
+            descuentoEfectivo: false,
             metodoPagoSena: document.getElementById('metodoPago').value,
             falla: document.getElementById('falla').value,
             obs: document.getElementById('obs').value,
@@ -9960,8 +9975,14 @@ function showApp() {
                 data.historialEstados = r.historialEstados || [];
                 data.esVentaRapida    = r.esVentaRapida || false;
                 data.metodoPagoSaldo  = r.metodoPagoSaldo || "";
-                // senaOriginal: es la seña histórica del ingreso, nunca cambia
-                data.senaOriginal     = r.senaOriginal !== undefined ? r.senaOriginal : (parseFloat(r.sena) || 0);
+                // senaOriginal: se actualiza si la orden no fue entregada aún
+                // Si ya fue entregada/cobrada, se preserva para no romper el historial de pagos
+                const ordenEntregada = r.estado === 'Entregado' || r.archivado;
+                if (ordenEntregada) {
+                    data.senaOriginal = r.senaOriginal !== undefined ? r.senaOriginal : (parseFloat(r.sena) || 0);
+                } else {
+                    data.senaOriginal = senaActual; // refleja la seña editada
+                }
 
                 // --- Historial de precios si cambió ---
                 const precioAnterior = parseFloat(r.precio) || 0;
@@ -9973,14 +9994,21 @@ function showApp() {
                     data.historialPrecios = r.historialPrecios || [];
                 }
 
+                // Preservar siempre los campos de descuento del registro original
+                data.descuentoMonto        = r.descuentoMonto        || 0;
+                data.descuentoTipo         = r.descuentoTipo         || '%';
+                data.descuentoValor        = r.descuentoValor        || 0;
+                data.descuentoEfectivo     = r.descuentoEfectivo     || false;
+                data.descuentoEntregaMonto = r.descuentoEntregaMonto || 0;
+                data.descuentoEntregaTipo  = r.descuentoEntregaTipo  || '%';
+                data.descuentoEntregaValor = r.descuentoEntregaValor || 0;
+
                 // --- saldoCobrado: para ordenes Entregadas+Archivadas, reflejar nuevo precio ---
                 if (r.archivado && r.estado === 'Entregado') {
-                    // FIX: considerar descuentoMonto y descuentoEntregaMonto para no sobreestimar saldoCobrado
-                    const descMotoEdit = parseFloat(data.descuentoMonto) || 0;
+                    const descMotoEdit    = parseFloat(r.descuentoMonto) || 0;
                     const descEntregaEdit = parseFloat(r.descuentoEntregaMonto) || 0;
                     const precioEfectivoEdit = descMotoEdit > 0 ? Math.max(0, precioActual - descMotoEdit) : precioActual;
                     data.saldoCobrado = Math.max(0, precioEfectivoEdit - descEntregaEdit - data.senaOriginal);
-                    data.descuentoEntregaMonto = r.descuentoEntregaMonto || 0; // preservar descuento de entrega
                 } else {
                     data.saldoCobrado = r.saldoCobrado || 0;
                 }
@@ -10200,25 +10228,17 @@ function showApp() {
         document.getElementById('imei').value = r.imei || "";
         document.getElementById('pin').value = await desencriptarPIN(r.pin || "", currentUser);
         
-        document.getElementById('precio').value = r.precio ? fmt.format(r.precio).replace('$ ', '') : "";
+        document.getElementById('precio').value = r.precio ? String(r.precio) : "";
         
         // Restaurar descuento
-        if (document.getElementById('descuentoOrden')) {
-            const dMonto = r.descuentoMonto || 0;
-            const dTipo = r.descuentoTipo || '$';
-            const dValor = r.descuentoValor || 0;
-            document.getElementById('descuentoOrdenTipo').value = dTipo;
-            document.getElementById('descuentoOrden').value = dValor > 0 ? (dTipo === '%' ? dValor : fmt.format(dValor).replace('$ ','')) : '';
-            if (document.getElementById('descuentoOrdenEfectivo')) {
-                document.getElementById('descuentoOrdenEfectivo').checked = r.descuentoEfectivo ? true : false;
-            }
-            recalcDescuentoOrden();
-        }
+
         
-        let senaReal = r.senaOriginal !== undefined ? r.senaOriginal : r.sena;
-        document.getElementById('sena').value = senaReal ? fmt.format(senaReal).replace(/\D/g, '') : "";
+        // Mostrar la seña actual del campo (lo que se ingresó al registrar)
+        // senaOriginal se preserva automáticamente en el bloque de guardado
+        let senaReal = r.sena !== undefined ? r.sena : 0;
+        document.getElementById('sena').value = senaReal ? String(senaReal) : "";
         
-        document.getElementById('costoRepuesto').value = r.costoRepuesto ? fmt.format(r.costoRepuesto).replace('$ ', '') : "";
+        document.getElementById('costoRepuesto').value = r.costoRepuesto ? String(r.costoRepuesto) : "";
         
         setSelectValueSafe('metodoPago', r.metodoPagoSena || "A Cotizar");
         
@@ -10277,15 +10297,19 @@ function showApp() {
             // Total ya abonado: misma lógica que el modal de cobro
             const totalAbonadoWA = fueEntregadoAntesWA
                 ? (parseFloat(r.sena) || 0)
-                : senaOriginalWA + saldoCobradoWA + descEntregaWA;
+                : senaOriginalWA + saldoCobradoWA;
             if (precioWA > 0) {
-                if (descMonto > 0) {
-                    const precioFinal = Math.max(0, precioWA - descMonto);
+                // Precio efectivo = precio - descuentos aplicados
+                const precioEfectivoWA = Math.max(0, precioWA - descMonto - descEntregaWA);
+                if (descMonto > 0 || descEntregaWA > 0) {
                     const dLabelWA = r.descuentoTipo === '%' ? `Descuento ${r.descuentoValor}%` : 'Descuento';
                     const efLabelWA = r.descuentoEfectivo ? ' (pago en efectivo)' : '';
-                    msjPlano += `\n💰 *Precio:* ${fmt.format(precioWA)}\n🏷️ *${dLabelWA}${efLabelWA}:* -${fmt.format(descMonto)}\n✅ *Total: ${fmt.format(precioFinal)}*`;
-                    const saldoWA = Math.max(0, precioFinal - totalAbonadoWA);
-                    if (totalAbonadoWA > 0 && totalAbonadoWA < precioFinal) {
+                    msjPlano += `\n💰 *Precio:* ${fmt.format(precioWA)}`;
+                    if (descMonto > 0) msjPlano += `\n🏷️ *${dLabelWA}${efLabelWA}:* -${fmt.format(descMonto)}`;
+                    if (descEntregaWA > 0) msjPlano += `\n🏷️ *Desc. al retirar:* -${fmt.format(descEntregaWA)}`;
+                    msjPlano += `\n✅ *Total: ${fmt.format(precioEfectivoWA)}*`;
+                    const saldoWA = Math.max(0, precioEfectivoWA - totalAbonadoWA);
+                    if (totalAbonadoWA > 0 && totalAbonadoWA < precioEfectivoWA) {
                         msjPlano += `\n💵 *Abonado:* ${fmt.format(totalAbonadoWA)}`;
                         msjPlano += `\n⏳ *Saldo pendiente:* ${fmt.format(saldoWA)}`;
                     } else if (saldoWA <= 0) {
@@ -11372,9 +11396,10 @@ function showApp() {
                             let descMontoCont = parseFloat(r.descuentoMonto) || 0;
                             let descEntregaCont = parseFloat(r.descuentoEntregaMonto) || 0;
                             let precioEfectivoCont = descMontoCont > 0 ? Math.max(0, precioActual - descMontoCont) : precioActual;
-                            let s = precioEfectivoCont - (senaOrig + cobroAnterior + descEntregaCont);
+                            let precioEfectivoContFinal = Math.max(0, precioEfectivoCont - descEntregaCont);
+                            let s = precioEfectivoContFinal - (senaOrig + cobroAnterior);
                             // Solo va a "por cobrar" si hay deuda real Y el adelanto no cubrió el total.
-                            const yaCubierto = (senaOrig + cobroAnterior + descEntregaCont) >= precioEfectivoCont;
+                            const yaCubierto = (senaOrig + cobroAnterior) >= precioEfectivoContFinal;
                             if (s > 0 && !yaCubierto && (r.estado !== 'Entregado' || r.entregadoSinCobrar)) porCobrar += s;
                         }
                     }
@@ -14384,7 +14409,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
 (function() {
     function aplicarInputmodeMobile() {
         if (window.innerWidth >= 600) return; // Solo en móvil
-        var camposPrecio = ['precio','sena','costoRepuesto','newPriceInput','cobroPrecioFinal','descuentoOrden','descuentoEntregaValor','inputStockMinGlobal','inputConfigStockMin'];
+        var camposPrecio = ['precio','sena','costoRepuesto','newPriceInput','cobroPrecioFinal','descuentoEntregaValor','inputStockMinGlobal','inputConfigStockMin'];
         camposPrecio.forEach(function(id) {
             var el = document.getElementById(id);
             if (el && !el.getAttribute('inputmode')) el.setAttribute('inputmode','decimal');
@@ -15273,10 +15298,11 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         const terminos     = conf.garantia     || '';
         const nroRecibo    = r.nroRecibo || ('REC-' + String(_siguienteNroRecibo()).padStart(4, '0'));
 
-        const total    = _totalOrden(r);
-        const sena     = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-        const saldoCob = parseFloat(r.saldoCobrado) || 0;
-        const descMonto = parseFloat(r.descuentoMonto) || 0;
+        const total      = _totalOrden(r);
+        const sena       = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        const saldoCob   = parseFloat(r.saldoCobrado) || 0;
+        const descMonto  = parseFloat(r.descuentoMonto) || 0;
+        const descEntrega = parseFloat(r.descuentoEntregaMonto) || 0;
         const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
 
         cont.innerHTML = `
@@ -15314,8 +15340,12 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
               <span style="font-size:13px;font-weight:700;color:#111827;">${_fmtMonto(parseFloat(r.precio) || 0)}</span>
             </div>
             ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
-              <span style="font-size:13px;color:#059669;font-weight:500;">Descuento aplicado</span>
-              <span style="font-size:13px;font-weight:700;color:#059669;">${_fmtMonto(descMonto)}</span>
+              <span style="font-size:13px;color:#059669;font-weight:500;">Descuento${r.descuentoTipo === '%' ? ' ' + (r.descuentoValor||'') + '%' : ''}</span>
+              <span style="font-size:13px;font-weight:700;color:#059669;">- ${_fmtMonto(descMonto)}</span>
+            </div>` : ''}
+            ${descEntrega > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="font-size:13px;color:#059669;font-weight:500;">Descuento al retirar${r.descuentoEntregaTipo === '%' ? ' ' + (r.descuentoEntregaValor||'') + '%' : ''}</span>
+              <span style="font-size:13px;font-weight:700;color:#059669;">- ${_fmtMonto(descEntrega)}</span>
             </div>` : ''}
             ${sena > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
               <span style="font-size:13px;color:#6b7280;font-weight:500;">Seña / Adelanto</span>
@@ -15327,7 +15357,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             </div>` : ''}
             <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
               <span style="font-size:15px;font-weight:800;color:#111827;">TOTAL ABONADO</span>
-              <span style="font-size:18px;font-weight:900;color:#059669;">${_fmtMonto(sena + saldoCob || total)}</span>
+              <span style="font-size:18px;font-weight:900;color:#059669;">${_fmtMonto(Math.min(sena + saldoCob, total - descEntrega) || total)}</span>
             </div>
           </div>
           ${terminos ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;line-height:1.5;margin-bottom:10px;">${escaparHTML(terminos)}</div>` : ''}
@@ -15382,11 +15412,13 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         const tallerWapp   = conf.wappTicket   || '';
         const terminos     = conf.garantia     || '';
 
-        const total     = _totalOrden(r);
-        const sena      = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-        const saldoCob  = parseFloat(r.saldoCobrado) || 0;
-        const descMonto = parseFloat(r.descuentoMonto) || 0;
-        const totalAbonado = sena + saldoCob || total;
+        const total        = _totalOrden(r);
+        const sena         = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        const saldoCob     = parseFloat(r.saldoCobrado) || 0;
+        const descMonto    = parseFloat(r.descuentoMonto) || 0;
+        const descEntrega  = parseFloat(r.descuentoEntregaMonto) || 0;
+        const precioEfectivoRecibo = Math.max(0, total - descEntrega);
+        const totalAbonado = Math.min(sena + saldoCob, precioEfectivoRecibo) || precioEfectivoRecibo;
         const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
 
         // Header
@@ -15437,18 +15469,21 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         doc.setDrawColor(229, 231, 235);
         doc.line(margen, y, margen + ancho, y); y += 6;
 
+        const precioBase = parseFloat(r.precio) || 0;
         const filas = [
-            { label: 'Servicio técnico', monto: parseFloat(r.precio) || 0, color: [17, 24, 39] }
+            { label: 'Servicio técnico', monto: precioBase, color: [17, 24, 39] }
         ];
-        if (descMonto > 0) filas.push({ label: 'Descuento', monto: descMonto, color: [5, 150, 105] });
-        if (sena > 0)      filas.push({ label: 'Seña / Adelanto', monto: sena, color: [107, 114, 128] });
-        if (saldoCob > 0)  filas.push({ label: 'Pagó al retirar', monto: saldoCob, color: [107, 114, 128] });
+        if (descMonto > 0)   filas.push({ label: 'Descuento' + (r.descuentoTipo === '%' ? ' ' + (r.descuentoValor||'') + '%' : '') + (r.descuentoEfectivo ? ' (efectivo)' : ''), monto: -descMonto, color: [5, 150, 105] });
+        if (descEntrega > 0) filas.push({ label: 'Descuento al retirar' + (r.descuentoEntregaTipo === '%' ? ' ' + (r.descuentoEntregaValor||'') + '%' : '') + (r.descuentoEfectivo ? ' (efectivo)' : ''), monto: -descEntrega, color: [5, 150, 105] });
+        if (sena > 0)        filas.push({ label: 'Seña / Adelanto', monto: sena, color: [107, 114, 128] });
+        if (saldoCob > 0)    filas.push({ label: 'Pagó al retirar', monto: saldoCob, color: [107, 114, 128] });
 
         filas.forEach(f => {
             doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(...f.color);
             doc.text(f.label, margen, y + 5);
             doc.setFont('helvetica', 'bold');
-            doc.text(_fmtMonto(f.monto), margen + ancho, y + 5, { align: 'right' });
+            const montoStr = f.monto < 0 ? '- ' + _fmtMonto(Math.abs(f.monto)) : _fmtMonto(f.monto);
+            doc.text(montoStr, margen + ancho, y + 5, { align: 'right' });
             y += 8;
             doc.setDrawColor(243, 244, 246);
             doc.line(margen, y, margen + ancho, y);
