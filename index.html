@@ -1481,12 +1481,8 @@
         }
 
         #landing-page .nav-logo-icon{
-            width: 52px; height: 36px;
-            background: linear-gradient(135deg, var(--blue), var(--blue-bright));
-            border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 16px;
-            box-shadow: 0 0 18px var(--blue-glow);
+            font-size: 28px;
             gap: 1px;
         }
 
@@ -2138,7 +2134,7 @@ function showApp() {
    <!-- NAV -->
    <nav>
     <a class="nav-logo" href="#"> 
-     <div class="nav-logo-icon">💻📱</div> Mi Taller Web 
+     <div class="nav-logo-icon">📱</div> Mi Taller Web 
     </a> <a class="nav-cta" href="#" onclick="showApp(); return false;">Ingresar al Sistema →</a>
    </nav>
    <!-- HERO -->
@@ -2493,7 +2489,7 @@ function showApp() {
    </section>
    <!-- FOOTER -->
    <footer>
-    <div class="footer-logo">💻📱 Mi Taller Web</div>
+    <div class="footer-logo">📱 Mi Taller Web</div>
     <div class="footer-links">
      <a href="#features">Funcionalidades</a> <a href="#planes">Planes</a> <a href="#faq">FAQ</a> <a href="#" onclick="showApp(); return false;">Ingresar</a>
     </div>
@@ -3406,11 +3402,11 @@ function showApp() {
             <span style="font-size:18px; line-height:1; pointer-events:none;">💵</span>
            </div>
           </div>
-          <div id="descuento-orden-total-wrap" style="display:none; margin-top:8px; background:#dcfce7; border-radius:8px; padding:10px 14px; border:1.5px solid #86efac;">
-           <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total a cobrar</div>
-           <div id="descuento-orden-total" style="font-size:20px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
-           <div id="descuento-orden-ahorra" style="font-size:12px; color:#6b7280; margin-top:2px;"></div>
-          </div>
+         </div>
+         <div id="descuento-orden-total-wrap" class="full" style="display:none; margin-top:8px; background:#dcfce7; border-radius:8px; padding:10px 14px; border:1.5px solid #86efac;">
+          <div style="font-size:11px; color:#15803d; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total a cobrar</div>
+          <div id="descuento-orden-total" style="font-size:20px; font-weight:900; color:#15803d; margin-top:2px;">$0</div>
+          <div id="descuento-orden-ahorra" style="font-size:12px; color:#6b7280; margin-top:2px;"></div>
          </div>
          <div class="full" id="desktop-pago-row">
           <div id="pago-total-inline" style="display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; width:100%;">
@@ -13100,7 +13096,6 @@ function abrirFormPresupuesto() {
     }
     agregarItemPresupuesto();
     document.getElementById('form-presupuesto-container').style.display = 'block';
-    document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function cerrarFormPresupuesto() {
@@ -13301,7 +13296,6 @@ function editarPresupuesto(id) {
         calcTotalPresupuesto();
     }
     document.getElementById('form-presupuesto-container').style.display = 'block';
-    document.getElementById('form-presupuesto-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function eliminarPresupuesto(id) {
