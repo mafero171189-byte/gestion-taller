@@ -5241,22 +5241,22 @@ function showApp() {
                         </div>`;
                     }).join('')}
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:2px solid #e8ecf0;">
+                ${descuentoMontoHTML > 0 ? `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:13px;color:#94a3b8;">
+                    <span>Subtotal</span>
+                    <span>${fmt.format(totalBruto)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:13px;font-weight:700;color:#dc2626;">
+                    <span>🏷️ Descuento${p.descuentoTipo === '%' ? ' ' + (p.descuentoValor||'') + '%' : ''}${p.descuentoEfectivo ? ' 💵 por pago en efectivo' : ''}</span>
+                    <span>- ${fmt.format(descuentoMontoHTML)}</span>
+                </div>` : ''}
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:2px solid #e8ecf0;">
                     <span style="font-size:15px;font-weight:800;color:#1e293b;">TOTAL</span>
                     <span style="font-size:18px;font-weight:900;color:#1e4d8c;">${fmt.format(total)}</span>
                 </div>
-                ${descuentoMontoHTML > 0 ? `
-                <div style="margin-top:8px;padding:8px 12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;">
-                    <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280;">
-                        <span>Precio sin descuento</span><span>${fmt.format(totalBruto)}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#dc2626;margin-top:4px;">
-                        <span>🏷️ Descuento${p.descuentoTipo === '%' ? ' ' + (p.descuentoValor||'') + '%' : ''}${p.descuentoEfectivo ? ' 💵 <span style="font-weight:800;color:#d97706;">por pago en efectivo</span>' : ''}</span>
-                        <span>- ${fmt.format(descuentoMontoHTML)}</span>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:#15803d;margin-top:6px;padding-top:6px;border-top:1px solid #fca5a5;">
-                        <span>Total a pagar</span><span>${fmt.format(total)}</span>
-                    </div>
+                ${descuentoMontoHTML > 0 && p.descuentoEfectivo ? `
+                <div style="margin-top:6px;font-size:11px;color:#b45309;font-style:italic;">
+                    * Precio válido únicamente con pago en efectivo.
                 </div>` : ''}
                 ${vencimientoHtml}
             </div>` : '';
