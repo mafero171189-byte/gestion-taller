@@ -2218,7 +2218,7 @@ function showApp() {
       <div class="feature-card reveal reveal-d1">
        <div class="feature-icon">💰</div>
        <div class="feature-title">Contabilidad Integrada</div>
-       <div class="feature-desc">Registrá señas, pagos totales y métodos de pago. Visualizá ingresos, egresos y ganancia neta con gráficos y resúmenes por período.</div>
+       <div class="feature-desc">Registrá señas, pagos totales y métodos de pago. Visualizá ingresos, egresos y ganancia neta con gráficos y resúmenes por período. Compatible con múltiples monedas latinoamericanas.</div>
        <div class="feature-tags">
         <span class="tag">Ingresos y egresos</span><span class="tag">Gráficos</span><span class="tag">Caja diaria</span>
        </div>
@@ -2266,7 +2266,7 @@ function showApp() {
       <div class="feature-card reveal reveal-d3">
        <div class="feature-icon">⚡</div>
        <div class="feature-title">Venta Rápida</div>
-       <div class="feature-desc">Vendé productos del stock directamente desde el mostrador sin crear una orden de reparación. Carrito multi-ítem y comprobante al instante.</div>
+       <div class="feature-desc">Vendé productos del stock directamente desde el mostrador sin crear una orden. Carrito multi-ítem, descuentos, recargos por tarjeta y comprobante al instante.</div>
        <div class="feature-tags">
         <span class="tag">Carrito multi-ítem</span><span class="tag">Desde stock</span><span class="tag">Comprobante</span>
        </div>
@@ -3027,13 +3027,30 @@ function showApp() {
      </div>
      <!-- FIN BLOQUE DE LICENCIA -->
      <div style="text-align:left; margin-top:10px;">
+      <label>País / Moneda</label>
+      <select id="confPais" style="width:100%; padding:9px 10px; border:1.5px solid #d1d5db; border-radius:7px; font-family:'Outfit',sans-serif; font-size:14px; margin-bottom:10px; background:white; color:#374151;">
+        <option value="AR">🇦🇷 Argentina ($ ARS)</option>
+        <option value="BO">🇧🇴 Bolivia (Bs. BOB)</option>
+        <option value="CL">🇨🇱 Chile ($ CLP)</option>
+        <option value="CO">🇨🇴 Colombia ($ COP)</option>
+        <option value="EC">🇪🇨 Ecuador ($ USD)</option>
+        <option value="ES">🇪🇸 España (€ EUR)</option>
+        <option value="GT">🇬🇹 Guatemala (Q GTQ)</option>
+        <option value="MX">🇲🇽 México ($ MXN)</option>
+        <option value="PY">🇵🇾 Paraguay (₲ PYG)</option>
+        <option value="PE">🇵🇪 Perú (S/ PEN)</option>
+        <option value="DO">🇩🇴 Rep. Dominicana ($ DOP)</option>
+        <option value="UY">🇺🇾 Uruguay ($ UYU)</option>
+        <option value="VE">🇻🇪 Venezuela (Bs. VES)</option>
+      </select>
       <label>Logo del Local</label>
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #e5e7eb;">
        <img id="logoPreview" src="" style="width:50px; height:50px; object-fit:contain; border:1px solid #e5e7eb; display:none; border-radius:5px; background:white;"> <input type="file" id="logoUpload" accept="image/*" style="display:none;" onchange="procesarLogoUpload(this)">
        <button id="btnCargarLogo" onclick="document.getElementById('logoUpload').click()" style="background:#1e4d8c; color:white; border:none; padding:8px 12px; border-radius:5px; font-size:12px; cursor:pointer; flex:1; font-weight:bold;">📷 CARGAR LOGO</button>
        <button onclick="borrarLogoUpload()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold;">X</button>
       </div>
-      <label>Nombre del Taller</label> <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller" style="margin-bottom:10px;"> <label>Descripción/Subtítulo</label> <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular" style="margin-bottom:10px;"> <label>WhatsApp en Ticket</label> <input type="text" id="confWappTicket" placeholder="Ej: 54911..." style="margin-bottom:10px;"> <label>Términos y Condiciones (Para el PDF)</label> <textarea id="confGarantia" rows="3" placeholder="Ej: Pasados los 90 días no nos hacemos cargo. La garantía es de 30 días." style="margin-bottom:10px; resize:none;"></textarea> <label>Nueva Clave</label> <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
+      <label>Nombre del Taller</label> <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller" style="margin-bottom:10px;"> <label>Descripción/Subtítulo</label> <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular" style="margin-bottom:10px;"> <label>WhatsApp en Ticket</label> <input type="text" id="confWappTicket" placeholder="Ej: 54911..." style="margin-bottom:10px;">
+      <label>Términos y Condiciones (Para el PDF)</label> <textarea id="confGarantia" rows="3" placeholder="Ej: Pasados los 90 días no nos hacemos cargo. La garantía es de 30 días." style="margin-bottom:10px; resize:none;"></textarea> <label>Nueva Clave</label> <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
      </div>
      <div style="display:flex; gap:10px; margin-top:20px;">
       <button onclick="closePassModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
@@ -4029,8 +4046,11 @@ function showApp() {
         <ul>
          <li>Desde acá realizás ventas de mostrador de artículos del stock. Buscá el artículo por nombre o escaneá su código de barras con el botón 📷.</li>
          <li>Podés agregar varios artículos al carrito antes de confirmar. Ajustá la cantidad de cada uno con los botones + y −.</li>
-         <li>Elegí el método de pago (Efectivo, Transferencia, Débito, Crédito o Mercado Pago) y tocá <b>REGISTRAR VENTA</b>. El stock se descuenta automáticamente y el movimiento queda en Contabilidad.</li>
-         <li>Debajo del formulario de venta aparece el <b>historial de ventas de mostrador</b> con buscador, donde podés ver y anular ventas anteriores.</li>
+         <li>Elegí el método de pago y tocá <b>REGISTRAR VENTA</b>. El stock se descuenta automáticamente y el movimiento queda en Contabilidad.</li>
+         <li><b>🏷️ Descuento:</b> Antes de registrar podés aplicar un descuento en % o en $ con el botón 🏷️ Desc. Tiene un checkbox 💵 para marcar si es por pago en efectivo.</li>
+         <li><b>💳 Recargo:</b> Si el cliente paga con tarjeta u otro método con costo adicional, usá el botón 💳 Rec. para aplicar un recargo en % o $. Descuento y recargo son mutuamente excluyentes. Con tarjeta de crédito el recibo muestra el desglose; con otros métodos el precio ya aparece ajustado.</li>
+         <li>El botón 📄 del historial genera el recibo de venta directo, sin pedir nombre. Si el cliente tiene nombre cargado lo usa automáticamente.</li>
+         <li>Debajo del formulario aparece el <b>historial de ventas</b> con buscador, donde podés ver y anular ventas anteriores.</li>
         </ul>
         <b>📁 Historial de Reparaciones</b>
         <ul>
@@ -4126,6 +4146,7 @@ function showApp() {
         <ul>
          <li>Desde la pestaña <b>Gestión</b>, el botón 🛒 abre la Venta Rápida (modal emergente). También podés usar la pestaña <b>Ventas y Reparaciones → Nueva Venta</b> para el mismo resultado con más espacio en pantalla.</li>
          <li>Ambas opciones permiten armar un carrito con múltiples artículos, ajustar cantidades y confirmar la venta con un solo toque.</li>
+         <li>Ambas tienen los mismos botones de <b>🏷️ Descuento</b> y <b>💳 Recargo</b> que aparecen al agregar artículos al carrito.</li>
         </ul>
        </div>
       </details>
@@ -4138,6 +4159,7 @@ function showApp() {
        <div class="faq-content">
         <p>Accedé desde el botón <b>👤 MI PERFIL</b> en la barra superior. Acá configurás los datos que aparecen en todos tus tickets PDF y mensajes de WhatsApp.</p>
         <ul>
+         <li><b>País / Moneda:</b> Seleccioná tu país para que el sistema use el formato de moneda y fechas correcto. Disponible para Argentina, México, Colombia, Chile, Uruguay, Perú y más países de habla hispana.</li>
          <li><b>Logo del taller:</b> Cargá una imagen JPG o PNG. Aparecerá en el encabezado de cada ticket PDF y en la vista de seguimiento del cliente.</li>
          <li><b>Nombre del taller y subtítulo:</b> Por ejemplo "Servicio Técnico Celular". Aparece en el PDF y en el link del cliente.</li>
          <li><b>WhatsApp en ticket:</b> El número que aparece en el pie del ticket para que el cliente te contacte.</li>
@@ -4327,7 +4349,7 @@ function showApp() {
         if (el) {
             el.style.opacity = '0';
             setTimeout(() => {
-                el.textContent = precio ? Number(precio).toLocaleString('es-AR') : '—';
+                el.textContent = precio ? Number(precio).toLocaleString(_localeActual) : '—';
                 el.style.opacity = '1';
             }, 200);
         }
@@ -4474,7 +4496,44 @@ function showApp() {
     let debounceTimer;
     let _autoOrdenTimer;
 
-    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+    // ── Configuración regional dinámica ────────────────────────────────────────
+    const _PAISES = {
+        AR: { locale: 'es-AR', currency: 'ARS', dateLocale: 'es-AR' },
+        MX: { locale: 'es-MX', currency: 'MXN', dateLocale: 'es-MX' },
+        CO: { locale: 'es-CO', currency: 'COP', dateLocale: 'es-CO' },
+        CL: { locale: 'es-CL', currency: 'CLP', dateLocale: 'es-CL' },
+        UY: { locale: 'es-UY', currency: 'UYU', dateLocale: 'es-UY' },
+        PE: { locale: 'es-PE', currency: 'PEN', dateLocale: 'es-PE' },
+        VE: { locale: 'es-VE', currency: 'VES', dateLocale: 'es-VE' },
+        BO: { locale: 'es-BO', currency: 'BOB', dateLocale: 'es-BO' },
+        PY: { locale: 'es-PY', currency: 'PYG', dateLocale: 'es-PY' },
+        EC: { locale: 'es-EC', currency: 'USD', dateLocale: 'es-EC' },
+        GT: { locale: 'es-GT', currency: 'GTQ', dateLocale: 'es-GT' },
+        DO: { locale: 'es-DO', currency: 'DOP', dateLocale: 'es-DO' },
+        ES: { locale: 'es-ES', currency: 'EUR', dateLocale: 'es-ES' },
+    };
+    window._paisActual = 'AR';
+    let fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
+    let _localeActual = 'es-AR';
+
+    function aplicarLocale(pais) {
+        const cfg = _PAISES[pais] || _PAISES['AR'];
+        window._paisActual = pais;
+        _localeActual = cfg.locale;
+        fmt = new Intl.NumberFormat(cfg.locale, { style: 'currency', currency: cfg.currency, minimumFractionDigits: 0 });
+        window.fmt = fmt;
+    }
+    window.fmt = fmt;
+    window.aplicarLocale = aplicarLocale;
+
+    function _fmtFecha(date, opts) {
+        return date.toLocaleDateString(_localeActual, opts || {});
+    }
+    function _fmtFechaHora(date, opts) {
+        return date.toLocaleString(_localeActual, Object.assign({ hour12: false }, opts || {}));
+    }
+    window._fmtFecha = _fmtFecha;
+    window._fmtFechaHora = _fmtFechaHora;
 
     // ====== LÓGICA DEL PATRÓN DE DESBLOQUEO ======
     let patternCanvas, ctxPattern;
@@ -5172,7 +5231,7 @@ function showApp() {
             </div>`;
 
         const vencimientoHtml = p.vencimiento ? (() => {
-            const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR');
+            const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual);
             const hoy = new Date(); hoy.setHours(0,0,0,0);
             const vd = new Date(p.vencimiento + 'T00:00:00');
             const diff = Math.ceil((vd - hoy) / 86400000);
@@ -5484,7 +5543,7 @@ function showApp() {
             }
             const precioUniMostrar = subtotal / (item.cantidad || 1);
             const linea1 = `${item.cantidad > 1 ? item.cantidad + 'x  ' : ''}${item.nombre}`;
-            const linea2 = item.cantidad > 1 ? `$${Math.round(precioUniMostrar).toLocaleString('es-AR')} c/u` : '';
+            const linea2 = item.cantidad > 1 ? `$${Math.round(precioUniMostrar).toLocaleString(_localeActual)} c/u` : '';
             doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(55,65,81);
             doc.text(linea1, margen, y + 5);
             if (linea2) { doc.setFontSize(8); doc.setTextColor(156,163,175); doc.text(linea2, margen, y + 10); }
@@ -5937,7 +5996,7 @@ function showApp() {
                 return db.ref('solicitudes_registro/' + wa).set({
                     whatsapp:      wa,
                     authEmail:     email,
-                    fecha:         new Date().toLocaleString('es-AR', { hour12: false }),
+                    fecha:         _fmtFechaHora(new Date()),
                     timestamp:     Date.now(),
                     tipoLicencia:  'prueba',
                     fechaExpiracion: expiracion,
@@ -6152,7 +6211,7 @@ function showApp() {
         const label = document.getElementById('mpPrecioLabel');
         if (label) {
             if (precio && precio !== '...') {
-                label.textContent = `AR$ ${Number(precio).toLocaleString('es-AR')}`;
+                label.textContent = `AR$ ${Number(precio).toLocaleString(_localeActual)}`;
             } else {
                 label.textContent = `AR$ ...`;
             }
@@ -6161,7 +6220,7 @@ function showApp() {
         const landingEl = document.getElementById('landing-precio-mp');
         if (landingEl) {
             landingEl.textContent = (precio && precio !== '...')
-                ? Number(precio).toLocaleString('es-AR') : '—';
+                ? Number(precio).toLocaleString(_localeActual) : '—';
         }
     }
 
@@ -6350,6 +6409,13 @@ function showApp() {
         isClientMode = false;
         const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(pathActivo);
+
+        // Cargar locale del perfil silenciosamente al iniciar sesión
+        const _pathPerfilLocale = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
+        db.ref(_pathPerfilLocale).child('pais').once('value', snap => {
+            const pais = snap.val() || 'AR';
+            if (typeof aplicarLocale === 'function') aplicarLocale(pais);
+        });
         
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
@@ -6442,7 +6508,7 @@ function showApp() {
                         const expiracion = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
                         db.ref('usuarios_registrados/' + u).set({
                             whatsapp: u,
-                            fechaAlta: solData.fecha || new Date().toLocaleString('es-AR', { hour12: false }),
+                            fechaAlta: solData.fecha || _fmtFechaHora(new Date()),
                             estado: 'activo',
                             tipoLicencia: 'prueba',
                             fechaExpiracion: expiracion,
@@ -6643,6 +6709,8 @@ function showApp() {
             document.getElementById('confSubtitulo').value = d.subtitulo || "";
             document.getElementById('confWappTicket').value = d.wappTicket || "";
             document.getElementById('confGarantia').value = d.garantia || "";
+            document.getElementById('confPais').value = d.pais || "AR";
+            if (typeof aplicarLocale === 'function') aplicarLocale(d.pais || 'AR');
             
             logoTemporalBase64 = d.logo || null;
             const prev = document.getElementById('logoPreview');
@@ -6685,7 +6753,7 @@ function showApp() {
 
                 // Días restantes y fecha de vencimiento
                 if (exp && !suspendida) {
-                    const fechaStr = new Date(exp).toLocaleDateString('es-AR');
+                    const fechaStr = new Date(exp).toLocaleDateString(_localeActual);
                     if (vencida) {
                         diasBox.innerHTML = '<div style="font-size:12px;color:#dc2626;font-weight:800;">Venció el ' + fechaStr + '</div>';
                     } else {
@@ -6736,9 +6804,10 @@ function showApp() {
         const nSub = document.getElementById('confSubtitulo').value.trim();
         const nWapp = document.getElementById('confWappTicket').value.trim();
         const nGarantia = document.getElementById('confGarantia').value.trim();
+        const nPais = document.getElementById('confPais').value || 'AR';
 
         const path = fbPathPerfil();
-        let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
+        let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia, pais: nPais };
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64;
 
         mostrarLoader("Guardando Perfil...");
@@ -6758,6 +6827,7 @@ function showApp() {
             })
             .then(() => {
                 ocultarLoader();
+                aplicarLocale(nPais);
                 showToast("PERFIL ACTUALIZADO ✅", "#059669");
                 closePassModal();
             })
@@ -7677,7 +7747,7 @@ function showApp() {
         if (diasGarantia > 0) {
             let hoy = new Date();
             hoy.setDate(hoy.getDate() + diasGarantia);
-            updates.vencimientoGarantia = hoy.toLocaleDateString('es-AR');
+            updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
         }
@@ -7802,7 +7872,7 @@ function showApp() {
         }
         const totalACobrar = Math.max(0, precioInput - descMonto);
 
-        const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
+        const fechaActual = _fmtFechaHora(new Date());
         let historialActual = [...(r.historialEstados || [])];
 
         let updates;
@@ -7840,7 +7910,7 @@ function showApp() {
         if (diasGarantia > 0) {
             let hoy = new Date();
             hoy.setDate(hoy.getDate() + diasGarantia);
-            updates.vencimientoGarantia = hoy.toLocaleDateString('es-AR');
+            updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
         }
@@ -7888,7 +7958,7 @@ function showApp() {
         if(!r) return;
         const diasGarantia = getDiasGarantiaActiva();
         
-        const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
+        const fechaActual = _fmtFechaHora(new Date());
         let historialActual = [...(r.historialEstados || [])];
         historialActual.push({ estado: 'Entregado', fecha: fechaActual });
         
@@ -7924,7 +7994,7 @@ function showApp() {
         if (diasGarantia > 0) {
             let hoy = new Date();
             hoy.setDate(hoy.getDate() + diasGarantia);
-            updates.vencimientoGarantia = hoy.toLocaleDateString('es-AR');
+            updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
         }
@@ -8461,7 +8531,7 @@ function showApp() {
 
         }
 
-        const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
+        const fechaActual = _fmtFechaHora(new Date());
         const coloresEstado = { 'Pendiente': '#f59e0b', 'Reparado': '#059669', 'Entregado': '#6b7280', 'No reparado': '#dc2626', 'Garantía': '#1e40af' };
         let historialActual = [...(r.historialEstados || [])];
         historialActual.push({ estado: nuevo, fecha: fechaActual });
@@ -8552,7 +8622,7 @@ function showApp() {
         const r = getRegistro(id);
         if(!r) return;
         idParaPrecio = id;
-        document.getElementById('newPriceInput').value = r.precio.toLocaleString('es-AR');
+        document.getElementById('newPriceInput').value = r.precio.toLocaleString(_localeActual);
         document.getElementById('priceModal').style.display = 'flex';
         setTimeout(() => document.getElementById('newPriceInput').focus(), 100);
     }
@@ -8570,7 +8640,7 @@ function showApp() {
 
         const precioAnterior = parseFloat(r.precio) || 0;
         const historialPrecios = r.historialPrecios || [];
-        historialPrecios.push({ precioAnterior, precioNuevo: nuevo, fecha: new Date().toLocaleString('es-AR', { hour12: false }), usuario: currentUser });
+        historialPrecios.push({ precioAnterior, precioNuevo: nuevo, fecha: _fmtFechaHora(new Date()), usuario: currentUser });
 
         db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo, historialPrecios }).then(() => {
             r.precio = nuevo;
@@ -9045,7 +9115,7 @@ function showApp() {
 
     function formatInput(i) { 
         let v = i.value.replace(/\D/g, ""); 
-        i.value = v ? parseInt(v).toLocaleString('es-AR') : ""; 
+        i.value = v ? parseInt(v).toLocaleString(_localeActual) : ""; 
 
         // Si estamos editando el precio, sincronizar la seña si el check está activo
         if (i.id === 'precio') {
@@ -9569,7 +9639,7 @@ function showApp() {
         if (!r) return;
 
         const motivo = document.getElementById('motivoGarantia').value.trim();
-        const fechaActual = new Date().toLocaleString('es-AR', { hour12: false });
+        const fechaActual = _fmtFechaHora(new Date());
 
         const pathActivo   = fbPathActivo();
         const pathArchivado = fbPathArchivado();
@@ -9897,7 +9967,7 @@ function showApp() {
                 const precioAnterior = parseFloat(r.precio) || 0;
                 if (precioActual !== precioAnterior && precioActual > 0) {
                     const hist = r.historialPrecios ? [...r.historialPrecios] : [];
-                    hist.push({ precioAnterior, precioNuevo: precioActual, fecha: new Date().toLocaleString('es-AR', { hour12: false }), usuario: currentUser });
+                    hist.push({ precioAnterior, precioNuevo: precioActual, fecha: _fmtFechaHora(new Date()), usuario: currentUser });
                     data.historialPrecios = hist;
                 } else {
                     data.historialPrecios = r.historialPrecios || [];
@@ -9922,7 +9992,7 @@ function showApp() {
             data.estado = "Pendiente";
             data.esVentaRapida = false;
             data.archivado = false;
-            data.fecha = new Date().toLocaleString('es-AR', { hour12: false });
+            data.fecha = _fmtFechaHora(new Date());
             data.historialEstados = [{ estado: "Pendiente", fecha: data.fecha }];
         }
 
@@ -10655,8 +10725,8 @@ function showApp() {
         document.getElementById('stockId').value = item.id;
         document.getElementById('stockNombre').value = item.nombre;
         document.getElementById('stockCantidad').value = item.cantidad;
-        document.getElementById('stockCosto').value = item.costo ? fmt.format(item.costo).replace('$ ', '') : "";
-        document.getElementById('stockPrecio').value = item.precioVenta ? fmt.format(item.precioVenta).replace('$ ', '') : "";
+        document.getElementById('stockCosto').value = item.costo ? String(item.costo) : "";
+        document.getElementById('stockPrecio').value = item.precioVenta ? String(item.precioVenta) : "";
         document.getElementById('stockMinimo').value = item.stockMinimo || "";
         document.getElementById('stockCodigo').value = item.codigo || "";
         
@@ -11732,7 +11802,7 @@ function showApp() {
         if (horas < 24) return `hace ${horas}h`;
         if (dias === 1) return 'ayer';
         if (dias < 30)  return `hace ${dias} días`;
-        return new Date(ts).toLocaleDateString('es-AR');
+        return new Date(ts).toLocaleDateString(_localeActual);
     }
     
     function crearLicencia() {
@@ -11755,7 +11825,7 @@ function showApp() {
                 const pathUsuario = 'usuarios_registrados/' + wa;
                 db.ref(pathUsuario).set({
                     whatsapp: wa,
-                    fechaAlta: new Date().toLocaleString('es-AR', { hour12: false }),
+                    fechaAlta: _fmtFechaHora(new Date()),
                     estado: "activo",
                     tipoLicencia: tipoLicencia,
                     fechaExpiracion: expiracion,
@@ -11884,7 +11954,7 @@ function showApp() {
 
                 let venceHtml = '';
                 if (expiracion) {
-                    const fechaExp = new Date(expiracion).toLocaleDateString('es-AR');
+                    const fechaExp = new Date(expiracion).toLocaleDateString(_localeActual);
                     if (estaExpirada) {
                         venceHtml = `<div style="font-size:11px; color:#dc2626; font-weight:700;">Venció el ${fechaExp}</div>`;
                     } else {
@@ -13440,7 +13510,7 @@ function renderListaPresupuestos() {
                     <span style="font-size:13px; color:#6b7280; font-weight:600;">N° ${p.nro || '-'}</span>
                     <span style="margin:0 8px; color:#e2e8f0;">|</span>
                     <span style="font-size:13px; color:#94a3b8;">${p.fecha || ''}</span>
-                    ${(function(){ if(!p.vencimiento) return ''; const hoy = new Date(); hoy.setHours(0,0,0,0); const venc = new Date(p.vencimiento + 'T00:00:00'); const diff = Math.ceil((venc - hoy) / 86400000); if(diff < 0) return '<span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ VENCIDO</span>'; if(diff === 0) return '<span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ VENCE HOY</span>'; if(diff <= 3) return `<span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ Vence en ${diff}d</span>`; return `<span style="font-size:11px; color:#94a3b8; margin-left:6px;">Válido hasta ${venc.toLocaleDateString('es-AR')}</span>`; })()}
+                    ${(function(){ if(!p.vencimiento) return ''; const hoy = new Date(); hoy.setHours(0,0,0,0); const venc = new Date(p.vencimiento + 'T00:00:00'); const diff = Math.ceil((venc - hoy) / 86400000); if(diff < 0) return '<span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ VENCIDO</span>'; if(diff === 0) return '<span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ VENCE HOY</span>'; if(diff <= 3) return `<span style="background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; margin-left:6px;">⏰ Vence en ${diff}d</span>`; return `<span style="font-size:11px; color:#94a3b8; margin-left:6px;">Válido hasta ${venc.toLocaleDateString(_localeActual)}</span>`; })()}
                 </div>
                 <span style="background:${estadoBg}; color:${estadoColor}; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">${p.estado || 'Pendiente'}</span>
             </div>
@@ -13473,7 +13543,7 @@ function abrirFormPresupuesto() {
     const btnGuardarPresReset = document.querySelector('[data-pres-action="guardar"]');
     if (btnGuardarPresReset) btnGuardarPresReset.innerHTML = '💾 GUARDAR PRESUPUESTO';
     document.getElementById('pres-nro').value = '';
-    document.getElementById('pres-fecha').value = new Date().toLocaleDateString('es-AR');
+    document.getElementById('pres-fecha').value = new Date().toLocaleDateString(_localeActual);
     autoNroPresupuesto(); // assign number immediately on open
     document.getElementById('pres-cliente').value = '';
     document.getElementById('pres-tel').value = '';
@@ -13507,7 +13577,7 @@ function cerrarFormPresupuesto() {
         const btnReset = document.querySelector('[data-pres-action="guardar"]');
         if (btnReset) btnReset.innerHTML = '💾 GUARDAR PRESUPUESTO';
         document.getElementById('pres-nro').value = '';
-        document.getElementById('pres-fecha').value = new Date().toLocaleDateString('es-AR');
+        document.getElementById('pres-fecha').value = new Date().toLocaleDateString(_localeActual);
         document.getElementById('pres-cliente').value = '';
         document.getElementById('pres-tel').value = '';
         document.getElementById('pres-equipo').value = 'Smartphone';
@@ -13983,7 +14053,7 @@ function _buildPDFPresupuestoCore(p, conf) {
 
     // ── VÁLIDO HASTA ──
     if (p.vencimiento) {
-        const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR');
+        const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual);
         doc.setLineWidth(0.3); doc.setDrawColor(232, 236, 240);
         doc.line(5, y, 75, y); y += 5;
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
@@ -14070,7 +14140,7 @@ function enviarWappPresupuesto(id) {
                   + (p.descuentoEfectivo ? ' (pago en efectivo)' : '') + ': -' + fmt.format(descMontoPres)
                   + '\n✅ *TOTAL A PAGAR: ' + fmt.format(totalConDesc) + '*'
                 : '\n\n💰 *TOTAL: ' + fmt.format(total) + '*')
-            + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString('es-AR') + '*' : '')
+            + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual) + '*' : '')
             + (p.obs ? '\n\n📌 ' + p.obs : '')
             + '\n\n🔎 *VER Y DESCARGAR PRESUPUESTO PDF AQUÍ:*\n' + presLink;
 
@@ -14938,7 +15008,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
 
     // ── Helpers ─────────────────────────────────────────────────────────────
     function _fmtMonto(n) {
-        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(n || 0);
+        return (window.fmt || new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })).format(n || 0);
     }
 
     function _parseFechaOrden(r) {
@@ -14966,7 +15036,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
     function _fechaStr(r) {
         const d = _parseFechaOrden(r);
         if (!d || isNaN(d)) return r.fechaEntrega || r.fecha || '—';
-        return d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        return d.toLocaleDateString(_localeActual, { day:'2-digit', month:'2-digit', year:'numeric' });
     }
 
     function _totalOrden(r) {
