@@ -11338,7 +11338,10 @@ function showApp() {
             let coincideSaldo = false;
             let estadoEntregado = null;
             // Incluir órdenes con saldo cobrado O entregadas sin cobrar
-            if (!r.esVentaRapida && r.historialEstados && (r.saldoCobrado > 0 || r.entregadoSinCobrar)) {
+            // También incluir órdenes archivadas con descuento 100% (saldoCobrado=0 pero tienen Entregado en historial y precio>0)
+            const tieneEntregadoEnHistorial = r.historialEstados && r.historialEstados.some(h => h.estado === 'Entregado');
+            const esDescuentoTotal = r.archivado && !r.entregadoSinCobrar && tieneEntregadoEnHistorial && (parseFloat(r.precio) || 0) > 0 && (parseFloat(r.saldoCobrado) || 0) === 0 && (parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0) === 0;
+            if (!r.esVentaRapida && r.historialEstados && (r.saldoCobrado > 0 || r.entregadoSinCobrar || esDescuentoTotal)) {
                 // CORRECCIÓN CONTABILIDAD: Usamos el PRIMER 'Entregado' para que las garantías no muevan el ingreso de mes
                 estadoEntregado = r.historialEstados.find(e => e.estado === 'Entregado');
                 if (estadoEntregado) {
@@ -11422,6 +11425,12 @@ function showApp() {
                         mov.deudaPendiente = deuda > 0 ? deuda : 0;
                         mov.fechaRaw = estadoEntregado.fecha;
                         mov.desc.add('⚠️ Deuda Pendiente');
+                    } else if (esDescuentoTotal) {
+                        // Cobrado con descuento 100%: ingreso $0, se muestra como Descuento Total
+                        mov.fechaRaw = estadoEntregado.fecha;
+                        mov.desc.add('🏷️ Descuento Total (100%)');
+                        if (r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
+                        else if (r.metodoPagoSena && r.metodoPagoSena !== '-') mov.metodo.add(r.metodoPagoSena);
                     }
                 }
             }
