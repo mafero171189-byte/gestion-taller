@@ -6613,20 +6613,22 @@ function showApp() {
                     // Escuchamos un timestamp liviano (~8 bytes). Cuando cambia
                     // desde otro dispositivo, bajamos las órdenes actualizadas.
                     const _syncPath = fbPathSync();
-                    let _syncTsLocal = Date.now();
                     // Desregistrar listener anterior si iniciarListener() se llama de nuevo
                     if (window._syncTsRef) { try { window._syncTsRef.off('value', window._syncTsHandler); } catch(e){} }
                     window._syncTsRef = db.ref(_syncPath);
+                    let _syncPrimerDisparo = true;
+                    let _syncTsUltimo = null;
                     window._syncTsHandler = tsSnap => {
                         const tsRemoto = tsSnap.val();
-                        if (!tsRemoto) return;
-                        // Ignoramos el primer disparo (valor actual) y cambios propios
-                        if (tsRemoto <= _syncTsLocal + 1500) {
-                            _syncTsLocal = Math.max(_syncTsLocal, tsRemoto);
+                        if (_syncPrimerDisparo) {
+                            // Primer disparo: solo memorizamos el valor actual, sin refrescar
+                            _syncPrimerDisparo = false;
+                            _syncTsUltimo = tsRemoto;
                             return;
                         }
-                        _syncTsLocal = tsRemoto;
-                        // Otro dispositivo modificó órdenes → refrescamos silenciosamente
+                        if (!tsRemoto || tsRemoto === _syncTsUltimo) return;
+                        // El valor cambió → otro dispositivo hizo algo
+                        _syncTsUltimo = tsRemoto;
                         dbRef.once('value').then(freshSnap => {
                             const fv = freshSnap.val();
                             registros = fv ? Object.keys(fv).map(k => ({id:k, ...fv[k]})) : [];
