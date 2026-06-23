@@ -9217,7 +9217,7 @@ function showApp() {
     let _clienteACTimer;
     let _indiceClientesCache = null; // { "nombre lower": "tel", ... }
     const _INDICE_CACHE_KEY = 'mtw_indice_clientes_v1';
-    const _INDICE_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+    const _INDICE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 días
 
     function _buildMapaMemoria() {
         const mapa = new Map();
@@ -9345,6 +9345,7 @@ function showApp() {
     function _invalidarCacheIndiceClientes() {
         _indiceClientesCache = null;
         try { localStorage.removeItem(_INDICE_CACHE_KEY); } catch(e) {}
+        try { localStorage.removeItem('mtw_indice_full_v1'); } catch(e) {}
     }
 
     function revelarCosto() { 
@@ -12623,52 +12624,120 @@ function showApp() {
         document.getElementById('hcTel').innerHTML = `<span>📱 ${tel || 'Sin teléfono'}</span>${waBtn}<button onclick="nuevaOrdenDesdeHistorial()" title="Nueva orden para este cliente" style="background:var(--danger);border:none;border-radius:50%;width:28px;height:28px;font-size:18px;cursor:pointer;color:white;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-weight:700;flex-shrink:0;">+</button>`;
         
         const body = document.getElementById('hcBody');
-        body.innerHTML = '';
-        
-        let todasLasOrdenes = [...registros, ...registrosArchivados];
-        let filtradas = todasLasOrdenes.filter(r => (r.cliente === nombre || r.tel === tel) && !r.esVentaRapida);
-        
-        if(filtradas.length === 0) {
-            body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#9ca3af;">No hay historial para este cliente.</td></tr>`;
-            document.getElementById('hcTotalDiv').innerText = '';
-            document.getElementById('modalHistorialCliente').style.display = 'flex';
-            return;
-        }
-        
-        filtradas.sort((a,b) => {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">⏳ Cargando...</td></tr>';
+        document.getElementById('modalHistorialCliente').style.display = 'flex';
+
+        function _renderHistorial(ordenes) {
             const parseD = (str) => {
-                if(!str) return 0;
+                if (!str) return 0;
                 let p = str.split(',');
-                if(!p[0]) return 0;
+                if (!p[0]) return 0;
                 let f = p[0].trim().split('/');
-                if(f.length !== 3) return 0;
+                if (f.length !== 3) return 0;
                 return new Date(f[2], f[1]-1, f[0]).getTime();
             };
-            return parseD(b.fecha) - parseD(a.fecha);
-        });
-        
-        let totalInvertido = 0;
-        
-        filtradas.forEach(r => {
-            let precio = parseFloat(r.precio) || 0;
-            totalInvertido += precio;
-            let badgeStatus = `<span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')}">${r.estado}</span>`;
-            
-            let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+            ordenes.sort((a, b) => parseD(b.fecha) - parseD(a.fecha));
+            body.innerHTML = '';
+            if (ordenes.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#9ca3af;">No hay historial para este cliente.</td></tr>`;
+                document.getElementById('hcTotalDiv').innerText = '';
+                return;
+            }
+            let totalInvertido = 0;
+            ordenes.forEach(r => {
+                let precio = parseFloat(r.precio) || 0;
+                totalInvertido += precio;
+                let badgeStatus = `<span class="badge-status st-${(r.estado || 'Pendiente').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-')}">${r.estado}</span>`;
+                let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
+                body.innerHTML += `
+                    <tr>
+                        <td style="font-size:12px;">${r.fecha ? r.fecha.split(',')[0] : '-'}</td>
+                        <td><b>${escaparHTML(equipoCompleto)}</b></td>
+                        <td style="font-size:12px;">${escaparHTML(r.falla || '-')}</td>
+                        <td>${badgeStatus}</td>
+                        <td style="font-weight:bold;">${fmt.format(precio)}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('hcTotalDiv').innerText = `💰 Inversión Total: ${fmt.format(totalInvertido)}`;
+        }
 
-            body.innerHTML += `
-                <tr>
-                    <td style="font-size:12px;">${r.fecha ? r.fecha.split(',')[0] : '-'}</td>
-                    <td><b>${escaparHTML(equipoCompleto)}</b></td>
-                    <td style="font-size:12px;">${escaparHTML(r.falla || '-')}</td>
-                    <td>${badgeStatus}</td>
-                    <td style="font-weight:bold;">${fmt.format(precio)}</td>
-                </tr>
-            `;
-        });
-        
-        document.getElementById('hcTotalDiv').innerText = `💰 Inversión Total: ${fmt.format(totalInvertido)}`;
-        document.getElementById('modalHistorialCliente').style.display = 'flex';
+        // Órdenes ya en memoria (activas + archivadas cargadas)
+        const nombreLower = nombre.toLowerCase();
+        const telLimpio2  = String(tel || '').replace(/\D/g, '');
+        const enMemoria = [...registros, ...registrosArchivados].filter(r =>
+            !r.esVentaRapida &&
+            ((r.cliente || '').toLowerCase() === nombreLower ||
+             (telLimpio2 && String(r.tel || '').replace(/\D/g, '') === telLimpio2))
+        );
+        const idsEnMemoria = new Set(enMemoria.map(r => r.id));
+
+        // Buscar en índice los IDs archivados de este cliente que NO están en memoria.
+        // Reutiliza el cache del índice del autocomplete (localStorage 7 días),
+        // así en sesiones posteriores es 0 lecturas Firebase.
+        function _procesarIndice(indice) {
+            const idsFaltantes = Object.keys(indice).filter(id => {
+                if (idsEnMemoria.has(id)) return false;
+                const e = indice[id];
+                if (!e.archivado) return false;
+                return (e.cliente === nombreLower) ||
+                       (telLimpio2 && e.tel === telLimpio2);
+            });
+
+            if (idsFaltantes.length === 0) {
+                _renderHistorial(enMemoria);
+                return;
+            }
+
+            // Bajar solo las órdenes faltantes (no toda la colección)
+            const pathArchivado = fbPathArchivado();
+            Promise.all(idsFaltantes.map(id =>
+                db.ref(pathArchivado).child(id).once('value').then(s => s.val() ? { id, ...s.val() } : null)
+            )).then(resultados => {
+                const bajadas = resultados.filter(Boolean);
+                bajadas.forEach(r => {
+                    if (!registrosArchivados.find(x => x.id === r.id)) registrosArchivados.push(r);
+                });
+                _renderHistorial([...enMemoria, ...bajadas]);
+            }).catch(() => _renderHistorial(enMemoria));
+        }
+
+        // Intentar cache local primero
+        let indiceCache = _indiceClientesCache;
+        if (!indiceCache) {
+            try {
+                const raw = localStorage.getItem(_INDICE_CACHE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Date.now() - parsed.ts < _INDICE_CACHE_TTL) {
+                        // Convertir formato cache {nombreLower: tel} a formato índice {id: {cliente, tel, archivado}}
+                        // El cache de clientes no tiene IDs — necesitamos el índice completo
+                        indiceCache = null; // formato diferente, no sirve directo
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Cache del índice completo (separado del cache de clientes)
+        const _IDX_FULL_KEY = 'mtw_indice_full_v1';
+        let indiceFull = null;
+        try {
+            const rawFull = localStorage.getItem(_IDX_FULL_KEY);
+            if (rawFull) {
+                const parsed = JSON.parse(rawFull);
+                if (Date.now() - parsed.ts < _INDICE_CACHE_TTL) indiceFull = parsed.data;
+            }
+        } catch(e) {}
+
+        if (indiceFull) {
+            _procesarIndice(indiceFull);
+        } else {
+            db.ref(fbPathIndice()).once('value').then(snapIdx => {
+                const indice = snapIdx.val() || {};
+                try { localStorage.setItem(_IDX_FULL_KEY, JSON.stringify({ ts: Date.now(), data: indice })); } catch(e) {}
+                _procesarIndice(indice);
+            }).catch(() => _renderHistorial(enMemoria));
+        }
     }
 
     // ====== MANTENIMIENTO: LIMPIEZA DE FOTOS ======
