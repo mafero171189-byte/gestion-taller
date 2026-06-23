@@ -3342,7 +3342,11 @@ function showApp() {
           <label>N° Orden</label><input type="text" id="nroOrden" readonly>
          </div>
          <div>
-          <label>Cliente</label><input type="text" id="cliente" required oninput="autoOrden(); saveDraft()">
+          <label>Cliente</label>
+          <div style="position:relative;">
+           <input type="text" id="cliente" required oninput="autoOrden(); saveDraft(); showClienteAutocomplete(this.value)" onblur="hideClienteAutocomplete()" autocomplete="off">
+           <div id="autocomplete-cliente" class="autocomplete-list" style="width:100%;"></div>
+          </div>
          </div>
          <div class="full">
           <label>WhatsApp</label><input type="text" id="tel" required placeholder="549..." oninput="saveDraft()" inputmode="tel">
@@ -9206,6 +9210,143 @@ function showApp() {
         }, 600);
     }
 
+    // ====== AUTOCOMPLETE DE CLIENTE ======
+    // Estrategia: memoria primero → si hay pocos resultados, complementa con
+    // índice Firebase (keys: cliente/tel en lowercase, ~KB). El índice se
+    // cachea en localStorage 24h para no releer en cada sesión.
+    let _clienteACTimer;
+    let _indiceClientesCache = null; // { "nombre lower": "tel", ... }
+    const _INDICE_CACHE_KEY = 'mtw_indice_clientes_v1';
+    const _INDICE_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+    function _buildMapaMemoria() {
+        const mapa = new Map();
+        [...registros, ...registrosArchivados].forEach(function(r) {
+            if (!r.cliente || r.esVentaRapida) return;
+            const key = r.cliente.toLowerCase();
+            if (!mapa.has(key)) mapa.set(key, { nombre: r.cliente, tel: r.tel || '' });
+        });
+        return mapa;
+    }
+
+    function _renderClienteAC(coincidencias, q) {
+        const listDiv = document.getElementById('autocomplete-cliente');
+        if (!listDiv) return;
+        if (coincidencias.length === 0) { listDiv.style.display = 'none'; return; }
+        listDiv.innerHTML = '';
+        coincidencias.slice(0, 8).forEach(function(c) {
+            const div = document.createElement('div');
+            const idx = c.nombre.toLowerCase().indexOf(q);
+            const antes   = escaparHTML(c.nombre.slice(0, idx));
+            const match   = escaparHTML(c.nombre.slice(idx, idx + q.length));
+            const despues = escaparHTML(c.nombre.slice(idx + q.length));
+            div.innerHTML = `${antes}<b style="color:var(--secondary)">${match}</b>${despues}` +
+                (c.tel ? `<span style="font-size:11px;color:#9ca3af;margin-left:8px;">📱${c.tel}</span>` : '');
+            div.onmousedown = function(e) {
+                e.preventDefault();
+                document.getElementById('cliente').value = c.nombre;
+                const campoTel = document.getElementById('tel');
+                if (campoTel && c.tel && !campoTel.value) campoTel.value = c.tel;
+                listDiv.style.display = 'none';
+                autoOrden(); saveDraft();
+            };
+            listDiv.appendChild(div);
+        });
+        listDiv.style.display = 'block';
+    }
+
+    function _buscarEnIndice(q, mapaMemoria) {
+        // Primero intentar cache local
+        let indice = _indiceClientesCache;
+        if (!indice) {
+            try {
+                const raw = localStorage.getItem(_INDICE_CACHE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Date.now() - parsed.ts < _INDICE_CACHE_TTL) {
+                        indice = parsed.data;
+                        _indiceClientesCache = indice;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        if (indice) {
+            _aplicarIndice(q, mapaMemoria, indice);
+        } else {
+            // Una sola lectura Firebase del índice, luego cachear
+            db.ref(fbPathIndice()).once('value').then(function(snap) {
+                const raw = snap.val() || {};
+                // Construir mapa nombre→tel (solo clientes no vacios)
+                const data = {};
+                Object.values(raw).forEach(function(e) {
+                    if (e.cliente) data[e.cliente] = e.tel || '';
+                });
+                _indiceClientesCache = data;
+                try {
+                    localStorage.setItem(_INDICE_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+                } catch(e) {}
+                _aplicarIndice(q, mapaMemoria, data);
+            }).catch(function() {});
+        }
+    }
+
+    function _aplicarIndice(q, mapaMemoria, indice) {
+        // Combinar índice con lo que ya está en memoria (sin duplicar)
+        Object.keys(indice).forEach(function(nombreLower) {
+            if (!mapaMemoria.has(nombreLower)) {
+                // Capitalizar primera letra de cada palabra para mostrar bonito
+                const nombreDisplay = nombreLower.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                mapaMemoria.set(nombreLower, { nombre: nombreDisplay, tel: indice[nombreLower] });
+            }
+        });
+        const coincidencias = [];
+        mapaMemoria.forEach(function(v) {
+            if (v.nombre.toLowerCase().includes(q)) coincidencias.push(v);
+        });
+        coincidencias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+        _renderClienteAC(coincidencias, q);
+    }
+
+    function showClienteAutocomplete(query) {
+        const listDiv = document.getElementById('autocomplete-cliente');
+        if (!listDiv) return;
+        const q = (query || '').trim().toLowerCase();
+        if (q.length < 2) { listDiv.style.display = 'none'; return; }
+
+        clearTimeout(_clienteACTimer);
+        _clienteACTimer = setTimeout(function() {
+            const mapaMemoria = _buildMapaMemoria();
+            // Buscar coincidencias en memoria primero
+            const coincidencias = [];
+            mapaMemoria.forEach(function(v) {
+                if (v.nombre.toLowerCase().includes(q)) coincidencias.push(v);
+            });
+            coincidencias.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+
+            if (coincidencias.length >= 3) {
+                // Suficientes resultados en memoria, mostrar sin tocar Firebase
+                _renderClienteAC(coincidencias, q);
+            } else {
+                // Pocos o ningún resultado → complementar con índice (cacheado)
+                _buscarEnIndice(q, mapaMemoria);
+            }
+        }, 200);
+    }
+
+    function hideClienteAutocomplete() {
+        setTimeout(function() {
+            const listDiv = document.getElementById('autocomplete-cliente');
+            if (listDiv) listDiv.style.display = 'none';
+        }, 150);
+    }
+
+    // Invalidar cache del índice cuando se archiva/registra una orden nueva
+    function _invalidarCacheIndiceClientes() {
+        _indiceClientesCache = null;
+        try { localStorage.removeItem(_INDICE_CACHE_KEY); } catch(e) {}
+    }
+
     function revelarCosto() { 
         let c = document.getElementById('costo-inner');
         let input = document.getElementById('costoRepuesto');
@@ -10207,7 +10348,10 @@ function showApp() {
                 }
             });
             if (Object.keys(batch).length > 0) {
-                db.ref(pathIndice).update(batch).catch(() => {});
+                db.ref(pathIndice).update(batch).then(function() {
+                    // El índice cambió → invalidar cache de autocomplete de clientes
+                    _invalidarCacheIndiceClientes();
+                }).catch(() => {});
             }
         }).catch(() => {});
     }
@@ -12441,8 +12585,29 @@ function showApp() {
     }
 
     // ====== HISTORIAL DE CLIENTE (VISTA RÁPIDA) ======
+    let _hcClienteActivo = { nombre: '', tel: '' };
+
+    function nuevaOrdenDesdeHistorial() {
+        document.getElementById('modalHistorialCliente').style.display = 'none';
+        showPage('gestion');
+        clickLimpiar(true);
+        setTimeout(function() {
+            const campoCliente = document.getElementById('cliente');
+            const campoTel = document.getElementById('tel');
+            if (campoCliente) {
+                campoCliente.value = _hcClienteActivo.nombre;
+                campoCliente.dispatchEvent(new Event('input'));
+            }
+            if (campoTel && _hcClienteActivo.tel) {
+                campoTel.value = _hcClienteActivo.tel;
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 80);
+    }
+
     function abrirHistorialCliente(nombre, tel) {
         if(isClientMode) return;
+        _hcClienteActivo = { nombre: nombre || '', tel: tel || '' };
         
         document.getElementById('hcNombre').innerText = nombre;
         
@@ -12455,7 +12620,7 @@ function showApp() {
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             WhatsApp</a>` : '';
         
-        document.getElementById('hcTel').innerHTML = `<span>📱 ${tel || 'Sin teléfono'}</span>${waBtn}`;
+        document.getElementById('hcTel').innerHTML = `<span>📱 ${tel || 'Sin teléfono'}</span>${waBtn}<button onclick="nuevaOrdenDesdeHistorial()" title="Nueva orden para este cliente" style="background:var(--danger);border:none;border-radius:50%;width:28px;height:28px;font-size:18px;cursor:pointer;color:white;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-weight:700;flex-shrink:0;">+</button>`;
         
         const body = document.getElementById('hcBody');
         body.innerHTML = '';
