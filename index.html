@@ -4448,25 +4448,11 @@ function showApp() {
     function fbPathStock()     { return isUserAdmin ? 'stock'                   : 'stock_usuarios/' + currentUser; }
     function fbPathIndice()    { return isUserAdmin ? 'indices/admin'           : 'indices/' + currentUser; }
     function fbPathPerfil()    { return isUserAdmin ? 'configuracion/admin'     : 'usuarios_registrados/' + currentUser; }
-    function fbPathSync()      { return isUserAdmin ? 'sync_ts/admin'           : 'sync_ts/' + currentUser; }
     window.fbPathActivo = fbPathActivo;
     window.fbPathArchivado = fbPathArchivado;
     window.fbPathStock = fbPathStock;
     window.fbPathIndice = fbPathIndice;
     window.fbPathPerfil = fbPathPerfil;
-    window.fbPathSync = fbPathSync;
-
-    // Escribe un timestamp en Firebase para notificar cambios a otros dispositivos.
-    // Costo: 1 escritura de ~8 bytes por operación de guardado.
-    let _syncTsDebounceTimer = null;
-    function _tocarSyncTs() {
-        clearTimeout(_syncTsDebounceTimer);
-        _syncTsDebounceTimer = setTimeout(() => {
-            if (!currentUser) return;
-            db.ref(fbPathSync()).set(Date.now()).catch(() => {});
-        }, 300);
-    }
-    window._tocarSyncTs = _tocarSyncTs;
     // ─────────────────────────────────────────────────────────────────────────
 
     let registros = [];
@@ -6608,32 +6594,6 @@ function showApp() {
                     actualizarListasAutocompletado();
                     // Mostrar onboarding si es usuario nuevo
                     setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 600);
-
-                    // ── SINCRONIZACIÓN ENTRE DISPOSITIVOS ──────────────────
-                    // Escuchamos un timestamp liviano (~8 bytes). Cuando cambia
-                    // desde otro dispositivo, bajamos las órdenes actualizadas.
-                    const _syncPath = fbPathSync();
-                    let _syncTsLocal = Date.now();
-                    db.ref(_syncPath).on('value', tsSnap => {
-                        const tsRemoto = tsSnap.val();
-                        if (!tsRemoto) return;
-                        // Ignoramos el primer disparo (valor actual) y cambios propios
-                        if (tsRemoto <= _syncTsLocal + 1500) {
-                            _syncTsLocal = Math.max(_syncTsLocal, tsRemoto);
-                            return;
-                        }
-                        _syncTsLocal = tsRemoto;
-                        // Otro dispositivo modificó órdenes → refrescamos silenciosamente
-                        dbRef.once('value').then(freshSnap => {
-                            const fv = freshSnap.val();
-                            registros = fv ? Object.keys(fv).map(k => ({id:k, ...fv[k]})) : [];
-                            localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
-                            renderTable();
-                            actualizarListasAutocompletado();
-                            showToast('🔄 Órdenes actualizadas desde otro dispositivo', '#0ea5e9');
-                        }).catch(() => {});
-                    });
-                    // ───────────────────────────────────────────────────────
                     
                 } catch (error) {
                     showToast("Error interno al cargar la tabla", "#dc2626");
@@ -8621,7 +8581,6 @@ function showApp() {
                 renderTable();
                 document.getElementById('statusModal').style.display = 'none';
                 showToast(`REINGRESO A GARANTÍA 🔄`, "#1e4d8c");
-                _tocarSyncTs();
             }).catch(err => {
                 showToast(mensajeFirebaseAmigable(err), '#dc2626');
             });
@@ -8656,7 +8615,6 @@ function showApp() {
                 renderTable();
 
                 document.getElementById('statusModal').style.display = 'none';
-                _tocarSyncTs();
 
             }).catch(err => {
                 clearTimeout(loaderTimeout);
@@ -8668,7 +8626,6 @@ function showApp() {
                 Object.assign(r, updates);
                 renderTable();
                 document.getElementById('statusModal').style.display = 'none';
-                _tocarSyncTs();
             }).catch(err => {
                 showToast(mensajeFirebaseAmigable(err), '#dc2626');
             });
@@ -8709,7 +8666,6 @@ function showApp() {
             if (r.archivado && document.getElementById("page-contabilidad").style.display === "block") {
                 cargarDatosContabilidad();
             }
-            _tocarSyncTs();
         }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
     };
 
@@ -9797,7 +9753,6 @@ function showApp() {
                 registrosArchivados = registrosArchivados.filter(x => x.id !== id); 
                 registros.push({id: id, ...copia});
                 renderTable();
-                _tocarSyncTs();
             }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
         } else {
             r.archivado = true;
@@ -9808,7 +9763,6 @@ function showApp() {
                 registros = registros.filter(x => x.id !== id);
                 if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
                 renderTable();
-                _tocarSyncTs();
             }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
         }
     }
@@ -9994,8 +9948,7 @@ function showApp() {
         if (modoHistorialEnVentas) renderHistorialEnVentas(registrosArchivados);
         
         closeDeleteModal(); 
-        showToast("BORRADO DEFINITIVO ❌", "#dc2626");
-        _tocarSyncTs(); // Notificar a otros dispositivos
+        showToast("BORRADO DEFINITIVO ❌", "#dc2626"); 
     };
 
     function clickLimpiar(skipToast = false) {
@@ -10294,7 +10247,6 @@ function showApp() {
             if (typeof actualizarOnboarding === "function") actualizarOnboarding();
             renderTable();
             cargarDatosContabilidad();
-            _tocarSyncTs(); // Notificar a otros dispositivos
         }
 
         if (fotosTemporales.length === 0) {
