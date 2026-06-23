@@ -6609,36 +6609,54 @@ function showApp() {
                     // Mostrar onboarding si es usuario nuevo
                     setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 600);
 
-                    // ── SINCRONIZACIÓN ENTRE DISPOSITIVOS ──────────────────
-                    // Escuchamos un timestamp liviano (~8 bytes). Cuando cambia
-                    // desde otro dispositivo, bajamos las órdenes actualizadas.
-                    const _syncPath = fbPathSync();
-                    // Desregistrar listener anterior si iniciarListener() se llama de nuevo
-                    if (window._syncTsRef) { try { window._syncTsRef.off('value', window._syncTsHandler); } catch(e){} }
-                    window._syncTsRef = db.ref(_syncPath);
-                    let _syncPrimerDisparo = true;
-                    let _syncTsUltimo = null;
-                    window._syncTsHandler = tsSnap => {
-                        const tsRemoto = tsSnap.val();
-                        if (_syncPrimerDisparo) {
-                            // Primer disparo: solo memorizamos el valor actual, sin refrescar
-                            _syncPrimerDisparo = false;
-                            _syncTsUltimo = tsRemoto;
-                            return;
+                    // ── SINCRONIZACIÓN EN TIEMPO REAL ───────────────────────
+                    // Escuchamos child_added y child_changed directamente sobre
+                    // el nodo de órdenes. Firebase solo dispara estos eventos
+                    // cuando hay un cambio real, no baja todo el árbol cada vez.
+                    // child_added se dispara al inicio para cada hijo existente,
+                    // por eso usamos _syncListo para ignorar esa ráfaga inicial.
+                    if (window._syncListeners) {
+                        try { window._syncListeners.forEach(fn => fn()); } catch(e) {}
+                    }
+                    window._syncListeners = [];
+                    let _syncListo = false;
+                    setTimeout(() => { _syncListo = true; }, 2000);
+
+                    const onCambio = childSnap => {
+                        if (!_syncListo) return;
+                        const id = childSnap.key;
+                        const data = childSnap.val();
+                        if (!data) return;
+                        const idx = registros.findIndex(r => r.id === id);
+                        if (idx !== -1) {
+                            registros[idx] = { id, ...data };
+                        } else {
+                            registros.push({ id, ...data });
                         }
-                        if (!tsRemoto || tsRemoto === _syncTsUltimo) return;
-                        // El valor cambió → otro dispositivo hizo algo
-                        _syncTsUltimo = tsRemoto;
-                        dbRef.once('value').then(freshSnap => {
-                            const fv = freshSnap.val();
-                            registros = fv ? Object.keys(fv).map(k => ({id:k, ...fv[k]})) : [];
-                            localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
-                            renderTable();
-                            actualizarListasAutocompletado();
-                            showToast('🔄 Órdenes actualizadas desde otro dispositivo', '#0ea5e9');
-                        }).catch(() => {});
+                        localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
+                        renderTable();
+                        actualizarListasAutocompletado();
+                        showToast('🔄 Órdenes actualizadas', '#0ea5e9');
                     };
-                    window._syncTsRef.on('value', window._syncTsHandler);
+
+                    const onRemovido = childSnap => {
+                        if (!_syncListo) return;
+                        registros = registros.filter(r => r.id !== childSnap.key);
+                        localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
+                        renderTable();
+                        actualizarListasAutocompletado();
+                    };
+
+                    dbRef.on('child_added',   onCambio);
+                    dbRef.on('child_changed', onCambio);
+                    dbRef.on('child_removed', onRemovido);
+
+                    // Guardar funciones para poder desregistrar si se llama de nuevo
+                    window._syncListeners = [
+                        () => dbRef.off('child_added',   onCambio),
+                        () => dbRef.off('child_changed', onCambio),
+                        () => dbRef.off('child_removed', onRemovido)
+                    ];
                     // ───────────────────────────────────────────────────────
                     
                 } catch (error) {
