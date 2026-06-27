@@ -6692,6 +6692,32 @@ function showApp() {
             iniciarListener();
         }
 
+        // ── RE-SYNC AL VOLVER A LA PESTAÑA ───────────────────────────────
+        // En la PC, cuando la pestaña queda en segundo plano (mientras usás
+        // el celular), el navegador estrangula la pestaña y Firebase suspende
+        // el socket de tiempo real, por lo que las órdenes pueden quedar
+        // desactualizadas varios minutos. Al volver el foco, re-pedimos los
+        // datos con un .once('value') para refrescar al instante.
+        // Se registra una sola vez aunque grantAccess se llame de nuevo.
+        if (!window._resyncFocoListo) {
+            window._resyncFocoListo = true;
+            let _ultimoResync = 0;
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'visible') return;
+                if (!currentUser || !dbRef) return;
+                if (Date.now() - _ultimoResync < 3000) return; // anti-rebote
+                _ultimoResync = Date.now();
+                dbRef.once('value', snap => {
+                    const v = snap.val();
+                    registros = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
+                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
+                    renderTable();
+                    actualizarListasAutocompletado();
+                });
+            });
+        }
+        // ─────────────────────────────────────────────────────────────────
+
         // CORRECCIÓN: Desconectamos el Stock del "tiempo real" global
         window.cargarStockData = () => {
             const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
