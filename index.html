@@ -6692,18 +6692,20 @@ function showApp() {
             iniciarListener();
         }
 
-        // ── RE-SYNC AL VOLVER A LA PESTAÑA ───────────────────────────────
-        // En la PC, cuando la pestaña queda en segundo plano (mientras usás
+        // ── RE-SYNC AL VOLVER A LA PESTAÑA / VENTANA ─────────────────────
+        // En la PC, cuando dejás la ventana en segundo plano (mientras usás
         // el celular), el navegador estrangula la pestaña y Firebase suspende
         // el socket de tiempo real, por lo que las órdenes pueden quedar
-        // desactualizadas varios minutos. Al volver el foco, re-pedimos los
-        // datos con un .once('value') para refrescar al instante.
+        // desactualizadas varios minutos. Re-pedimos los datos con un
+        // .once('value') ante varios eventos para refrescar al instante:
+        //   - visibilitychange: al cambiar de pestaña / minimizar y volver
+        //   - focus (window):   al volver a clickear la ventana del navegador
+        //   - online:           al recuperar la conexión
         // Se registra una sola vez aunque grantAccess se llame de nuevo.
         if (!window._resyncFocoListo) {
             window._resyncFocoListo = true;
             let _ultimoResync = 0;
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState !== 'visible') return;
+            const _resyncOrdenes = () => {
                 if (!currentUser || !dbRef) return;
                 if (Date.now() - _ultimoResync < 3000) return; // anti-rebote
                 _ultimoResync = Date.now();
@@ -6714,7 +6716,12 @@ function showApp() {
                     renderTable();
                     actualizarListasAutocompletado();
                 });
+            };
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') _resyncOrdenes();
             });
+            window.addEventListener('focus', _resyncOrdenes);
+            window.addEventListener('online', _resyncOrdenes);
         }
         // ─────────────────────────────────────────────────────────────────
 
