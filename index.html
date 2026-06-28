@@ -6638,6 +6638,11 @@ function showApp() {
                             if (searchInput) {
                                 searchInput.value = reg.orden || _pAbrir;
                                 renderTable();
+                                // Scroll a la orden filtrada
+                                setTimeout(() => {
+                                    const firstRow = document.querySelector('#tableBody tr');
+                                    if (firstRow) firstRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }, 150);
                             }
                         } catch(e) {}
                     } else if (_intentos++ < 12) {
