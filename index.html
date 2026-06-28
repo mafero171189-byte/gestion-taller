@@ -2242,10 +2242,10 @@ function showApp() {
       </div>
       <div class="feature-card reveal">
        <div class="feature-icon">📄</div>
-       <div class="feature-title">Tickets e Impresión PDF</div>
-       <div class="feature-desc">Generá tickets de ingreso y comprobantes en PDF con el logo y datos de tu taller, listos para imprimir o compartir por WhatsApp.</div>
+       <div class="feature-title">Tickets PDF con QR</div>
+       <div class="feature-desc">Generá tickets profesionales con logo, precios y un <b>código QR</b> para que el cliente rastree su reparación en tiempo real. Compartilo directo por WhatsApp en un toque.</div>
        <div class="feature-tags">
-        <span class="tag">Logo personalizado</span><span class="tag">PDF descargable</span>
+        <span class="tag">Logo personalizado</span><span class="tag">QR de seguimiento</span><span class="tag">Compartir por WhatsApp</span>
        </div>
       </div>
       <div class="feature-card reveal reveal-d1">
@@ -2273,11 +2273,19 @@ function showApp() {
        </div>
       </div>
       <div class="feature-card reveal">
-       <div class="feature-icon">🔍</div>
-       <div class="feature-title">Escáner de Código de Barras</div>
-       <div class="feature-desc">Escaneá productos del stock con la cámara del celular, un lector USB o ingreso manual. Ideal para agilizar ventas y control de inventario sin tipear.</div>
+       <div class="feature-icon">🏷️</div>
+       <div class="feature-title">Etiquetas QR por Orden</div>
+       <div class="feature-desc">Imprimí una etiqueta con QR para pegar en el equipo del estante. Al escanearla con tu celular, la orden aparece filtrada al instante lista para editar o cambiar estado. Sin buscar.</div>
        <div class="feature-tags">
-        <span class="tag">Cámara del celular</span><span class="tag">Lector USB</span><span class="tag">Linterna integrada</span>
+        <span class="tag">QR del taller</span><span class="tag">Filtro instantáneo</span><span class="tag">80mm térmico</span>
+       </div>
+      </div>
+      <div class="feature-card reveal reveal-d1">
+       <div class="feature-icon">📡</div>
+       <div class="feature-title">Funciona Sin Internet</div>
+       <div class="feature-desc">Si se corta el wifi seguís trabajando: registrás y editás órdenes normalmente. Los cambios se sincronizan solos cuando vuelve la conexión. Un indicador te avisa el estado en todo momento.</div>
+       <div class="feature-tags">
+        <span class="tag">Modo offline</span><span class="tag">Sync automático</span><span class="tag">Sin perder datos</span>
        </div>
       </div>
      </div>
@@ -4009,7 +4017,8 @@ function showApp() {
         </ul>
         <b>C. Acciones por Orden</b>
         <ul>
-         <li><b>📄 PDF / Ticket:</b> Genera un recibo profesional con logo, datos del equipo, precios y términos y condiciones.</li>
+         <li><b>📄 PDF / Ticket:</b> Genera un recibo profesional con logo, datos del equipo, precios, términos y condiciones y un <b>código QR al pie</b> para que el cliente escanee y vea el estado de su reparación en tiempo real. Podés verlo, imprimirlo o compartirlo por WhatsApp directamente desde el botón.</li>
+         <li><b>🏷️ Etiqueta QR:</b> Genera una etiqueta para pegar en el equipo físico en el estante. Al escanearla con tu celu, el sistema filtra automáticamente esa orden para que puedas cambiar el estado, editar o consultar sin tener que buscarla a mano.</li>
          <li><b>💬 WhatsApp:</b> Abre un mensaje prediseñado con el estado actual y un link para que el cliente vea su seguimiento online.</li>
          <li><b>🕒 Historial:</b> Muestra todos los cambios de estado con fecha, hora y nota de reparación si la hay.</li>
          <li><b>✏️ Editar precio:</b> Actualizá el precio final si el presupuesto cambió durante la reparación.</li>
@@ -4176,6 +4185,22 @@ function showApp() {
          <li>Un botón amarillo parpadeante aparece automáticamente cuando tenés equipos con estado "Reparado" que llevan más de <b>15 días sin ser retirados</b>.</li>
          <li>Al tocarlo, se abre una lista con esos equipos. Desde ahí podés enviar un recordatorio por WhatsApp a cada cliente. Una vez enviado, el botón cambia a "Notificado" para no duplicar el mensaje.</li>
         </ul>
+        <b>🏷️ Etiqueta QR por Orden</b>
+        <ul>
+         <li>El botón 🏷️ de cada orden genera una etiqueta en PDF de 80mm (formato térmico) con el N° de orden, cliente, equipo y un <b>código QR</b>.</li>
+         <li>Al escanear ese QR con tu celular, el sistema filtra automáticamente esa orden en la lista para que puedas cambiar el estado, editar o consultar sin buscarla manualmente. Ideal para pegar en el equipo dentro del estante.</li>
+        </ul>
+        <b>📄 QR en el Ticket del Cliente</b>
+        <ul>
+         <li>Todos los tickets PDF de reparación incluyen automáticamente un <b>código QR al pie</b>, debajo de los términos y condiciones.</li>
+         <li>El cliente escanea ese QR con su celular y accede en tiempo real al estado de su reparación, sin necesidad de link adicional ni WhatsApp.</li>
+        </ul>
+        <b>📡 Modo Offline</b>
+        <ul>
+         <li>Si perdés conexión mientras trabajás, el sistema mostrará un cartel rojo por unos segundos y seguirá funcionando. Podés registrar y editar órdenes normalmente.</li>
+         <li>Todos los cambios que hagas sin internet se sincronizan automáticamente en cuanto la conexión se restablece. Un cartel verde confirma que los datos fueron guardados.</li>
+         <li><b>Nota:</b> las fotos requieren conexión para subirse. Si registrás una orden con fotos sin internet, la orden se guarda igual pero las fotos deben agregarse cuando vuelva la conexión.</li>
+        </ul>
         <b>🔗 Vista de Seguimiento del Cliente</b>
         <ul>
          <li>Cuando le mandás el WhatsApp al cliente, recibe un link donde puede ver en tiempo real el estado de su equipo, con tu logo, nombre del taller y un botón para descargar su ticket PDF. No requiere cuenta ni contraseña.</li>
@@ -4223,8 +4248,9 @@ function showApp() {
       <details>
        <summary class="faq-summary">🖨️ Impresión y Tickets PDF <span>+</span></summary>
        <div class="faq-content">
-        <p><b>¿Cómo genero el ticket de una reparación?</b><br>Presioná el botón 📄 en la fila de la orden. Se genera un PDF y se abre en una pestaña nueva. Desde ahí podés imprimirlo, guardarlo o enviarlo por WhatsApp.</p>
+        <p><b>¿Cómo genero el ticket de una reparación?</b><br>Presioná el botón 📄 en la fila de la orden. Se genera un PDF con el logo de tu taller, los datos de la reparación, el desglose de pagos, tus términos y condiciones y un <b>código QR al pie</b> para que el cliente rastree su equipo. Desde el modal podés verlo en una pestaña nueva o compartirlo directamente por WhatsApp u otras apps.</p>
         <p><b>¿Cómo lo imprimo desde el celular?</b><br>Con el PDF abierto, tocá el ícono de compartir y seleccioná tu impresora. Si tenés una impresora térmica por Bluetooth o Wi-Fi, también aparece como opción.</p>
+        <p><b>¿Para qué sirve el QR que aparece en el ticket?</b><br>Es el QR de seguimiento del cliente. Al escanearlo, el cliente accede en tiempo real al estado de su reparación sin necesidad de guardar ningún link ni contactarte.</p>
         <p><b>Mi logo no aparece en el PDF.</b><br>Verificá en <b>👤 Mi Perfil</b> que hayas cargado la imagen con "📷 CARGAR LOGO" y presionado "ACTUALIZAR". El logo debe ser JPG o PNG.</p>
         <p><b>¿Puedo personalizar el ticket?</b><br>Sí. El nombre, subtítulo, WhatsApp del taller y los términos y condiciones configurados en Mi Perfil aparecen en todos los tickets.</p>
         <p><b>¿El cliente puede descargar su propio ticket?</b><br>Sí. La vista de seguimiento que recibe por WhatsApp incluye un botón para descargar su propio PDF.</p>
@@ -4291,7 +4317,7 @@ function showApp() {
       <details>
        <summary class="faq-summary">⚙️ Técnico y Rendimiento <span>+</span></summary>
        <div class="faq-content">
-        <p><b>¿El sistema funciona sin internet?</b><br>No. Mi Taller Web es una aplicación en la nube y requiere conexión a internet. Sin conexión, verás un indicador rojo y no podrás guardar cambios.</p>
+        <p><b>¿El sistema funciona sin internet?</b><br>Sí, parcialmente. Si perdés la conexión, podés seguir registrando y editando órdenes normalmente. Los cambios quedan guardados localmente y se sincronizan solos cuando vuelve la conexión. Las fotos, en cambio, requieren conexión para subirse a la nube.</p>
         <p><b>¿Mis datos están respaldados?</b><br>Sí. Todos los datos se guardan en tiempo real en Firebase (infraestructura de Google). No necesitás hacer backups manuales.</p>
         <p><b>El sistema se pone lento. ¿Qué puedo hacer?</b><br>Cerrá otras pestañas del navegador y limpiá el caché. La aplicación funciona más fluido en redes WiFi estables.</p>
         <p><b>¿Puedo instalarlo como app en mi celular?</b><br>Sí. Al abrir el sistema en Chrome, el navegador te ofrecerá "Agregar a pantalla de inicio". Esto crea un ícono que abre la app en modo pantalla completa.</p>
