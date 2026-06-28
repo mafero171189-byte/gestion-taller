@@ -13381,11 +13381,53 @@ function showApp() {
     }
 
     function borrarErrorLogs() {
-        if (!confirm('¿Borrar TODOS los registros de errores?\n\nEsta acción no se puede deshacer.')) return;
-        db.ref('error_logs').remove().then(() => {
-            showToast('🗑️ Registros de errores borrados', '#059669');
-            cargarErrorLogs();
-        }).catch(err => showToast('❌ Error: ' + err.message, '#dc2626'));
+        // Modal de confirmación personalizado
+        let mConf = document.getElementById('_modalBorrarLogs');
+        if (!mConf) {
+            mConf = document.createElement('div');
+            mConf.id = '_modalBorrarLogs';
+            mConf.style.cssText = 'position:fixed;inset:0;z-index:19000;background:rgba(8,12,24,0.85);display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);';
+            mConf.innerHTML = ''
+                + '<div style="background:#fff;border-radius:20px;width:88%;max-width:340px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.5);font-family:\'Outfit\',sans-serif;">'
+                +   '<div style="background:linear-gradient(135deg,#dc2626,#991b1b);padding:20px 22px 14px;color:#fff;">'
+                +     '<div style="font-size:32px;margin-bottom:6px;">🗑️</div>'
+                +     '<div style="font-size:17px;font-weight:900;letter-spacing:-0.3px;">Borrar registros de errores</div>'
+                +   '</div>'
+                +   '<div style="padding:18px 22px;">'
+                +     '<p style="margin:0 0 6px;font-size:14px;color:#374151;">Vas a borrar <b>todos</b> los registros capturados de todos los usuarios.</p>'
+                +     '<p style="margin:0;font-size:13px;color:#9ca3af;">Esta acción no se puede deshacer.</p>'
+                +   '</div>'
+                +   '<div style="padding:0 22px 20px;display:flex;gap:10px;">'
+                +     '<button id="_btnBorrarLogsCancelar" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;background:#f9fafb;color:#374151;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">Cancelar</button>'
+                +     '<button id="_btnBorrarLogsConfirmar" style="flex:1;padding:12px;border:none;border-radius:10px;background:#dc2626;color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;">Sí, borrar todo</button>'
+                +   '</div>'
+                + '</div>';
+            document.body.appendChild(mConf);
+            document.getElementById('_btnBorrarLogsCancelar').onclick = () => { mConf.style.display = 'none'; };
+            mConf.addEventListener('click', e => { if (e.target === mConf) mConf.style.display = 'none'; });
+        }
+
+        document.getElementById('_btnBorrarLogsConfirmar').onclick = () => {
+            mConf.style.display = 'none';
+            mostrarLoader('Borrando registros...');
+            // Borramos de a usuario para respetar las reglas de seguridad
+            db.ref('error_logs').once('value').then(snap => {
+                const data = snap.val();
+                if (!data) { ocultarLoader(); showToast('No hay registros para borrar', '#6b7280'); return; }
+                const usuarios = Object.keys(data);
+                const promesas = usuarios.map(u => db.ref('error_logs/' + u).remove());
+                Promise.all(promesas).then(() => {
+                    ocultarLoader();
+                    showToast('🗑️ Registros de errores borrados', '#059669');
+                    cargarErrorLogs();
+                }).catch(err => {
+                    ocultarLoader();
+                    showToast('❌ Error: ' + err.message, '#dc2626');
+                });
+            }).catch(err => { ocultarLoader(); showToast('❌ Error: ' + err.message, '#dc2626'); });
+        };
+
+        mConf.style.display = 'flex';
     }
     // ─────────────────────────────────────────────────────────────────────
 
