@@ -6622,6 +6622,27 @@ function showApp() {
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
 
+        // ── HANDLER ?abrir= (QR interno del taller) ──────────────────────
+        // Lo procesamos al INICIO de grantAccess con polling para que funcione
+        // tanto en pestaña nueva como al escanear sobre la app ya cargada.
+        // NO usamos un flag global porque debe re-evaluarse en cada grantAccess.
+        try {
+            const _pAbrir = new URLSearchParams(window.location.search).get('abrir');
+            if (_pAbrir) {
+                let _intentos = 0;
+                const _poll = () => {
+                    const reg = getRegistro(_pAbrir);
+                    if (reg) {
+                        setTimeout(() => { try { openHistory(_pAbrir); } catch(e) {} }, 200);
+                    } else if (_intentos++ < 12) {
+                        setTimeout(_poll, 300); // reintenta hasta ~3.6s
+                    }
+                };
+                setTimeout(_poll, 400); // primera vez: espera a que carguen los registros
+            }
+        } catch(e) {}
+        // ─────────────────────────────────────────────────────────────────
+
         // Registrar último ingreso: máximo 1 escritura por día por dispositivo
         if (!isAdmin) {
             const claveLocal = 'st_ultimo_ingreso_' + u;
@@ -6833,17 +6854,6 @@ function showApp() {
                     renderTable(); 
                     actualizarListasAutocompletado();
 
-                    // Si se entró escaneando un "QR para mí" (?abrir=<id>), abrimos
-                    // el detalle de esa orden una sola vez, ya con los datos cargados.
-                    if (!window._abrirProcesado) {
-                        window._abrirProcesado = true;
-                        try {
-                            const _pAbrir = new URLSearchParams(window.location.search).get('abrir');
-                            if (_pAbrir && getRegistro(_pAbrir)) {
-                                setTimeout(() => { try { openHistory(_pAbrir); } catch(e) {} }, 400);
-                            }
-                        } catch (e) {}
-                    }
                     // Mostrar onboarding si es usuario nuevo
                     setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 600);
 
