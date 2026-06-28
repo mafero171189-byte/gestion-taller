@@ -6633,12 +6633,18 @@ function showApp() {
                 const _poll = () => {
                     const reg = getRegistro(_pAbrir);
                     if (reg) {
-                        setTimeout(() => { try { openHistory(_pAbrir); } catch(e) {} }, 200);
+                        try {
+                            const searchInput = document.getElementById('search');
+                            if (searchInput) {
+                                searchInput.value = reg.orden || _pAbrir;
+                                renderTable();
+                            }
+                        } catch(e) {}
                     } else if (_intentos++ < 12) {
-                        setTimeout(_poll, 300); // reintenta hasta ~3.6s
+                        setTimeout(_poll, 300);
                     }
                 };
-                setTimeout(_poll, 400); // primera vez: espera a que carguen los registros
+                setTimeout(_poll, 400);
             }
         } catch(e) {}
         // ─────────────────────────────────────────────────────────────────
