@@ -11618,7 +11618,8 @@ function showApp() {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).style.display = 'block';
-        document.getElementById('btn-nav-' + pageId).classList.add('active');
+        const btnNav = document.getElementById('btn-nav-' + pageId);
+        if (btnNav) btnNav.classList.add('active');
         if (pageId === 'gestion' && typeof iniciarOnboarding === 'function' && currentUser) iniciarOnboarding();
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'ventas') {
