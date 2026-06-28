@@ -36,6 +36,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     /* === SCANNER DE CÓDIGO DE BARRAS === */
     #scannerModal {
@@ -3939,6 +3940,17 @@ function showApp() {
       </div>
      </div>
 
+     <!-- VISOR DE ERRORES -->
+     <div style="width: 100%; background: #fff7ed; padding: 20px; border-radius: 12px; border: 1.5px solid #fdba74; margin-bottom: 25px; box-sizing: border-box;">
+      <h3 style="margin:0 0 6px 0; font-size:16px; color:#9a3412;">🐞 Registro de Errores</h3>
+      <p style="font-size:12px; color:#9a3412; margin:0 0 12px 0;">Errores capturados en los dispositivos de los usuarios. Sirve para detectar fallas sin pedir capturas.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+       <button onclick="cargarErrorLogs()" class="btn" style="flex:1; min-width:130px; background:#ea580c; color:white; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">🔄 Ver / Actualizar</button>
+       <button onclick="borrarErrorLogs()" class="btn" style="flex:1; min-width:130px; background:#6b7280; color:white; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">🗑️ Borrar todos</button>
+      </div>
+      <div id="errorLogsContenido" style="margin-top:15px;"></div>
+     </div>
+
 
     </div>
 
@@ -4307,6 +4319,69 @@ function showApp() {
     
     const db = firebase.database();
     window.db = db;
+
+    // ── LOGGER DE ERRORES REMOTO ─────────────────────────────────────────
+    // Captura errores JS y promesas rechazadas y los guarda en Firebase para
+    // poder verlos desde el panel admin / consola, sin depender de que el
+    // cliente nos cuente qué pasó. Con anti-duplicados y tope por sesión para
+    // no gastar cuota.
+    (function initErrorLogger() {
+        if (window._errLoggerInit) return;
+        window._errLoggerInit = true;
+
+        const vistos = new Set();   // firmas ya registradas en esta sesión
+        let _enviados = 0;
+        const TOPE_SESION = 25;     // máximo de errores que mandamos por sesión
+        let _ultimoEnvio = 0;
+
+        function registrarError(info) {
+            try {
+                const firma = (info.mensaje || '') + '|' + (info.linea || '') + '|' + (info.columna || '');
+                if (vistos.has(firma)) return;          // ya lo mandamos
+                if (_enviados >= TOPE_SESION) return;    // tope alcanzado
+                if (Date.now() - _ultimoEnvio < 1500) return; // anti-ráfaga
+                vistos.add(firma);
+                _enviados++;
+                _ultimoEnvio = Date.now();
+
+                const usuario = (window.currentUser || 'anonimo').toString().replace(/[.#$\[\]\/]/g, '_');
+                const registro = {
+                    mensaje:  String(info.mensaje || '').slice(0, 500),
+                    origen:   String(info.origen  || '').slice(0, 200),
+                    linea:    info.linea || 0,
+                    columna:  info.columna || 0,
+                    stack:    String(info.stack || '').slice(0, 800),
+                    usuario:  window.currentUser || 'anonimo',
+                    fecha:    new Date().toLocaleString('es-AR'),
+                    ts:       Date.now(),
+                    online:   (window.estaOnline !== false),
+                    ua:       String(navigator.userAgent || '').slice(0, 200),
+                    url:      String(location.href || '').slice(0, 200)
+                };
+                db.ref('error_logs/' + usuario).push(registro).catch(() => {});
+            } catch (e) { /* el logger nunca debe romper la app */ }
+        }
+        window.registrarError = registrarError; // por si querés loguear algo a mano
+
+        window.addEventListener('error', (e) => {
+            registrarError({
+                mensaje: e.message,
+                origen:  e.filename,
+                linea:   e.lineno,
+                columna: e.colno,
+                stack:   e.error && e.error.stack ? e.error.stack : ''
+            });
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            const motivo = e.reason;
+            registrarError({
+                mensaje: 'Promesa rechazada: ' + (motivo && motivo.message ? motivo.message : motivo),
+                stack:   motivo && motivo.stack ? motivo.stack : ''
+            });
+        });
+    })();
+    // ─────────────────────────────────────────────────────────────────────
 
     // ── DÍAS DE PRUEBA EN TIEMPO REAL PARA LA LANDING PAGE ───────────────────
     db.ref('configuracion/sistema/diasPrueba').on('value', snap => {
@@ -5357,6 +5432,146 @@ function showApp() {
             }
         }, 100);
     }
+
+    // ── ETIQUETAS (menú con 3 opciones) ──────────────────────────────────
+    // Un solo botón 🏷️ abre un menú con tres tipos de etiqueta:
+    //  1) Estante: N° de orden grande para identificar el equipo. Sin QR.
+    //  2) QR para mí: QR que abre esta orden en el sistema (?abrir=<id>).
+    //  3) Comprobante cliente: QR de seguimiento online para darle al cliente.
+    function abrirMenuEtiqueta(id) {
+        const r = getRegistro(id);
+        if (!r) return;
+        let modal = document.getElementById('menuEtiquetaModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'menuEtiquetaModal';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:16000;background:rgba(8,12,24,0.82);display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);';
+            modal.innerHTML = ''
+                + '<div style="background:#fff;border-radius:18px;width:90%;max-width:360px;overflow:hidden;box-shadow:0 25px 70px rgba(0,0,0,0.45);font-family:\'Outfit\',sans-serif;">'
+                +   '<div style="background:linear-gradient(135deg,#1e4d8c,#0e2a5e);padding:16px 20px;color:#fff;font-weight:800;font-size:16px;display:flex;justify-content:space-between;align-items:center;">'
+                +     '🏷️ Etiquetas<span onclick="cerrarMenuEtiqueta()" style="cursor:pointer;font-size:18px;">✕</span>'
+                +   '</div>'
+                +   '<div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">'
+                +     '<button onclick="cerrarMenuEtiqueta(); etiquetaEstante(window._etqId)" style="text-align:left;padding:13px 14px;border:1.5px solid #e5e7eb;border-radius:11px;background:#f9fafb;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#111827;">📦 Etiqueta de estante<br><span style="font-weight:500;color:#6b7280;font-size:12px;">N° de orden grande para identificar el equipo. Sin QR.</span></button>'
+                +     '<button onclick="cerrarMenuEtiqueta(); etiquetaQRInterno(window._etqId)" style="text-align:left;padding:13px 14px;border:1.5px solid #ddd6fe;border-radius:11px;background:#f5f3ff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#5b21b6;">🔎 QR para mí<br><span style="font-weight:500;color:#7c3aed;font-size:12px;">Lo escaneás y se abre esta orden en tu sistema.</span></button>'
+                +     '<button onclick="cerrarMenuEtiqueta(); etiquetaCliente(window._etqId)" style="text-align:left;padding:13px 14px;border:1.5px solid #bbf7d0;border-radius:11px;background:#f0fdf4;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#166534;">👤 Comprobante cliente<br><span style="font-weight:500;color:#15803d;font-size:12px;">QR de seguimiento online para darle al cliente.</span></button>'
+                +   '</div>'
+                + '</div>';
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) cerrarMenuEtiqueta(); });
+        }
+        window._etqId = id;
+        modal.style.display = 'flex';
+    }
+    function cerrarMenuEtiqueta() {
+        const m = document.getElementById('menuEtiquetaModal');
+        if (m) m.style.display = 'none';
+    }
+
+    // 1) Etiqueta de estante (sin QR)
+    function etiquetaEstante(id) {
+        const r = getRegistro(id); if (!r) return;
+        if (!window.jspdf) { showToast('Generador de PDF no disponible (revisá tu conexión).', '#dc2626'); return; }
+        mostrarLoader('Generando etiqueta...');
+        db.ref(fbPathPerfil()).once('value')
+            .then(snap => _generarEtiquetaPDF(r, snap.val() || {}, { qr: false, mostrarFalla: true }))
+            .catch(() => _generarEtiquetaPDF(r, {}, { qr: false, mostrarFalla: true }));
+    }
+
+    // 2) QR para mí (abre la orden en el sistema al escanear)
+    function etiquetaQRInterno(id) {
+        const r = getRegistro(id); if (!r) return;
+        if (typeof QRCode === 'undefined' || !window.jspdf) { showToast('Generador de QR no disponible (revisá tu conexión).', '#dc2626'); return; }
+        const baseUrl = window.location.origin + window.location.pathname;
+        const link = baseUrl + '?abrir=' + r.id + '&u=' + currentUser;
+        mostrarLoader('Generando etiqueta...');
+        db.ref(fbPathPerfil()).once('value')
+            .then(snap => _generarEtiquetaPDF(r, snap.val() || {}, { qr: true, link, footer: 'Escaneá para abrir esta orden en el sistema', mostrarFalla: true }))
+            .catch(() => _generarEtiquetaPDF(r, {}, { qr: true, link, footer: 'Escaneá para abrir esta orden en el sistema', mostrarFalla: true }));
+    }
+
+    // 3) Comprobante para el cliente (QR de seguimiento online)
+    function etiquetaCliente(id) {
+        const r = getRegistro(id); if (!r) return;
+        if (typeof QRCode === 'undefined' || !window.jspdf) { showToast('Generador de QR no disponible (revisá tu conexión).', '#dc2626'); return; }
+        const baseUrl = window.location.origin + window.location.pathname;
+        const link = baseUrl + '?id=' + r.id + '&u=' + currentUser;
+        mostrarLoader('Generando etiqueta...');
+        db.ref(fbPathPerfil()).once('value')
+            .then(snap => _generarEtiquetaPDF(r, snap.val() || {}, { qr: true, link, footer: 'Escaneá para seguir tu reparación', mostrarFalla: false }))
+            .catch(() => _generarEtiquetaPDF(r, {}, { qr: true, link, footer: 'Escaneá para seguir tu reparación', mostrarFalla: false }));
+    }
+
+    // Generador compartido de la etiqueta en PDF (80mm térmico)
+    function _generarEtiquetaPDF(r, conf, opts) {
+        opts = opts || {};
+        const finalizar = (qrDataUrl) => {
+            try {
+                const { jsPDF } = window.jspdf;
+                const alto = opts.qr ? 80 : 54;
+                const doc = new jsPDF({ unit: 'mm', format: [80, alto] });
+                const W = 80; let y = 8;
+
+                const nombre = (conf.nombreTaller || 'Mi Taller Web').toString().substring(0, 30);
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+                doc.text(nombre, W / 2, y, { align: 'center' }); y += 7;
+
+                const nro = String(r.orden || '').replace('ORD-', '');
+                doc.setFontSize(22);
+                doc.text('N° ' + nro, W / 2, y, { align: 'center' }); y += 4;
+
+                doc.setDrawColor(170); doc.line(6, y, W - 6, y); y += 5;
+
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+                doc.text(('Cliente: ' + (r.cliente || '')).substring(0, 40), 6, y); y += 5;
+                const equipo = ((r.equipo || '') + ' ' + (r.marca || '') + ' ' + (r.modelo || '')).trim();
+                const eqLines = doc.splitTextToSize('Equipo: ' + (equipo || '-'), W - 12);
+                doc.text(eqLines, 6, y); y += eqLines.length * 5;
+                if (opts.mostrarFalla && r.falla) {
+                    const flLines = doc.splitTextToSize('Falla: ' + r.falla, W - 12);
+                    doc.text(flLines, 6, y); y += flLines.length * 5;
+                }
+                if (r.fecha) { doc.text('Fecha: ' + r.fecha, 6, y); y += 5; }
+
+                if (opts.qr && qrDataUrl) {
+                    const qrSize = 26;
+                    doc.addImage(qrDataUrl, 'PNG', (W - qrSize) / 2, y + 1, qrSize, qrSize); y += qrSize + 5;
+                    doc.setFontSize(8); doc.setTextColor(90);
+                    doc.text(opts.footer || '', W / 2, y, { align: 'center' });
+                }
+
+                ocultarLoader();
+                const blob = doc.output('blob');
+                const url = URL.createObjectURL(blob);
+                const win = window.open(url, '_blank');
+                if (!win) { const a = document.createElement('a'); a.href = url; a.download = 'Etiqueta-' + nro + '.pdf'; a.click(); }
+            } catch (e) { ocultarLoader(); showToast('Error al generar la etiqueta', '#dc2626'); }
+        };
+
+        if (!opts.qr) { finalizar(''); return; }
+
+        // Generar el QR primero y luego armar el PDF
+        try {
+            let cont = document.getElementById('_qrTempEtiqueta');
+            if (!cont) {
+                cont = document.createElement('div');
+                cont.id = '_qrTempEtiqueta';
+                cont.style.position = 'fixed'; cont.style.left = '-9999px'; cont.style.top = '0';
+                document.body.appendChild(cont);
+            }
+            cont.innerHTML = '';
+            new QRCode(cont, { text: opts.link, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+            setTimeout(() => {
+                const canvas = cont.querySelector('canvas');
+                const imgEl  = cont.querySelector('img');
+                let qrDataUrl = '';
+                try { qrDataUrl = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : ''); }
+                catch (e) { qrDataUrl = imgEl ? imgEl.src : ''; }
+                finalizar(qrDataUrl);
+            }, 160);
+        } catch (e) { ocultarLoader(); showToast('Error al generar el QR', '#dc2626'); }
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     function imprimir(id) {
         const r = getRegistro(id); 
@@ -6606,6 +6821,18 @@ function showApp() {
                     
                     renderTable(); 
                     actualizarListasAutocompletado();
+
+                    // Si se entró escaneando un "QR para mí" (?abrir=<id>), abrimos
+                    // esa orden automáticamente una sola vez, ya con los datos cargados.
+                    if (!window._abrirProcesado) {
+                        window._abrirProcesado = true;
+                        try {
+                            const _pAbrir = new URLSearchParams(window.location.search).get('abrir');
+                            if (_pAbrir && getRegistro(_pAbrir)) {
+                                setTimeout(() => { try { editar(_pAbrir); } catch(e) {} }, 400);
+                            }
+                        } catch (e) {}
+                    }
                     // Mostrar onboarding si es usuario nuevo
                     setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 600);
 
@@ -9203,6 +9430,7 @@ function showApp() {
                 <td class="action-btns">
                     ${!r.esVentaRapida ? `<button onclick="abrirFotos('${r.id}')">🖼️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="imprimir('${r.id}')">📄</button>` : `<button onclick="abrirModalNombreRecibo('${r.id}')" title="Recibo de venta">📄</button>`}
+                    ${!r.esVentaRapida ? `<button onclick="abrirMenuEtiqueta('${r.id}')" title="Etiquetas (estante / QR)">🏷️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="editar('${r.id}')">✏️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>` : ''}
                     ${(r.archivado && !r.esVentaRapida) ? `<button onclick="abrirModalGarantia('${r.id}')" title="Reingresar por Garantía" style="color:#7c3aed;">🔄</button>` : ''}
@@ -10283,8 +10511,9 @@ function showApp() {
             const dataCompleto = Object.assign({}, rEdit, data);
             delete dataCompleto.id; // el id no va en el nodo de Firebase
 
-            db.ref(pathParaUpdate).child(idEditando).set(dataCompleto)
-            .then(() => {
+            let _hecho = false;
+            const finalizarEdit = () => {
+                if (_hecho) return; _hecho = true;
                 escribirIndice(idEditando, dataCompleto, esOrdenArchivada);
                 if (esOrdenArchivada) {
                     const idx = registrosArchivados.findIndex(x => x.id === idEditando);
@@ -10294,19 +10523,33 @@ function showApp() {
                     if (idx !== -1) { registros[idx] = { id: idEditando, ...dataCompleto }; }
                 }
                 subirFotosYFinalizar(idEditando, pathParaUpdate, esOrdenArchivada, "ACTUALIZADO ✅", "#059669");
-            })
-            .catch(err => { ocultarLoader(); showToast("Error al actualizar: " + err.message, "#dc2626"); });
+            };
+
+            db.ref(pathParaUpdate).child(idEditando).set(dataCompleto)
+            .then(finalizarEdit)
+            .catch(err => { if (_hecho) return; ocultarLoader(); showToast("Error al actualizar: " + err.message, "#dc2626"); });
+
+            // Sin conexión: RTDB encola la escritura, pero el .then() no dispara
+            // hasta reconectar. Finalizamos optimista para no colgar la UI.
+            if (window.estaOnline === false) finalizarEdit();
         } else {
             const nuevaRef = db.ref(pathActivo).push();
-            nuevaRef.set(data)
-            .then(() => {
+            let _hecho = false;
+            const finalizarNueva = () => {
+                if (_hecho) return; _hecho = true;
                 escribirIndice(nuevaRef.key, data, false);
                 if (!registros.find(r => r.id === nuevaRef.key)) {
                     registros.push({ id: nuevaRef.key, ...data });
                 }
                 subirFotosYFinalizar(nuevaRef.key, pathActivo, false, "REGISTRADO ✅", "#059669");
-            })
-            .catch(err => { ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
+            };
+
+            nuevaRef.set(data)
+            .then(finalizarNueva)
+            .catch(err => { if (_hecho) return; ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
+
+            // Sin conexión: finalizamos optimista; la escritura sube al reconectar.
+            if (window.estaOnline === false) finalizarNueva();
         }
     };
 
@@ -10355,6 +10598,14 @@ function showApp() {
         }
 
         if (fotosTemporales.length === 0) {
+            postGuardado();
+            return;
+        }
+
+        // Sin conexión no se puede subir a Cloudinary: finalizamos la orden
+        // local y avisamos para agregar las fotos cuando vuelva internet.
+        if (window.estaOnline === false) {
+            showToast(msg + " (sin conexión · agregá las fotos cuando vuelva internet)", "#f59e0b");
             postGuardado();
             return;
         }
@@ -13033,6 +13284,52 @@ function showApp() {
         }).catch(err => showToast('❌ Error: ' + err.message, '#dc2626'));
     }
 
+    // ── VISOR DE ERRORES (panel admin) ───────────────────────────────────
+    function cargarErrorLogs() {
+        const cont = document.getElementById('errorLogsContenido');
+        if (!cont) return;
+        cont.innerHTML = '<p style="color:#6b7280;font-size:13px;text-align:center;padding:10px;">Cargando...</p>';
+        db.ref('error_logs').once('value').then(snap => {
+            const data = snap.val() || {};
+            const lista = [];
+            Object.keys(data).forEach(usuario => {
+                const logs = data[usuario] || {};
+                Object.keys(logs).forEach(logId => {
+                    lista.push(Object.assign({ usuario, logId }, logs[logId]));
+                });
+            });
+            lista.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+            if (lista.length === 0) {
+                cont.innerHTML = '<p style="color:#16a34a;font-size:13px;text-align:center;padding:12px;">✅ No hay errores registrados.</p>';
+                return;
+            }
+            const top = lista.slice(0, 100);
+            let html = '<p style="font-size:12px;color:#6b7280;margin:0 0 10px;">Mostrando ' + top.length + ' de ' + lista.length + ' (más recientes primero)</p>';
+            top.forEach(e => {
+                const estado = e.online ? '🟢 online' : '🔌 offline';
+                html += '<div style="background:#fff;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;">'
+                    + '<div style="font-weight:800;color:#b91c1c;word-break:break-word;">' + escaparHTML(e.mensaje || '(sin mensaje)') + '</div>'
+                    + '<div style="color:#6b7280;margin-top:4px;">👤 ' + escaparHTML(e.usuario || '?') + ' · 📅 ' + escaparHTML(e.fecha || '') + ' · ' + estado + '</div>'
+                    + (e.linea ? '<div style="color:#6b7280;">📍 línea ' + e.linea + ':' + (e.columna || 0) + '</div>' : '')
+                    + (e.stack ? '<details style="margin-top:5px;"><summary style="cursor:pointer;color:#2563eb;">ver stack</summary><pre style="white-space:pre-wrap;word-break:break-word;font-size:11px;color:#374151;background:#f9fafb;padding:6px;border-radius:6px;margin-top:4px;">' + escaparHTML(e.stack) + '</pre></details>' : '')
+                    + (e.ua ? '<div style="color:#9ca3af;margin-top:4px;font-size:11px;word-break:break-word;">' + escaparHTML(e.ua) + '</div>' : '')
+                    + '</div>';
+            });
+            cont.innerHTML = html;
+        }).catch(err => {
+            cont.innerHTML = '<p style="color:#dc2626;font-size:13px;padding:10px;">Error al leer: ' + escaparHTML(err.message || '') + '<br><small>¿Publicaste la regla de seguridad de <b>error_logs</b>?</small></p>';
+        });
+    }
+
+    function borrarErrorLogs() {
+        if (!confirm('¿Borrar TODOS los registros de errores?\n\nEsta acción no se puede deshacer.')) return;
+        db.ref('error_logs').remove().then(() => {
+            showToast('🗑️ Registros de errores borrados', '#059669');
+            cargarErrorLogs();
+        }).catch(err => showToast('❌ Error: ' + err.message, '#dc2626'));
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
 
 </script>
   <!-- MODAL PAGO MERCADO PAGO -->
@@ -13703,6 +14000,93 @@ function showApp() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register(swURL).then(() => console.log('SW inyectado')).catch(console.error);
     }
+
+    // ── MÓDULO OFFLINE: detección de conexión + indicador visual ─────────
+    // Realtime Database ya encola las escrituras cuando no hay internet y las
+    // sincroniza sola al reconectar (online-first cuando hay red). Acá solo
+    // detectamos y avisamos el estado para que el usuario sepa qué pasa.
+    (function initOffline() {
+        if (window._offlineInit) return;
+        window._offlineInit = true;
+        window.estaOnline = navigator.onLine;
+
+        const badge = document.createElement('div');
+        badge.id = 'conn-indicator';
+        badge.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:99999;padding:9px 18px;border-radius:999px;font-size:13px;font-weight:600;font-family:Outfit,"Segoe UI",sans-serif;box-shadow:0 6px 22px rgba(0,0,0,0.28);display:none;align-items:center;gap:8px;max-width:92vw;text-align:center;line-height:1.25;';
+        const ponerBadge = () => {
+            if (badge.isConnected) return;
+            if (document.body) document.body.appendChild(badge);
+        };
+        ponerBadge();
+
+        let _ocultarTimer = null;
+        let _offlineTimer = null;
+        let _estuvoOffline = false;   // true solo si hubo un corte real estando dentro de la app
+
+        // No mostramos carteles de conexión en la landing ni en el login,
+        // solo cuando el usuario ya está adentro del sistema.
+        function appActiva() { return !!window.currentUser; }
+
+        function pintarOnline(justChanged) {
+            ponerBadge();
+            clearTimeout(_offlineTimer);
+            // Solo avisamos "conectado/sincronizado" si veníamos de un corte
+            // real estando logueados. En la landing o al loguearse no aparece.
+            if (!appActiva() || !_estuvoOffline || !justChanged) {
+                badge.style.display = 'none';
+                return;
+            }
+            _estuvoOffline = false;
+            badge.style.background = '#059669';
+            badge.style.color = '#fff';
+            badge.innerHTML = '🟢 Conectado · cambios sincronizados';
+            badge.style.display = 'flex';
+            clearTimeout(_ocultarTimer);
+            _ocultarTimer = setTimeout(() => { badge.style.display = 'none'; }, 2500);
+        }
+        function pintarOffline() {
+            if (!appActiva()) { badge.style.display = 'none'; return; }
+            ponerBadge();
+            _estuvoOffline = true;
+            badge.style.background = '#dc2626';
+            badge.style.color = '#fff';
+            badge.style.cursor = 'pointer';
+            badge.title = 'Tocá para cerrar';
+            badge.innerHTML = '🔌 Sin conexión · seguí trabajando, se sincroniza al volver internet';
+            badge.style.display = 'flex';
+            clearTimeout(_ocultarTimer);
+            // Se auto-oculta a los 6s para no molestar; el estado offline sigue activo.
+            _ocultarTimer = setTimeout(() => { badge.style.display = 'none'; }, 6000);
+        }
+        badge.addEventListener('click', () => { badge.style.display = 'none'; });
+
+        function setOnline(v) {
+            const cambio = (window.estaOnline !== v);
+            window.estaOnline = v;
+            if (v) {
+                clearTimeout(_offlineTimer);
+                pintarOnline(cambio);
+            } else {
+                // Esperamos 1.5s antes de declarar "offline" para evitar el
+                // parpadeo del corte momentáneo al cargar o al reconectar.
+                clearTimeout(_offlineTimer);
+                _offlineTimer = setTimeout(pintarOffline, 1500);
+            }
+        }
+
+        // Señal rápida del navegador
+        window.addEventListener('online',  () => setOnline(true));
+        window.addEventListener('offline', () => setOnline(false));
+
+        // Señal REAL y autoritativa de Firebase
+        try {
+            firebase.database().ref('.info/connected').on('value', snap => {
+                setOnline(snap.val() === true);
+            });
+        } catch (e) {}
+    })();
+    // ─────────────────────────────────────────────────────────────────────
+
     // 3. Crear el banner fijo arriba de todo
     const bannerInstalar = document.createElement('div');
     bannerInstalar.id = 'banner-instalar-app';
