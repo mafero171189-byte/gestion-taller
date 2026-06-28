@@ -3084,7 +3084,7 @@ function showApp() {
      <p style="font-size:16px; font-weight:bold; margin-bottom:18px;">📄 Ticket PDF — ¿Qué querés hacer?</p>
      <div style="display:flex; flex-direction:column; gap:10px;">
       <button id="btnPDFVer" style="padding:13px; border:none; border-radius:10px; background:#1e4d8c; color:white; font-weight:bold; font-size:14px; cursor:pointer;">👁️ Ver PDF</button>
-      <button id="btnPDFDescargar" style="padding:13px; border:none; border-radius:10px; background:#059669; color:white; font-weight:bold; font-size:14px; cursor:pointer;">⬇️ Descargar</button>
+      <button id="btnPDFDescargar" style="display:none;"></button>
       <button id="btnPDFCompartir" style="padding:13px; border:none; border-radius:10px; background:#25d366; color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">📲 Compartir</button>
       <button id="btnPDFRecibo" onclick="abrirReciboDesdePDFModal()" style="padding:13px; border:none; border-radius:10px; background:linear-gradient(135deg,#7c3aed,#5b21b6); color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">🧾 Generar Recibo</button>
      </div>
@@ -5433,52 +5433,9 @@ function showApp() {
         }, 100);
     }
 
-    // ── ETIQUETAS (menú con 3 opciones) ──────────────────────────────────
-    // Un solo botón 🏷️ abre un menú con tres tipos de etiqueta:
-    //  1) Estante: N° de orden grande para identificar el equipo. Sin QR.
-    //  2) QR para mí: QR que abre esta orden en el sistema (?abrir=<id>).
-    //  3) Comprobante cliente: QR de seguimiento online para darle al cliente.
-    function abrirMenuEtiqueta(id) {
-        const r = getRegistro(id);
-        if (!r) return;
-        let modal = document.getElementById('menuEtiquetaModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'menuEtiquetaModal';
-            modal.style.cssText = 'position:fixed;inset:0;z-index:16000;background:rgba(8,12,24,0.82);display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);';
-            modal.innerHTML = ''
-                + '<div style="background:#fff;border-radius:18px;width:90%;max-width:360px;overflow:hidden;box-shadow:0 25px 70px rgba(0,0,0,0.45);font-family:\'Outfit\',sans-serif;">'
-                +   '<div style="background:linear-gradient(135deg,#1e4d8c,#0e2a5e);padding:16px 20px;color:#fff;font-weight:800;font-size:16px;display:flex;justify-content:space-between;align-items:center;">'
-                +     '🏷️ Etiquetas<span onclick="cerrarMenuEtiqueta()" style="cursor:pointer;font-size:18px;">✕</span>'
-                +   '</div>'
-                +   '<div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">'
-                +     '<button onclick="cerrarMenuEtiqueta(); etiquetaEstante(window._etqId)" style="text-align:left;padding:13px 14px;border:1.5px solid #e5e7eb;border-radius:11px;background:#f9fafb;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#111827;">📦 Etiqueta de estante<br><span style="font-weight:500;color:#6b7280;font-size:12px;">N° de orden grande para identificar el equipo. Sin QR.</span></button>'
-                +     '<button onclick="cerrarMenuEtiqueta(); etiquetaQRInterno(window._etqId)" style="text-align:left;padding:13px 14px;border:1.5px solid #ddd6fe;border-radius:11px;background:#f5f3ff;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#5b21b6;">🔎 QR para mí<br><span style="font-weight:500;color:#7c3aed;font-size:12px;">Lo escaneás y se abre esta orden en tu sistema.</span></button>'
-                +     '<button onclick="cerrarMenuEtiqueta(); etiquetaCliente(window._etqId)" style="text-align:left;padding:13px 14px;border:1.5px solid #bbf7d0;border-radius:11px;background:#f0fdf4;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:#166534;">👤 Comprobante cliente<br><span style="font-weight:500;color:#15803d;font-size:12px;">QR de seguimiento online para darle al cliente.</span></button>'
-                +   '</div>'
-                + '</div>';
-            document.body.appendChild(modal);
-            modal.addEventListener('click', (e) => { if (e.target === modal) cerrarMenuEtiqueta(); });
-        }
-        window._etqId = id;
-        modal.style.display = 'flex';
-    }
-    function cerrarMenuEtiqueta() {
-        const m = document.getElementById('menuEtiquetaModal');
-        if (m) m.style.display = 'none';
-    }
-
-    // 1) Etiqueta de estante (sin QR)
-    function etiquetaEstante(id) {
-        const r = getRegistro(id); if (!r) return;
-        if (!window.jspdf) { showToast('Generador de PDF no disponible (revisá tu conexión).', '#dc2626'); return; }
-        mostrarLoader('Generando etiqueta...');
-        db.ref(fbPathPerfil()).once('value')
-            .then(snap => _generarEtiquetaPDF(r, snap.val() || {}, { qr: false, mostrarFalla: true }))
-            .catch(() => _generarEtiquetaPDF(r, {}, { qr: false, mostrarFalla: true }));
-    }
-
-    // 2) QR para mí (abre la orden en el sistema al escanear)
+    // ── ETIQUETA QR PARA EL TALLER ───────────────────────────────────────
+    // Botón 🏷️: genera etiqueta con QR que al escanearlo abre esta orden
+    // en el sistema (?abrir=<id>). Para pegar en el equipo en el estante.
     function etiquetaQRInterno(id) {
         const r = getRegistro(id); if (!r) return;
         if (typeof QRCode === 'undefined' || !window.jspdf) { showToast('Generador de QR no disponible (revisá tu conexión).', '#dc2626'); return; }
@@ -5490,54 +5447,64 @@ function showApp() {
             .catch(() => _generarEtiquetaPDF(r, {}, { qr: true, link, footer: 'Escaneá para abrir esta orden en el sistema', mostrarFalla: true }));
     }
 
-    // 3) Comprobante para el cliente (QR de seguimiento online)
-    function etiquetaCliente(id) {
-        const r = getRegistro(id); if (!r) return;
-        if (typeof QRCode === 'undefined' || !window.jspdf) { showToast('Generador de QR no disponible (revisá tu conexión).', '#dc2626'); return; }
-        const baseUrl = window.location.origin + window.location.pathname;
-        const link = baseUrl + '?id=' + r.id + '&u=' + currentUser;
-        mostrarLoader('Generando etiqueta...');
-        db.ref(fbPathPerfil()).once('value')
-            .then(snap => _generarEtiquetaPDF(r, snap.val() || {}, { qr: true, link, footer: 'Escaneá para seguir tu reparación', mostrarFalla: false }))
-            .catch(() => _generarEtiquetaPDF(r, {}, { qr: true, link, footer: 'Escaneá para seguir tu reparación', mostrarFalla: false }));
-    }
-
     // Generador compartido de la etiqueta en PDF (80mm térmico)
     function _generarEtiquetaPDF(r, conf, opts) {
         opts = opts || {};
+        const M = 5;
+        const W = 80;
+        const TW = W - M * 2;
+
         const finalizar = (qrDataUrl) => {
             try {
                 const { jsPDF } = window.jspdf;
-                const alto = opts.qr ? 80 : 54;
-                const doc = new jsPDF({ unit: 'mm', format: [80, alto] });
-                const W = 80; let y = 8;
+                const alto = opts.qr ? 82 : 82;
+                const doc = new jsPDF({ unit: 'mm', format: [W, alto] });
+                let y = 7;
 
-                const nombre = (conf.nombreTaller || 'Mi Taller Web').toString().substring(0, 30);
-                doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-                doc.text(nombre, W / 2, y, { align: 'center' }); y += 7;
+                // Nombre del taller
+                const nombre = (conf.nombreTaller || 'Mi Taller Web').toString();
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+                const nLines = doc.splitTextToSize(nombre, TW);
+                doc.text(nLines, W / 2, y, { align: 'center' });
+                y += nLines.length * 5;
 
-                const nro = String(r.orden || '').replace('ORD-', '');
-                doc.setFontSize(22);
-                doc.text('N° ' + nro, W / 2, y, { align: 'center' }); y += 4;
+                // N° de orden (mismo tamaño que las otras etiquetas)
+                const nro = String(r.orden || '');
+                doc.setFontSize(16);
+                const oLines = doc.splitTextToSize('N\u00b0 ' + nro, TW);
+                doc.text(oLines, W / 2, y, { align: 'center' });
+                y += oLines.length * 7;
 
-                doc.setDrawColor(170); doc.line(6, y, W - 6, y); y += 5;
+                // Separador
+                doc.setDrawColor(170); doc.line(M, y, W - M, y); y += 5;
 
-                doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-                doc.text(('Cliente: ' + (r.cliente || '')).substring(0, 40), 6, y); y += 5;
+                // Datos
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+                const cli = doc.splitTextToSize('Cliente: ' + (r.cliente || '-'), TW);
+                doc.text(cli, M, y); y += cli.length * 4.5;
+
                 const equipo = ((r.equipo || '') + ' ' + (r.marca || '') + ' ' + (r.modelo || '')).trim();
-                const eqLines = doc.splitTextToSize('Equipo: ' + (equipo || '-'), W - 12);
-                doc.text(eqLines, 6, y); y += eqLines.length * 5;
-                if (opts.mostrarFalla && r.falla) {
-                    const flLines = doc.splitTextToSize('Falla: ' + r.falla, W - 12);
-                    doc.text(flLines, 6, y); y += flLines.length * 5;
-                }
-                if (r.fecha) { doc.text('Fecha: ' + r.fecha, 6, y); y += 5; }
+                const eqL = doc.splitTextToSize('Equipo: ' + (equipo || '-'), TW);
+                doc.text(eqL, M, y); y += eqL.length * 4.5;
 
+                if (opts.mostrarFalla && r.falla) {
+                    const flL = doc.splitTextToSize('Falla: ' + r.falla, TW);
+                    doc.text(flL, M, y); y += flL.length * 4.5;
+                }
+                if (r.fecha) {
+                    const feL = doc.splitTextToSize('Fecha: ' + r.fecha, TW);
+                    doc.text(feL, M, y); y += feL.length * 4.5;
+                }
+
+                // QR
                 if (opts.qr && qrDataUrl) {
+                    y += 2;
                     const qrSize = 26;
-                    doc.addImage(qrDataUrl, 'PNG', (W - qrSize) / 2, y + 1, qrSize, qrSize); y += qrSize + 5;
-                    doc.setFontSize(8); doc.setTextColor(90);
-                    doc.text(opts.footer || '', W / 2, y, { align: 'center' });
+                    doc.addImage(qrDataUrl, 'PNG', (W - qrSize) / 2, y, qrSize, qrSize);
+                    y += qrSize + 4;
+                    doc.setFontSize(7); doc.setTextColor(90);
+                    const ftL = doc.splitTextToSize(opts.footer || '', TW);
+                    doc.text(ftL, W / 2, y, { align: 'center' });
                 }
 
                 ocultarLoader();
@@ -5548,9 +5515,8 @@ function showApp() {
             } catch (e) { ocultarLoader(); showToast('Error al generar la etiqueta', '#dc2626'); }
         };
 
-        if (!opts.qr) { finalizar(''); return; }
+        if (!opts.qr) { setTimeout(() => finalizar(''), 50); return; }
 
-        // Generar el QR primero y luego armar el PDF
         try {
             let cont = document.getElementById('_qrTempEtiqueta');
             if (!cont) {
@@ -5578,47 +5544,76 @@ function showApp() {
         if(!r) return;
         const path = fbPathPerfil();
         mostrarLoader("Generando PDF...");
-        db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
-                const url = URL.createObjectURL(blob);
-                const modal = document.getElementById('modalPDFAcciones');
-                const btnVer = document.getElementById('btnPDFVer');
-                const btnDesc = document.getElementById('btnPDFDescargar');
-                const btnComp = document.getElementById('btnPDFCompartir');
-                const btnRecibo = document.getElementById('btnPDFRecibo');
 
-                btnVer.onclick = () => {
-                    window.open(url, '_blank');
-                    modal.style.display = 'none';
-                };
-                btnDesc.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
-                    modal.style.display = 'none';
-                };
-                if (navigator.share) {
-                    btnComp.style.display = 'block';
-                    btnComp.onclick = () => {
-                        const file = new File([blob], `Orden-${nro}.pdf`, { type: 'application/pdf' });
-                        navigator.share({ title: `Ticket Orden #${nro}`, files: [file] }).catch(() => {});
+        // Genero el QR de seguimiento del cliente primero (async), luego armo el PDF
+        const baseUrl = window.location.origin + window.location.pathname;
+        const linkSeg = baseUrl + '?id=' + r.id + '&u=' + currentUser;
+
+        const _hacerPDF = (qrDataUrl) => {
+            db.ref(path).once('value', snap => {
+                generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
+                    const url = URL.createObjectURL(blob);
+                    const modal = document.getElementById('modalPDFAcciones');
+                    const btnVer = document.getElementById('btnPDFVer');
+                    const btnDesc = document.getElementById('btnPDFDescargar');
+                    const btnComp = document.getElementById('btnPDFCompartir');
+                    const btnRecibo = document.getElementById('btnPDFRecibo');
+
+                    btnVer.onclick = () => {
+                        window.open(url, '_blank');
                         modal.style.display = 'none';
                     };
-                } else {
-                    btnComp.style.display = 'none';
-                }
-                // Mostrar botón Recibo solo para órdenes entregadas
-                if (btnRecibo) {
-                    if (r.estado === 'Entregado') {
-                        btnRecibo.style.display = 'block';
-                        modal._reciboOrdenId = id;
+                    btnDesc.onclick = () => {
+                        const a = document.createElement('a');
+                        a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
+                        modal.style.display = 'none';
+                    };
+                    if (navigator.share) {
+                        btnComp.style.display = 'block';
+                        btnComp.onclick = () => {
+                            const file = new File([blob], `Orden-${nro}.pdf`, { type: 'application/pdf' });
+                            navigator.share({ title: `Ticket Orden #${nro}`, files: [file] }).catch(() => {});
+                            modal.style.display = 'none';
+                        };
                     } else {
-                        btnRecibo.style.display = 'none';
-                        modal._reciboOrdenId = null;
+                        btnComp.style.display = 'none';
                     }
-                }
-                modal.style.display = 'flex';
+                    if (btnRecibo) {
+                        if (r.estado === 'Entregado') {
+                            btnRecibo.style.display = 'block';
+                            modal._reciboOrdenId = id;
+                        } else {
+                            btnRecibo.style.display = 'none';
+                            modal._reciboOrdenId = null;
+                        }
+                    }
+                    modal.style.display = 'flex';
+                }, qrDataUrl);
             });
-        });
+        };
+
+        if (typeof QRCode !== 'undefined') {
+            try {
+                let cont = document.getElementById('_qrTempTicket');
+                if (!cont) {
+                    cont = document.createElement('div');
+                    cont.id = '_qrTempTicket';
+                    cont.style.position = 'fixed'; cont.style.left = '-9999px'; cont.style.top = '0';
+                    document.body.appendChild(cont);
+                }
+                cont.innerHTML = '';
+                new QRCode(cont, { text: linkSeg, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
+                setTimeout(() => {
+                    const canvas = cont.querySelector('canvas');
+                    const imgEl  = cont.querySelector('img');
+                    let qrDataUrl = '';
+                    try { qrDataUrl = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : ''); } catch(e) {}
+                    _hacerPDF(qrDataUrl);
+                }, 160);
+            } catch(e) { _hacerPDF(''); }
+        } else {
+            _hacerPDF('');
+        }
     }
 
     function abrirReciboDesdePDFModal() {
@@ -5892,7 +5887,7 @@ function showApp() {
         });
     }
 
-    function generarEImprimirPDF(r, conf, callback) {
+    function generarEImprimirPDF(r, conf, callback, qrDataUrl) {
         const nombreHeader = conf.nombreTaller || "";
         const subHeader = conf.subtitulo || "";
         const wappHeader = conf.wappTicket || "";
@@ -5919,7 +5914,7 @@ function showApp() {
         const motivoGar = r.motivoGarantia ? String(r.motivoGarantia) : '';
         const linesMotivoGar = motivoGar ? docDummy.splitTextToSize(motivoGar, 40) : [];
 
-        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(8);
+        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(7);
         const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
         const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 65); 
         
@@ -5938,7 +5933,8 @@ function showApp() {
         if (wappHeader) altoHeader += 6;
         if (conf.logo && altoHeader < 30) altoHeader = 30;
         
-        const altoDinamico = altoHeader + 140 + (lineasGarantia.length * 4) + (extraLines * 5); 
+        const _extraQR = 32; // espacio para el QR (22mm) + leyenda + padding
+        const altoDinamico = altoHeader + 140 + (lineasGarantia.length * 3.5) + (extraLines * 5) + _extraQR; 
         
         const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
         
@@ -6038,8 +6034,23 @@ function showApp() {
         }
         
         doc.setTextColor(50, 50, 50); 
-        doc.setFont("helvetica", "normal"); doc.setFontSize(8); 
-        doc.text(lineasGarantia, 40, y + 20, {align:'center'});
+        doc.setFont("helvetica", "normal"); doc.setFontSize(7); 
+        const garantiaStartY = y + 20;
+        doc.text(lineasGarantia, 10, garantiaStartY, { align: 'left' });
+
+        // QR de seguimiento del cliente al pie del ticket,
+        // debajo del texto de garantía (calculamos su altura real)
+        if (qrDataUrl) {
+            try {
+                const lineH7 = 3.2; // altura aprox de una línea a 7pt
+                const garantiaEndY = garantiaStartY + (lineasGarantia.length * lineH7);
+                const qrY = garantiaEndY + 5;
+                const qrSize = 22;
+                doc.addImage(qrDataUrl, 'PNG', 40 - qrSize / 2, qrY, qrSize, qrSize);
+                doc.setFontSize(7); doc.setTextColor(120, 120, 120);
+                doc.text('Escaneá para seguir tu reparación', 40, qrY + qrSize + 3, { align: 'center' });
+            } catch(e) {}
+        }
         
         const pdfBlob = doc.output('blob');
         ocultarLoader();
@@ -6823,13 +6834,13 @@ function showApp() {
                     actualizarListasAutocompletado();
 
                     // Si se entró escaneando un "QR para mí" (?abrir=<id>), abrimos
-                    // esa orden automáticamente una sola vez, ya con los datos cargados.
+                    // el detalle de esa orden una sola vez, ya con los datos cargados.
                     if (!window._abrirProcesado) {
                         window._abrirProcesado = true;
                         try {
                             const _pAbrir = new URLSearchParams(window.location.search).get('abrir');
                             if (_pAbrir && getRegistro(_pAbrir)) {
-                                setTimeout(() => { try { editar(_pAbrir); } catch(e) {} }, 400);
+                                setTimeout(() => { try { openHistory(_pAbrir); } catch(e) {} }, 400);
                             }
                         } catch (e) {}
                     }
@@ -9430,7 +9441,7 @@ function showApp() {
                 <td class="action-btns">
                     ${!r.esVentaRapida ? `<button onclick="abrirFotos('${r.id}')">🖼️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="imprimir('${r.id}')">📄</button>` : `<button onclick="abrirModalNombreRecibo('${r.id}')" title="Recibo de venta">📄</button>`}
-                    ${!r.esVentaRapida ? `<button onclick="abrirMenuEtiqueta('${r.id}')" title="Etiquetas (estante / QR)">🏷️</button>` : ''}
+                    ${!r.esVentaRapida ? `<button onclick="etiquetaQRInterno('${r.id}')" title="Etiqueta QR para el equipo">🏷️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="editar('${r.id}')">✏️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>` : ''}
                     ${(r.archivado && !r.esVentaRapida) ? `<button onclick="abrirModalGarantia('${r.id}')" title="Reingresar por Garantía" style="color:#7c3aed;">🔄</button>` : ''}
