@@ -31,6 +31,44 @@
     </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+  <script>
+  // ── ARRANQUE INSTANTÁNEO ──────────────────────────────────────────────
+  // Corre apenas el navegador lee el HTML, ANTES de descargar Firebase.
+  // Si hay sesión guardada, muestra la app al toque (no el login ni pantalla
+  // vacía) con un aviso "Cargando tus órdenes". Firebase, al terminar (1-2s),
+  // llama a renderTable() y llena las filas reales. Esto elimina la espera
+  // visible del arranque en frío sin tocar la lógica de armado de filas.
+  (function arranqueInstantaneo() {
+    try {
+      var qs = new URLSearchParams(location.search);
+      var esVistaCliente = (qs.get('id') && qs.get('u')) || (qs.get('presid') && qs.get('u'));
+      if (esVistaCliente) return; // la vista cliente tiene su propio flujo
+
+      var haySesion = localStorage.getItem('st_login_wa') || localStorage.getItem('st_matias_token');
+      if (!haySesion) return; // sin sesión: se muestra el login normal
+
+      // Mostrar la app y ocultar el login en cuanto el DOM tenga esos nodos.
+      // Usamos un pequeño poll porque este script corre antes que el body.
+      var intentos = 0;
+      var t = setInterval(function () {
+        intentos++;
+        var app = document.getElementById('app-content');
+        var login = document.getElementById('login-overlay');
+        var tbody = document.getElementById('tableBody');
+        if (app && login && tbody) {
+          clearInterval(t);
+          login.style.display = 'none';
+          app.style.display = 'block';
+          // Placeholder mientras Firebase carga las filas reales
+          if (!tbody.children.length) {
+            tbody.innerHTML = '<tr id="fila-cargando-inicial"><td colspan="20" style="text-align:center; padding:40px; color:#64748b; font-size:15px;">⏳ Cargando tus órdenes…</td></tr>';
+          }
+        }
+        if (intentos > 200) clearInterval(t); // ~10s tope de seguridad
+      }, 50);
+    } catch (e) {}
+  })();
+  </script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -4948,14 +4986,24 @@ function showApp() {
         const esVistaCliente = (urlParams.get('id') && urlParams.get('u')) || (urlParams.get('presid') && urlParams.get('u'));
 
         // OPTIMIZACIÓN DE VELOCIDAD: Solo mostramos loader si hay una sesión guardada. Si no, salta al login.
+        // Incluye la sesión admin, que restaura por token (st_matias_token) y no por st_login_wa.
         const posibleSesion = localStorage.getItem('st_login_wa');
-        if (posibleSesion || esVistaCliente) {
-            mostrarLoader("Verificando seguridad...");
+        const haySesionAdmin = localStorage.getItem('st_matias_token');
+        // Si el arranque instantáneo ya mostró la app, NO tapamos con el loader.
+        const appYaVisible = document.getElementById('app-content') && document.getElementById('app-content').style.display === 'block';
+        if (posibleSesion || haySesionAdmin || esVistaCliente) {
+            if (!appYaVisible) mostrarLoader("Verificando seguridad...");
         } else {
             document.getElementById('login-overlay').style.display = 'flex';
             setTimeout(() => document.getElementById('userIn').focus(), 100);
             loadDraft();
         }
+
+        // ── PINTADO INMEDIATO DEL CACHÉ ─────────────────────────────────
+        // (Se hace ahora en un script del <head>, antes de cargar Firebase,
+        // para que aparezca de verdad al instante. Ver pintarCacheInstantaneo.)
+        // ─────────────────────────────────────────────────────────────────
+
 
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
@@ -4979,6 +5027,7 @@ function showApp() {
                             appIniciada = false;
                             firebase.auth().signOut();
                             ocultarLoader();
+                            document.getElementById('app-content').style.display = 'none';
                             document.getElementById('login-overlay').style.display = 'flex';
                             document.getElementById('loginError').innerText = 'Sesión expirada. Volvé a ingresar.';
                             document.getElementById('loginError').style.display = 'block';
@@ -5112,6 +5161,9 @@ function showApp() {
         }
 
         document.getElementById('login-overlay').style.display = 'flex';
+        // Si el arranque instantáneo mostró la app (sesión vieja) pero el token
+        // ya no es válido, ocultamos la app para no dejarla bajo el login.
+        document.getElementById('app-content').style.display = 'none';
         setTimeout(() => document.getElementById('userIn').focus(), 100);
         loadDraft();
     }
@@ -6647,6 +6699,10 @@ function showApp() {
 
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
+        // Marca para el pintado temprano del caché: guardamos el currentUser
+        // EXACTO (admin incluido, que no usa st_login_wa). Así el arranque en
+        // frío sabe bajo qué clave st_cache_ordenes_<u> está el caché.
+        try { if (isStored || u) localStorage.setItem('st_last_user', u); } catch(e) {}
 
         // ── HANDLER ?abrir= (QR interno del taller) ──────────────────────
         // Lo procesamos al INICIO de grantAccess con polling para que funcione
@@ -6882,6 +6938,7 @@ function showApp() {
         const iniciarListener = () => {
                         dbRef.once('value', snap => {
                 try {
+                    window._reintentosOnce = 0; // carga OK: reseteamos el contador de reintentos
                     const v = snap.val(); 
                     registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                     
@@ -6951,7 +7008,14 @@ function showApp() {
                 }
             }, errorDeFirebase => {
                 ocultarLoader();
-                // Solo mostramos el error si ya pasó suficiente tiempo (no es el arranque de sesión guardada)
+                // FIX: antes este error se tragaba en silencio en sesión guardada
+                // y la tabla quedaba con el caché viejo de localStorage sin reintento.
+                // Reintentamos hasta 3 veces con espera creciente (1.5s, 3s, 4.5s).
+                window._reintentosOnce = (window._reintentosOnce || 0) + 1;
+                if (window._reintentosOnce <= 3) {
+                    setTimeout(iniciarListener, 1500 * window._reintentosOnce);
+                    return;
+                }
                 if (!isStored || Date.now() - _grantAccessTime > 5000) {
                     showToast("Problema de conexión con la base de datos", "#dc2626");
                 }
@@ -6994,6 +7058,13 @@ function showApp() {
                 if (!currentUser || !dbRef) return;
                 if (Date.now() - _ultimoResync < 3000) return; // anti-rebote
                 _ultimoResync = Date.now();
+                // FIX socket zombie: con listeners child_* activos, el SDK responde
+                // el .once('value') desde su caché local SIN ir al servidor. Si la
+                // pestaña estuvo estrangulada, esa caché está vieja. goOffline+goOnline
+                // fuerza reconexión real y re-sincroniza los listeners contra el
+                // servidor (las escrituras en cola no se pierden: se reenvían solas).
+                try { firebase.database().goOffline(); } catch(e) {}
+                try { firebase.database().goOnline(); } catch(e) {}
                 dbRef.once('value', snap => {
                     const v = snap.val();
                     registros = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
@@ -10583,9 +10654,10 @@ function showApp() {
                 subirFotosYFinalizar(idEditando, pathParaUpdate, esOrdenArchivada, "ACTUALIZADO ✅", "#059669");
             };
 
+            if (window._marcarPendiente) window._marcarPendiente();
             db.ref(pathParaUpdate).child(idEditando).set(dataCompleto)
-            .then(finalizarEdit)
-            .catch(err => { if (_hecho) return; ocultarLoader(); showToast("Error al actualizar: " + err.message, "#dc2626"); });
+            .then(() => { if (window._resolverPendiente) window._resolverPendiente(); finalizarEdit(); })
+            .catch(err => { if (window._resolverPendiente) window._resolverPendiente(); if (_hecho) return; ocultarLoader(); showToast("Error al actualizar: " + err.message, "#dc2626"); });
 
             // Sin conexión: RTDB encola la escritura, pero el .then() no dispara
             // hasta reconectar. Finalizamos optimista para no colgar la UI.
@@ -10602,9 +10674,10 @@ function showApp() {
                 subirFotosYFinalizar(nuevaRef.key, pathActivo, false, "REGISTRADO ✅", "#059669");
             };
 
+            if (window._marcarPendiente) window._marcarPendiente();
             nuevaRef.set(data)
-            .then(finalizarNueva)
-            .catch(err => { if (_hecho) return; ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
+            .then(() => { if (window._resolverPendiente) window._resolverPendiente(); finalizarNueva(); })
+            .catch(err => { if (window._resolverPendiente) window._resolverPendiente(); if (_hecho) return; ocultarLoader(); showToast("Error al registrar: " + err.message, "#dc2626"); });
 
             // Sin conexión: finalizamos optimista; la escritura sube al reconectar.
             if (window.estaOnline === false) finalizarNueva();
@@ -14101,6 +14174,68 @@ function showApp() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register(swURL).then(() => console.log('SW inyectado')).catch(console.error);
     }
+
+    // ── MÓDULO DE ESCRITURAS PENDIENTES ──────────────────────────────────
+    // Problema real detectado: la UI confirma "REGISTRADO ✅" de forma
+    // optimista, pero RTDB encola la escritura SOLO EN MEMORIA. Si el
+    // celular congela o mata la pestaña antes de reconectar, esas órdenes
+    // nunca llegan al servidor (y otra PC no las ve, o se pierden).
+    // Este módulo cuenta las escrituras sin confirmar y avisa al usuario.
+    (function initPendientes() {
+        if (window._pendInit) return;
+        window._pendInit = true;
+        window._escriturasPendientes = 0;
+
+        const badgeP = document.createElement('div');
+        badgeP.id = 'sync-pending-indicator';
+        badgeP.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:58px;z-index:99999;padding:9px 18px;border-radius:999px;font-size:13px;font-weight:600;font-family:Outfit,"Segoe UI",sans-serif;box-shadow:0 6px 22px rgba(0,0,0,0.28);display:none;align-items:center;gap:8px;background:#d97706;color:#fff;max-width:92vw;text-align:center;line-height:1.25;';
+        const ponerBadgeP = () => { if (!badgeP.isConnected && document.body) document.body.appendChild(badgeP); };
+
+        let _mostrarTimer = null;
+
+        window._pintarPendientes = function() {
+            ponerBadgeP();
+            const n = window._escriturasPendientes;
+            if (n > 0) {
+                badgeP.innerHTML = '⏳ ' + n + (n === 1 ? ' cambio' : ' cambios') + ' por subir · no cierres la app todavía';
+                badgeP.style.display = 'flex';
+            } else {
+                badgeP.style.display = 'none';
+            }
+        };
+
+        window._marcarPendiente = function() {
+            window._escriturasPendientes++;
+            // Demora de 1.2s antes de mostrar el badge: un guardado normal
+            // con buena conexión confirma en menos de eso y no molesta.
+            if (!_mostrarTimer) {
+                _mostrarTimer = setTimeout(() => { _mostrarTimer = null; window._pintarPendientes(); }, 1200);
+            }
+        };
+
+        window._resolverPendiente = function() {
+            if (window._escriturasPendientes > 0) window._escriturasPendientes--;
+            if (window._escriturasPendientes === 0) {
+                clearTimeout(_mostrarTimer); _mostrarTimer = null;
+                window._pintarPendientes();
+            } else if (badgeP.style.display === 'flex') {
+                window._pintarPendientes(); // actualizar el número si ya está visible
+            }
+        };
+
+        // Aviso nativo del navegador si intenta cerrar con cambios sin subir
+        window.addEventListener('beforeunload', (e) => {
+            if (window._escriturasPendientes > 0) { e.preventDefault(); e.returnValue = ''; }
+        });
+
+        // Al volver a la app con pendientes, refrescar el badge al instante
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && window._escriturasPendientes > 0) {
+                window._pintarPendientes();
+            }
+        });
+    })();
+    // ─────────────────────────────────────────────────────────────────────
 
     // ── MÓDULO OFFLINE: detección de conexión + indicador visual ─────────
     // Realtime Database ya encola las escrituras cuando no hay internet y las
