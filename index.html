@@ -11,9 +11,13 @@
   <script>
         // Aplicar modo oscuro ANTES de renderizar y saltar Landing si corresponde
         (function() {
-            if (localStorage.getItem('st_matias_darkmode') === 'on') {
+            var esOscuro = localStorage.getItem('st_matias_darkmode') === 'on';
+            if (esOscuro) {
                 document.documentElement.classList.add('dark-mode-early');
             }
+            // Pintar el fondo del <html> YA MISMO (sin esperar al CSS externo)
+            // para eliminar el destello blanco del arranque instantáneo.
+            document.documentElement.style.backgroundColor = esOscuro ? '#080c18' : '#f4f5fb';
             
             var isLogged = localStorage.getItem('st_login_wa');
             var isRecordada = localStorage.getItem('st_session_recordada');
@@ -64,8 +68,8 @@
             tbody.innerHTML = '<tr id="fila-cargando-inicial"><td colspan="20" style="text-align:center; padding:40px; color:#64748b; font-size:15px;">⏳ Cargando tus órdenes…</td></tr>';
           }
         }
-        if (intentos > 200) clearInterval(t); // ~10s tope de seguridad
-      }, 50);
+        if (intentos > 400) clearInterval(t); // ~10s tope de seguridad
+      }, 25);
     } catch (e) {}
   })();
   </script>
@@ -242,6 +246,10 @@
         #trial-banner span { background:white; color:#d97706; padding:2px 8px; border-radius:10px; font-size:11px; margin-left:8px; }
         #trial-banner-close { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.15); border:none; color:white; font-size:15px; font-weight:bold; cursor:pointer; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:1; transition:background 0.2s; padding:0; }
         #trial-banner-close:hover { background:rgba(0,0,0,0.3); }
+        #volumen-banner { background: linear-gradient(135deg,#1e4d8c,#2563eb); color:white; font-size:13px; font-weight:700; display:none; border-radius:0; position:relative; }
+        #volumen-banner-inner { padding: 8px 40px 8px 15px; cursor:pointer; text-align:center; }
+        #volumen-banner-close { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.15); border:none; color:white; font-size:15px; font-weight:bold; cursor:pointer; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:1; transition:background 0.2s; padding:0; }
+        #volumen-banner-close:hover { background:rgba(0,0,0,0.3); }
 
         body.dark-mode .badge-licencia { filter: brightness(0.85); }
 
@@ -813,6 +821,7 @@
         body.client-mode nav, 
         body.client-mode #gesture-zone-top,
         body.client-mode #trial-banner,
+        body.client-mode #volumen-banner,
         body.client-mode #global-announcement {
             display: none !important;
         }
@@ -2832,6 +2841,13 @@ function showApp() {
      ⏳ <b id="trial-banner-text">Tu licencia de prueba vence en</b> <span id="trial-dias-texto">...</span> · ¡Tocá aquí para renovar!
     </div>
     <button id="trial-banner-close" onclick="cerrarBannerLicencia(event)" title="Cerrar">✕</button>
+   </div>
+
+<div id="volumen-banner">
+    <div id="volumen-banner-inner" onclick="setModoVista('activo'); cerrarBannerVolumen(event);">
+     📦 Tenés <b id="volumen-banner-cantidad">0</b> reparaciones activas · Revisá las viejas o "No reparado" y archivalas (📁) para que la app funcione más rápido
+    </div>
+    <button id="volumen-banner-close" onclick="cerrarBannerVolumen(event)" title="Cerrar">✕</button>
    </div>
 
    <!-- NUEVO BANNER DE ANUNCIO GLOBAL -->
@@ -6411,6 +6427,38 @@ function showApp() {
         sessionStorage.setItem('banner_cerrado', '1'); // se borra al cerrar la pestaña/sesión
     }
 
+    // ── AVISO DE VOLUMEN DE ÓRDENES ACTIVAS ───────────────────────────────
+    // El nodo activo ('reparaciones'/'reparaciones_usuarios/<taller>') se
+    // sincroniza completo en tiempo real ante cada reconexión. Al entregar
+    // una orden se archiva sola, pero "No reparado" y órdenes viejas
+    // olvidadas NO se archivan automáticamente y se acumulan para siempre.
+    // Este aviso es solo una sugerencia de buena práctica — no bloquea nada.
+    // El umbral (150) es un número de referencia: un taller con más de 150
+    // reparaciones EN CURSO al mismo tiempo casi seguro tiene viejas
+    // olvidadas ahí adentro, no 150 trabajos activos reales.
+    const UMBRAL_VOLUMEN_ACTIVO = 150;
+    function cerrarBannerVolumen(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('volumen-banner').style.display = 'none';
+        // Se recuerda por día (no por sesión): si el taller sigue por encima
+        // del umbral, conviene que el aviso vuelva a aparecer al otro día
+        // en vez de desaparecer para siempre con un solo click.
+        try { localStorage.setItem('st_volumen_banner_cerrado', new Date().toDateString()); } catch(e) {}
+    }
+    function verificarVolumenActivo() {
+        try {
+            const banner = document.getElementById('volumen-banner');
+            const cantidad = (registros || []).filter(r => !r.archivado).length;
+            if (cantidad < UMBRAL_VOLUMEN_ACTIVO) { if (banner) banner.style.display = 'none'; return; }
+            const cerradoHoy = localStorage.getItem('st_volumen_banner_cerrado') === new Date().toDateString();
+            if (cerradoHoy) return;
+            const spanCant = document.getElementById('volumen-banner-cantidad');
+            if (spanCant) spanCant.innerText = cantidad;
+            if (banner) banner.style.display = 'block';
+        } catch(e) {}
+    }
+    window.verificarVolumenActivo = verificarVolumenActivo;
+
     function mostrarPanelContactoAdmin() {
         if (!currentUser) {
             alert("Error: No se identificó el usuario.");
@@ -6947,6 +6995,7 @@ function showApp() {
                     
                     renderTable(); 
                     actualizarListasAutocompletado();
+                    if (typeof verificarVolumenActivo === 'function') verificarVolumenActivo();
 
                     // Mostrar onboarding si es usuario nuevo
                     setTimeout(() => { if (typeof iniciarOnboarding === 'function') iniciarOnboarding(); }, 600);
@@ -6979,6 +7028,7 @@ function showApp() {
                         renderTable();
                         actualizarListasAutocompletado();
                         showToast('🔄 Órdenes actualizadas', '#0ea5e9');
+                        if (typeof verificarVolumenActivo === 'function') verificarVolumenActivo();
                     };
 
                     const onRemovido = childSnap => {
@@ -6987,6 +7037,7 @@ function showApp() {
                         localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
                         renderTable();
                         actualizarListasAutocompletado();
+                        if (typeof verificarVolumenActivo === 'function') verificarVolumenActivo();
                     };
 
                     dbRef.on('child_added',   onCambio);
@@ -7046,25 +7097,38 @@ function showApp() {
         // el celular), el navegador estrangula la pestaña y Firebase suspende
         // el socket de tiempo real, por lo que las órdenes pueden quedar
         // desactualizadas varios minutos. Re-pedimos los datos con un
-        // .once('value') ante varios eventos para refrescar al instante:
+        // .once('value') + reconexión forzada, pero SOLO si la pestaña
+        // estuvo oculta un tiempo real (>= 60s). Un alt-tab de 2-3 segundos
+        // no genera el "socket zombie" y forzar goOffline/goOnline ahí sería
+        // gastar cuota de Firebase (GB descargados) sin necesidad — esto
+        // importa mucho al vender el sistema a varios talleres, porque cada
+        // reconexión de cada taller se suma a la cuota total de la cuenta.
         //   - visibilitychange: al cambiar de pestaña / minimizar y volver
         //   - focus (window):   al volver a clickear la ventana del navegador
-        //   - online:           al recuperar la conexión
+        //   - online:           al recuperar la conexión (siempre se fuerza:
+        //                       es un evento raro y ahí sí hay riesgo real
+        //                       de datos desactualizados)
         // Se registra una sola vez aunque grantAccess se llame de nuevo.
         if (!window._resyncFocoListo) {
             window._resyncFocoListo = true;
+            const UMBRAL_OCULTO_MS = 60000; // 60s: por debajo de esto, no vale la pena forzar reconexión
             let _ultimoResync = 0;
-            const _resyncOrdenes = () => {
+            let _ocultadoDesde = 0;
+
+            const _resyncOrdenes = (forzarReconexion) => {
                 if (!currentUser || !dbRef) return;
                 if (Date.now() - _ultimoResync < 3000) return; // anti-rebote
                 _ultimoResync = Date.now();
-                // FIX socket zombie: con listeners child_* activos, el SDK responde
-                // el .once('value') desde su caché local SIN ir al servidor. Si la
-                // pestaña estuvo estrangulada, esa caché está vieja. goOffline+goOnline
-                // fuerza reconexión real y re-sincroniza los listeners contra el
-                // servidor (las escrituras en cola no se pierden: se reenvían solas).
-                try { firebase.database().goOffline(); } catch(e) {}
-                try { firebase.database().goOnline(); } catch(e) {}
+                if (forzarReconexion) {
+                    // FIX socket zombie: con listeners child_* activos, el SDK responde
+                    // el .once('value') desde su caché local SIN ir al servidor. Si la
+                    // pestaña estuvo estrangulada, esa caché está vieja. goOffline+goOnline
+                    // fuerza reconexión real (las escrituras en cola no se pierden: se
+                    // reenvían solas). Esto SÍ descarga el nodo completo del usuario:
+                    // por eso solo lo hacemos cuando realmente hubo un corte largo.
+                    try { firebase.database().goOffline(); } catch(e) {}
+                    try { firebase.database().goOnline(); } catch(e) {}
+                }
                 dbRef.once('value', snap => {
                     const v = snap.val();
                     registros = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
@@ -7073,11 +7137,26 @@ function showApp() {
                     actualizarListasAutocompletado();
                 });
             };
+
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') _resyncOrdenes();
+                if (document.visibilityState === 'hidden') {
+                    _ocultadoDesde = Date.now();
+                } else if (document.visibilityState === 'visible') {
+                    const tiempoOculto = _ocultadoDesde ? (Date.now() - _ocultadoDesde) : 0;
+                    if (tiempoOculto >= UMBRAL_OCULTO_MS) {
+                        _resyncOrdenes(true); // corte largo: reconexión completa
+                    }
+                    // corte corto: no hacemos nada, Firebase ya mantiene el socket vivo
+                    _ocultadoDesde = 0;
+                }
             });
-            window.addEventListener('focus', _resyncOrdenes);
-            window.addEventListener('online', _resyncOrdenes);
+            window.addEventListener('blur', () => { if (!_ocultadoDesde) _ocultadoDesde = Date.now(); });
+            window.addEventListener('focus', () => {
+                const tiempoOculto = _ocultadoDesde ? (Date.now() - _ocultadoDesde) : 0;
+                if (tiempoOculto >= UMBRAL_OCULTO_MS) _resyncOrdenes(true);
+                _ocultadoDesde = 0;
+            });
+            window.addEventListener('online', () => _resyncOrdenes(true)); // recuperar conexión: siempre vale la pena
         }
         // ─────────────────────────────────────────────────────────────────
 
