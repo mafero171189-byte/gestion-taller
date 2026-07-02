@@ -4638,6 +4638,7 @@ function showApp() {
     let limiteTabla = 50;
     let logoTemporalBase64 = null; 
     let appIniciada = false;
+    let _authNullCount = 0; // cuántas veces onAuthStateChanged disparó con user=null (ver fix del flash app→login→app)
     let clienteRenderizado = false;
 
     let idParaSuspender = null;
@@ -4971,6 +4972,25 @@ function showApp() {
         });
     }
 
+    // ── MENSAJE DE "ACTUALIZANDO" EN LA TABLA ─────────────────────────────
+    // renderTable() hace body.innerHTML="" y reconstruye todo de una. En PC
+    // es tan rápido que no se nota, pero en el celular (con muchas filas) el
+    // usuario puede llegar a ver el hueco vacío un instante antes de que se
+    // repinte con los datos reales. Esta función pinta un aviso ANTES de esa
+    // reconstrucción pesada, y usa doble requestAnimationFrame para forzar
+    // que el navegador lo pinte de verdad antes de arrancar el trabajo lento
+    // (si no se fuerza el paint, el navegador puede saltearse el aviso y
+    // mostrar recién el resultado final, sin que se llegue a ver el mensaje).
+    function _mostrarActualizandoTabla(cb) {
+        try {
+            const tbody = document.getElementById('tableBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr id="fila-actualizando-tabla"><td colspan="20" style="text-align:center; padding:40px; color:#64748b; font-size:15px;">🔄 Actualizando tus órdenes…</td></tr>';
+            }
+        } catch (e) {}
+        requestAnimationFrame(() => requestAnimationFrame(cb));
+    }
+
     function mostrarLoader(msg = "Cargando...") {
         document.getElementById('loader-text').innerText = msg;
         document.getElementById('global-loader').style.display = 'flex';
@@ -5055,8 +5075,26 @@ function showApp() {
                     // No depender de login anónimo — ir directo a la vista
                     checkStoredSession();
                 } else {
-                    ocultarLoader();
-                    checkStoredSession(); 
+                    _authNullCount++;
+                    // Firebase dispara onAuthStateChanged con user=null PRIMERO
+                    // (mientras restaura la sesión guardada del dispositivo) y
+                    // recién DESPUÉS con el usuario real, si existe. Si tratamos
+                    // ese primer "null" como "no hay sesión", se ve un flash
+                    // feo: app (cascarón vacío) → login → app real. Si hay una
+                    // bandera de sesión guardada, le damos un margen para que
+                    // llegue el segundo callback antes de rendirnos y mostrar
+                    // el login — recién ahí asumimos que el token venció de verdad.
+                    const haySesionGuardadaAuth = localStorage.getItem('st_login_wa') || localStorage.getItem('st_matias_token');
+                    if (haySesionGuardadaAuth && _authNullCount === 1 && !appIniciada) {
+                        setTimeout(() => {
+                            if (appIniciada) return; // el usuario real ya llegó, no hacemos nada
+                            ocultarLoader();
+                            checkStoredSession();
+                        }, 2500);
+                    } else {
+                        ocultarLoader();
+                        checkStoredSession(); 
+                    }
                 }
             }
         });
@@ -6985,10 +7023,15 @@ function showApp() {
 
         const iniciarListener = () => {
                         dbRef.once('value', snap => {
+                window._reintentosOnce = 0; // carga OK: reseteamos el contador de reintentos
+                const v = snap.val();
+                const _nuevosRegistros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                // Si vamos a reemplazar contenido que ya se ve en pantalla, mostramos
+                // "Actualizando…" en vez de dejar la tabla en blanco mientras
+                // renderTable() reconstruye todo (puede notarse en celulares lentos).
+                _mostrarActualizandoTabla(() => {
                 try {
-                    window._reintentosOnce = 0; // carga OK: reseteamos el contador de reintentos
-                    const v = snap.val(); 
-                    registros = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                    registros = _nuevosRegistros;
                     
                     // --- NUEVO: Guardar en el caché para la próxima entrada ---
                     localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
@@ -7057,6 +7100,7 @@ function showApp() {
                 } finally {
                     ocultarLoader();
                 }
+                }); // fin _mostrarActualizandoTabla
             }, errorDeFirebase => {
                 ocultarLoader();
                 // FIX: antes este error se tragaba en silencio en sesión guardada
@@ -7131,10 +7175,17 @@ function showApp() {
                 }
                 dbRef.once('value', snap => {
                     const v = snap.val();
-                    registros = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
-                    localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
-                    renderTable();
-                    actualizarListasAutocompletado();
+                    const _nuevosRegistros = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
+                    // Esta pantalla ya estaba mostrando datos antes del corte;
+                    // mostramos "Actualizando…" en vez de vaciarla en blanco
+                    // mientras renderTable() reconstruye todo.
+                    _mostrarActualizandoTabla(() => {
+                        registros = _nuevosRegistros;
+                        localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
+                        renderTable();
+                        actualizarListasAutocompletado();
+                        if (typeof verificarVolumenActivo === 'function') verificarVolumenActivo();
+                    });
                 });
             };
 
@@ -9558,6 +9609,14 @@ function showApp() {
 
         const filtradosReversos = [...filtrados].reverse();
         const aMostrar = filtradosReversos.slice(0, limiteTabla);
+        // FIX RENDIMIENTO: antes se hacía body.innerHTML += por cada fila,
+        // lo cual obliga al navegador a serializar y volver a parsear TODO
+        // el HTML acumulado en cada vuelta del loop (patrón O(n²)). Con
+        // pocas órdenes no se nota, pero con muchas (100-300+) esto puede
+        // tardar varios segundos en un celular y dejar la pantalla congelada
+        // o en blanco mientras tanto. Ahora acumulamos strings en un array
+        // y hacemos UNA sola asignación al final (O(n), mucho más rápido).
+        const _filasHTML = [];
 
         aMostrar.forEach(r => {
             const precioActual = parseFloat(r.precio) || 0;
@@ -9620,7 +9679,7 @@ function showApp() {
             let badgeVentaRapida = r.esVentaRapida ? `<br><span style="background:#8e44ad; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:3px;">🛒 VENTA DIRECTA</span>` : '';
             let badgeHistorial = (r.archivado && !modoArchivo && bus.length > 0) ? `<br><span style="background:#6b7280; color:white; font-size:10px; padding:2px 6px; border-radius:4px; font-weight:bold; display:inline-block; margin-top:2px;">📁 HISTORIAL</span>` : '';
 
-            body.innerHTML += `<tr>
+            _filasHTML.push(`<tr>
                 <td><b>${nroLimpio}</b> <span style="cursor:pointer;" onclick="openHistory('${r.id}')">🕒</span><br>
                 <span style="font-size:10px; color:#6b7280;"><b>${fechaMostrar}</b></span></td>
                 <td>
@@ -9643,8 +9702,11 @@ function showApp() {
                     ${!r.esVentaRapida ? `<button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>` : ''}
                     ${(r.archivado && !r.esVentaRapida) ? `<button onclick="abrirModalGarantia('${r.id}')" title="Reingresar por Garantía" style="color:#7c3aed;">🔄</button>` : ''}
                     <button onclick="openDeleteModal('${r.id}')" style="color:red;">❌</button>
-                </td></tr>`;
+                </td></tr>`);
         });
+
+        // Una sola escritura al DOM con todas las filas ya armadas (rápido, O(n))
+        body.innerHTML = _filasHTML.join('');
 
         if (filtradosReversos.length > limiteTabla) {
             document.getElementById('btnCargarMas').style.display = 'inline-block';
