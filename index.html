@@ -9537,7 +9537,10 @@ function showApp() {
         let listaBase = [];
         if (modoArchivo) {
             const archivadosViejos = registros.filter(r => r.archivado === true);
-            listaBase = [...archivadosViejos, ...registrosArchivados];
+            const _combinada = [...archivadosViejos, ...registrosArchivados];
+            // Evitar que una misma orden aparezca dos veces (dedup por id)
+            const _vistos = new Set();
+            listaBase = _combinada.filter(r => { if (!r || _vistos.has(r.id)) return false; _vistos.add(r.id); return true; });
         } else {
             listaBase = registros;
         }
@@ -10377,7 +10380,7 @@ function showApp() {
                 db.ref(pathActivo).child(id).remove();
                 escribirIndice(id, copia, true);
                 registros = registros.filter(x => x.id !== id);
-                if (historialDescargado) { registrosArchivados.push({id: id, ...copia}); }
+                if (historialDescargado) { registrosArchivados = registrosArchivados.filter(x => x.id !== id); registrosArchivados.push({id: id, ...copia}); }
                 renderTable();
                 _tocarSyncTs();
             }).catch(err => showToast(mensajeFirebaseAmigable(err), '#dc2626'));
