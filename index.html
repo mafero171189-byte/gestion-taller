@@ -4604,6 +4604,7 @@ function showApp() {
     function fbPathIndice()    { return isUserAdmin ? 'indices/admin'           : 'indices/' + currentUser; }
     function fbPathPerfil()    { return isUserAdmin ? 'configuracion/admin'     : 'usuarios_registrados/' + currentUser; }
     function fbPathSync()      { return isUserAdmin ? 'sync_ts/admin'           : 'sync_ts/' + currentUser; }
+    function fbPathSeguimiento(){ return isUserAdmin ? 'seguimiento_publico/admin' : 'seguimiento_publico/' + currentUser; }
     window.fbPathActivo = fbPathActivo;
     window.fbPathArchivado = fbPathArchivado;
     window.fbPathStock = fbPathStock;
@@ -4819,6 +4820,18 @@ function showApp() {
         function escaparHTML(texto) {
         if (!texto) return "";
         return texto.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // Devuelve una URL de logo segura para usar en src="".
+    // Solo permite https:// y data:image/... (imágenes reales).
+    // Bloquea javascript:, data:text/html y cualquier esquema raro que
+    // podría inyectar código en la vista del cliente. Escapa comillas.
+    function logoSeguro(url) {
+        if (!url) return "";
+        var u = url.toString().trim();
+        var ok = /^https:\/\//i.test(u) || /^data:image\/(png|jpe?g|gif|webp|svg\+xml);/i.test(u);
+        if (!ok) return "";
+        return u.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     // --- NUEVA FUNCIÓN PARA FORMATEAR ENLACES ---
@@ -5191,21 +5204,14 @@ function showApp() {
             document.body.style.padding = '32px 16px 48px';
             document.body.style.boxSizing = 'border-box';
 
-            const pathActivo = tecnicoUser === 'Admin' ? 'reparaciones' : 'reparaciones_usuarios/' + tecnicoUser;
-            const pathArchivado = tecnicoUser === 'Admin' ? 'reparaciones_archivadas' : 'reparaciones_archivadas_usuarios/' + tecnicoUser;
+            const pathSeguimiento = tecnicoUser === 'Admin' ? 'seguimiento_publico/admin' : 'seguimiento_publico/' + tecnicoUser;
 
-            db.ref(pathActivo).child(clienteId).once('value')
-            .then(snapActivo => {
-                if (snapActivo.exists()) { 
-                    renderVistaCliente({id: clienteId, ...snapActivo.val()}, container); 
+            db.ref(pathSeguimiento).child(clienteId).once('value')
+            .then(snapPub => {
+                if (snapPub.exists()) { 
+                    renderVistaCliente({id: clienteId, ...snapPub.val()}, container); 
                 } else {
-                    return db.ref(pathArchivado).child(clienteId).once('value').then(snapArchivo => {
-                        if (snapArchivo.exists()) { 
-                            renderVistaCliente({id: clienteId, ...snapArchivo.val()}, container); 
-                        } else {
-                            container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">🔍</div><h2 style="color:#dc2626;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Orden no encontrada</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">El enlace no corresponde a ninguna orden activa. Comunicate con el taller para más información.</p></div>`;
-                        }
-                    });
+                    container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">🔍</div><h2 style="color:#dc2626;font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Orden no encontrada</h2><p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">El enlace no corresponde a ninguna orden activa. Comunicate con el taller para más información.</p></div>`;
                 }
             })
             .catch(error => {
@@ -5247,7 +5253,7 @@ function showApp() {
         const nombreTaller = conf.nombreTaller || "Servicio Técnico";
         const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
         const logoHtml = conf.logo
-            ? `<img src="${conf.logo}" style="max-height:55px;max-width:160px;object-fit:contain;margin-bottom:14px;border-radius:8px;display:block;margin-left:auto;margin-right:auto;">`
+            ? `<img src="${logoSeguro(conf.logo)}" style="max-height:55px;max-width:160px;object-fit:contain;margin-bottom:14px;border-radius:8px;display:block;margin-left:auto;margin-right:auto;">`
             : '';
 
         const statusMap = {
@@ -5416,7 +5422,7 @@ function showApp() {
         const nombreTaller = conf.nombreTaller || 'Servicio Técnico';
         const subtitulo = conf.subtitulo || 'Presupuesto';
         const logoHtml = conf.logo
-            ? `<img src="${conf.logo}" style="max-height:55px;max-width:160px;object-fit:contain;margin-bottom:14px;border-radius:8px;display:block;margin-left:auto;margin-right:auto;">`
+            ? `<img src="${logoSeguro(conf.logo)}" style="max-height:55px;max-width:160px;object-fit:contain;margin-bottom:14px;border-radius:8px;display:block;margin-left:auto;margin-right:auto;">`
             : '';
 
         const estadoMap = {
@@ -7035,6 +7041,9 @@ function showApp() {
                     
                     // --- NUEVO: Guardar en el caché para la próxima entrada ---
                     localStorage.setItem('st_cache_ordenes_' + currentUser, JSON.stringify({ data: registros, _ts: Date.now() }));
+
+                    // Publicar copias públicas de las órdenes activas ya existentes (una sola vez).
+                    _backfillPublico();
                     
                     renderTable(); 
                     actualizarListasAutocompletado();
@@ -9137,6 +9146,9 @@ function showApp() {
         updates.estado = nuevo;
         updates.historialEstados = historialActual;
 
+        // Actualizar la copia pública para que el cliente vea el nuevo estado.
+        _proyectarPublico(idParaEstado, {...r, ...updates});
+
         // Si se cambia desde "Entregado s/c" a cualquier otro estado, limpiar la bandera
         if (nuevo !== "Entregado" && r.entregadoSinCobrar) {
             updates.entregadoSinCobrar = false;
@@ -10941,11 +10953,48 @@ function showApp() {
             fechaEntrega: fechaEntrega
         };
         db.ref(pathIndice).child(id).set(entrada).catch(() => {});
+        _proyectarPublico(id, data);
     }
 
     function borrarIndice(id) {
         const pathIndice = fbPathIndice();
         db.ref(pathIndice).child(id).remove().catch(() => {});
+        _borrarPublico(id);
+    }
+
+    // ── COPIA PÚBLICA PARA EL LINK DEL CLIENTE ────────────────────────────
+    // Solo se publican estos campos (los que ve el cliente en el seguimiento).
+    // NUNCA se publican datos sensibles: PIN/patrón de desbloqueo, notas
+    // internas, costo de repuesto, etc. El registro real queda 100% privado.
+    var _CAMPOS_PUBLICOS = ['estado','senaOriginal','sena','saldoCobrado','precio','orden','modelo','marca','equipo','color','fecha','falla','obs','imei','cliente','archivado','descuentoValor','descuentoTipo','descuentoMonto','descuentoEntregaMonto','descuentoEfectivo'];
+    function _proyectarPublico(id, data) {
+        try {
+            if (!id || !data || isClientMode) return;
+            var pub = {};
+            _CAMPOS_PUBLICOS.forEach(function(k) {
+                if (data[k] !== undefined && data[k] !== null) pub[k] = data[k];
+            });
+            db.ref(fbPathSeguimiento()).child(id).set(pub).catch(function() {});
+        } catch (e) {}
+    }
+    function _borrarPublico(id) {
+        try {
+            if (!id || isClientMode) return;
+            db.ref(fbPathSeguimiento()).child(id).remove().catch(function() {});
+        } catch (e) {}
+    }
+    // Al iniciar, publica las órdenes ACTIVAS existentes una sola vez, para que
+    // los links que ya están circulando sigan funcionando tras la migración.
+    function _backfillPublico() {
+        try {
+            if (isClientMode || !currentUser) return;
+            var flag = 'st_backfill_pub_' + currentUser;
+            if (localStorage.getItem(flag)) return;
+            (registros || []).forEach(function(r) {
+                if (r && r.id && !r.archivado) _proyectarPublico(r.id, r);
+            });
+            localStorage.setItem(flag, '1');
+        } catch (e) {}
     }
 
     // Migración silenciosa: la primera vez que el historial se descarga,
@@ -12784,8 +12833,8 @@ function showApp() {
                 body.innerHTML += `
                     <tr>
                         <td style="padding:10px 8px;">
-                            <b style="font-size:12px;">${u.whatsapp || u.id}</b>
-                            ${u.authEmail ? `<div style="font-size:10px;color:#9ca3af;">${u.authEmail}</div>` : ''}
+                            <b style="font-size:12px;">${escaparHTML(u.whatsapp || u.id)}</b>
+                            ${u.authEmail ? `<div style="font-size:10px;color:#9ca3af;">${escaparHTML(u.authEmail)}</div>` : ''}
                             <div style="font-size:10px;color:#9ca3af;margin-top:2px;">📅 ${u.fechaAlta ? u.fechaAlta.split(',')[0] : '—'}</div>
                             <div style="font-size:10px;color:${u.ultimoIngreso ? '#4b5563' : '#d1d5db'};">🕐 ${u.ultimoIngreso ? tiempoRelativo(u.ultimoIngreso) : 'Sin registro'}</div>
                         </td>
