@@ -5336,6 +5336,43 @@ function showApp() {
 
         registros = [regEncontrado];
 
+        // Si la orden ya fue entregada Y no quedó saldo pendiente, no se muestra el
+        // seguimiento: se reemplaza por una confirmación profesional con la marca del taller.
+        // Si fue "entregada sin cobrar" (queda deuda), se sigue mostrando el seguimiento
+        // para que el cliente vea el saldo que adeuda.
+        const _estadoOrden = (regEncontrado.estado || '').toString();
+        const _estaEntregado = (_estadoOrden === 'Entregado' || _estadoOrden.toLowerCase().startsWith('entregado'));
+        if (_estaEntregado && saldoPendiente <= 0) {
+            container.innerHTML = `
+            <div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);">
+
+                <div style="background:linear-gradient(135deg,#06122a 0%,#1a3565 100%);padding:28px 24px;text-align:center;">
+                    ${logoHtml}
+                    <h1 style="color:white;margin:0 0 5px;font-size:22px;font-weight:900;letter-spacing:-0.3px;font-family:'Outfit',sans-serif;">${nombreTaller}</h1>
+                    <p style="color:rgba(255,255,255,0.6);margin:0;font-size:13px;font-weight:500;">${subtitulo}</p>
+                </div>
+
+                <div style="padding:44px 32px 40px;text-align:center;">
+                    <div style="width:88px;height:88px;margin:0 auto 22px;border-radius:50%;background:#ecfdf5;border:3px solid #a7f3d0;display:flex;align-items:center;justify-content:center;">
+                        <span style="font-size:44px;line-height:1;">✅</span>
+                    </div>
+                    <h2 style="color:#065f46;font-size:23px;font-weight:900;margin:0 0 12px;letter-spacing:-0.4px;font-family:'Outfit',sans-serif;">Equipo entregado</h2>
+                    <p style="color:#64748b;font-size:14.5px;line-height:1.65;margin:0 0 26px;">Esta orden fue finalizada y entregada. El seguimiento en línea ya no se encuentra disponible.</p>
+
+                    <div style="display:inline-flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e8ecf0;border-radius:50px;padding:9px 20px;margin-bottom:28px;">
+                        <span style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Orden</span>
+                        <span style="font-size:16px;font-weight:900;color:#06122a;letter-spacing:-0.5px;">#${regEncontrado.orden || ''}</span>
+                    </div>
+
+                    <div style="border-top:1px solid #f1f5f9;padding-top:22px;">
+                        <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin:0;">Gracias por confiar en <b style="color:#475569;">${nombreTaller}</b>.<br>Ante cualquier consulta, comunicate con el taller.</p>
+                    </div>
+                </div>
+
+            </div>`;
+            return;
+        }
+
         container.innerHTML = `
             <div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);">
 
