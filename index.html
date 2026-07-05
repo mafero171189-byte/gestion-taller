@@ -8371,6 +8371,7 @@ function showApp() {
                 document.getElementById('modalCobroEntregado').style.display = 'none';
                 // Ahora archivar: mover al nodo archivado
                 r.archivado = true;
+                _proyectarPublico(idParaEstado, r);
                 let copia = {...r};
                 delete copia.id;
                 const loaderTimeoutDeuda = setTimeout(() => {
@@ -8529,6 +8530,7 @@ function showApp() {
             // Archivar la orden (el costoRepuesto ya está en r y se guarda en la copia,
             // la contabilidad lo lee automáticamente desde ahí)
             r.archivado = true;
+            _proyectarPublico(idParaEstado, r);
             let copia = {...r};
             delete copia.id;
             return db.ref(pathArchivado).child(idParaEstado).set(copia).then(() => {
@@ -8606,6 +8608,7 @@ function showApp() {
         mostrarLoader("Registrando entrega...");
         db.ref(pathActivo).child(idParaEstado).update(updates).then(() => {
             Object.assign(r, updates);
+            _proyectarPublico(idParaEstado, r);
             document.getElementById('modalCobroEntregado').style.display = 'none';
             renderTable();
             ocultarLoader();
