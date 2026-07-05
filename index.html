@@ -9261,6 +9261,7 @@ function showApp() {
         db.ref(nodoActualizar).child(idParaPrecio).update({ precio: nuevo, historialPrecios }).then(() => {
             r.precio = nuevo;
             r.historialPrecios = historialPrecios;
+            _proyectarPublico(idParaPrecio, r);
             renderTable();
             closePriceModal();
             showToast("PRECIO ACTUALIZADO ✅", "#059669");
@@ -10969,7 +10970,7 @@ function showApp() {
     // Solo se publican estos campos (los que ve el cliente en el seguimiento).
     // NUNCA se publican datos sensibles: PIN/patrón de desbloqueo, notas
     // internas, costo de repuesto, etc. El registro real queda 100% privado.
-    var _CAMPOS_PUBLICOS = ['estado','senaOriginal','sena','saldoCobrado','precio','orden','modelo','marca','equipo','color','fecha','falla','obs','imei','cliente','archivado','descuentoValor','descuentoTipo','descuentoMonto','descuentoEntregaMonto','descuentoEfectivo'];
+    var _CAMPOS_PUBLICOS = ['estado','senaOriginal','sena','saldoCobrado','precio','orden','modelo','marca','equipo','color','fecha','falla','obs','imei','cliente','archivado','motivoGarantia','descuentoValor','descuentoTipo','descuentoMonto','descuentoEfectivo','descuentoEntregaMonto','descuentoEntregaTipo','descuentoEntregaValor'];
     function _proyectarPublico(id, data) {
         try {
             if (!id || !data || isClientMode) return;
