@@ -3577,7 +3577,7 @@ function showApp() {
      <!-- Barra sticky mobile (oculta en desktop) -->
      <div id="sticky-submit-bar" style="display:none;">
       <button type="button" id="btnSubmitMobile" class="btn btn-main" onclick="document.getElementById('repairForm').requestSubmit()">✅ REGISTRAR</button>
-      <button type="button" class="btn btn-limpiar" onclick="clickLimpiar()">🗑️ LIMPIAR</button>
+      <button type="button" id="btnLimpiarMobile" class="btn btn-limpiar" onclick="clickLimpiar()">🗑️ LIMPIAR</button>
      </div>
      <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
       <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid var(--gray-200); min-width: 200px;">
@@ -10630,6 +10630,8 @@ function showApp() {
         idEditando = null;
         const btnL = document.getElementById('btnLimpiar');
         if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#9ca3af"; }
+        const btnLMob = document.getElementById('btnLimpiarMobile');
+        if (btnLMob) { btnLMob.innerText = "🗑️ LIMPIAR"; btnLMob.style.background = ""; }
         document.getElementById('repairForm').reset();
         
         const inputs = ['nroOrden', 'cliente', 'tel', 'modelo', 'color', 'imei', 'pin', 'precio', 'sena', 'costoRepuesto', 'falla', 'obs', 'notaInterna'];
@@ -11115,6 +11117,8 @@ function showApp() {
         if (btnMobile) btnMobile.innerText = "✏️ ACTUALIZAR";
         document.getElementById('btnLimpiar').innerText = "✖ CANCELAR";
         document.getElementById('btnLimpiar').style.background = "#dc2626";
+        const btnLimpMob = document.getElementById('btnLimpiarMobile');
+        if (btnLimpMob) { btnLimpMob.innerText = "✖ CANCELAR"; btnLimpMob.style.background = "#dc2626"; }
         document.getElementById('costo-inner').style.display = "none"; 
         
         fotosTemporales = [];
