@@ -5456,7 +5456,7 @@ function showApp() {
         const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {}); // abre en nueva pestaña (comportamiento default)
+            generarEImprimirPDF(r, snap.val() || {}, null, null, null, { modo: 'cliente' }); // solo copia cliente
         });
     }
 
@@ -5470,7 +5470,7 @@ function showApp() {
                 const a = document.createElement('a');
                 a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
                 URL.revokeObjectURL(url);
-            });
+            }, null, null, { modo: 'cliente' });
         });
     }
 
@@ -5740,39 +5740,41 @@ function showApp() {
     }
     // ─────────────────────────────────────────────────────────────────────
 
-    function imprimir(id) {
-        const r = getRegistro(id); 
-        if(!r) return;
+    async function imprimir(id) {
+        const r = getRegistro(id);
+        if (!r) return;
         const path = fbPathPerfil();
         mostrarLoader("Generando PDF...");
 
-        // Genero el QR de seguimiento del cliente primero (async), luego armo el PDF
         const baseUrl = window.location.origin + window.location.pathname;
-        const linkSeg = baseUrl + '?id=' + r.id + '&u=' + currentUser;
+        const linkSeg   = baseUrl + '?id=' + r.id + '&u=' + currentUser;      // seguimiento del cliente
+        const linkAbrir = baseUrl + '?abrir=' + r.id + '&u=' + currentUser;   // abrir orden en el sistema (taller)
 
-        const _hacerPDF = (qrDataUrl) => {
-            db.ref(path).once('value', snap => {
-                generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
-                    const url = URL.createObjectURL(blob);
+        const [qrCliente, qrTaller] = await Promise.all([_qrDataUrl(linkSeg), _qrDataUrl(linkAbrir)]);
+
+        db.ref(path).once('value', (snap) => {
+            const conf = snap.val() || {};
+            // 1) PDF doble (taller + cliente) para Ver / Descargar
+            generarEImprimirPDF(r, conf, (blobDoble, nro) => {
+                const urlDoble = URL.createObjectURL(blobDoble);
+                // 2) PDF single cliente para Compartir (pre-generado: navigator.share no rompe el gesto en iOS)
+                generarEImprimirPDF(r, conf, (blobCli) => {
                     const modal = document.getElementById('modalPDFAcciones');
                     const btnVer = document.getElementById('btnPDFVer');
                     const btnDesc = document.getElementById('btnPDFDescargar');
                     const btnComp = document.getElementById('btnPDFCompartir');
                     const btnRecibo = document.getElementById('btnPDFRecibo');
 
-                    btnVer.onclick = () => {
-                        window.open(url, '_blank');
-                        modal.style.display = 'none';
-                    };
+                    btnVer.onclick = () => { window.open(urlDoble, '_blank'); modal.style.display = 'none'; };
                     btnDesc.onclick = () => {
                         const a = document.createElement('a');
-                        a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
+                        a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click();
                         modal.style.display = 'none';
                     };
                     if (navigator.share) {
                         btnComp.style.display = 'block';
                         btnComp.onclick = () => {
-                            const file = new File([blob], `Orden-${nro}.pdf`, { type: 'application/pdf' });
+                            const file = new File([blobCli], `Orden-${nro}-cliente.pdf`, { type: 'application/pdf' });
                             navigator.share({ title: `Ticket Orden #${nro}`, files: [file] }).catch(() => {});
                             modal.style.display = 'none';
                         };
@@ -5780,41 +5782,13 @@ function showApp() {
                         btnComp.style.display = 'none';
                     }
                     if (btnRecibo) {
-                        if (r.estado === 'Entregado') {
-                            btnRecibo.style.display = 'block';
-                            modal._reciboOrdenId = id;
-                        } else {
-                            btnRecibo.style.display = 'none';
-                            modal._reciboOrdenId = null;
-                        }
+                        if (r.estado === 'Entregado') { btnRecibo.style.display = 'block'; modal._reciboOrdenId = id; }
+                        else { btnRecibo.style.display = 'none'; modal._reciboOrdenId = null; }
                     }
                     modal.style.display = 'flex';
-                }, qrDataUrl);
-            });
-        };
-
-        if (typeof QRCode !== 'undefined') {
-            try {
-                let cont = document.getElementById('_qrTempTicket');
-                if (!cont) {
-                    cont = document.createElement('div');
-                    cont.id = '_qrTempTicket';
-                    cont.style.position = 'fixed'; cont.style.left = '-9999px'; cont.style.top = '0';
-                    document.body.appendChild(cont);
-                }
-                cont.innerHTML = '';
-                new QRCode(cont, { text: linkSeg, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
-                setTimeout(() => {
-                    const canvas = cont.querySelector('canvas');
-                    const imgEl  = cont.querySelector('img');
-                    let qrDataUrl = '';
-                    try { qrDataUrl = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : ''); } catch(e) {}
-                    _hacerPDF(qrDataUrl);
-                }, 160);
-            } catch(e) { _hacerPDF(''); }
-        } else {
-            _hacerPDF('');
-        }
+                }, qrCliente, null, { modo: 'cliente' });
+            }, qrCliente, qrTaller, { modo: 'doble' });
+        });
     }
 
     function abrirReciboDesdePDFModal() {
@@ -6088,177 +6062,272 @@ function showApp() {
         });
     }
 
-    function generarEImprimirPDF(r, conf, callback, qrDataUrl) {
+    // Genera un dataURL PNG de un QR a partir de un texto (Promise).
+    function _qrDataUrl(text) {
+        return new Promise((resolve) => {
+            try {
+                if (typeof QRCode === 'undefined' || !text) return resolve('');
+                let cont = document.getElementById('_qrTempGen');
+                if (!cont) {
+                    cont = document.createElement('div');
+                    cont.id = '_qrTempGen';
+                    cont.style.position = 'fixed'; cont.style.left = '-9999px'; cont.style.top = '0';
+                    document.body.appendChild(cont);
+                }
+                cont.innerHTML = '';
+                new QRCode(cont, { text: text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+                setTimeout(() => {
+                    const canvas = cont.querySelector('canvas');
+                    const imgEl  = cont.querySelector('img');
+                    let d = '';
+                    try { d = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : ''); }
+                    catch (e) { d = imgEl ? imgEl.src : ''; }
+                    resolve(d);
+                }, 160);
+            } catch (e) { resolve(''); }
+        });
+    }
+
+    async function generarEImprimirPDF(r, conf, callback, qrCliente, qrTaller, opts) {
+        opts = opts || {};
+        const modo = opts.modo || 'doble';          // 'doble' (taller+cliente) o 'cliente' (una sola)
         const nombreHeader = conf.nombreTaller || "";
         const subHeader = conf.subtitulo || "";
         const wappHeader = conf.wappTicket || "";
         const textGarantia = conf.garantia || "";
         const nroLimpio = String(r.orden || '').replace('ORD-', '');
-        
-        
-        const { jsPDF } = window.jspdf;
-        const docDummy = new jsPDF({ unit: 'mm', format: [80, 160] });
-        
-        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
-        const linesCliente = docDummy.splitTextToSize(String(r.cliente), 40);
-        
-        let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''} (${r.color || '-'})`.trim();
-        const linesEquipo = docDummy.splitTextToSize(equipoCompleto, 40);
-        
-        const fallaLimpia = String(r.falla || "-").replace(/\s*\+\s*$/, '');
-        const linesFalla = docDummy.splitTextToSize(fallaLimpia, 40);
-        
-        const linesObs = docDummy.splitTextToSize(String(r.obs || "-"), 40);
-        const linesImei = docDummy.splitTextToSize(String(r.imei || "-"), 40);
 
-        // Motivo de garantía (solo si aplica)
-        const motivoGar = r.motivoGarantia ? String(r.motivoGarantia) : '';
-        const linesMotivoGar = motivoGar ? docDummy.splitTextToSize(motivoGar, 40) : [];
-
-        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(7);
-        const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
-        const lineasGarantia = docDummy.splitTextToSize(garantiaLimpia, 65); 
-        
-        let extraLines = (linesCliente.length - 1) + (linesEquipo.length - 1) + (linesFalla.length - 1) + (linesObs.length - 1) + (linesImei.length - 1) + (linesMotivoGar.length > 0 ? linesMotivoGar.length + 1 : 0);
-        
-        let txtX = 40, alignStr = 'center', nameSize = 18, maxTextWidth = 70;
-        if (conf.logo) { txtX = 28; alignStr = 'left'; nameSize = 16; maxTextWidth = 47; }
-
-        docDummy.setFont("helvetica", "bold"); docDummy.setFontSize(nameSize);
-        const lineasNombreTaller = docDummy.splitTextToSize(nombreHeader, maxTextWidth);
-        
-        docDummy.setFont("helvetica", "normal"); docDummy.setFontSize(10);
-        const lineasSubtitulo = docDummy.splitTextToSize(subHeader, maxTextWidth);
-
-        let altoHeader = 10 + (lineasNombreTaller.length * 6) + (lineasSubtitulo.length * 4);
-        if (wappHeader) altoHeader += 6;
-        if (conf.logo && altoHeader < 30) altoHeader = 30;
-        
-        const _extraQR = 32; // espacio para el QR (22mm) + leyenda + padding
-        const altoDinamico = altoHeader + 140 + (lineasGarantia.length * 3.5) + (extraLines * 5) + _extraQR; 
-        
-        const doc = new jsPDF({ unit: 'mm', format: [80, altoDinamico] });
-        
-        doc.setFillColor(26, 42, 58); doc.rect(0, 0, 80, altoHeader, 'F');
-        if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', 5, 5, 20, 20); } catch(e) {} }
-
-        doc.setTextColor(255, 255, 255); let headY = 12;
-        doc.setFont("helvetica", "bold"); doc.setFontSize(nameSize); doc.text(lineasNombreTaller, txtX, headY, {align: alignStr}); headY += (lineasNombreTaller.length * 6);
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(lineasSubtitulo, txtX, headY, {align: alignStr}); headY += (lineasSubtitulo.length * 4.5);
-        if(wappHeader) doc.text("WhatsApp: " + wappHeader, txtX, headY, {align: alignStr});
-        
-        let subY = altoHeader + 8;
-        doc.setTextColor(26, 42, 58); doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("COMPROBANTE DE INGRESO", 40, subY, {align:'center'});
-        doc.setFontSize(18); doc.text("ORDEN: " + nroLimpio, 40, subY + 8, {align:'center'});
-        doc.setDrawColor(150, 150, 150); doc.line(10, subY + 12, 70, subY + 12);
-        
-        doc.setFontSize(10); let y = subY + 22; const col1 = 12, col2 = 35;
-        const printRow = (l, linesArray) => { doc.setFont("helvetica", "bold"); doc.text(l, col1, y); doc.setFont("helvetica", "normal"); doc.text(linesArray, col2, y); y += (linesArray.length * 5) + 2; };
-        
-        printRow("FECHA:", [r.fecha ? r.fecha.split(',')[0] : ""]); 
-        printRow("CLIENTE:", linesCliente); 
-        printRow("EQUIPO:", linesEquipo);
-        printRow("IMEI/SERIE:", linesImei); 
-        printRow("FALLA:", linesFalla); 
-        printRow("OBS:", linesObs);
-        if (linesMotivoGar.length > 0) {
-            doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-            doc.setTextColor(91, 33, 182);
-            doc.text("GARANTÍA:", col1, y);
-            doc.setFont("helvetica", "normal");
-            doc.text(linesMotivoGar, col2, y);
-            doc.setTextColor(50, 50, 50);
-            y += (linesMotivoGar.length * 5) + 2;
-        }
-        
-        let precioActual = parseFloat(r.precio) || 0;
-        let senaAbonada      = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
-        let saldoCobrado     = parseFloat(r.saldoCobrado) || 0;
-        let descuentoMontoPDF = parseFloat(r.descuentoMonto) || 0;
-        let descEntregaPDF   = parseFloat(r.descuentoEntregaMonto) || 0;
-        let precioConDescuento = precioActual > 0 && descuentoMontoPDF > 0 ? Math.max(0, precioActual - descuentoMontoPDF) : precioActual;
-        let precioEfectivo   = Math.max(0, precioConDescuento - descEntregaPDF);
-        // totalPagado = seña inicial + saldo cobrado después
-        // Si no hay senaOriginal, usar r.sena como referencia completa
-        let totalPagado = r.senaOriginal !== undefined
-            ? senaAbonada + saldoCobrado
-            : Math.max(senaAbonada, senaAbonada + saldoCobrado);
-        let saldoPendiente = Math.max(0, precioEfectivo - totalPagado);
-
-        y += 3; doc.line(10, y, 70, y); y += 10;
-        if (descuentoMontoPDF > 0 && precioActual > 0) {
-            // Precio original (sin tachar)
-            doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(80,80,80);
-            doc.text("Precio: " + fmt.format(precioActual), col1, y); y += 6;
-            // Descuento con etiqueta "en efectivo" si aplica
-            doc.setTextColor(220, 38, 38); doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-            const dLabel = r.descuentoTipo === '%' ? "Descuento " + (r.descuentoValor || '') + "%" : "Descuento";
-            const dEfectivo = r.descuentoEfectivo ? " (pago en efectivo)" : "";
-            doc.text(dLabel + dEfectivo + ": -" + fmt.format(descuentoMontoPDF), col1, y); y += 6;
-            doc.setTextColor(50, 50, 50);
-            doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-            doc.text("TOTAL: " + fmt.format(precioConDescuento), col1, y); y += 7;
-        } else {
-            doc.setFont("helvetica", "normal"); doc.text("TOTAL: " + fmt.format(precioActual), col1, y); y += 7;
-        }
-        // Mostrar descuento de entrega si aplica
-        if (descEntregaPDF > 0) {
-            const dEntregaLabel = (r.descuentoEntregaTipo === '%')
-                ? 'Desc. entrega ' + (r.descuentoEntregaValor || '') + '%'
-                : 'Desc. entrega';
-            const dEntregaEfec = r.descuentoEfectivo ? ' (efectivo)' : '';
-            doc.setTextColor(220,38,38); doc.setFont('helvetica','normal'); doc.setFontSize(9);
-            doc.text(dEntregaLabel + dEntregaEfec + ': -' + fmt.format(descEntregaPDF), col1, y); y += 6;
-            doc.setTextColor(50,50,50);
-        }
-        doc.setFont('helvetica','normal'); doc.setFontSize(10);
-        // ABONADO no puede superar el precio efectivo (evita mostrar más de lo que costó)
-        const abonadoMostrar = Math.min(totalPagado, precioEfectivo || totalPagado);
-        doc.text("ABONADO: " + fmt.format(abonadoMostrar), col1, y); y += 10;
-        doc.setFillColor(242, 242, 242); doc.rect(10, y, 60, 14, 'F');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); 
-        
-        if (precioActual === 0) {
-            if (totalPagado > 0) {
-                doc.setTextColor(22, 163, 74); 
-                doc.text("A FAVOR: " + fmt.format(totalPagado), 40, y + 9.5, {align:'center'});
-            } else {
-                doc.setTextColor(180, 130, 0); 
-                doc.text("A COTIZAR", 40, y + 9.5, {align:'center'});
-            }
-        } else if (saldoPendiente > 0) {
-            doc.setTextColor(26, 42, 58); 
-            doc.text("SALDO: " + fmt.format(saldoPendiente), 40, y + 9.5, {align:'center'});
-        } else {
-            doc.setTextColor(22, 163, 74); 
-            doc.text("PAGADO", 40, y + 9.5, {align:'center'});
-        }
-        
-        doc.setTextColor(50, 50, 50); 
-        doc.setFont("helvetica", "normal"); doc.setFontSize(7); 
-        const garantiaStartY = y + 20;
-        doc.text(lineasGarantia, 10, garantiaStartY, { align: 'left' });
-
-        // QR de seguimiento del cliente al pie del ticket,
-        // debajo del texto de garantía (calculamos su altura real)
-        if (qrDataUrl) {
+        // ----- desencriptar y parsear PIN / patrón (si existe) -----
+        let pinInfo = { tipo: 'none' };
+        if (r.pin) {
             try {
-                const lineH7 = 3.2; // altura aprox de una línea a 7pt
-                const garantiaEndY = garantiaStartY + (lineasGarantia.length * lineH7);
-                const qrY = garantiaEndY + 5;
-                const qrSize = 22;
-                doc.addImage(qrDataUrl, 'PNG', 40 - qrSize / 2, qrY, qrSize, qrSize);
-                doc.setFontSize(7); doc.setTextColor(120, 120, 120);
-                doc.text('Escaneá para seguir tu reparación', 40, qrY + qrSize + 3, { align: 'center' });
-            } catch(e) {}
+                let plano = '';
+                if (typeof desencriptarPIN === 'function') plano = await desencriptarPIN(r.pin, currentUser);
+                else plano = String(r.pin);
+                plano = (plano || '').trim();
+                if (plano) {
+                    if (/^patr[oó]n\s*:/i.test(plano)) {
+                        const seq = plano.split(':')[1].split('-')
+                            .map(n => parseInt(String(n).trim(), 10))
+                            .filter(n => n >= 1 && n <= 9);
+                        pinInfo = seq.length ? { tipo: 'patron', path: seq } : { tipo: 'none' };
+                    } else {
+                        pinInfo = { tipo: 'texto', valor: plano };
+                    }
+                }
+            } catch (e) { pinInfo = { tipo: 'none' }; }
         }
-        
+
+        const { jsPDF } = window.jspdf;
+        const doble = (modo === 'doble');
+        const doc = doble
+            ? new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+            : new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const PAGE_W = doble ? 297 : 210;
+        const PAGE_H = doble ? 210 : 297;
+        const COPY_W = doble ? PAGE_W / 2 : PAGE_W;   // ancho de cada copia
+
+        // ----- datos comunes -----
+        const equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''} (${r.color || '-'})`.trim();
+        const fallaLimpia = String(r.falla || "-").replace(/\s*\+\s*$/, '');
+        const motivoGar = r.motivoGarantia ? String(r.motivoGarantia) : '';
+        const garantiaLimpia = textGarantia.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+
+        // ----- precios (mismo criterio de siempre) -----
+        const precioActual = parseFloat(r.precio) || 0;
+        const senaAbonada  = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        const saldoCobrado = parseFloat(r.saldoCobrado) || 0;
+        const descuentoMontoPDF = parseFloat(r.descuentoMonto) || 0;
+        const descEntregaPDF = parseFloat(r.descuentoEntregaMonto) || 0;
+        const precioConDescuento = precioActual > 0 && descuentoMontoPDF > 0 ? Math.max(0, precioActual - descuentoMontoPDF) : precioActual;
+        const precioEfectivo = Math.max(0, precioConDescuento - descEntregaPDF);
+        const totalPagado = r.senaOriginal !== undefined ? senaAbonada + saldoCobrado : Math.max(senaAbonada, senaAbonada + saldoCobrado);
+        const saldoPendiente = Math.max(0, precioEfectivo - totalPagado);
+        const abonadoMostrar = Math.min(totalPagado, precioEfectivo || totalPagado);
+
+        // dibuja el patrón 3x3 en (gx, gy) con lado gSize
+        function dibujarPatron(gx, gy, gSize, path) {
+            const step = gSize / 2;
+            const pos = (id) => ({ x: gx + ((id - 1) % 3) * step, y: gy + Math.floor((id - 1) / 3) * step });
+            // líneas de la secuencia + flechitas de dirección
+            doc.setDrawColor(30, 77, 140); doc.setFillColor(30, 77, 140);
+            for (let i = 1; i < path.length; i++) {
+                const a = pos(path[i - 1]), b = pos(path[i]);
+                doc.setLineWidth(0.7);
+                doc.line(a.x, a.y, b.x, b.y);
+                // flecha en el medio del tramo, apuntando hacia b
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const ux = dx / len, uy = dy / len;   // dirección
+                const px = -uy, py = ux;              // perpendicular
+                const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+                const s = 1.5;                        // tamaño de la flecha
+                const tipX = mx + ux * s, tipY = my + uy * s;
+                const b1X = mx - ux * s + px * s * 0.7, b1Y = my - uy * s + py * s * 0.7;
+                const b2X = mx - ux * s - px * s * 0.7, b2Y = my - uy * s - py * s * 0.7;
+                if (doc.triangle) doc.triangle(tipX, tipY, b1X, b1Y, b2X, b2Y, 'F');
+            }
+            doc.setLineWidth(0.2);
+            // puntos
+            for (let id = 1; id <= 9; id++) {
+                const p = pos(id);
+                if (path.includes(id)) { doc.setFillColor(30, 77, 140); doc.circle(p.x, p.y, 1.3, 'F'); }
+                else { doc.setFillColor(210, 213, 219); doc.circle(p.x, p.y, 1.0, 'F'); }
+            }
+            // marcar inicio con anillo
+            if (path.length) { const s = pos(path[0]); doc.setDrawColor(30,77,140); doc.setLineWidth(0.4); doc.circle(s.x, s.y, 2.1, 'S'); }
+        }
+
+        function renderCopia(ox, w, etiqueta, colorBadge, qrDataUrl) {
+            const M = 8;
+            const x0 = ox + M;
+            const xR = ox + w - M;
+            const cx = ox + w / 2;
+            const contentW = xR - x0;
+
+            // Header
+            const hY = 8, hH = 24;
+            doc.setFillColor(26, 42, 58);
+            doc.rect(x0, hY, contentW, hH, 'F');
+            let txtX = x0 + 4;
+            if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', x0 + 3, hY + 2, 20, 20); } catch(e){} txtX = x0 + 27; }
+            doc.setTextColor(255,255,255);
+            doc.setFont("helvetica","bold"); doc.setFontSize(15);
+            const nName = doc.splitTextToSize(nombreHeader, contentW - (txtX - x0) - (etiqueta ? 42 : 6));
+            let hy = hY + 8;
+            doc.text(nName, txtX, hy); hy += nName.length * 6;
+            doc.setFont("helvetica","normal"); doc.setFontSize(9);
+            if (subHeader) { doc.text(subHeader, txtX, hy); hy += 4.5; }
+            if (wappHeader) { doc.text("WhatsApp: " + wappHeader, txtX, hy); }
+            if (etiqueta) {
+                doc.setFillColor(colorBadge[0], colorBadge[1], colorBadge[2]);
+                const bw = 40, bh = 7;
+                if (doc.roundedRect) doc.roundedRect(xR - bw, hY + 2, bw, bh, 1.5, 1.5, 'F');
+                else doc.rect(xR - bw, hY + 2, bw, bh, 'F');
+                doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+                doc.text(etiqueta, xR - bw/2, hY + 6.8, { align: 'center' });
+            }
+
+            // Título / orden
+            let y = hY + hH + 8;
+            doc.setTextColor(26,42,58);
+            doc.setFont("helvetica","bold"); doc.setFontSize(10);
+            doc.text("COMPROBANTE DE INGRESO", cx, y, { align:'center' });
+            doc.setFontSize(19);
+            doc.text("ORDEN: " + nroLimpio, cx, y + 8, { align:'center' });
+            doc.setDrawColor(150,150,150); doc.setLineWidth(0.2); doc.line(x0, y + 12, xR, y + 12);
+            y += 20;
+
+            // Datos
+            const labX = x0 + 2, valX = x0 + 30, valW = xR - valX;
+            doc.setFontSize(10); doc.setTextColor(40,40,40);
+            const printRow = (l, val) => {
+                const lines = doc.splitTextToSize(String(val || "-"), valW);
+                doc.setFont("helvetica","bold"); doc.text(l, labX, y);
+                doc.setFont("helvetica","normal"); doc.text(lines, valX, y);
+                y += lines.length * 5 + 2;
+            };
+            printRow("FECHA:", r.fecha ? r.fecha.split(',')[0] : "");
+            printRow("CLIENTE:", r.cliente);
+            if (r.tel) printRow("TEL:", r.tel);
+            printRow("EQUIPO:", equipoCompleto);
+            printRow("IMEI/SERIE:", r.imei);
+            printRow("FALLA:", fallaLimpia);
+            printRow("OBS:", r.obs);
+
+            // Clave / PIN / Patrón
+            if (pinInfo.tipo === 'texto') {
+                printRow("CLAVE/PIN:", pinInfo.valor);
+            } else if (pinInfo.tipo === 'patron') {
+                doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(40,40,40);
+                doc.text("PATRÓN:", labX, y + 8);
+                dibujarPatron(valX, y + 2, 16, pinInfo.path);
+                y += 22;
+            }
+
+            if (motivoGar) {
+                const lg = doc.splitTextToSize(motivoGar, valW);
+                doc.setTextColor(91,33,182); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+                doc.text("GARANTÍA:", labX, y);
+                doc.setFont("helvetica","normal"); doc.text(lg, valX, y);
+                doc.setTextColor(40,40,40); doc.setFontSize(10);
+                y += lg.length * 5 + 2;
+            }
+
+            // Precios
+            y += 2; doc.setDrawColor(150,150,150); doc.setLineWidth(0.2); doc.line(x0, y, xR, y); y += 8;
+            doc.setTextColor(50,50,50);
+            if (descuentoMontoPDF > 0 && precioActual > 0) {
+                doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80);
+                doc.text("Precio: " + fmt.format(precioActual), labX, y); y += 6;
+                doc.setTextColor(220,38,38); doc.setFont("helvetica","bold");
+                const dLabel = r.descuentoTipo === '%' ? "Descuento " + (r.descuentoValor || '') + "%" : "Descuento";
+                const dEfectivo = r.descuentoEfectivo ? " (efectivo)" : "";
+                doc.text(dLabel + dEfectivo + ": -" + fmt.format(descuentoMontoPDF), labX, y); y += 6;
+                doc.setTextColor(50,50,50); doc.setFont("helvetica","bold"); doc.setFontSize(10);
+                doc.text("TOTAL: " + fmt.format(precioConDescuento), labX, y); y += 7;
+            } else {
+                doc.setFont("helvetica","normal"); doc.setFontSize(10);
+                doc.text("TOTAL: " + fmt.format(precioActual), labX, y); y += 7;
+            }
+            if (descEntregaPDF > 0) {
+                const dEntregaLabel = (r.descuentoEntregaTipo === '%') ? 'Desc. entrega ' + (r.descuentoEntregaValor || '') + '%' : 'Desc. entrega';
+                const dEntregaEfec = r.descuentoEfectivo ? ' (efectivo)' : '';
+                doc.setTextColor(220,38,38); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+                doc.text(dEntregaLabel + dEntregaEfec + ': -' + fmt.format(descEntregaPDF), labX, y); y += 6;
+                doc.setTextColor(50,50,50);
+            }
+            doc.setFont('helvetica','normal'); doc.setFontSize(10);
+            doc.text("ABONADO: " + fmt.format(abonadoMostrar), labX, y); y += 9;
+
+            // Caja de saldo
+            doc.setFillColor(242,242,242); doc.rect(x0, y, contentW, 13, 'F');
+            doc.setFont("helvetica","bold"); doc.setFontSize(15);
+            if (precioActual === 0) {
+                if (totalPagado > 0) { doc.setTextColor(22,163,74); doc.text("A FAVOR: " + fmt.format(totalPagado), cx, y + 9, {align:'center'}); }
+                else { doc.setTextColor(180,130,0); doc.text("A COTIZAR", cx, y + 9, {align:'center'}); }
+            } else if (saldoPendiente > 0) {
+                doc.setTextColor(26,42,58); doc.text("SALDO: " + fmt.format(saldoPendiente), cx, y + 9, {align:'center'});
+            } else {
+                doc.setTextColor(22,163,74); doc.text("PAGADO", cx, y + 9, {align:'center'});
+            }
+            y += 13 + 6;
+
+            // Garantía + QR
+            doc.setTextColor(50,50,50); doc.setFont("helvetica","normal"); doc.setFontSize(7);
+            const qrSize = 24;
+            const garW = qrDataUrl ? (contentW - qrSize - 6) : contentW;
+            const lgar = doc.splitTextToSize(garantiaLimpia, garW);
+            doc.text(lgar, x0, y);
+            if (qrDataUrl) {
+                try {
+                    doc.addImage(qrDataUrl, 'PNG', xR - qrSize, y - 2, qrSize, qrSize);
+                    doc.setFontSize(6); doc.setTextColor(120,120,120);
+                    const capQR = (etiqueta === 'COPIA TALLER') ? 'Abrir orden en el sistema' : 'Segui tu reparacion';
+                    doc.text(capQR, xR - qrSize/2, y + qrSize + 1, { align:'center' });
+                } catch(e) {}
+            }
+        }
+
+        if (doble) {
+            renderCopia(0, COPY_W, "COPIA TALLER", [180, 83, 9], qrTaller);
+            renderCopia(COPY_W, COPY_W, "COPIA CLIENTE", [22, 130, 74], qrCliente);
+            // Línea de corte al medio
+            doc.setDrawColor(120,120,120);
+            if (doc.setLineDashPattern) doc.setLineDashPattern([2, 2], 0);
+            doc.setLineWidth(0.2); doc.line(COPY_W, 6, COPY_W, PAGE_H - 6);
+            if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+            doc.setFontSize(7); doc.setTextColor(150,150,150);
+            doc.text("- cortar aqui -", COPY_W, PAGE_H - 2, { align: 'center' });
+        } else {
+            renderCopia(0, COPY_W, null, null, qrCliente);
+        }
+
         const pdfBlob = doc.output('blob');
         ocultarLoader();
         if (typeof callback === 'function') {
             callback(pdfBlob, nroLimpio);
         } else {
-            // comportamiento por defecto: abrir en nueva pestaña
             const pdfUrl = URL.createObjectURL(pdfBlob);
             const link = document.createElement('a');
             link.href = pdfUrl;
@@ -9772,7 +9841,7 @@ function showApp() {
                 <td class="action-btns">
                     ${!r.esVentaRapida ? `<button onclick="abrirFotos('${r.id}')">🖼️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="imprimir('${r.id}')">📄</button>` : `<button onclick="abrirModalNombreRecibo('${r.id}')" title="Recibo de venta">📄</button>`}
-                    ${!r.esVentaRapida ? `<button onclick="etiquetaQRInterno('${r.id}')" title="Etiqueta QR para el equipo">🏷️</button>` : ''}
+                    ${!r.esVentaRapida ? `` : ''}
                     ${!r.esVentaRapida ? `<button onclick="editar('${r.id}')">✏️</button>` : ''}
                     ${!r.esVentaRapida ? `<button onclick="archivar('${r.id}')">${r.archivado ? '🔙' : '📁'}</button>` : ''}
                     ${(r.archivado && !r.esVentaRapida) ? `<button onclick="abrirModalGarantia('${r.id}')" title="Reingresar por Garantía" style="color:var(--purple-600);">🔄</button>` : ''}
@@ -16211,6 +16280,591 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
 // ===== FIN SCANNER =====
 
 
+// ===== MÓDULO FACTURACIÓN =====
+(function() {
+
+    // ── Estado interno ──────────────────────────────────────────────────────
+    let _factOrdenesVisibles = [];   // órdenes filtradas mostradas en tabla
+    let _factSeleccionados   = [];   // IDs seleccionados
+    let _factReciboActual    = null; // orden del recibo en preview
+    let _factNroRecibo       = null; // número asignado al recibo en curso
+    const FACT_CACHE_KEY     = () => 'st_fact_nro_' + (window.currentUser || '');
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function _fmtMonto(n) {
+        return (window.fmt || new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })).format(n || 0);
+    }
+
+    function _parseFechaOrden(r) {
+        // Soporta "DD/M/YYYY, HH:MM:SS", "DD/MM/YYYY HH:MM:SS", "DD/MM/YYYY", ISO
+        const raw = r.fechaEntrega || r.fechaEstado || r.fecha || '';
+        if (!raw) return null;
+        try {
+            if (raw.includes('/')) {
+                const solofecha = raw.split(/[\s,]/)[0]; // "15/3/2026"
+                const partes = solofecha.split('/');
+                if (partes.length === 3) {
+                    const dd = parseInt(partes[0], 10);
+                    const mm = parseInt(partes[1], 10);
+                    const yy = parseInt(partes[2], 10);
+                    if (!isNaN(dd) && !isNaN(mm) && !isNaN(yy) && yy > 1000) {
+                        return new Date(yy, mm - 1, dd);
+                    }
+                }
+            }
+            const d = new Date(raw);
+            return isNaN(d) ? null : d;
+        } catch(e) { return null; }
+    }
+
+    function _fechaStr(r) {
+        const d = _parseFechaOrden(r);
+        if (!d || isNaN(d)) return r.fechaEntrega || r.fecha || '—';
+        return d.toLocaleDateString(_localeActual, { day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+
+    function _totalOrden(r) {
+        const precio   = parseFloat(r.precio) || 0;
+        const descMonto = parseFloat(r.descuentoMonto) || 0;
+        return Math.max(0, precio - descMonto);
+    }
+
+    function _siguienteNroRecibo() {
+        const key = FACT_CACHE_KEY();
+        const actual = parseInt(localStorage.getItem(key) || '0', 10);
+        const siguiente = actual + 1;
+        localStorage.setItem(key, String(siguiente));
+        return siguiente;
+    }
+
+    // ── Inicializar filtros al abrir el módulo ───────────────────────────────
+    window.initFacuracionFiltros = function() {
+        const hoy  = new Date();
+        const y    = hoy.getFullYear();
+        const m    = String(hoy.getMonth() + 1).padStart(2, '0');
+        const d    = String(hoy.getDate()).padStart(2, '0');
+        const iso  = `${y}-${m}-${d}`;
+        const primerDia = `${y}-${m}-01`;
+
+        const desde = document.getElementById('factFiltroDesde');
+        const hasta = document.getElementById('factFiltroHasta');
+        if (desde && !desde.value) desde.value = primerDia;
+        if (hasta && !hasta.value) hasta.value = iso;
+    };
+
+    window.factMesActual = function() {
+        const hoy  = new Date();
+        const y    = hoy.getFullYear();
+        const m    = String(hoy.getMonth() + 1).padStart(2, '0');
+        const d    = String(hoy.getDate()).padStart(2, '0');
+        document.getElementById('factFiltroDesde').value = `${y}-${m}-01`;
+        document.getElementById('factFiltroHasta').value = `${y}-${m}-${d}`;
+        renderTablaFacturacion();
+    };
+
+    // ── Render tabla ─────────────────────────────────────────────────────────
+    window.renderTablaFacturacion = function() {
+        initFacuracionFiltros();
+
+        const desde     = document.getElementById('factFiltroDesde').value;
+        const hasta     = document.getElementById('factFiltroHasta').value;
+        const buscar    = (document.getElementById('factFiltroBuscar').value || '').toLowerCase().trim();
+
+        const filtroCmp = document.getElementById('factFiltroComprobante').value;
+
+        const desdeDate = desde ? new Date(desde + 'T00:00:00') : null;
+        const hastaDate = hasta ? new Date(hasta + 'T23:59:59') : null;
+
+        // Combinar activas + archivadas que sean Entregado
+        const todasEntregadas = [
+            ...(window.registros || []),
+            ...(window.registrosArchivados || [])
+        ].filter(r => r.estado === 'Entregado');
+
+        // Filtrar por fecha
+        let filtradas = todasEntregadas.filter(r => {
+            const fd = _parseFechaOrden(r);
+            if (desdeDate && fd && fd < desdeDate) return false;
+            if (hastaDate && fd && fd > hastaDate) return false;
+            return true;
+        });
+
+        // Filtrar por búsqueda
+        if (buscar) {
+            filtradas = filtradas.filter(r =>
+                (r.cliente || '').toLowerCase().includes(buscar) ||
+                (r.equipo  || '').toLowerCase().includes(buscar) ||
+                (r.modelo  || '').toLowerCase().includes(buscar) ||
+                (r.orden   || '').toLowerCase().includes(buscar)
+            );
+        }
+
+        // Filtrar por comprobante
+        if (filtroCmp === 'sin') filtradas = filtradas.filter(r => !r.nroRecibo);
+        if (filtroCmp === 'con') filtradas = filtradas.filter(r =>  r.nroRecibo);
+
+        // Ordenar por fecha desc
+        filtradas.sort((a, b) => {
+            const da = _parseFechaOrden(a), db = _parseFechaOrden(b);
+            if (!da && !db) return 0;
+            if (!da) return 1;
+            if (!db) return -1;
+            return db - da;
+        });
+
+        _factOrdenesVisibles = filtradas;
+        _factSeleccionados   = [];
+        _actualizarBarraMultiple();
+
+        // Resumen
+        const totalMonto = filtradas.reduce((s, r) => s + _totalOrden(r), 0);
+        const conRecibo  = filtradas.filter(r => r.nroRecibo).length;
+        const sinRecibo  = filtradas.length - conRecibo;
+        const resumenEl  = document.getElementById('factResumen');
+        if (resumenEl) {
+            resumenEl.innerHTML = [
+                { label: 'Órdenes', valor: filtradas.length, color: '#1e4d8c', bg: '#eff6ff', border: '#bfdbfe' },
+                { label: 'Total facturado', valor: _fmtMonto(totalMonto), color: '#059669', bg: '#f0fdf4', border: '#bbf7d0' },
+                { label: 'Con recibo', valor: conRecibo, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+                { label: 'Sin recibo', valor: sinRecibo, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+            ].map(c => `
+                <div style="flex:1;min-width:120px;background:${c.bg};border:1.5px solid ${c.border};border-radius:12px;padding:14px 16px;">
+                  <div style="font-size:11px;font-weight:800;color:${c.color};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${c.label}</div>
+                  <div style="font-size:20px;font-weight:900;color:${c.color};font-family:'Outfit',sans-serif;">${c.valor}</div>
+                </div>
+            `).join('');
+        }
+
+        // Tabla
+        const tbody = document.getElementById('factTableBody');
+        if (!tbody) return;
+
+        if (filtradas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center;color:#9ca3af;font-family:'Outfit',sans-serif;font-size:14px;">No hay órdenes entregadas en el período seleccionado.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtradas.map(r => {
+            const total      = _totalOrden(r);
+            const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
+            const tieneRecibo = !!r.nroRecibo;
+            const badgeRecibo = tieneRecibo
+                ? `<span style="background:#f0fdf4;color:#059669;border:1.5px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:800;white-space:nowrap;">✅ Recibo #${r.nroRecibo}</span>`
+                : `<span style="background:#fffbeb;color:#d97706;border:1.5px solid #fde68a;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:800;white-space:nowrap;">⏳ Sin emitir</span>`;
+            return `<tr style="border-bottom:1px solid #f3f4f6;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                <td style="padding:12px 14px;">
+                  <input type="checkbox" class="fact-check" data-id="${r.id}" onchange="factOnCheck(this)"
+                    style="width:16px;height:16px;accent-color:#1e4d8c;cursor:pointer;" ${_factSeleccionados.includes(r.id) ? 'checked' : ''}>
+                </td>
+                <td style="padding:12px 14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:#1e4d8c;white-space:nowrap;">${escaparHTML(r.orden || r.id.slice(-6))}</td>
+                <td style="padding:12px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:#6b7280;white-space:nowrap;">${_fechaStr(r)}</td>
+                <td style="padding:12px 14px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#111827;">${escaparHTML(r.cliente || '—')}</td>
+                <td style="padding:12px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:#6b7280;">${escaparHTML(equipoFull || '—')}</td>
+                <td style="padding:12px 14px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;color:#111827;text-align:right;white-space:nowrap;">${_fmtMonto(total)}</td>
+                <td style="padding:12px 14px;text-align:center;">${badgeRecibo}</td>
+                <td style="padding:12px 14px;text-align:center;">
+                  <button onclick="factVerRecibo('${r.id}')"
+                    style="padding:7px 14px;background:${tieneRecibo ? '#f0fdf4' : 'linear-gradient(135deg,#1e4d8c,#0e2a5e)'};color:${tieneRecibo ? '#059669' : 'white'};border:${tieneRecibo ? '1.5px solid #bbf7d0' : 'none'};border-radius:8px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                    ${tieneRecibo ? '🔄 Reimprimir' : '🧾 Emitir'}
+                  </button>
+                </td>
+              </tr>`;
+        }).join('');
+
+        // Sincronizar checkAll
+        const checkAll = document.getElementById('factCheckAll');
+        if (checkAll) checkAll.checked = false;
+    };
+
+    // ── Selección ────────────────────────────────────────────────────────────
+    window.factOnCheck = function(el) {
+        const id = el.dataset.id;
+        if (el.checked) {
+            if (!_factSeleccionados.includes(id)) _factSeleccionados.push(id);
+        } else {
+            _factSeleccionados = _factSeleccionados.filter(x => x !== id);
+        }
+        _actualizarBarraMultiple();
+    };
+
+    window.factToggleAll = function(checked) {
+        _factSeleccionados = checked ? _factOrdenesVisibles.map(r => r.id) : [];
+        document.querySelectorAll('.fact-check').forEach(cb => { cb.checked = checked; });
+        _actualizarBarraMultiple();
+    };
+
+    window.factDeseleccionarTodo = function() {
+        _factSeleccionados = [];
+        document.querySelectorAll('.fact-check').forEach(cb => { cb.checked = false; });
+        const checkAll = document.getElementById('factCheckAll');
+        if (checkAll) checkAll.checked = false;
+        _actualizarBarraMultiple();
+    };
+
+    function _actualizarBarraMultiple() {
+        const barra  = document.getElementById('factBarraMultiple');
+        const texto  = document.getElementById('factBarraTexto');
+        const n      = _factSeleccionados.length;
+        if (barra) barra.style.display = n > 0 ? 'flex' : 'none';
+        if (texto) texto.textContent   = `${n} orden${n !== 1 ? 'es' : ''} seleccionada${n !== 1 ? 's' : ''}`;
+    }
+
+    // ── Generar recibo único ──────────────────────────────────────────────────
+    window.factVerRecibo = function(id) {
+        const r = [...(window.registros || []), ...(window.registrosArchivados || [])].find(x => x.id === id);
+        if (!r) return;
+        _factReciboActual = r;
+        _mostrarPreviewRecibo(r);
+    };
+
+    window.factGenerarRecibosSeleccionados = function() {
+        if (_factSeleccionados.length === 0) return;
+        if (_factSeleccionados.length === 1) {
+            factVerRecibo(_factSeleccionados[0]);
+            return;
+        }
+        // Múltiples: generar PDF batch directo sin preview
+        _generarPDFBatch(_factSeleccionados);
+    };
+
+    function _getConfPath() {
+        const u = window.currentUser;
+        return (u === 'Admin' || window.isUserAdmin) ? 'configuracion/admin' : 'usuarios_registrados/' + u;
+    }
+
+    function _mostrarPreviewRecibo(r) {
+        const modal = document.getElementById('modalReciboPreview');
+        const cont  = document.getElementById('reciboPreviewContenido');
+        if (!modal || !cont) return;
+
+        cont.innerHTML = '<div style="text-align:center;padding:30px;color:#9ca3af;font-family:\'Outfit\',sans-serif;">Cargando...</div>';
+        modal.style.display = 'flex';
+
+        window.db.ref(_getConfPath()).once('value').then(snap => {
+            const conf = snap.val() || {};
+            _renderPreviewConf(r, conf);
+        }).catch(() => _renderPreviewConf(r, {}));
+    }
+
+    function _renderPreviewConf(r, conf) {
+        const modal = document.getElementById('modalReciboPreview');
+        const cont  = document.getElementById('reciboPreviewContenido');
+        if (!modal || !cont) return;
+
+        const tallerNombre = conf.nombreTaller || 'Mi Taller Web';
+        const tallerSub    = conf.subtitulo    || 'Servicio Técnico';
+        const tallerWapp   = conf.wappTicket   || '';
+        const terminos     = conf.garantia     || '';
+        const nroRecibo    = r.nroRecibo || ('REC-' + String(_siguienteNroRecibo()).padStart(4, '0'));
+
+        const total      = _totalOrden(r);
+        const sena       = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        const saldoCob   = parseFloat(r.saldoCobrado) || 0;
+        const descMonto  = parseFloat(r.descuentoMonto) || 0;
+        const descEntrega = parseFloat(r.descuentoEntregaMonto) || 0;
+        const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
+
+        cont.innerHTML = `
+          <div style="text-align:center;margin-bottom:18px;padding-bottom:16px;border-bottom:2px dashed #e5e7eb;">
+            <div style="font-size:13px;font-weight:900;color:#111827;letter-spacing:0.5px;">${escaparHTML(tallerNombre)}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escaparHTML(tallerSub)}</div>
+            ${tallerWapp ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">📱 ${escaparHTML(tallerWapp)}</div>` : ''}
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:6px;">
+            <div>
+              <div style="font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Comprobante</div>
+              <div style="font-size:16px;font-weight:900;color:#1e4d8c;">${nroRecibo}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Fecha</div>
+              <div style="font-size:14px;font-weight:700;color:#111827;">${_fechaStr(r)}</div>
+            </div>
+          </div>
+          <div style="background:#f7f8fc;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+            <div style="font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Cliente</div>
+            <div style="font-size:14px;font-weight:700;color:#111827;">${escaparHTML(r.cliente || '—')}</div>
+            ${r.tel ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">📱 ${escaparHTML(r.tel)}</div>` : ''}
+          </div>
+          <div style="background:#f7f8fc;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+            <div style="font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Equipo</div>
+            <div style="font-size:14px;font-weight:700;color:#111827;">${escaparHTML(equipoFull || '—')}</div>
+            ${r.imei ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">IMEI: ${escaparHTML(r.imei)}</div>` : ''}
+            ${r.falla ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;">Falla: ${escaparHTML(r.falla)}</div>` : ''}
+            ${r.notaReparacion ? `<div style="font-size:12px;color:#059669;margin-top:4px;font-weight:600;">Reparación: ${escaparHTML(r.notaReparacion)}</div>` : ''}
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:10px;font-weight:800;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Detalle</div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="font-size:13px;color:#374151;font-weight:500;">Servicio técnico</span>
+              <span style="font-size:13px;font-weight:700;color:#111827;">${_fmtMonto(parseFloat(r.precio) || 0)}</span>
+            </div>
+            ${descMonto > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="font-size:13px;color:#059669;font-weight:500;">Descuento${r.descuentoTipo === '%' ? ' ' + (r.descuentoValor||'') + '%' : ''}</span>
+              <span style="font-size:13px;font-weight:700;color:#059669;">- ${_fmtMonto(descMonto)}</span>
+            </div>` : ''}
+            ${descEntrega > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="font-size:13px;color:#059669;font-weight:500;">Descuento al retirar${r.descuentoEntregaTipo === '%' ? ' ' + (r.descuentoEntregaValor||'') + '%' : ''}</span>
+              <span style="font-size:13px;font-weight:700;color:#059669;">- ${_fmtMonto(descEntrega)}</span>
+            </div>` : ''}
+            ${sena > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="font-size:13px;color:#6b7280;font-weight:500;">Seña / Adelanto</span>
+              <span style="font-size:13px;font-weight:600;color:#6b7280;">${_fmtMonto(sena)}</span>
+            </div>` : ''}
+            ${saldoCob > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+              <span style="font-size:13px;color:#6b7280;font-weight:500;">Pagó al retirar</span>
+              <span style="font-size:13px;font-weight:600;color:#6b7280;">${_fmtMonto(saldoCob)}</span>
+            </div>` : ''}
+            <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
+              <span style="font-size:15px;font-weight:800;color:#111827;">TOTAL ABONADO</span>
+              <span style="font-size:18px;font-weight:900;color:#059669;">${_fmtMonto(Math.min(sena + saldoCob, total - descEntrega) || total)}</span>
+            </div>
+          </div>
+          ${terminos ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;line-height:1.5;margin-bottom:10px;">${escaparHTML(terminos)}</div>` : ''}
+          <div style="text-align:center;font-size:10px;color:#d1d5db;padding-top:10px;border-top:1px dashed #e5e7eb;">Este comprobante no tiene validez fiscal.</div>
+        `;
+
+        // Guardar número en la orden si es nuevo
+        _factNroRecibo = nroRecibo;
+        if (!r.nroRecibo) {
+            _guardarNroReciboEnOrden(r.id, nroRecibo);
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function _guardarNroReciboEnOrden(id, nro) {
+        // Actualizar en Firebase y en el array local
+        const pathActivo    = window.fbPathActivo();
+        const pathArchivado = window.fbPathArchivado();
+
+        const enActivos = (window.registros || []).find(x => x.id === id);
+        const enArch    = (window.registrosArchivados || []).find(x => x.id === id);
+
+        if (enActivos) {
+            enActivos.nroRecibo = nro;
+            window.db.ref(pathActivo).child(id).update({ nroRecibo: nro }).catch(() => {});
+        } else if (enArch) {
+            enArch.nroRecibo = nro;
+            window.db.ref(pathArchivado).child(id).update({ nroRecibo: nro }).catch(() => {});
+        }
+    }
+
+    window.cerrarModalRecibo = function() {
+        const modal = document.getElementById('modalReciboPreview');
+        if (modal) modal.style.display = 'none';
+        _factReciboActual = null;
+        _factNroRecibo    = null;
+    };
+
+    // ── Generar PDF de recibo ─────────────────────────────────────────────────
+    function _buildPDFRecibo(r, nroRecibo, conf) {
+        conf = conf || {};
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+        const pageW = 210;
+        const margen = 20;
+        const ancho  = pageW - margen * 2;
+        let y = 20;
+
+        const tallerNombre = conf.nombreTaller || 'Mi Taller Web';
+        const tallerSub    = conf.subtitulo    || 'Servicio Técnico';
+        const tallerWapp   = conf.wappTicket   || '';
+        const terminos     = conf.garantia     || '';
+
+        const total        = _totalOrden(r);
+        const sena         = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        const saldoCob     = parseFloat(r.saldoCobrado) || 0;
+        const descMonto    = parseFloat(r.descuentoMonto) || 0;
+        const descEntrega  = parseFloat(r.descuentoEntregaMonto) || 0;
+        const precioEfectivoRecibo = Math.max(0, total - descEntrega);
+        const totalAbonado = Math.min(sena + saldoCob, precioEfectivoRecibo) || precioEfectivoRecibo;
+        const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
+
+        // Header
+        doc.setFillColor(6, 18, 42);
+        doc.rect(0, 0, pageW, 38, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+        doc.text(tallerNombre, margen, 16);
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+        doc.setTextColor(180, 190, 210);
+        doc.text(tallerSub + (tallerWapp ? '  |  ' + tallerWapp : ''), margen, 25);
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text('RECIBO INTERNO', pageW - margen, 16, { align: 'right' });
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+        doc.setTextColor(180, 190, 210);
+        doc.text(nroRecibo, pageW - margen, 25, { align: 'right' });
+        doc.text(_fechaStr(r), pageW - margen, 32, { align: 'right' });
+
+        y = 50;
+        doc.setTextColor(17, 24, 39);
+
+        // Sección Cliente
+        doc.setFillColor(247, 248, 252);
+        doc.roundedRect(margen, y, ancho, 28, 3, 3, 'F');
+        doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(156, 163, 175);
+        doc.text('CLIENTE', margen + 6, y + 7);
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(17, 24, 39);
+        doc.text(r.cliente || '—', margen + 6, y + 15);
+        if (r.tel) { doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(107, 114, 128); doc.text('Tel: ' + r.tel, margen + 6, y + 22); }
+        y += 34;
+
+        // Sección Equipo
+        doc.setFillColor(247, 248, 252);
+        doc.roundedRect(margen, y, ancho, r.falla ? 30 : 22, 3, 3, 'F');
+        doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(156, 163, 175);
+        doc.text('EQUIPO', margen + 6, y + 7);
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(17, 24, 39);
+        doc.text(equipoFull || '—', margen + 6, y + 15);
+        if (r.imei) { doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(107, 114, 128); doc.text('IMEI: ' + r.imei, margen + 6, y + 22); }
+        if (r.falla) { doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(107, 114, 128); doc.text('Falla: ' + r.falla, margen + 6, y + (r.imei ? 28 : 22)); }
+        y += (r.falla ? 36 : 28);
+
+        // Detalle de precios
+        doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(156, 163, 175);
+        doc.text('DETALLE', margen, y + 6);
+        y += 10;
+        doc.setDrawColor(229, 231, 235);
+        doc.line(margen, y, margen + ancho, y); y += 6;
+
+        const precioBase = parseFloat(r.precio) || 0;
+        const filas = [
+            { label: 'Servicio técnico', monto: precioBase, color: [17, 24, 39] }
+        ];
+        if (descMonto > 0)   filas.push({ label: 'Descuento' + (r.descuentoTipo === '%' ? ' ' + (r.descuentoValor||'') + '%' : '') + (r.descuentoEfectivo ? ' (efectivo)' : ''), monto: -descMonto, color: [5, 150, 105] });
+        if (descEntrega > 0) filas.push({ label: 'Descuento al retirar' + (r.descuentoEntregaTipo === '%' ? ' ' + (r.descuentoEntregaValor||'') + '%' : '') + (r.descuentoEfectivo ? ' (efectivo)' : ''), monto: -descEntrega, color: [5, 150, 105] });
+        if (sena > 0)        filas.push({ label: 'Seña / Adelanto', monto: sena, color: [107, 114, 128] });
+        if (saldoCob > 0)    filas.push({ label: 'Pagó al retirar', monto: saldoCob, color: [107, 114, 128] });
+
+        filas.forEach(f => {
+            doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(...f.color);
+            doc.text(f.label, margen, y + 5);
+            doc.setFont('helvetica', 'bold');
+            const montoStr = f.monto < 0 ? '- ' + _fmtMonto(Math.abs(f.monto)) : _fmtMonto(f.monto);
+            doc.text(montoStr, margen + ancho, y + 5, { align: 'right' });
+            y += 8;
+            doc.setDrawColor(243, 244, 246);
+            doc.line(margen, y, margen + ancho, y);
+            y += 3;
+        });
+
+        y += 4;
+        doc.setFillColor(6, 18, 42);
+        doc.roundedRect(margen, y, ancho, 14, 3, 3, 'F');
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+        doc.text('TOTAL ABONADO', margen + 6, y + 9);
+        doc.text(_fmtMonto(totalAbonado), margen + ancho - 6, y + 9, { align: 'right' });
+        y += 20;
+
+        // Términos
+        if (terminos) {
+            doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+            const lineas  = doc.splitTextToSize(terminos, ancho - 12);
+            const altoBox = lineas.length * 5 + 10;
+            doc.setFillColor(255, 251, 235);
+            doc.roundedRect(margen, y, ancho, altoBox, 3, 3, 'F');
+            doc.setTextColor(146, 64, 14);
+            doc.text(lineas, margen + 6, y + 7);
+            y += altoBox + 6;
+        }
+
+        // Pie
+        doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(209, 213, 219);
+        doc.text('Este comprobante no tiene validez fiscal.', pageW / 2, y + 6, { align: 'center' });
+
+        return doc;
+    }
+
+    window.factDescargarReciboPDF = function() {
+        const r = _factReciboActual;
+        if (!r) return;
+        if (typeof mostrarLoader === 'function') mostrarLoader('Generando PDF...');
+        window.db.ref(_getConfPath()).once('value').then(snap => {
+            const conf = snap.val() || {};
+            if (typeof ocultarLoader === 'function') ocultarLoader();
+            const nro = _factNroRecibo || r.nroRecibo || 'REC';
+            try {
+                const doc = _buildPDFRecibo(r, nro, conf);
+                const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
+                doc.save(nombre);
+                if (typeof showToast === 'function') showToast('📄 PDF descargado ✅', '#059669');
+            } catch(e) {
+                alert('Error al generar el PDF: ' + e.message);
+            }
+        }).catch(e => {
+            if (typeof ocultarLoader === 'function') ocultarLoader();
+            alert('Error al leer configuración: ' + e.message);
+        });
+    };
+
+    window.factEnviarReciboWapp = function() {
+        const r = _factReciboActual;
+        if (!r) return;
+        if (typeof mostrarLoader === 'function') mostrarLoader('Preparando...');
+        window.db.ref(_getConfPath()).once('value').then(snap => {
+            const conf = snap.val() || {};
+            if (typeof ocultarLoader === 'function') ocultarLoader();
+            const nro    = _factNroRecibo || r.nroRecibo || 'REC';
+            const taller = conf.nombreTaller || 'el taller';
+            const total  = _fmtMonto(_totalOrden(r));
+            const equipo = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
+            const tel    = (r.tel || '').replace(/\D/g, '');
+            const msg    = encodeURIComponent(
+                `Hola ${r.cliente || ''}! 👋\n` +
+                `Te comparto el recibo de tu reparación en ${taller}.\n\n` +
+                `📄 Comprobante: ${nro}\n` +
+                `📱 Equipo: ${equipo}\n` +
+                `💰 Total: ${total}\n\n` +
+                `Gracias por tu confianza! 🙌`
+            );
+            const url = tel ? `https://wa.me/${tel}?text=${msg}` : `https://wa.me/?text=${msg}`;
+            window.open(url, '_blank');
+            // Descargar PDF para adjuntar manualmente
+            try {
+                const doc    = _buildPDFRecibo(r, nro, conf);
+                const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
+                doc.save(nombre);
+            } catch(e) {}
+        }).catch(() => {
+            if (typeof ocultarLoader === 'function') ocultarLoader();
+        });
+    };
+
+    // ── PDF Batch (múltiples recibos en 1 PDF) ────────────────────────────────
+    function _generarPDFBatch(ids) {
+        if (typeof mostrarLoader === 'function') mostrarLoader('Generando recibos...');
+        window.db.ref(_getConfPath()).once('value').then(snap => {
+            const conf = snap.val() || {};
+            if (typeof ocultarLoader === 'function') ocultarLoader();
+            const allR = [...(window.registros || []), ...(window.registrosArchivados || [])];
+            let count = 0;
+            ids.forEach(id => {
+                const r = allR.find(x => x.id === id);
+                if (!r) return;
+                const nro = r.nroRecibo || ('REC-' + String(_siguienteNroRecibo()).padStart(4, '0'));
+                if (!r.nroRecibo) _guardarNroReciboEnOrden(r.id, nro);
+                try {
+                    const doc    = _buildPDFRecibo(r, nro, conf);
+                    const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
+                    doc.save(nombre);
+                    count++;
+                } catch(e) {}
+            });
+            if (count > 0 && typeof showToast === 'function') showToast(`📄 ${count} recibo${count !== 1 ? 's' : ''} generado${count !== 1 ? 's' : ''} ✅`, '#059669');
+            factDeseleccionarTodo();
+            renderTablaFacturacion();
+        }).catch(() => {
+            if (typeof ocultarLoader === 'function') ocultarLoader();
+        });
+    }
+
+    // ── Hook en showPage ─────────────────────────────────────────────────────
+    const _origDoShowPage = window._doShowPage;
+    // Se engancha desde el módulo principal via el if en _doShowPage
+
+})();
+// ===== FIN MÓDULO FACTURACIÓN =====
 
 
 // ===== FIN SCANNER =====
