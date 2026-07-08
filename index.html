@@ -2346,11 +2346,11 @@ function showApp() {
        </div>
       </div>
       <div class="feature-card reveal">
-       <div class="feature-icon">🏷️</div>
-       <div class="feature-title">Etiquetas QR por Orden</div>
-       <div class="feature-desc">Imprimí una etiqueta con QR para pegar en el equipo del estante. Al escanearla con tu celular, la orden aparece filtrada al instante lista para editar o cambiar estado. Sin buscar.</div>
+       <div class="feature-icon">📱</div>
+       <div class="feature-title">QR por Orden</div>
+       <div class="feature-desc">Cada ticket incluye un QR: escaneás la copia del taller y la orden se abre al instante en el sistema, lista para editar o cambiar estado. Sin buscar a mano.</div>
        <div class="feature-tags">
-        <span class="tag">QR del taller</span><span class="tag">Filtro instantáneo</span><span class="tag">80mm térmico</span>
+        <span class="tag">QR del taller</span><span class="tag">Apertura instantánea</span><span class="tag">Doble copia</span>
        </div>
       </div>
       <div class="feature-card reveal reveal-d1">
@@ -3171,7 +3171,7 @@ function showApp() {
     <div class="modal-box" style="max-width:320px;">
      <p style="font-size:16px; font-weight:bold; margin-bottom:18px;">📄 Ticket PDF — ¿Qué querés hacer?</p>
      <div style="display:flex; flex-direction:column; gap:10px;">
-      <button id="btnPDFVer" style="padding:13px; border:none; border-radius:10px; background:var(--secondary); color:white; font-weight:bold; font-size:14px; cursor:pointer;">👁️ Ver PDF</button>
+      <button id="btnPDFVer" style="padding:13px; border:none; border-radius:10px; background:var(--secondary); color:white; font-weight:bold; font-size:14px; cursor:pointer;">👁️ Ver/Imprimir PDF</button>
       <button id="btnPDFDescargar" style="display:none;"></button>
       <button id="btnPDFCompartir" style="padding:13px; border:none; border-radius:10px; background:var(--wapp); color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">📲 Compartir</button>
       <button id="btnPDFRecibo" onclick="abrirReciboDesdePDFModal()" style="padding:13px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--purple-600),var(--purple-800)); color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">🧾 Generar Recibo</button>
@@ -4097,8 +4097,7 @@ function showApp() {
         </ul>
         <b>C. Acciones por Orden</b>
         <ul>
-         <li><b>📄 PDF / Ticket:</b> Genera un recibo profesional con logo, datos del equipo, precios, términos y condiciones y un <b>código QR al pie</b> para que el cliente escanee y vea el estado de su reparación en tiempo real. Podés verlo, imprimirlo o compartirlo por WhatsApp directamente desde el botón.</li>
-         <li><b>🏷️ Etiqueta QR:</b> Genera una etiqueta para pegar en el equipo físico en el estante. Al escanearla con tu celu, el sistema filtra automáticamente esa orden para que puedas cambiar el estado, editar o consultar sin tener que buscarla a mano.</li>
+         <li><b>📄 PDF / Ticket:</b> Genera un ticket profesional en <b>dos copias</b> (taller y cliente) con logo, datos del equipo, precios, términos y condiciones, la <b>clave/patrón de desbloqueo</b> y un <b>código QR en cada copia</b>: el de la copia del taller abre la orden en el sistema, el de la copia del cliente muestra el seguimiento en vivo. Podés verlo, imprimirlo o compartirlo por WhatsApp directamente desde el botón.</li>
          <li><b>💬 WhatsApp:</b> Abre un mensaje prediseñado con el estado actual y un link para que el cliente vea su seguimiento online.</li>
          <li><b>🕒 Historial:</b> Muestra todos los cambios de estado con fecha, hora y nota de reparación si la hay.</li>
          <li><b>✏️ Editar precio:</b> Actualizá el precio final si el presupuesto cambió durante la reparación.</li>
@@ -4265,15 +4264,11 @@ function showApp() {
          <li>Un botón amarillo parpadeante aparece automáticamente cuando tenés equipos con estado "Reparado" que llevan más de <b>15 días sin ser retirados</b>.</li>
          <li>Al tocarlo, se abre una lista con esos equipos. Desde ahí podés enviar un recordatorio por WhatsApp a cada cliente. Una vez enviado, el botón cambia a "Notificado" para no duplicar el mensaje.</li>
         </ul>
-        <b>🏷️ Etiqueta QR por Orden</b>
+        <b>📄 QR en el Ticket (doble copia)</b>
         <ul>
-         <li>El botón 🏷️ de cada orden genera una etiqueta en PDF de 80mm (formato térmico) con el N° de orden, cliente, equipo y un <b>código QR</b>.</li>
-         <li>Al escanear ese QR con tu celular, el sistema filtra automáticamente esa orden en la lista para que puedas cambiar el estado, editar o consultar sin buscarla manualmente. Ideal para pegar en el equipo dentro del estante.</li>
-        </ul>
-        <b>📄 QR en el Ticket del Cliente</b>
-        <ul>
-         <li>Todos los tickets PDF de reparación incluyen automáticamente un <b>código QR al pie</b>, debajo de los términos y condiciones.</li>
-         <li>El cliente escanea ese QR con su celular y accede en tiempo real al estado de su reparación, sin necesidad de link adicional ni WhatsApp.</li>
+         <li>El ticket PDF se imprime en <b>dos copias</b>: COPIA TALLER y COPIA CLIENTE, cada una con su propio <b>código QR</b>.</li>
+         <li><b>QR de la copia del taller:</b> al escanearlo, la orden se abre automáticamente en el sistema, lista para editar, cambiar el estado o consultar sin buscarla a mano. Ideal para dejar esa copia junto al equipo en el estante.</li>
+         <li><b>QR de la copia del cliente:</b> el cliente lo escanea y accede en tiempo real al estado de su reparación, sin necesidad de link adicional ni WhatsApp.</li>
         </ul>
         <b>📡 Modo Offline</b>
         <ul>
@@ -4328,9 +4323,9 @@ function showApp() {
       <details>
        <summary class="faq-summary">🖨️ Impresión y Tickets PDF <span>+</span></summary>
        <div class="faq-content">
-        <p><b>¿Cómo genero el ticket de una reparación?</b><br>Presioná el botón 📄 en la fila de la orden. Se genera un PDF con el logo de tu taller, los datos de la reparación, el desglose de pagos, tus términos y condiciones y un <b>código QR al pie</b> para que el cliente rastree su equipo. Desde el modal podés verlo en una pestaña nueva o compartirlo directamente por WhatsApp u otras apps.</p>
+        <p><b>¿Cómo genero el ticket de una reparación?</b><br>Presioná el botón 📄 en la fila de la orden. Se genera un PDF en <b>dos copias</b> (taller y cliente), con el logo de tu taller, los datos de la reparación, el desglose de pagos, tus términos y condiciones, la clave/patrón de desbloqueo y un <b>código QR en cada copia</b>. Desde el modal podés verlo/imprimirlo en una pestaña nueva o compartirlo directamente por WhatsApp u otras apps.</p>
         <p><b>¿Cómo lo imprimo desde el celular?</b><br>Con el PDF abierto, tocá el ícono de compartir y seleccioná tu impresora. Si tenés una impresora térmica por Bluetooth o Wi-Fi, también aparece como opción.</p>
-        <p><b>¿Para qué sirve el QR que aparece en el ticket?</b><br>Es el QR de seguimiento del cliente. Al escanearlo, el cliente accede en tiempo real al estado de su reparación sin necesidad de guardar ningún link ni contactarte.</p>
+        <p><b>¿Para qué sirven los QR que aparecen en el ticket?</b><br>Son dos. El de la <b>copia del cliente</b> es de seguimiento: al escanearlo, el cliente accede en tiempo real al estado de su reparación sin necesidad de guardar ningún link ni contactarte. El de la <b>copia del taller</b> abre la orden directamente en el sistema para editarla o cambiarle el estado sin buscarla a mano.</p>
         <p><b>Mi logo no aparece en el PDF.</b><br>Verificá en <b>👤 Mi Perfil</b> que hayas cargado la imagen con "📷 CARGAR LOGO" y presionado "ACTUALIZAR". El logo debe ser JPG o PNG.</p>
         <p><b>¿Puedo personalizar el ticket?</b><br>Sí. El nombre, subtítulo, WhatsApp del taller y los términos y condiciones configurados en Mi Perfil aparecen en todos los tickets.</p>
         <p><b>¿El cliente puede descargar su propio ticket?</b><br>Sí. La vista de seguimiento que recibe por WhatsApp incluye un botón para descargar su propio PDF.</p>
@@ -5634,112 +5629,6 @@ function showApp() {
         }, 100);
     }
 
-    // ── ETIQUETA QR PARA EL TALLER ───────────────────────────────────────
-    // Botón 🏷️: genera etiqueta con QR que al escanearlo abre esta orden
-    // en el sistema (?abrir=<id>). Para pegar en el equipo en el estante.
-    function etiquetaQRInterno(id) {
-        const r = getRegistro(id); if (!r) return;
-        if (typeof QRCode === 'undefined' || !window.jspdf) { showToast('Generador de QR no disponible (revisá tu conexión).', '#dc2626'); return; }
-        const baseUrl = window.location.origin + window.location.pathname;
-        const link = baseUrl + '?abrir=' + r.id + '&u=' + currentUser;
-        mostrarLoader('Generando etiqueta...');
-        db.ref(fbPathPerfil()).once('value')
-            .then(snap => _generarEtiquetaPDF(r, snap.val() || {}, { qr: true, link, footer: 'Escaneá para abrir esta orden en el sistema', mostrarFalla: true }))
-            .catch(() => _generarEtiquetaPDF(r, {}, { qr: true, link, footer: 'Escaneá para abrir esta orden en el sistema', mostrarFalla: true }));
-    }
-
-    // Generador compartido de la etiqueta en PDF (80mm térmico)
-    function _generarEtiquetaPDF(r, conf, opts) {
-        opts = opts || {};
-        const M = 5;
-        const W = 80;
-        const TW = W - M * 2;
-
-        const finalizar = (qrDataUrl) => {
-            try {
-                const { jsPDF } = window.jspdf;
-                const alto = opts.qr ? 82 : 82;
-                const doc = new jsPDF({ unit: 'mm', format: [W, alto] });
-                let y = 7;
-
-                // Nombre del taller
-                const nombre = (conf.nombreTaller || 'Mi Taller Web').toString();
-                doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-                const nLines = doc.splitTextToSize(nombre, TW);
-                doc.text(nLines, W / 2, y, { align: 'center' });
-                y += nLines.length * 5;
-
-                // N° de orden (mismo tamaño que las otras etiquetas)
-                const nro = String(r.orden || '');
-                doc.setFontSize(16);
-                const oLines = doc.splitTextToSize('N\u00b0 ' + nro, TW);
-                doc.text(oLines, W / 2, y, { align: 'center' });
-                y += oLines.length * 7;
-
-                // Separador
-                doc.setDrawColor(170); doc.line(M, y, W - M, y); y += 5;
-
-                // Datos
-                doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-                const cli = doc.splitTextToSize('Cliente: ' + (r.cliente || '-'), TW);
-                doc.text(cli, M, y); y += cli.length * 4.5;
-
-                const equipo = ((r.equipo || '') + ' ' + (r.marca || '') + ' ' + (r.modelo || '')).trim();
-                const eqL = doc.splitTextToSize('Equipo: ' + (equipo || '-'), TW);
-                doc.text(eqL, M, y); y += eqL.length * 4.5;
-
-                if (opts.mostrarFalla && r.falla) {
-                    const flL = doc.splitTextToSize('Falla: ' + r.falla, TW);
-                    doc.text(flL, M, y); y += flL.length * 4.5;
-                }
-                if (r.fecha) {
-                    const feL = doc.splitTextToSize('Fecha: ' + r.fecha, TW);
-                    doc.text(feL, M, y); y += feL.length * 4.5;
-                }
-
-                // QR
-                if (opts.qr && qrDataUrl) {
-                    y += 2;
-                    const qrSize = 26;
-                    doc.addImage(qrDataUrl, 'PNG', (W - qrSize) / 2, y, qrSize, qrSize);
-                    y += qrSize + 4;
-                    doc.setFontSize(7); doc.setTextColor(90);
-                    const ftL = doc.splitTextToSize(opts.footer || '', TW);
-                    doc.text(ftL, W / 2, y, { align: 'center' });
-                }
-
-                ocultarLoader();
-                const blob = doc.output('blob');
-                const url = URL.createObjectURL(blob);
-                const win = window.open(url, '_blank');
-                if (!win) { const a = document.createElement('a'); a.href = url; a.download = 'Etiqueta-' + nro + '.pdf'; a.click(); }
-            } catch (e) { ocultarLoader(); showToast('Error al generar la etiqueta', '#dc2626'); }
-        };
-
-        if (!opts.qr) { setTimeout(() => finalizar(''), 50); return; }
-
-        try {
-            let cont = document.getElementById('_qrTempEtiqueta');
-            if (!cont) {
-                cont = document.createElement('div');
-                cont.id = '_qrTempEtiqueta';
-                cont.style.position = 'fixed'; cont.style.left = '-9999px'; cont.style.top = '0';
-                document.body.appendChild(cont);
-            }
-            cont.innerHTML = '';
-            new QRCode(cont, { text: opts.link, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
-            setTimeout(() => {
-                const canvas = cont.querySelector('canvas');
-                const imgEl  = cont.querySelector('img');
-                let qrDataUrl = '';
-                try { qrDataUrl = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : ''); }
-                catch (e) { qrDataUrl = imgEl ? imgEl.src : ''; }
-                finalizar(qrDataUrl);
-            }, 160);
-        } catch (e) { ocultarLoader(); showToast('Error al generar el QR', '#dc2626'); }
-    }
-    // ─────────────────────────────────────────────────────────────────────
-
     async function imprimir(id) {
         const r = getRegistro(id);
         if (!r) return;
@@ -5765,7 +5654,11 @@ function showApp() {
                     const btnComp = document.getElementById('btnPDFCompartir');
                     const btnRecibo = document.getElementById('btnPDFRecibo');
 
-                    btnVer.onclick = () => { window.open(urlDoble, '_blank'); modal.style.display = 'none'; };
+                    btnVer.onclick = () => {
+                        modal.style.display = 'none';
+                        const w = window.open(urlDoble, '_blank');
+                        if (!w) { const a = document.createElement('a'); a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click(); }
+                    };
                     btnDesc.onclick = () => {
                         const a = document.createElement('a');
                         a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click();
@@ -6293,18 +6186,18 @@ function showApp() {
             }
             y += 13 + 6;
 
-            // Garantía + QR
+            // Garantía (ancho completo) + QR centrado debajo
             doc.setTextColor(50,50,50); doc.setFont("helvetica","normal"); doc.setFontSize(7);
-            const qrSize = 24;
-            const garW = qrDataUrl ? (contentW - qrSize - 6) : contentW;
-            const lgar = doc.splitTextToSize(garantiaLimpia, garW);
+            const lgar = doc.splitTextToSize(garantiaLimpia, contentW);
             doc.text(lgar, x0, y);
+            y += lgar.length * 3 + 4;   // bajar debajo del texto de garantía
             if (qrDataUrl) {
                 try {
-                    doc.addImage(qrDataUrl, 'PNG', xR - qrSize, y - 2, qrSize, qrSize);
+                    const qrSize = 24;
+                    doc.addImage(qrDataUrl, 'PNG', cx - qrSize / 2, y, qrSize, qrSize);
                     doc.setFontSize(6); doc.setTextColor(120,120,120);
                     const capQR = (etiqueta === 'COPIA TALLER') ? 'Abrir orden en el sistema' : 'Segui tu reparacion';
-                    doc.text(capQR, xR - qrSize/2, y + qrSize + 1, { align:'center' });
+                    doc.text(capQR, cx, y + qrSize + 3, { align:'center' });
                 } catch(e) {}
             }
         }
