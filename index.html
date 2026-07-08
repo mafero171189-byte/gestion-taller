@@ -610,12 +610,12 @@
         #pdfPrintImgWrap { padding: 16px; text-align: center; }
         #pdfPrintImg { max-width: 100%; height: auto; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
         @media print {
-            @page { size: A4 landscape; margin: 0; }
+            @page { size: A4 portrait; margin: 0; }
             body.printing-pdf > * { display: none !important; }
             body.printing-pdf > #pdfPrintOverlay { display: block !important; position: static !important; background: #fff !important; overflow: visible !important; }
             #pdfPrintOverlay .no-print { display: none !important; }
             #pdfPrintOverlay #pdfPrintImgWrap { padding: 0 !important; margin: 0 !important; }
-            #pdfPrintOverlay #pdfPrintImg { width: 297mm !important; height: 210mm !important; object-fit: contain !important; box-shadow: none !important; display: block !important; }
+            #pdfPrintOverlay #pdfPrintImg { width: 210mm !important; height: 297mm !important; object-fit: contain !important; box-shadow: none !important; display: block !important; }
         }
 
         /* Alerta amarilla */
@@ -5676,7 +5676,10 @@ function showApp() {
                         modal.style.display = 'none';
                         // App instalada (PWA): sin barra de navegador. Rasterizamos el PDF real
                         // y lo imprimimos con window.print() (sale idéntico). En el navegador, el PDF de siempre.
-                        if (esAppInstalada()) { abrirImpresionPDF(blobDoble, nro); return; }
+                        if (esAppInstalada()) {
+                            generarEImprimirPDF(r, conf, (blobVert) => abrirImpresionPDF(blobVert, nro), qrCliente, qrTaller, { modo: 'doblevert' });
+                            return;
+                        }
                         const w = window.open(urlDoble, '_blank');
                         if (!w) { const a = document.createElement('a'); a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click(); }
                     };
@@ -6028,7 +6031,7 @@ function showApp() {
             const buf = await blob.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
             const page = await pdf.getPage(1);
-            const scale = 2.5; // ~150 DPI: nítido para imprimir sin ser pesado
+            const scale = 3; // ~215 DPI: bien nítido para imprimir
             const viewport = page.getViewport({ scale });
             const canvas = document.createElement('canvas');
             canvas.width = Math.ceil(viewport.width);
@@ -6100,11 +6103,13 @@ function showApp() {
 
         const { jsPDF } = window.jspdf;
         const doble = (modo === 'doble');
-        const doc = doble
+        const dobleVert = (modo === 'doblevert');   // A4 vertical, copias apiladas (taller arriba, cliente abajo)
+        const landscape = doble;
+        const doc = landscape
             ? new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
             : new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const PAGE_W = doble ? 297 : 210;
-        const PAGE_H = doble ? 210 : 297;
+        const PAGE_W = landscape ? 297 : 210;
+        const PAGE_H = landscape ? 210 : 297;
         const COPY_W = doble ? PAGE_W / 2 : PAGE_W;   // ancho de cada copia
 
         // ----- datos comunes -----
@@ -6289,16 +6294,139 @@ function showApp() {
             }
         }
 
+        // Copia COMPACTA para A4 vertical (media hoja): ancho completo, QR al lado del saldo.
+        function renderCopiaVert(oy, etiqueta, colorBadge, qrDataUrl, capQR) {
+            const M = 8, x0 = M, xR = PAGE_W - M, cx = PAGE_W / 2, contentW = xR - x0;
+            const top = 7 + oy;
+            // Header
+            const hH = 17;
+            doc.setFillColor(26, 42, 58); doc.rect(x0, top, contentW, hH, 'F');
+            let txtX = x0 + 4;
+            if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', x0 + 3, top + 2, 13, 13); } catch(e){} txtX = x0 + 20; }
+            doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(13);
+            const nName = doc.splitTextToSize(nombreHeader, contentW - (txtX - x0) - 48);
+            let hy = top + 6; doc.text(nName, txtX, hy); hy += nName.length * 4.6;
+            doc.setFont("helvetica","normal"); doc.setFontSize(8);
+            if (subHeader) { doc.text(subHeader, txtX, hy); hy += 3.6; }
+            if (wappHeader) { doc.text("WhatsApp: " + wappHeader, txtX, hy); }
+            doc.setFillColor(colorBadge[0], colorBadge[1], colorBadge[2]);
+            const bw = 42, bh = 6.5;
+            if (doc.roundedRect) doc.roundedRect(xR - bw, top + 2, bw, bh, 1.5, 1.5, 'F'); else doc.rect(xR - bw, top + 2, bw, bh, 'F');
+            doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(9);
+            doc.text(etiqueta, xR - bw/2, top + 6.5, { align:'center' });
+            // Orden
+            let y = top + hH + 5;
+            doc.setTextColor(26,42,58); doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+            doc.text("COMPROBANTE DE INGRESO", cx, y, { align:'center' });
+            doc.setFontSize(15); doc.text("ORDEN: " + nroLimpio, cx, y + 6, { align:'center' });
+            doc.setDrawColor(150,150,150); doc.setLineWidth(0.2); doc.line(x0, y + 9.5, xR, y + 9.5); y += 14;
+            // Datos
+            const labX = x0 + 2, valX = x0 + 30, valW = xR - valX;
+            doc.setFontSize(9); doc.setTextColor(40,40,40);
+            const rowH = 4.0;
+            const prow = (l, val) => {
+                const lines = doc.splitTextToSize(String(val || "-"), valW);
+                doc.setFont("helvetica","bold"); doc.text(l, labX, y);
+                doc.setFont("helvetica","normal"); doc.text(lines, valX, y);
+                y += lines.length * rowH + 1.1;
+            };
+            prow("FECHA:", r.fecha ? r.fecha.split(',')[0] : "");
+            prow("CLIENTE:", r.cliente);
+            if (r.tel) prow("TEL:", r.tel);
+            prow("EQUIPO:", equipoCompleto);
+            prow("IMEI/SERIE:", r.imei);
+            prow("FALLA:", fallaLimpia);
+            prow("OBS:", r.obs);
+            if (pinInfo.tipo === 'texto') {
+                prow("CLAVE/PIN:", pinInfo.valor);
+            } else if (pinInfo.tipo === 'patron') {
+                doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(40,40,40);
+                doc.text("PATRÓN:", labX, y + 5);
+                dibujarPatron(valX, y - 0.5, 11, pinInfo.path);
+                y += 13;
+            }
+            if (motivoGar) {
+                const lg = doc.splitTextToSize(motivoGar, valW);
+                doc.setTextColor(91,33,182); doc.setFont("helvetica","bold"); doc.setFontSize(8);
+                doc.text("GARANTÍA:", labX, y);
+                doc.setFont("helvetica","normal"); doc.text(lg, valX, y);
+                doc.setTextColor(40,40,40); doc.setFontSize(9);
+                y += lg.length * rowH + 1.1;
+            }
+            // Precios
+            y += 1.5; doc.setDrawColor(150,150,150); doc.setLineWidth(0.2); doc.line(x0, y, xR, y); y += 5;
+            doc.setTextColor(50,50,50);
+            if (descuentoMontoPDF > 0 && precioActual > 0) {
+                doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(80,80,80);
+                doc.text("Precio: " + fmt.format(precioActual), labX, y); y += 4.5;
+                doc.setTextColor(220,38,38); doc.setFont("helvetica","bold");
+                const dLabel = r.descuentoTipo === '%' ? "Descuento " + (r.descuentoValor || '') + "%" : "Descuento";
+                const dEf = r.descuentoEfectivo ? " (efectivo)" : "";
+                doc.text(dLabel + dEf + ": -" + fmt.format(descuentoMontoPDF), labX, y); y += 4.5;
+                doc.setTextColor(50,50,50); doc.setFont("helvetica","bold"); doc.setFontSize(10);
+                doc.text("TOTAL: " + fmt.format(precioConDescuento), labX, y); y += 5.5;
+            } else {
+                doc.setFont("helvetica","normal"); doc.setFontSize(10);
+                doc.text("TOTAL: " + fmt.format(precioActual), labX, y); y += 5.5;
+            }
+            if (descEntregaPDF > 0) {
+                const dl = (r.descuentoEntregaTipo === '%') ? 'Desc. entrega ' + (r.descuentoEntregaValor || '') + '%' : 'Desc. entrega';
+                const de = r.descuentoEfectivo ? ' (efectivo)' : '';
+                doc.setTextColor(220,38,38); doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+                doc.text(dl + de + ': -' + fmt.format(descEntregaPDF), labX, y); y += 4.5;
+                doc.setTextColor(50,50,50);
+            }
+            doc.setFont('helvetica','normal'); doc.setFontSize(10);
+            doc.text("ABONADO: " + fmt.format(abonadoMostrar), labX, y); y += 6;
+            // Caja saldo (ancho reducido) + QR a la derecha
+            const saldoW = contentW - 34, saldoH = 10;
+            doc.setFillColor(242,242,242); doc.rect(x0, y, saldoW, saldoH, 'F');
+            doc.setFont("helvetica","bold"); doc.setFontSize(13);
+            const scx = x0 + saldoW / 2;
+            if (precioActual === 0) {
+                if (totalPagado > 0) { doc.setTextColor(22,163,74); doc.text("A FAVOR: " + fmt.format(totalPagado), scx, y + 7, {align:'center'}); }
+                else { doc.setTextColor(180,130,0); doc.text("A COTIZAR", scx, y + 7, {align:'center'}); }
+            } else if (saldoPendiente > 0) {
+                doc.setTextColor(26,42,58); doc.text("SALDO: " + fmt.format(saldoPendiente), scx, y + 7, {align:'center'});
+            } else {
+                doc.setTextColor(22,163,74); doc.text("PAGADO", scx, y + 7, {align:'center'});
+            }
+            if (qrDataUrl) {
+                try {
+                    const qs = 24;
+                    doc.addImage(qrDataUrl, 'PNG', xR - qs, y - 5, qs, qs);
+                    doc.setFontSize(5.5); doc.setTextColor(120,120,120);
+                    doc.text(capQR, xR - qs/2, y + qs - 3, { align:'center' });
+                } catch(e) {}
+            }
+            y += saldoH + 4;
+            // Términos (ancho completo)
+            doc.setTextColor(50,50,50); doc.setFont("helvetica","normal"); doc.setFontSize(6.2);
+            const lgar = doc.splitTextToSize(garantiaLimpia, contentW);
+            doc.text(lgar, x0, y);
+        }
+
         if (doble) {
             renderCopia(0, COPY_W, "COPIA TALLER", [180, 83, 9], qrTaller);
             renderCopia(COPY_W, COPY_W, "COPIA CLIENTE", [22, 130, 74], qrCliente);
-            // Línea de corte al medio
+            // Línea de corte al medio (vertical)
             doc.setDrawColor(120,120,120);
             if (doc.setLineDashPattern) doc.setLineDashPattern([2, 2], 0);
             doc.setLineWidth(0.2); doc.line(COPY_W, 6, COPY_W, PAGE_H - 6);
             if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
             doc.setFontSize(7); doc.setTextColor(150,150,150);
             doc.text("- cortar aqui -", COPY_W, PAGE_H - 2, { align: 'center' });
+        } else if (dobleVert) {
+            const HALF = PAGE_H / 2;
+            renderCopiaVert(0, "COPIA TALLER", [180, 83, 9], qrTaller, 'Abrir orden en el sistema');
+            renderCopiaVert(HALF, "COPIA CLIENTE", [22, 130, 74], qrCliente, 'Segui tu reparacion');
+            // Línea de corte al medio (horizontal)
+            doc.setDrawColor(120,120,120);
+            if (doc.setLineDashPattern) doc.setLineDashPattern([2, 2], 0);
+            doc.setLineWidth(0.2); doc.line(6, HALF, PAGE_W - 6, HALF);
+            if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+            doc.setFontSize(7); doc.setTextColor(150,150,150);
+            doc.text("- cortar aqui -", PAGE_W / 2, HALF - 1.5, { align: 'center' });
         } else {
             renderCopia(0, COPY_W, null, null, qrCliente);
         }
