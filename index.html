@@ -79,6 +79,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     /* === SCANNER DE CÓDIGO DE BARRAS === */
     #scannerModal {
@@ -599,6 +600,23 @@
         body.dark-mode .faq-summary:hover { background-color: var(--navy-900) !important; }
         body.dark-mode .faq-content { background-color: var(--navy-900) !important; border-color: var(--navy-850) !important; color: var(--gray-500) !important; }
         body.dark-mode .faq-content b { color: var(--slate-50) !important; }
+
+        /* ===== Impresión del ticket como imagen del PDF real (para imprimir desde la app instalada) ===== */
+        #pdfPrintOverlay { position: fixed; inset: 0; background: #525659; z-index: 100000; overflow: auto; -webkit-overflow-scrolling: touch; }
+        #pdfPrintOverlay .tpo-bar { position: sticky; top: 0; display: flex; gap: 10px; justify-content: center; padding: 12px; background: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+        #pdfPrintOverlay .tpo-bar button { padding: 12px 22px; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; color: #fff; cursor: pointer; font-family: 'Outfit', sans-serif; }
+        #pdfPrintOverlay .tpo-print { background: #2563eb; }
+        #pdfPrintOverlay .tpo-close { background: #475569; }
+        #pdfPrintImgWrap { padding: 16px; text-align: center; }
+        #pdfPrintImg { max-width: 100%; height: auto; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
+        @media print {
+            @page { size: A4 landscape; margin: 0; }
+            body.printing-pdf > * { display: none !important; }
+            body.printing-pdf > #pdfPrintOverlay { display: block !important; position: static !important; background: #fff !important; overflow: visible !important; }
+            #pdfPrintOverlay .no-print { display: none !important; }
+            #pdfPrintOverlay #pdfPrintImgWrap { padding: 0 !important; margin: 0 !important; }
+            #pdfPrintOverlay #pdfPrintImg { width: 297mm !important; height: 210mm !important; object-fit: contain !important; box-shadow: none !important; display: block !important; }
+        }
 
         /* Alerta amarilla */
         .btn-alerta-amarilla { background: linear-gradient(135deg, var(--amber-500), var(--warning)); color: white; font-weight: 800; animation: pulseAlerta 2s infinite; border: none; border-radius: 9px; font-family: 'Outfit', sans-serif; }
@@ -5656,17 +5674,9 @@ function showApp() {
 
                     btnVer.onclick = () => {
                         modal.style.display = 'none';
-                        // App instalada (PWA): no hay barra de navegador para imprimir.
-                        // Mandamos el PDF REAL al menú del sistema (Imprimir / Guardar en Drive / etc.),
-                        // así lo que se imprime es idéntico al PDF. En el navegador, se abre como siempre.
-                        if (esAppInstalada() && navigator.share) {
-                            const file = new File([blobDoble], `Orden-${nro}.pdf`, { type: 'application/pdf' });
-                            navigator.share({ title: `Ticket Orden #${nro}`, files: [file] }).catch(() => {
-                                const w = window.open(urlDoble, '_blank');
-                                if (!w) { const a = document.createElement('a'); a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click(); }
-                            });
-                            return;
-                        }
+                        // App instalada (PWA): sin barra de navegador. Rasterizamos el PDF real
+                        // y lo imprimimos con window.print() (sale idéntico). En el navegador, el PDF de siempre.
+                        if (esAppInstalada()) { abrirImpresionPDF(blobDoble, nro); return; }
                         const w = window.open(urlDoble, '_blank');
                         if (!w) { const a = document.createElement('a'); a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click(); }
                     };
@@ -5999,6 +6009,63 @@ function showApp() {
                 || window.matchMedia('(display-mode: fullscreen)').matches
                 || window.navigator.standalone === true;
         } catch (e) { return false; }
+    }
+
+    // Rasteriza el PDF REAL a imagen (pdf.js) y la muestra con botón Imprimir.
+    // Al imprimir sale idéntico al PDF (colores y letras tal cual), en una sola hoja.
+    async function abrirImpresionPDF(blob, nro) {
+        const abrirPDFNormal = () => {
+            const url = URL.createObjectURL(blob);
+            const w = window.open(url, '_blank');
+            if (!w) { const a = document.createElement('a'); a.href = url; a.download = `Orden-${nro}.pdf`; a.click(); }
+        };
+        if (!window.pdfjsLib) { abrirPDFNormal(); return; }
+        try {
+            mostrarLoader('Preparando impresión...');
+            if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            }
+            const buf = await blob.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+            const page = await pdf.getPage(1);
+            const scale = 2.5; // ~150 DPI: nítido para imprimir sin ser pesado
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.ceil(viewport.width);
+            canvas.height = Math.ceil(viewport.height);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            const dataUrl = canvas.toDataURL('image/png');
+            const img = document.getElementById('pdfPrintImg');
+            const ov = document.getElementById('pdfPrintOverlay');
+            img.onload = () => ocultarLoader();
+            img.src = dataUrl;
+            ov.style.display = 'block';
+            ov.scrollTop = 0;
+            setTimeout(ocultarLoader, 800);
+        } catch (e) {
+            ocultarLoader();
+            abrirPDFNormal();
+        }
+    }
+
+    function cerrarImpresionPDF() {
+        const ov = document.getElementById('pdfPrintOverlay');
+        const img = document.getElementById('pdfPrintImg');
+        if (ov) ov.style.display = 'none';
+        if (img) img.src = '';
+        document.body.classList.remove('printing-pdf');
+    }
+
+    function imprimirPDFImg() {
+        document.body.classList.add('printing-pdf');
+        const limpiar = () => {
+            document.body.classList.remove('printing-pdf');
+            window.removeEventListener('afterprint', limpiar);
+        };
+        window.addEventListener('afterprint', limpiar);
+        setTimeout(() => { try { window.print(); } catch (e) { limpiar(); } }, 60);
     }
 
     async function generarEImprimirPDF(r, conf, callback, qrCliente, qrTaller, opts) {
@@ -16851,5 +16918,14 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
     <button class="btn-scanner-close" onclick="cerrarScanner()">✕ Cancelar</button>
   </div>
 </div>
+
+ <!-- Impresión del ticket como imagen del PDF real (para imprimir desde la app instalada) -->
+ <div id="pdfPrintOverlay" style="display:none;">
+   <div class="tpo-bar no-print">
+     <button type="button" class="tpo-print" onclick="imprimirPDFImg()">🖨️ Imprimir</button>
+     <button type="button" class="tpo-close" onclick="cerrarImpresionPDF()">✕ Cerrar</button>
+   </div>
+   <div id="pdfPrintImgWrap"><img id="pdfPrintImg" alt="Ticket"></div>
+ </div>
  </body>
 </html>
