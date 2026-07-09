@@ -27,6 +27,16 @@
             if (isLogged || isRecordada || isClient || isSkipped) {
                 document.documentElement.classList.add('skip-landing-early');
             }
+
+            // La vista pública de cliente (?id=&u= / ?presid=&u=) expone datos del
+            // cliente en la URL. Le inyectamos noindex para que Google no indexe
+            // esas páginas de seguimiento. La landing/app quedan indexables.
+            if (isClient) {
+                var _mrobots = document.createElement('meta');
+                _mrobots.name = 'robots';
+                _mrobots.content = 'noindex, nofollow';
+                document.head.appendChild(_mrobots);
+            }
         })();
     </script>
   <style>
@@ -5676,7 +5686,7 @@ function showApp() {
                     btnVer.onclick = () => {
                         modal.style.display = 'none';
                         // App instalada (PWA): sin barra de navegador. Rasterizamos el PDF real
-                        // y lo imprimimos con window.print() (sale idéntico). En el navegador, el PDF de siempre.
+                        // y lo imprimimos con window.print() (sale idéntico). En el navegador se abre el mismo PDF vertical apilado.
                         if (esAppInstalada()) {
                             generarEImprimirPDF(r, conf, (blobVert) => abrirImpresionPDF(blobVert, nro), qrCliente, qrTaller, { modo: 'doblevert' });
                             return;
@@ -5705,7 +5715,7 @@ function showApp() {
                     }
                     modal.style.display = 'flex';
                 }, qrCliente, null, { modo: 'cliente' });
-            }, qrCliente, qrTaller, { modo: 'doble' });
+            }, qrCliente, qrTaller, { modo: 'doblevert' });
         });
     }
 
@@ -7286,6 +7296,9 @@ function showApp() {
 
                     // Publicar copias públicas de las órdenes activas ya existentes (una sola vez).
                     _backfillPublico();
+
+                    // Rellenar 'ordenNum' en órdenes viejas (activas + archivadas), una sola vez.
+                    migrarOrdenNum();
                     
                     renderTable(); 
                     actualizarListasAutocompletado();
@@ -8260,12 +8273,14 @@ function showApp() {
         let nroVta;
         try {
             const snaps = await Promise.all([
-                db.ref(_pathActVR).orderByChild('orden').limitToLast(1).once('value'),
-                db.ref(_pathArchVR).orderByChild('orden').limitToLast(1).once('value')
+                db.ref(_pathActVR).orderByChild('ordenNum').limitToLast(1).once('value'),
+                db.ref(_pathArchVR).orderByChild('ordenNum').limitToLast(1).once('value')
             ]);
             let maxNum = 0;
             snaps.forEach(snap => snap.forEach(child => {
-                const val = parseInt(String(child.val().orden).replace(/[^\d]/g, ''), 10);
+                const cv = child.val();
+                const val = (cv && cv.ordenNum != null) ? cv.ordenNum
+                          : parseInt(String(cv && cv.orden).replace(/[^\d]/g, ''), 10);
                 if (!isNaN(val) && val > maxNum) maxNum = val;
             }));
             const enMemoria = [...registros, ...(registrosArchivados || [])];
@@ -8290,6 +8305,7 @@ function showApp() {
 
         const dataVenta = {
             orden:          nroVta,
+            ordenNum:       parseInt(String(nroVta).replace(/[^\d]/g, ''), 10) || 0,
             cliente:        'Venta de Mostrador',
             modelo:         nombresStr,
             tel:            '0',
@@ -10028,13 +10044,15 @@ function showApp() {
                 const pathArchivado = fbPathArchivado();
 
                 Promise.all([
-                    db.ref(pathActivo).orderByChild('orden').limitToLast(1).once('value'),
-                    db.ref(pathArchivado).orderByChild('orden').limitToLast(1).once('value')
+                    db.ref(pathActivo).orderByChild('ordenNum').limitToLast(1).once('value'),
+                    db.ref(pathArchivado).orderByChild('ordenNum').limitToLast(1).once('value')
                 ]).then(function(snaps) {
                     let maxNum = 0;
                     snaps.forEach(function(snap) {
                         snap.forEach(function(child) {
-                            const val = parseInt(String(child.val().orden).replace(/[^\d]/g, ''), 10);
+                            const cv = child.val();
+                            const val = (cv && cv.ordenNum != null) ? cv.ordenNum
+                                      : parseInt(String(cv && cv.orden).replace(/[^\d]/g, ''), 10);
                             if (!isNaN(val) && val > maxNum) maxNum = val;
                         });
                     });
@@ -10919,6 +10937,7 @@ function showApp() {
 
         let data = {
             orden: document.getElementById('nroOrden').value,
+            ordenNum: parseInt(String(document.getElementById('nroOrden').value).replace(/[^\d]/g, ''), 10) || 0,
             cliente: c,
             tel: document.getElementById('tel').value,
             equipo: eq,
@@ -11219,6 +11238,46 @@ function showApp() {
             localStorage.setItem(flag, '1');
         } catch (e) {}
     }
+
+    // Migración silenciosa de 'ordenNum': las órdenes viejas no tienen el campo
+    // numérico que usan los queries orderByChild('ordenNum').limitToLast(1).
+    // Lo rellena una sola vez por usuario, SOLO donde falta. Es idempotente:
+    // si una escritura falla (ej: usuario no activo), no marca el flag y reintenta
+    // en la próxima carga. No toca ningún registro que ya tenga ordenNum.
+    function migrarOrdenNum() {
+        try {
+            if (isClientMode || !currentUser) return;
+            var flag = 'st_ordennum_migrado_' + currentUser;
+            if (localStorage.getItem(flag)) return;
+
+            var paths = [fbPathActivo(), fbPathArchivado()];
+            var pendientes = paths.length;
+            var huboError = false;
+
+            function _fin() {
+                pendientes--;
+                if (pendientes === 0 && !huboError) localStorage.setItem(flag, '1');
+            }
+
+            paths.forEach(function (p) {
+                db.ref(p).once('value').then(function (snap) {
+                    var updates = {};
+                    snap.forEach(function (child) {
+                        var v = child.val() || {};
+                        if (v.ordenNum == null) {
+                            var n = parseInt(String(v.orden || '').replace(/[^\d]/g, ''), 10);
+                            if (!isNaN(n)) updates[child.key + '/ordenNum'] = n;
+                        }
+                    });
+                    if (Object.keys(updates).length === 0) { _fin(); return; }
+                    db.ref(p).update(updates)
+                        .then(function () { _fin(); })
+                        .catch(function () { huboError = true; _fin(); });
+                }).catch(function () { huboError = true; _fin(); });
+            });
+        } catch (e) {}
+    }
+    window.migrarOrdenNum = migrarOrdenNum;
 
     // Migración silenciosa: la primera vez que el historial se descarga,
     // construye el índice para las órdenes que aún no lo tienen.
