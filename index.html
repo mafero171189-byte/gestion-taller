@@ -5335,7 +5335,7 @@ function showApp() {
         const row = (label, value) => (!value || value === '-') ? '' : `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:14px;line-height:1.45;">
                 <span style="color:var(--slate-400);font-weight:600;white-space:nowrap;flex-shrink:0;">${label}</span>
-                <span style="color:var(--slate-850);font-weight:600;text-align:right;word-break:break-word;">${value}</span>
+                <span style="color:var(--slate-850);font-weight:600;text-align:left;word-break:break-word;">${value}</span>
             </div>`;
 
         let finHtml = '';
@@ -5521,7 +5521,7 @@ function showApp() {
         const row = (label, value) => (!value || value === '-') ? '' : `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:14px;line-height:1.45;">
                 <span style="color:var(--slate-400);font-weight:600;white-space:nowrap;flex-shrink:0;">${label}</span>
-                <span style="color:var(--slate-850);font-weight:600;text-align:right;word-break:break-word;">${value}</span>
+                <span style="color:var(--slate-850);font-weight:600;text-align:left;word-break:break-word;">${value}</span>
             </div>`;
 
         const vencimientoHtml = p.vencimiento ? (() => {
@@ -10676,6 +10676,7 @@ function showApp() {
             mostrarLoader('Registrando cambio a Garantía...');
             db.ref(pathActivo).child(_idGarantia).update(updates).then(() => {
                 Object.assign(r, updates);
+                _proyectarPublico(_idGarantia, r); // actualizar el link de seguimiento al nuevo estado
                 cerrarModalGarantia();
                 ocultarLoader();
                 renderTable();
@@ -15391,11 +15392,16 @@ function _buildPDFPresupuestoCore(p, conf) {
 
         const dataRow = (label, value) => {
             if (!value) return;
-            const valLines = doc.splitTextToSize(String(value), 120);
+            const colX = L + 34;                                  // inicio de la columna de valores
+            const valLines = doc.splitTextToSize(String(value), R - colX);
             doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
             doc.text(label, L, y);
             doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
-            doc.text(valLines, R, y, { align: 'right' });
+            if (valLines.length > 1) {
+                doc.text(valLines, colX, y, { align: 'left' });   // texto largo: alineado a la izquierda, prolijo
+            } else {
+                doc.text(valLines, R, y, { align: 'right' });     // texto corto: a la derecha como el resto
+            }
             y += valLines.length * 5.5 + 2;
         };
         dataRow('Cliente', p.cliente);
