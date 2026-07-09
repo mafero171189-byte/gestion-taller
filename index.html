@@ -16695,6 +16695,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
 
         cont.innerHTML = `
           <div style="text-align:center;margin-bottom:18px;padding-bottom:16px;border-bottom:2px dashed #e5e7eb;">
+            ${conf.logo ? `<img src="${logoSeguro(conf.logo)}" style="max-height:48px;max-width:150px;object-fit:contain;margin-bottom:10px;border-radius:6px;display:block;margin-left:auto;margin-right:auto;">` : ''}
             <div style="font-size:13px;font-weight:900;color:#111827;letter-spacing:0.5px;">${escaparHTML(tallerNombre)}</div>
             <div style="font-size:12px;color:#6b7280;margin-top:2px;">${escaparHTML(tallerSub)}</div>
             ${tallerWapp ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">📱 ${escaparHTML(tallerWapp)}</div>` : ''}
@@ -16812,12 +16813,14 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         // Header
         doc.setFillColor(6, 18, 42);
         doc.rect(0, 0, pageW, 38, 'F');
+        let _hdrX = margen;
+        if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', margen, 9, 20, 20); _hdrX = margen + 25; } catch(e){} }
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-        doc.text(tallerNombre, margen, 16);
+        doc.text(tallerNombre, _hdrX, 16);
         doc.setFontSize(9); doc.setFont('helvetica', 'normal');
         doc.setTextColor(180, 190, 210);
-        doc.text(tallerSub + (tallerWapp ? '  |  ' + tallerWapp : ''), margen, 25);
+        doc.text(tallerSub + (tallerWapp ? '  |  ' + tallerWapp : ''), _hdrX, 25);
         doc.setFontSize(11); doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
         doc.text('RECIBO INTERNO', pageW - margen, 16, { align: 'right' });
