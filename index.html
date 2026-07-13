@@ -4682,6 +4682,30 @@ function showApp() {
     Object.defineProperty(window, 'registrosArchivados', { get: () => registrosArchivados, set: v => { registrosArchivados = v; } });
     let stockData = []; 
     let historialDescargado = false; 
+
+    // ── CONTABILIDAD: cache propio del archivo COMPLETO ─────────────────────
+    // registrosArchivados solo contiene el MES que se está viendo en el
+    // historial de Ventas (cargarHistorialMes lo pisa). Contabilidad necesita
+    // TODOS los meses, así que mantiene su propia lista independiente.
+    let archivadosConta = [];
+    let contaDescargado = false;
+
+    function contaBorrarDeCache(id) {
+        archivadosConta = archivadosConta.filter(x => x.id !== id);
+    }
+
+    // Devuelve [activos + archivados de todos los meses], sin duplicados.
+    function getOrdenesParaContabilidad() {
+        const idsActivos = new Set(registros.map(r => r.id));
+        const mapa = {};
+        // Base: cache completo bajado de Firebase
+        archivadosConta.forEach(r => { if (!idsActivos.has(r.id)) mapa[r.id] = r; });
+        // Pisar con lo que esté fresco en memoria (ediciones, entregas del día)
+        (registrosArchivados || []).forEach(r => { if (!idsActivos.has(r.id)) mapa[r.id] = r; });
+        return [...registros, ...Object.values(mapa)];
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     // Historial por mes
     let historialMesOffset = 0; // 0 = mes actual, -1 = mes anterior, etc.
     let historialMesesCargados = {}; // cache por "YYYY-MM"
@@ -10796,6 +10820,7 @@ function showApp() {
         borrarIndice(idParaBorrar);
         
         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaBorrar); 
+        contaBorrarDeCache(idParaBorrar);
         registros = registros.filter(x => x.id !== idParaBorrar);
         
         ocultarLoader();
@@ -12234,6 +12259,7 @@ function showApp() {
         }).then(() => {
             registros = registros.filter(x => x.id !== idOrden);
             registrosArchivados = (registrosArchivados || []).filter(x => x.id !== idOrden);
+            contaBorrarDeCache(idOrden);
             ocultarLoader();
             showToast('Venta eliminada — stock repuesto ✅', '#dc2626');
             renderTablaVentas();
@@ -12357,15 +12383,17 @@ function showApp() {
     function limpiarFiltroDia() { document.getElementById('inputDia').value = ""; }
 
     function cargarDatosContabilidad() {
-        // --- INICIO DEL FIX: Descargar historial si no existe ---
-        if (!historialDescargado) {
+        // --- Descargar el archivo COMPLETO una sola vez por sesión ---
+        // OJO: no usamos historialDescargado / registrosArchivados acá porque
+        // el historial de Ventas los pisa con un solo mes.
+        if (!contaDescargado) {
             mostrarLoader("Calculando finanzas...");
             const pathArchivado = fbPathArchivado();
             
             db.ref(pathArchivado).once('value').then(snap => {
                 const v = snap.val();
-                registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                historialDescargado = true;
+                archivadosConta = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                contaDescargado = true;
                 ocultarLoader();
                 cargarDatosContabilidad();
             }).catch(err => {
@@ -12375,7 +12403,6 @@ function showApp() {
             
             return; // Cortamos la ejecución acá para esperar a que Firebase traiga los datos
         }
-        // --- FIN DEL FIX ---
 
         const mesObj = document.getElementById('selectMes');
         const diaObj = document.getElementById('inputDia');
@@ -12412,7 +12439,7 @@ function showApp() {
         let gastosRepuestos = 0, porCobrar = 0;
         let movsMap = {};
 
-        let todasLasOrdenes = [...registros, ...registrosArchivados];
+        let todasLasOrdenes = getOrdenesParaContabilidad();
 
         todasLasOrdenes.forEach(r => {
             let datePart = r.fecha ? r.fecha.split(/[, ]+/)[0].trim() : "";
@@ -12736,6 +12763,7 @@ function showApp() {
                 Promise.all(stockPromesas).then(() => {
                     registros = registros.filter(x => x.id !== idOrden);
                     registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
+                    contaBorrarDeCache(idOrden);
                     ocultarLoader();
                     showToast("Venta Anulada (Stock repuesto)", "#dc2626");
                     cargarDatosContabilidad();
@@ -12803,7 +12831,7 @@ function showApp() {
             return (p[1].padStart(2,'0') === targetMonthStr && p[2] === targetYearStr);
         };
 
-        let todasLasOrdenes = [...registros, ...registrosArchivados];
+        let todasLasOrdenes = getOrdenesParaContabilidad();
 
         todasLasOrdenes.forEach(r => {
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
