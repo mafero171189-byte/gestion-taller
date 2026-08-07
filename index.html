@@ -15375,164 +15375,167 @@ function _buildPDFPresupuestoCore(p, conf) {
     const total = descuentoMontoPDF > 0 ? Math.max(0, totalBruto - descuentoMontoPDF) : totalBruto;
     const fmtARS = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 });
     const equipoStr = [p.equipo, p.marca, p.modelo].filter(Boolean).join(' ');
+    const limpio = (v) => { const s = String(v == null ? '' : v).trim(); return (!s || s === '-') ? '' : s; };
 
-    // Dibuja todo el presupuesto en 'doc' a ancho A4 (210mm) usando todo el ancho
-    // y devuelve la coordenada Y final. Se ejecuta 2 veces: primero en una hoja
-    // gigante SOLO para medir el alto real del contenido, y después en la hoja
-    // definitiva creada justo con ese alto. Así ocupa todo el ancho de una hoja
-    // estándar (A4/oficio/carta) y el pie nunca se corta ni queda hueco, por más
-    // largos que sean el Problema o las Observaciones.
-    function render(doc) {
-        const W = 210, M = 16, L = M, R = W - M, C = W / 2;
+    // Hoja A4 REAL (210x297mm). Antes se creaba una hoja de alto "a medida"
+    // (format:[210, altoReal]) y los visores de PDF del celular no la ajustan al
+    // ancho: la mostraban más ancha que la pantalla y se comía toda la columna
+    // derecha (Cliente, Problema, TOTAL). Con A4 estándar entra siempre completo,
+    // y si el contenido es largo se agrega una hoja más en vez de cortarse.
+    const W = 210, H = 297, M = 16, L = M, R = W - M, C = W / 2, LIMITE = H - 16;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    let y = 0;
 
-        // ── HEADER azul oscuro ──
-        const altoH = conf.logo ? 42 : 32;
-        doc.setFillColor(6, 18, 42); doc.rect(0, 0, W, altoH, 'F');
-        if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', L, 8, 24, 24); } catch(e) {} }
-        doc.setTextColor(255, 255, 255);
-        const txtX = conf.logo ? (L + 32) : C;
-        const algn = conf.logo ? 'left' : 'center';
-        let hy = conf.logo ? 17 : 14;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 18 : 22);
-        doc.text(nombreTaller, txtX, hy, { align: algn }); hy += 8;
-        if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(180, 200, 220); doc.text(subtitulo, txtX, hy, { align: algn }); hy += 6; }
-        if (wapp) { doc.setFontSize(10); doc.setTextColor(180, 200, 220); doc.text('WhatsApp: ' + wapp, txtX, hy, { align: algn }); }
+    // Si lo que sigue no entra en la hoja, abre una nueva
+    const ensure = (alto) => { if (y + alto > LIMITE) { doc.addPage(); y = M; } };
 
-        // ── SECCIÓN NRO ──
-        const altoNro = 26;
-        let y = altoH;
-        doc.setFillColor(248, 250, 252); doc.rect(0, y, W, altoNro, 'F');
-        doc.setTextColor(148, 163, 184); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-        doc.text('Presupuesto', C, y + 7, { align: 'center' });
-        doc.setDrawColor(220, 225, 235); doc.setLineWidth(0.4);
-        doc.line(C - 24, y + 9.5, C + 24, y + 9.5);
-        doc.setTextColor(6, 18, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(24);
-        doc.text('#' + (p.nro || ''), C, y + 18, { align: 'center' });
-        if (p.fecha) { doc.setTextColor(148, 163, 184); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(p.fecha, C, y + 23, { align: 'center' }); }
-        y += altoNro;
-
-        // ── SECCIÓN DATOS ──
-        y += 5;
+    // Título de sección con línea separadora arriba
+    const seccion = (titulo) => {
+        ensure(16);
         doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
         doc.line(L, y, R, y); y += 5;
         doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
-        doc.text('Datos', L, y + 3); y += 8;
+        doc.text(titulo, L, y + 3); y += 9;
+    };
 
-        const dataRow = (label, value) => {
-            if (!value) return;
-            const colX = L + 34;                                  // inicio de la columna de valores
-            const valLines = doc.splitTextToSize(String(value), R - colX);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
-            doc.text(label, L, y);
-            doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
-            if (valLines.length > 1) {
-                doc.text(valLines, colX, y, { align: 'left' });   // texto largo: alineado a la izquierda, prolijo
-            } else {
-                doc.text(valLines, R, y, { align: 'right' });     // texto corto: a la derecha como el resto
-            }
-            y += valLines.length * 5.5 + 2;
-        };
-        dataRow('Cliente', p.cliente);
-        dataRow('Equipo', equipoStr);
-        dataRow('Problema', p.descripcion);
-        y += 2;
+    // ── HEADER azul oscuro ──
+    const altoH = conf.logo ? 42 : 32;
+    doc.setFillColor(6, 18, 42); doc.rect(0, 0, W, altoH, 'F');
+    if (conf.logo) { try { doc.addImage(conf.logo, 'PNG', L, 8, 24, 24); } catch(e) {} }
+    doc.setTextColor(255, 255, 255);
+    const txtX = conf.logo ? (L + 32) : C;
+    const algn = conf.logo ? 'left' : 'center';
+    const anchoTxt = conf.logo ? (R - (L + 32)) : (W - 2 * M);
+    let hy = conf.logo ? 17 : 14;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(conf.logo ? 18 : 22);
+    doc.text(doc.splitTextToSize(nombreTaller, anchoTxt)[0], txtX, hy, { align: algn }); hy += 8;
+    if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(180, 200, 220); doc.text(doc.splitTextToSize(subtitulo, anchoTxt)[0], txtX, hy, { align: algn }); hy += 6; }
+    if (wapp) { doc.setFontSize(10); doc.setTextColor(180, 200, 220); doc.text('WhatsApp: ' + wapp, txtX, hy, { align: algn }); }
 
-        // ── SECCIÓN ITEMS ──
-        doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
-        doc.line(L, y, R, y); y += 5;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
-        doc.text('Detalle del presupuesto', L, y + 3); y += 9;
+    // ── SECCIÓN NRO ──
+    const altoNro = 26;
+    y = altoH;
+    doc.setFillColor(248, 250, 252); doc.rect(0, y, W, altoNro, 'F');
+    doc.setTextColor(148, 163, 184); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('Presupuesto', C, y + 7, { align: 'center' });
+    doc.setDrawColor(220, 225, 235); doc.setLineWidth(0.4);
+    doc.line(C - 24, y + 9.5, C + 24, y + 9.5);
+    doc.setTextColor(6, 18, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(24);
+    doc.text('#' + (p.nro || ''), C, y + 18, { align: 'center' });
+    if (p.fecha) { doc.setTextColor(148, 163, 184); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(String(p.fecha), C, y + 23, { align: 'center' }); }
+    y += altoNro + 5;
 
-        items.forEach((item, idx) => {
-            const cant = parseInt(item.cantidad) || 1;
-            const subtotal = (parseFloat(item.precio) || 0) * cant;
-            const labelItem = cant > 1 ? item.descripcion + ' x' + cant : (item.descripcion || '-');
-            const itemLines = doc.splitTextToSize(labelItem, 130);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(30, 41, 59);
-            doc.text(itemLines, L, y);
-            doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 77, 140);
-            doc.text(fmtARS.format(subtotal), R, y, { align: 'right' });
-            y += itemLines.length * 5.5 + 3;
-            if (idx < items.length - 1) { doc.setLineWidth(0.2); doc.setDrawColor(241, 245, 249); doc.line(L, y - 1.5, R, y - 1.5); }
-        });
+    // ── SECCIÓN DATOS ──
+    // Label a la izquierda y valor pegado al margen derecho. Si el valor no entra
+    // en una sola línea, se parte y queda alineado a la izquierda de su columna
+    // (así el "Problema" largo siempre sale entero y no se pisa con el label).
+    const colX = L + 34;
+    const dataRow = (label, value) => {
+        const v = limpio(value);
+        if (!v) return;
+        const lines = doc.splitTextToSize(v, R - colX);
+        ensure(lines.length * 5.5 + 3);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
+        doc.text(label, L, y);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
+        if (lines.length > 1) doc.text(lines, colX, y, { align: 'left' });
+        else doc.text(lines, R, y, { align: 'right' });
+        y += lines.length * 5.5 + 2;
+    };
+    seccion('Datos');
+    dataRow('Cliente', p.cliente);
+    dataRow('Equipo', equipoStr);
+    dataRow('Problema', p.descripcion);
+    y += 2;
 
-        // Línea antes del total
-        y += 2;
-        doc.setLineWidth(0.6); doc.setDrawColor(30, 77, 140); doc.line(L, y, R, y); y += 2.5;
+    // ── SECCIÓN ITEMS ──
+    seccion('Detalle del presupuesto');
+    const anchoItem = R - L - 42;   // deja 42mm fijos para el importe de la derecha
+    items.forEach((item, idx) => {
+        const cant = parseInt(item.cantidad) || 1;
+        const subtotal = (parseFloat(item.precio) || 0) * cant;
+        const desc = limpio(item.descripcion) || '-';
+        const labelItem = cant > 1 ? desc + ' x' + cant : desc;
+        const itemLines = doc.splitTextToSize(labelItem, anchoItem);
+        ensure(itemLines.length * 5.5 + 4);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(30, 41, 59);
+        doc.text(itemLines, L, y);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 77, 140);
+        doc.text(fmtARS.format(subtotal), R, y, { align: 'right' });
+        y += itemLines.length * 5.5 + 3;
+        if (idx < items.length - 1) { doc.setLineWidth(0.2); doc.setDrawColor(241, 245, 249); doc.line(L, y - 1.5, R, y - 1.5); }
+    });
 
-        // Fila SUBTOTAL + DESCUENTO (solo si hay descuento)
-        if (descuentoMontoPDF > 0) {
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(100, 116, 139);
-            doc.text('Subtotal', L, y + 5);
-            doc.text(fmtARS.format(totalBruto), R, y + 5, { align: 'right' });
-            y += 8;
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(220, 38, 38);
-            const dLabelPDF = (p.descuentoTipo === '%'
-                ? 'Descuento ' + (p.descuentoValor || '') + '%'
-                : 'Descuento')
-                + (p.descuentoEfectivo ? ' (efectivo)' : '');
-            doc.text(dLabelPDF, L, y + 6);
-            doc.text('- ' + fmtARS.format(descuentoMontoPDF), R, y + 5, { align: 'right' });
-            y += 8;
-            doc.setLineWidth(0.4); doc.setDrawColor(220, 38, 38); doc.line(L, y, R, y); y += 2.5;
-        }
+    // Bloque de totales: que no quede partido entre dos hojas
+    ensure(descuentoMontoPDF > 0 ? 42 : 22);
 
-        // Fila TOTAL
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(30, 41, 59);
-        doc.text('TOTAL', L, y + 7);
-        doc.setFontSize(19); doc.setTextColor(30, 77, 140);
-        doc.text(fmtARS.format(total), R, y + 7, { align: 'right' });
-        y += 15;
+    y += 2;
+    doc.setLineWidth(0.6); doc.setDrawColor(30, 77, 140); doc.line(L, y, R, y); y += 2.5;
 
-        // Nota aclaratoria si el descuento es por pago en efectivo
-        if (descuentoMontoPDF > 0 && p.descuentoEfectivo) {
-            doc.setFont('helvetica', 'italic'); doc.setFontSize(10.5); doc.setTextColor(180, 83, 9);
-            const notaEfec = '* Precio final de ' + fmtARS.format(total) + ' válido únicamente con pago en efectivo.';
-            const notaLines = doc.splitTextToSize(notaEfec, R - L);
-            doc.text(notaLines, L, y);
-            y += notaLines.length * 5.5 + 4;
-        }
-
-        // ── VÁLIDO HASTA ──
-        if (p.vencimiento) {
-            const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual);
-            doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
-            doc.line(L, y, R, y); y += 6;
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
-            doc.text('Válido hasta', L, y);
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(217, 119, 6);
-            doc.text(fechaVenc, R, y, { align: 'right' });
-            y += 8;
-        }
-
-        // ── OBSERVACIONES ──
-        if (p.obs) {
-            doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
-            doc.line(L, y, R, y); y += 5;
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
-            doc.text('Observaciones', L, y + 3); y += 9;
-            const oLines = doc.splitTextToSize(p.obs, R - L);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(71, 85, 105);
-            doc.text(oLines, L, y); y += oLines.length * 5.5 + 4;
-        }
-
-        // ── PIE ──
-        y += 3;
-        doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
-        doc.line(L, y, R, y); y += 6;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(148, 163, 184);
-        doc.text('Ante cualquier consulta, comunicate con el taller', C, y, { align: 'center' }); y += 5;
-        doc.text('Presupuesto generado por Mi Taller Web', C, y, { align: 'center' });
-
-        return y;
+    if (descuentoMontoPDF > 0) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(100, 116, 139);
+        doc.text('Subtotal', L, y + 5);
+        doc.text(fmtARS.format(totalBruto), R, y + 5, { align: 'right' });
+        y += 8;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(220, 38, 38);
+        const dLabelPDF = (p.descuentoTipo === '%'
+            ? 'Descuento ' + (p.descuentoValor || '') + '%'
+            : 'Descuento')
+            + (p.descuentoEfectivo ? ' (efectivo)' : '');
+        doc.text(dLabelPDF, L, y + 5);
+        doc.text('- ' + fmtARS.format(descuentoMontoPDF), R, y + 5, { align: 'right' });
+        y += 8;
+        doc.setLineWidth(0.4); doc.setDrawColor(220, 38, 38); doc.line(L, y, R, y); y += 2.5;
     }
 
-    // 1) Medir el alto real dibujando en una hoja A4-ancho muy alta (descartable).
-    const _medir = new jsPDF({ unit: 'mm', format: [210, 4000] });
-    const _altoReal = render(_medir);
-    // 2) Crear la hoja definitiva: ancho A4 (210mm) y alto exacto + margen inferior.
-    const doc = new jsPDF({ unit: 'mm', format: [210, Math.max(_altoReal + 10, 120)] });
-    render(doc);
+    // Fila TOTAL
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(30, 41, 59);
+    doc.text('TOTAL', L, y + 7);
+    doc.setFontSize(19); doc.setTextColor(30, 77, 140);
+    doc.text(fmtARS.format(total), R, y + 7, { align: 'right' });
+    y += 15;
+
+    if (descuentoMontoPDF > 0 && p.descuentoEfectivo) {
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(10.5); doc.setTextColor(180, 83, 9);
+        const notaEfec = '* Precio final de ' + fmtARS.format(total) + ' válido únicamente con pago en efectivo.';
+        const notaLines = doc.splitTextToSize(notaEfec, R - L);
+        ensure(notaLines.length * 5.5 + 4);
+        doc.text(notaLines, L, y);
+        y += notaLines.length * 5.5 + 4;
+    }
+
+    // ── VÁLIDO HASTA ──
+    if (p.vencimiento) {
+        const fechaVenc = new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual);
+        ensure(14);
+        doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
+        doc.line(L, y, R, y); y += 6;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(148, 163, 184);
+        doc.text('Válido hasta', L, y);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(217, 119, 6);
+        doc.text(fechaVenc, R, y, { align: 'right' });
+        y += 8;
+    }
+
+    // ── OBSERVACIONES ──
+    const obsTxt = limpio(p.obs);
+    if (obsTxt) {
+        seccion('Observaciones');
+        const oLines = doc.splitTextToSize(obsTxt, R - L);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(71, 85, 105);
+        oLines.forEach(linea => { ensure(6); doc.text(linea, L, y); y += 5.5; });
+        y += 4;
+    }
+
+    // ── PIE ──
+    ensure(16);
+    y += 3;
+    doc.setLineWidth(0.4); doc.setDrawColor(232, 236, 240);
+    doc.line(L, y, R, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(148, 163, 184);
+    doc.text('Ante cualquier consulta, comunicate con el taller', C, y, { align: 'center' }); y += 5;
+    doc.text('Presupuesto generado por Mi Taller Web', C, y, { align: 'center' });
+
     return doc.output('blob');
 }
 
