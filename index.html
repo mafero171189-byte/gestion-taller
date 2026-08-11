@@ -4993,6 +4993,12 @@ function showApp() {
         return textoProcesado.replace(/\n/g, '<br>');
     }
 
+    // Normaliza texto para búsquedas: minúsculas y sin acentos/diacríticos,
+    // así "telefono" encuentra "Teléfono" y viceversa.
+    function normalizarBusqueda(s) {
+        return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
     function parseFechaAR(fechaStr) {
         if (!fechaStr) return new Date();
         let partes = fechaStr.split(',');
@@ -7864,14 +7870,14 @@ function showApp() {
     }
     function filtrarVentaRapida() {
         const input = document.getElementById('vrBusqueda');
-        const val = input.value.toLowerCase().trim();
+        const val = normalizarBusqueda(input.value.trim());
         const listDiv = document.getElementById('vrAutocomplete');
         listDiv.innerHTML = '';
 
         if (!val) { listDiv.style.display = 'none'; return; }
 
         const filtrados = stockData.filter(item =>
-            (item.nombre || '').toLowerCase().includes(val) && item.cantidad > 0
+            normalizarBusqueda(item.nombre).includes(val) && item.cantidad > 0
         );
 
         if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
@@ -7995,13 +8001,13 @@ function showApp() {
     // ── Panel de ventas inline (página Ventas) ───────────────────────────────
     function pvFiltrar() {
         const input   = document.getElementById('pvBusqueda');
-        const val     = input ? input.value.toLowerCase().trim() : '';
+        const val     = input ? normalizarBusqueda(input.value.trim()) : '';
         const listDiv = document.getElementById('pvAutocomplete');
         if (!listDiv) return;
         listDiv.innerHTML = '';
         if (!val) { listDiv.style.display = 'none'; return; }
         const filtrados = stockData.filter(item =>
-            (item.nombre || '').toLowerCase().includes(val) && item.cantidad > 0
+            normalizarBusqueda(item.nombre).includes(val) && item.cantidad > 0
         );
         if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
         filtrados.forEach(item => {
@@ -8428,11 +8434,11 @@ function showApp() {
     function filtrarStockModal() {
         if(isClientMode) return;
         const input = document.getElementById('repuestoModalUsado');
-        const val = input.value.toLowerCase();
+        const val = normalizarBusqueda(input.value);
         const listDiv = document.getElementById('autocomplete-repuestoModalUsado');
         listDiv.innerHTML = '';
         
-        const filtrados = stockData.filter(item => item.nombre.toLowerCase().includes(val) && item.cantidad > 0);
+        const filtrados = stockData.filter(item => normalizarBusqueda(item.nombre).includes(val) && item.cantidad > 0);
         
         if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
         
@@ -11954,11 +11960,11 @@ function showApp() {
     }
 
     function renderStock() {
-        const bus = document.getElementById('search-stock').value.toLowerCase();
+        const bus = normalizarBusqueda(document.getElementById('search-stock').value);
         const body = document.getElementById('bodyStock');
         body.innerHTML = "";
 
-        const filtrados = stockData.filter(i => (i.nombre||"").toLowerCase().includes(bus));
+        const filtrados = stockData.filter(i => normalizarBusqueda(i.nombre).includes(bus));
         filtrados.sort((a,b) => a.nombre.localeCompare(b.nombre));
 
         // Calcular stock bajo para la campana (usa mínimo global como fallback)
