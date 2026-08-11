@@ -17130,7 +17130,9 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             const taller = conf.nombreTaller || 'el taller';
             const total  = _fmtMonto(_totalOrden(r));
             const equipo = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
-            const tel    = (r.tel || '').replace(/\D/g, '');
+            let tel = (r.tel || '').replace(/\D/g, '');
+            if (tel && !tel.startsWith('54')) tel = '549' + tel;
+            else if (tel && tel.startsWith('54') && !tel.startsWith('549')) tel = tel.replace(/^54/, '549');
             const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
             const wMsg   = `Hola ${r.cliente || ''}! 👋\n` +
                 `Te comparto el recibo de tu reparación en ${taller}.\n\n` +
@@ -17142,32 +17144,27 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             const doc  = _buildPDFRecibo(r, nro, conf);
             const blob = doc.output('blob');
 
-            if (tel) {
-                // Tenemos el número del cliente: vamos DIRECTO a su chat de WhatsApp
-                // (wa.me con número no admite adjuntar archivos vía URL, es límite de
-                // WhatsApp) y bajamos el PDF ya mismo para adjuntarlo ahí en 2 toques.
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
-                window.open(`https://wa.me/${tel}?text=${encodeURIComponent(wMsg)}`, '_blank');
-                return;
-            }
-
-            // Sin teléfono cargado: como no hay a quién ir directo, probamos compartir
-            // el PDF real por el selector nativo (el usuario elige WhatsApp y contacto).
+            // 1) Prioridad: compartir el PDF real adjunto (selector nativo → elegís
+            //    WhatsApp → WhatsApp te deja elegir el chat con el PDF ya cargado).
+            //    Esto es lo único que logra mandar el archivo en sí, no solo texto.
             const file = new File([blob], nombre, { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({ files: [file], text: wMsg });
                     return;
                 } catch(e) {
-                    if (e.name === 'AbortError') return;
+                    if (e.name === 'AbortError') return; // canceló, no seguir al fallback
                 }
             }
 
-            // Último fallback: selector de contacto genérico de WhatsApp + descarga manual.
-            window.open(`https://wa.me/?text=${encodeURIComponent(wMsg)}`, '_blank');
-            const a2 = document.createElement('a');
-            a2.href = URL.createObjectURL(blob); a2.download = nombre; a2.click();
+            // 2) Fallback (el dispositivo no soporta compartir archivos): wa.me no admite
+            //    adjuntar PDF por URL, así que abrimos el chat del cliente con el texto
+            //    (directo a su número si está agendado) y bajamos el PDF para adjuntar a mano.
+            const msg = encodeURIComponent(wMsg);
+            const url = tel ? `https://wa.me/${tel}?text=${msg}` : `https://wa.me/?text=${msg}`;
+            window.open(url, '_blank');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
         } catch(e) {
             if (typeof ocultarLoader === 'function') ocultarLoader();
         }
