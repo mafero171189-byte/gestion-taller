@@ -3737,6 +3737,7 @@ function showApp() {
       <div style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; background: var(--gray-50); padding: 10px 15px; border-radius: 12px; border: 1px solid var(--gray-200);">
        <label style="margin:0; font-size:13px; font-weight:bold; color:var(--gray-600);">Mes:</label> <select id="selectMes" onchange="limpiarFiltroDia(); cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid var(--gray-200); outline:none; font-weight:bold; color:var(--gray-900);"></select> <label style="margin:0; font-size:13px; margin-left:10px; font-weight:bold; color:var(--gray-600);">Día Específico:</label> <input type="date" id="inputDia" onchange="cargarDatosContabilidad()" style="padding:8px; border-radius:8px; border:1px solid var(--gray-200); outline:none; font-weight:bold; color:var(--gray-900);">
        <button class="btn" style="background: #27ae60; color:white; font-size:12px; padding:8px 15px; margin-left: 5px; box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);" onclick="exportarExcel()">📊 DESCARGAR EXCEL</button>
+       <button class="btn" style="background: var(--danger); color:white; font-size:12px; padding:8px 15px; margin-left: 5px; box-shadow: 0 2px 5px rgba(220,38,38,0.3);" onclick="abrirModalGastoExtra()">🧾 ANOTAR GASTO</button>
       </div>
      </div>
      <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 20px;"></div>
@@ -4069,6 +4070,44 @@ function showApp() {
      </div>
 
 
+    </div>
+
+    <!-- MODAL GASTO EXTRA -->
+    <div id="modalGastoExtra" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.82);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+      <div style="background:white;border-radius:20px;width:92%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,0.45);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+        <div style="background:linear-gradient(135deg,var(--danger),#991b1b);padding:18px 22px;border-radius:20px 20px 0 0;display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:white;font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;">🧾 Anotar Gasto Extra</div>
+          <button onclick="cerrarModalGastoExtra()" style="background:rgba(255,255,255,0.1);border:none;color:white;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+        </div>
+        <div style="padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gray-600);">Concepto</label>
+            <input type="text" id="gastoExtraConcepto" placeholder="Ej: Alquiler, insumos, luz..." style="width:100%;padding:12px;border-radius:8px;border:1.5px solid var(--gray-200);box-sizing:border-box;margin-top:4px;">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gray-600);">Monto</label>
+            <input type="number" id="gastoExtraMonto" inputmode="decimal" placeholder="0" style="width:100%;padding:12px;border-radius:8px;border:1.5px solid var(--gray-200);box-sizing:border-box;margin-top:4px;">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gray-600);">Fecha</label>
+            <input type="date" id="gastoExtraFecha" style="width:100%;padding:12px;border-radius:8px;border:1.5px solid var(--gray-200);box-sizing:border-box;margin-top:4px;">
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--gray-600);">Método de pago</label>
+            <select id="gastoExtraMetodo" style="width:100%;padding:12px;border-radius:8px;border:1.5px solid var(--gray-200);box-sizing:border-box;margin-top:4px;">
+              <option>Efectivo</option>
+              <option>Transferencia</option>
+              <option>Débito</option>
+              <option>Crédito</option>
+              <option>Mercado Pago</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:16px 22px 20px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--gray-100);">
+          <button onclick="guardarGastoExtra()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--danger),#991b1b);color:white;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;">💾 GUARDAR GASTO</button>
+          <button onclick="cerrarModalGastoExtra()" style="width:100%;padding:11px;background:transparent;color:var(--gray-500);border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+        </div>
+      </div>
     </div>
 
     <!-- MODAL PREVIEW RECIBO -->
@@ -4653,6 +4692,7 @@ function showApp() {
     function fbPathStock()     { return isUserAdmin ? 'stock'                   : 'stock_usuarios/' + currentUser; }
     function fbPathIndice()    { return isUserAdmin ? 'indices/admin'           : 'indices/' + currentUser; }
     function fbPathPerfil()    { return isUserAdmin ? 'configuracion/admin'     : 'usuarios_registrados/' + currentUser; }
+    function fbPathGastos()    { return isUserAdmin ? 'gastos_extra'           : 'gastos_extra_usuarios/' + currentUser; }
     function fbPathSync()      { return isUserAdmin ? 'sync_ts/admin'           : 'sync_ts/' + currentUser; }
     function fbPathSeguimiento(){ return isUserAdmin ? 'seguimiento_publico/admin' : 'seguimiento_publico/' + currentUser; }
     window.fbPathActivo = fbPathActivo;
@@ -4689,6 +4729,9 @@ function showApp() {
     // TODOS los meses, así que mantiene su propia lista independiente.
     let archivadosConta = [];
     let contaDescargado = false;
+    // Gastos extra: egresos manuales sin orden asociada (alquiler, insumos, etc.)
+    let gastosExtraCache = [];
+    let gastosExtraDescargado = false;
 
     function contaBorrarDeCache(id) {
         archivadosConta = archivadosConta.filter(x => x.id !== id);
@@ -12404,6 +12447,19 @@ function showApp() {
             return; // Cortamos la ejecución acá para esperar a que Firebase traiga los datos
         }
 
+        if (!gastosExtraDescargado) {
+            db.ref(fbPathGastos()).once('value').then(snap => {
+                const v = snap.val();
+                gastosExtraCache = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                gastosExtraDescargado = true;
+                cargarDatosContabilidad();
+            }).catch(err => {
+                gastosExtraDescargado = true; // no bloquear contabilidad si esto falla
+                cargarDatosContabilidad();
+            });
+            return;
+        }
+
         const mesObj = document.getElementById('selectMes');
         const diaObj = document.getElementById('inputDia');
         
@@ -12556,8 +12612,36 @@ function showApp() {
             }
         });
 
+        // Gastos extra manuales (alquiler, insumos, etc.) del período seleccionado
+        let gastosExtraTotal = 0;
+        let gastosExtraDelPeriodo = [];
+        gastosExtraCache.forEach(g => {
+            let datePartG = g.fecha ? g.fecha.split(/[, ]+/)[0].trim() : "";
+            if (!datePartG) return;
+            let partesG = datePartG.split('/');
+            if (partesG.length !== 3) return;
+
+            let coincideG = false;
+            if (diaFiltro) {
+                let dfG = diaFiltro.split('-');
+                coincideG = (partesG[0].padStart(2,'0') === dfG[2] && partesG[1].padStart(2,'0') === dfG[1] && partesG[2] === dfG[0]);
+            } else {
+                coincideG = (partesG[1].padStart(2,'0') === targetMonthStr && partesG[2] === targetYearStr);
+            }
+            if (!coincideG) return;
+
+            const montoG = parseFloat(g.monto) || 0;
+            gastosExtraTotal += montoG;
+            gastosExtraDelPeriodo.push({
+                id: g.id, orden: '—', cliente: g.concepto || 'Gasto extra',
+                descStr: '🧾 Gasto Extra', metodoStr: g.metodo || 'Efectivo',
+                ingreso: 0, egreso: montoG, fechaRaw: g.fecha,
+                esVentaRapida: false, equipo: '', deudaPendiente: 0, esGastoExtra: true
+            });
+        });
+
         let ingresosTotales = ingresoEfectivo + ingresoTransf + ingresoTarjeta + ingresoDebito + ingresoCredito + ingresoMP;
-        let gananciaNeta = ingresosTotales - gastosRepuestos;
+        let gananciaNeta = ingresosTotales - gastosRepuestos - gastosExtraTotal;
         // Desglose: siempre EF y TR; los demás solo si tienen monto, para no recargar la tarjeta
         let desgloseParts = [`EF: <b>${fmt.format(ingresoEfectivo)}</b>`, `TR: <b>${fmt.format(ingresoTransf)}</b>`];
         if (ingresoDebito > 0) desgloseParts.push(`DB: <b>${fmt.format(ingresoDebito)}</b>`);
@@ -12574,6 +12658,7 @@ function showApp() {
             </div>
             <div class="card-stats caja-warning"><b>⏳ SALDOS POR COBRAR</b><p style="color:var(--warning);">${fmt.format(porCobrar)}</p><span class="stat-icon">🕒</span></div>
             <div class="card-stats caja-danger"><b>📉 COSTOS DE REPUESTOS</b><p style="color:var(--danger);">${fmt.format(gastosRepuestos)}</p><span class="stat-icon">📦</span></div>
+            <div class="card-stats caja-danger"><b>🧾 GASTOS EXTRA</b><p style="color:var(--danger);">${fmt.format(gastosExtraTotal)}</p><span class="stat-icon">🧾</span></div>
             <div class="card-stats caja-primary"><b>✅ GANANCIA NETA</b><p style="color:var(--primary);">${fmt.format(gananciaNeta)}</p><span class="stat-icon">📊</span></div>
         `;
 
@@ -12598,7 +12683,7 @@ function showApp() {
                 esVentaRapida: m.esVentaRapida, equipo: m.equipo,
                 deudaPendiente: m.deudaPendiente || 0
             };
-        });
+        }).concat(gastosExtraDelPeriodo);
 
         renderTablaContabilidad();
     }
@@ -12698,7 +12783,7 @@ function showApp() {
                         if (gan < 0) return `<b style="color:var(--danger);">${fmt.format(gan)}</b>`;
                         return '<span style="color:var(--gray-500);">$0</span>';
                     })()}</td>
-                    <td class="action-btns">${!v.deudaPendiente ? `<button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button>` : `<button onclick="cobrarDeudaPendiente('${v.id}')" style="background:var(--green-600); color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">💰 Cobrar</button>`}</td>
+                    <td class="action-btns">${v.esGastoExtra ? `<button onclick="eliminarGastoExtra('${v.id}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Gasto">🗑️ Borrar</button>` : (!v.deudaPendiente ? `<button onclick="eliminarMovimiento('${v.id}', '${v.descStr}')" style="background:white; color:var(--danger); border:1px solid var(--danger); padding:6px; border-radius:6px; cursor:pointer;" title="Eliminar Movimiento">🗑️ Anular</button>` : `<button onclick="cobrarDeudaPendiente('${v.id}')" style="background:var(--green-600); color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">💰 Cobrar</button>`)}</td>
                 </tr>`;
             });
             listHtml += `</tbody></table></div>`;
@@ -12793,6 +12878,61 @@ function showApp() {
             ocultarLoader();
             showToast("Movimientos Financieros Anulados", "#dc2626");
             cargarDatosContabilidad();
+        });
+    }
+
+    // ── Gastos Extra (egresos manuales sin orden asociada) ─────────────────────
+    function abrirModalGastoExtra() {
+        const hoy = new Date();
+        const hoyStr = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0');
+        document.getElementById('gastoExtraConcepto').value = '';
+        document.getElementById('gastoExtraMonto').value = '';
+        document.getElementById('gastoExtraFecha').value = hoyStr;
+        document.getElementById('gastoExtraMetodo').value = 'Efectivo';
+        document.getElementById('modalGastoExtra').style.display = 'flex';
+    }
+
+    function cerrarModalGastoExtra() {
+        document.getElementById('modalGastoExtra').style.display = 'none';
+    }
+
+    function guardarGastoExtra() {
+        const concepto = (document.getElementById('gastoExtraConcepto').value || '').trim();
+        const monto = parseFloat(document.getElementById('gastoExtraMonto').value) || 0;
+        const fechaInput = document.getElementById('gastoExtraFecha').value;
+        const metodo = document.getElementById('gastoExtraMetodo').value;
+
+        if (!concepto) { showToast('⚠️ Ingresá un concepto para el gasto', '#dc2626'); return; }
+        if (monto <= 0) { showToast('⚠️ Ingresá un monto válido', '#dc2626'); return; }
+        if (!fechaInput) { showToast('⚠️ Elegí una fecha', '#dc2626'); return; }
+
+        const [y, m, d] = fechaInput.split('-');
+        const fechaAR = `${d}/${m}/${y}`;
+
+        mostrarLoader('Guardando gasto...');
+        db.ref(fbPathGastos()).push({ concepto, monto, fecha: fechaAR, metodo, ts: Date.now() }).then((ref) => {
+            gastosExtraCache.push({ id: ref.key, concepto, monto, fecha: fechaAR, metodo });
+            ocultarLoader();
+            cerrarModalGastoExtra();
+            showToast('🧾 Gasto registrado', '#dc2626');
+            cargarDatosContabilidad();
+        }).catch(err => {
+            ocultarLoader();
+            showToast('⚠️ Error al guardar el gasto: ' + err.message, '#dc2626');
+        });
+    }
+
+    function eliminarGastoExtra(id) {
+        if (!confirm('¿Eliminar este gasto extra?')) return;
+        mostrarLoader('Eliminando...');
+        db.ref(fbPathGastos()).child(id).remove().then(() => {
+            gastosExtraCache = gastosExtraCache.filter(g => g.id !== id);
+            ocultarLoader();
+            showToast('Gasto eliminado', '#dc2626');
+            cargarDatosContabilidad();
+        }).catch(err => {
+            ocultarLoader();
+            showToast('⚠️ Error al eliminar: ' + err.message, '#dc2626');
         });
     }
 
@@ -16961,37 +17101,59 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         });
     };
 
-    window.factEnviarReciboWapp = function() {
+    window.factEnviarReciboWapp = async function() {
         const r = _factReciboActual;
         if (!r) return;
         if (typeof mostrarLoader === 'function') mostrarLoader('Preparando...');
-        window.db.ref(_getConfPath()).once('value').then(snap => {
-            const conf = snap.val() || {};
+        try {
+            const snap  = await window.db.ref(_getConfPath()).once('value');
+            const conf  = snap.val() || {};
             if (typeof ocultarLoader === 'function') ocultarLoader();
             const nro    = _factNroRecibo || r.nroRecibo || 'REC';
             const taller = conf.nombreTaller || 'el taller';
             const total  = _fmtMonto(_totalOrden(r));
             const equipo = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
             const tel    = (r.tel || '').replace(/\D/g, '');
-            const msg    = encodeURIComponent(
-                `Hola ${r.cliente || ''}! 👋\n` +
+            const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
+            const wMsg   = `Hola ${r.cliente || ''}! 👋\n` +
                 `Te comparto el recibo de tu reparación en ${taller}.\n\n` +
                 `📄 Comprobante: ${nro}\n` +
                 `📱 Equipo: ${equipo}\n` +
                 `💰 Total: ${total}\n\n` +
-                `Gracias por tu confianza! 🙌`
-            );
-            const url = tel ? `https://wa.me/${tel}?text=${msg}` : `https://wa.me/?text=${msg}`;
-            window.open(url, '_blank');
-            // Descargar PDF para adjuntar manualmente
-            try {
-                const doc    = _buildPDFRecibo(r, nro, conf);
-                const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
-                doc.save(nombre);
-            } catch(e) {}
-        }).catch(() => {
+                `Gracias por tu confianza! 🙌`;
+
+            const doc  = _buildPDFRecibo(r, nro, conf);
+            const blob = doc.output('blob');
+
+            if (tel) {
+                // Tenemos el número del cliente: vamos DIRECTO a su chat de WhatsApp
+                // (wa.me con número no admite adjuntar archivos vía URL, es límite de
+                // WhatsApp) y bajamos el PDF ya mismo para adjuntarlo ahí en 2 toques.
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+                window.open(`https://wa.me/${tel}?text=${encodeURIComponent(wMsg)}`, '_blank');
+                return;
+            }
+
+            // Sin teléfono cargado: como no hay a quién ir directo, probamos compartir
+            // el PDF real por el selector nativo (el usuario elige WhatsApp y contacto).
+            const file = new File([blob], nombre, { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], text: wMsg });
+                    return;
+                } catch(e) {
+                    if (e.name === 'AbortError') return;
+                }
+            }
+
+            // Último fallback: selector de contacto genérico de WhatsApp + descarga manual.
+            window.open(`https://wa.me/?text=${encodeURIComponent(wMsg)}`, '_blank');
+            const a2 = document.createElement('a');
+            a2.href = URL.createObjectURL(blob); a2.download = nombre; a2.click();
+        } catch(e) {
             if (typeof ocultarLoader === 'function') ocultarLoader();
-        });
+        }
     };
 
     // ── PDF Batch (múltiples recibos en 1 PDF) ────────────────────────────────
