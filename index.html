@@ -5362,14 +5362,26 @@ function showApp() {
     window.descargarReciboPublico = function() {
         try {
             const data = window._reciboPublicoData;
-            if (!data || !data.r) return;
+            if (!data || !data.r) { alert('No se pudo generar el recibo. Recargá la página e intentá de nuevo.'); return; }
             const r = data.r;
             const conf = data.conf || {};
             const nro = r.nroRecibo || r.orden || 'REC';
             const doc = r.esVentaRapida ? _buildPDFReciboVenta(r, conf, '') : _buildPDFRecibo(r, nro, conf);
             const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
-            doc.save(nombre);
-        } catch(e) {}
+
+            // Primero intentamos abrir el PDF en una pestaña nueva (mismo método que
+            // "Ver/Imprimir", que ya sabemos que anda bien en cualquier navegador).
+            // doc.save() a veces queda bloqueado en silencio en algunos celulares/
+            // navegadores embebidos, así que lo dejamos solo como respaldo.
+            const blob = doc.output('blob');
+            const url  = URL.createObjectURL(blob);
+            const w    = window.open(url, '_blank');
+            if (!w) {
+                doc.save(nombre);
+            }
+        } catch(e) {
+            alert('No se pudo generar el recibo: ' + (e && e.message ? e.message : e));
+        }
     };
 
     function renderVistaCliente(regEncontrado, container) {
