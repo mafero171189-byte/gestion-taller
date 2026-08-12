@@ -16943,6 +16943,19 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
               <span style="font-size:18px;font-weight:900;color:#059669;">${_fmtMonto(Math.min(sena + saldoCob, total - descEntrega) || total)}</span>
             </div>
           </div>
+          ${r.vencimientoGarantia ? (() => {
+              let diasTxt = '';
+              try {
+                  const evEntregado = (r.historialEstados || []).find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+                  if (evEntregado && evEntregado.fecha) {
+                      const fEntrega = parseFechaAR(evEntregado.fecha);
+                      const fVence   = parseFechaAR(r.vencimientoGarantia);
+                      const dias = Math.round((fVence - fEntrega) / 86400000);
+                      if (dias > 0) diasTxt = dias + ' días — ';
+                  }
+              } catch(e) {}
+              return `<div style="background:#ede9fe;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:800;color:#5b21b6;margin-bottom:10px;">Garantía: ${diasTxt}válida hasta ${escaparHTML(r.vencimientoGarantia)}</div>`;
+          })() : ''}
           ${terminos ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;line-height:1.5;margin-bottom:10px;">${escaparHTML(terminos)}</div>` : ''}
           <div style="text-align:center;font-size:10px;color:#d1d5db;padding-top:10px;border-top:1px dashed #e5e7eb;">Este comprobante no tiene validez fiscal.</div>
         `;
@@ -17082,6 +17095,25 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         doc.text('TOTAL ABONADO', margen + 6, y + 9);
         doc.text(_fmtMonto(totalAbonado), margen + ancho - 6, y + 9, { align: 'right' });
         y += 20;
+
+        // Garantía (si la orden se entregó con garantía)
+        if (r.vencimientoGarantia) {
+            let diasGarantiaTxt = '';
+            try {
+                const evEntregado = (r.historialEstados || []).find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+                if (evEntregado && evEntregado.fecha) {
+                    const fEntrega = parseFechaAR(evEntregado.fecha);
+                    const fVence   = parseFechaAR(r.vencimientoGarantia);
+                    const dias = Math.round((fVence - fEntrega) / 86400000);
+                    if (dias > 0) diasGarantiaTxt = dias + ' días — ';
+                }
+            } catch(e) {}
+            doc.setFillColor(237, 233, 254);
+            doc.roundedRect(margen, y, ancho, 14, 3, 3, 'F');
+            doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(91, 33, 182);
+            doc.text('Garantía: ' + diasGarantiaTxt + 'válida hasta ' + r.vencimientoGarantia, margen + 6, y + 9);
+            y += 20;
+        }
 
         // Términos
         if (terminos) {
