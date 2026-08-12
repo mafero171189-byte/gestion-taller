@@ -4995,6 +4995,14 @@ function showApp() {
 
     // Normaliza texto para búsquedas: minúsculas y sin acentos/diacríticos,
     // así "telefono" encuentra "Teléfono" y viceversa.
+    // Fecha de entrega de una orden: usa el campo directo si está (recibo público,
+    // que no tiene el historial completo) o lo busca en historialEstados (privado).
+    function _fechaEntregaDe(r) {
+        if (r.fechaEntrega) return r.fechaEntrega;
+        const ev = (r.historialEstados || []).find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+        return ev ? ev.fecha : null;
+    }
+
     function normalizarBusqueda(s) {
         return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
@@ -5351,11 +5359,23 @@ function showApp() {
         loadDraft();
     }
 
+    window.descargarReciboPublico = function() {
+        try {
+            const data = window._reciboPublicoData;
+            if (!data || !data.r) return;
+            const r = data.r;
+            const conf = data.conf || {};
+            const nro = r.nroRecibo || r.orden || 'REC';
+            const doc = r.esVentaRapida ? _buildPDFReciboVenta(r, conf, '') : _buildPDFRecibo(r, nro, conf);
+            const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
+            doc.save(nombre);
+        } catch(e) {}
+    };
+
     function renderVistaCliente(regEncontrado, container) {
-        if (regEncontrado.archivado && regEncontrado.estado === 'Entregado') {
-            container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">📦</div><h2 style="color:var(--gray-600);font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Equipo Entregado</h2><p style="color:var(--gray-600);font-size:14px;line-height:1.6;margin:0;">Este equipo ya fue entregado. El seguimiento de esta orden no está disponible.</p></div>`;
-            return;
-        }
+        // Antes, si la orden ya estaba archivada (lo normal tras la entrega), acá se
+        // cortaba con un mensaje de "no disponible" — eso era lo que hacía que el link
+        // "caducara". Ahora sigue de largo y muestra la pantalla de entrega + recibo.
 
         // Usamos el usuario de la URL (?u=...) para no depender de currentUser,
         // que puede ser null cuando el cliente abre el link sin estar logueado.
@@ -5466,6 +5486,14 @@ function showApp() {
         const _estadoOrden = (regEncontrado.estado || '').toString();
         const _estaEntregado = (_estadoOrden === 'Entregado' || _estadoOrden.toLowerCase().startsWith('entregado'));
         if (_estaEntregado && saldoPendiente <= 0) {
+            window._reciboPublicoData = { r: regEncontrado, conf: conf };
+            const tieneRecibo = typeof window.jspdf !== 'undefined';
+            const esVenta = !!regEncontrado.esVentaRapida;
+            const tituloEntrega = esVenta ? 'Compra registrada' : 'Equipo entregado';
+            const textoEntrega  = esVenta
+                ? 'Gracias por tu compra. Podés descargar tu recibo cuando quieras desde este mismo link.'
+                : 'Esta orden fue finalizada y entregada. Podés descargar tu recibo cuando quieras desde este mismo link.';
+            const labelOrden = esVenta ? 'Comprobante' : 'Orden';
             container.innerHTML = `
             <div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);">
 
@@ -5479,13 +5507,15 @@ function showApp() {
                     <div style="width:88px;height:88px;margin:0 auto 22px;border-radius:50%;background:#ecfdf5;border:3px solid var(--green-200);display:flex;align-items:center;justify-content:center;">
                         <span style="font-size:44px;line-height:1;">✅</span>
                     </div>
-                    <h2 style="color:var(--green-800);font-size:23px;font-weight:900;margin:0 0 12px;letter-spacing:-0.4px;font-family:'Outfit',sans-serif;">Equipo entregado</h2>
-                    <p style="color:var(--slate-500);font-size:14.5px;line-height:1.65;margin:0 0 26px;">Esta orden fue finalizada y entregada. El seguimiento en línea ya no se encuentra disponible.</p>
+                    <h2 style="color:var(--green-800);font-size:23px;font-weight:900;margin:0 0 12px;letter-spacing:-0.4px;font-family:'Outfit',sans-serif;">${tituloEntrega}</h2>
+                    <p style="color:var(--slate-500);font-size:14.5px;line-height:1.65;margin:0 0 26px;">${textoEntrega}</p>
 
-                    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--slate-50);border:1px solid var(--gray-150);border-radius:50px;padding:9px 20px;margin-bottom:28px;">
-                        <span style="font-size:11px;color:var(--slate-400);font-weight:700;letter-spacing:1px;text-transform:uppercase;">Orden</span>
+                    <div style="display:inline-flex;align-items:center;gap:8px;background:var(--slate-50);border:1px solid var(--gray-150);border-radius:50px;padding:9px 20px;margin-bottom:24px;">
+                        <span style="font-size:11px;color:var(--slate-400);font-weight:700;letter-spacing:1px;text-transform:uppercase;">${labelOrden}</span>
                         <span style="font-size:16px;font-weight:900;color:var(--primary);letter-spacing:-0.5px;">#${regEncontrado.orden || ''}</span>
                     </div>
+
+                    ${tieneRecibo ? `<button onclick="descargarReciboPublico()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--primary),var(--navy-600));color:white;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:28px;">📄 DESCARGAR RECIBO</button>` : ''}
 
                     <div style="border-top:1px solid var(--slate-100);padding-top:22px;">
                         <p style="color:var(--slate-400);font-size:13px;line-height:1.6;margin:0;">Gracias por confiar en <b style="color:var(--slate-600);">${nombreTaller}</b>.<br>Ante cualquier consulta, comunicate con el taller.</p>
@@ -5757,16 +5787,25 @@ function showApp() {
                         a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click();
                         modal.style.display = 'none';
                     };
-                    if (navigator.share) {
-                        btnComp.style.display = 'block';
-                        btnComp.onclick = () => {
-                            const file = new File([blobCli], `Orden-${nro}-cliente.pdf`, { type: 'application/pdf' });
-                            navigator.share({ title: `Ticket Orden #${nro}`, files: [file] }).catch(() => {});
-                            modal.style.display = 'none';
-                        };
-                    } else {
-                        btnComp.style.display = 'none';
-                    }
+                    // "Compartir" ahora manda el link de seguimiento por WhatsApp (funciona
+                    // igual en PC y en celular) en vez de intentar adjuntar el PDF directo,
+                    // que en PC no abre WhatsApp.
+                    btnComp.style.display = 'block';
+                    btnComp.onclick = () => {
+                        let tel = (r.tel || '').replace(/\D/g, '');
+                        if (tel && !tel.startsWith('54')) tel = '549' + tel;
+                        else if (tel && tel.startsWith('54') && !tel.startsWith('549')) tel = tel.replace(/^54/, '549');
+                        const equipoWA = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
+                        const msg = `Hola ${r.cliente || ''}! 👋\n` +
+                            `Te comparto el ticket de tu orden.\n\n` +
+                            `📌 Orden: ${r.orden || ''}\n` +
+                            `📱 Equipo: ${equipoWA}\n` +
+                            `🛠️ Estado: ${r.estado || ''}\n\n` +
+                            `Podés verlo y descargarlo acá: ${linkSeg}`;
+                        const urlWa = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                        window.open(urlWa, '_blank');
+                        modal.style.display = 'none';
+                    };
                     if (btnRecibo) {
                         if (r.estado === 'Entregado') { btnRecibo.style.display = 'block'; modal._reciboOrdenId = id; }
                         else { btnRecibo.style.display = 'none'; modal._reciboOrdenId = null; }
@@ -5802,7 +5841,7 @@ function showApp() {
             const pathAct = fbPathActivo();
             db.ref(pathAct).child(id).update({ cliente: nombre }).catch(() => {});
             const reg = registros.find(x => x.id === id);
-            if (reg) reg.cliente = nombre;
+            if (reg) { reg.cliente = nombre; _proyectarPublico(id, reg); }
         }
         imprimirVentaRapida(id, nombre);
     }
@@ -5819,7 +5858,7 @@ function showApp() {
         });
     }
 
-    function _generarYMostrarReciboVR(r, conf, nombreCliente) {
+    function _buildPDFReciboVenta(r, conf, nombreCliente) {
         const { jsPDF } = window.jspdf;
         const pageW  = 210, margen = 20, ancho = pageW - margen * 2;
         let y = 20;
@@ -5827,7 +5866,6 @@ function showApp() {
         const tallerNombre = conf.nombreTaller || 'Mi Taller Web';
         const tallerSub    = conf.subtitulo    || 'Servicio Técnico';
         const tallerWapp   = conf.wappTicket   || '';
-        const terminos     = conf.garantia     || '';
 
         // Parsear ítems
         let items = [];
@@ -5870,13 +5908,14 @@ function showApp() {
         y += 18;
 
         // Nombre del cliente (si se ingresó)
-        if (nombreCliente) {
+        const nombreMostrar = nombreCliente || (r.cliente && r.cliente !== 'Venta de Mostrador' ? r.cliente : '');
+        if (nombreMostrar) {
             doc.setFillColor(247,248,252);
             doc.roundedRect(margen, y, ancho, 14, 3, 3, 'F');
             doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(156,163,175);
             doc.text('CLIENTE', margen + 6, y + 6);
             doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(17,24,39);
-            doc.text(nombreCliente, margen + 6, y + 12);
+            doc.text(nombreMostrar, margen + 6, y + 12);
             y += 20;
         }
 
@@ -5994,6 +6033,17 @@ function showApp() {
         doc.setFontSize(8); doc.setFont('helvetica','italic'); doc.setTextColor(209,213,219);
         doc.text('Este comprobante no tiene validez fiscal.', pageW / 2, y + 6, { align:'center' });
 
+        return doc;
+    }
+
+    function _generarYMostrarReciboVR(r, conf, nombreCliente) {
+        const doc  = _buildPDFReciboVenta(r, conf, nombreCliente);
+        const nro  = r.orden || 'VTA';
+        let items = [];
+        if (r.itemsVenta) { try { items = JSON.parse(r.itemsVenta); } catch(e) {} }
+        if (items.length === 0) items = [{ nombre: r.modelo, precioUni: parseFloat(r.precio) || 0, cantidad: parseInt(r.cantVendida) || 1 }];
+        const total = parseFloat(r.precio) || 0;
+
         const blob    = doc.output('blob');
         const blobUrl = URL.createObjectURL(blob);
         const nombre  = `Recibo_${nro}.pdf`;
@@ -6012,28 +6062,9 @@ function showApp() {
             const a = document.createElement('a'); a.href = blobUrl; a.download = nombre; a.click();
             modal.style.display = 'none';
         };
-        btnComp.style.display = 'block';
-        btnComp.textContent = '📲 WhatsApp + PDF';
-        btnComp.onclick = async () => {
-            modal.style.display = 'none';
-            const file = new File([blob], nombre, { type: 'application/pdf' });
-            const wMsg = `Hola! 👋 Te adjunto el recibo de tu compra en ${conf.nombreTaller || 'el taller'}.\n` +
-                `📄 Comprobante: ${nro}\n` +
-                `📦 ${items.map(x=>`${x.cantidad>1?x.cantidad+'x ':''}${x.nombre}`).join(', ')}\n` +
-                `💰 Total: ${fmt.format(total)}\n\nGracias! 🙌`;
-            // Intentar compartir con archivo (Android Chrome — abre selector nativo con PDF adjunto)
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({ files: [file], text: wMsg });
-                    return;
-                } catch(e) {
-                    if (e.name === 'AbortError') return; // usuario canceló
-                }
-            }
-            // Fallback: descargar PDF + abrir WhatsApp con texto
-            const a2 = document.createElement('a'); a2.href = blobUrl; a2.download = nombre; a2.click();
-            setTimeout(() => window.open(`https://wa.me/?text=${encodeURIComponent(wMsg)}`, '_blank'), 400);
-        };
+        // Sin botón de Compartir: desde "Ver/Imprimir" el navegador ya permite
+        // compartir el PDF si el cliente lo necesita.
+        btnComp.style.display = 'none';
         if (btnRec) btnRec.style.display = 'none';
 
         modal._vtaRapidaActive = true;
@@ -7964,14 +7995,17 @@ function showApp() {
             <div style="display:flex;align-items:center;gap:8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:10px 12px;">
               <div style="flex:1;min-width:0;">
                 <div style="font-size:13px;font-weight:700;color:var(--gray-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escaparHTML(item.nombre)}</div>
-                <div style="font-size:12px;color:var(--gray-600);margin-top:1px;">${fmt.format(item.precioUni)} c/u</div>
+                ${item.precioUni > 0
+                    ? `<div style="font-size:12px;color:var(--gray-600);margin-top:1px;">${fmt.format(item.precioUni)} c/u</div>`
+                    : `<input type="number" inputmode="decimal" placeholder="⚠️ Sin precio — tocá acá" oninput="vrSetPrecio(${idx}, this.value)" style="margin-top:3px;width:150px;max-width:100%;padding:4px 7px;border-radius:6px;border:1.5px solid var(--danger);font-size:12px;font-weight:700;color:var(--danger);background:var(--red-50);">`
+                }
               </div>
               <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
                 <button onmousedown="vrCambiarCant(${idx},-1)" style="width:28px;height:28px;border-radius:6px;border:1.5px solid var(--gray-200);background:white;font-size:16px;font-weight:700;cursor:pointer;line-height:1;color:var(--gray-700);">−</button>
                 <span style="font-size:14px;font-weight:800;color:var(--gray-900);min-width:20px;text-align:center;">${item.cantidad}</span>
                 <button onmousedown="vrCambiarCant(${idx},1)" style="width:28px;height:28px;border-radius:6px;border:1.5px solid var(--gray-200);background:white;font-size:16px;font-weight:700;cursor:pointer;line-height:1;color:var(--gray-700);">+</button>
               </div>
-              <div style="font-size:13px;font-weight:800;color:var(--purple-700);white-space:nowrap;min-width:60px;text-align:right;">${fmt.format(item.precioUni * item.cantidad)}</div>
+              <div id="vrSub-${idx}" style="font-size:13px;font-weight:800;color:var(--purple-700);white-space:nowrap;min-width:60px;text-align:right;">${fmt.format(item.precioUni * item.cantidad)}</div>
               <button onmousedown="vrQuitarItem(${idx})" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--red-100);color:var(--danger);font-size:14px;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>
             </div>
         `).join('');
@@ -7994,6 +8028,26 @@ function showApp() {
     function vrQuitarItem(idx) {
         _vrCarrito.splice(idx, 1);
         vrRenderCarrito();
+    }
+
+    // Actualiza el precio de un ítem sin precio cargado, directo desde el carrito
+    // (sin re-renderizar toda la lista, para no perder el foco del input mientras se tipea).
+    function vrSetPrecio(idx, valor) {
+        const item = _vrCarrito[idx];
+        if (!item) return;
+        item.precioUni = parseFloat(valor) || 0;
+        const subtotal = fmt.format(item.precioUni * item.cantidad);
+        const subVr = document.getElementById('vrSub-' + idx);
+        if (subVr) subVr.textContent = subtotal;
+        const subPv = document.getElementById('pvSub-' + idx);
+        if (subPv) subPv.textContent = subtotal;
+        const total = fmt.format(_vrCarrito.reduce((s, x) => s + x.precioUni * x.cantidad, 0));
+        const totalVr = document.getElementById('vrTotalCarrito');
+        if (totalVr) totalVr.textContent = total;
+        const totalPv = document.getElementById('pvTotal');
+        if (totalPv) totalPv.textContent = total;
+        if (typeof vrRecalcDesc === 'function') vrRecalcDesc();
+        if (typeof pvRecalcDesc === 'function') pvRecalcDesc();
     }
 
     function calcVrTotal() {} // mantener por compatibilidad con scanner
@@ -8073,14 +8127,17 @@ function showApp() {
             <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px 12px;">
               <div style="flex:1;min-width:0;">
                 <div style="font-size:13px;font-weight:700;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escaparHTML(item.nombre)}</div>
-                <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:1px;">${fmt.format(item.precioUni)} c/u</div>
+                ${item.precioUni > 0
+                    ? `<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:1px;">${fmt.format(item.precioUni)} c/u</div>`
+                    : `<input type="number" inputmode="decimal" placeholder="⚠️ Sin precio — tocá acá" oninput="vrSetPrecio(${idx}, this.value)" style="margin-top:3px;width:150px;max-width:100%;padding:4px 7px;border-radius:6px;border:1.5px solid #fca5a5;font-size:12px;font-weight:700;color:#fff;background:rgba(220,38,38,0.35);">`
+                }
               </div>
               <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
                 <button onmousedown="pvCambiarCant(${idx},-1)" style="width:28px;height:28px;border-radius:6px;border:1.5px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);font-size:16px;font-weight:700;cursor:pointer;line-height:1;color:white;">−</button>
                 <span style="font-size:14px;font-weight:800;color:white;min-width:20px;text-align:center;">${item.cantidad}</span>
                 <button onmousedown="pvCambiarCant(${idx},1)" style="width:28px;height:28px;border-radius:6px;border:1.5px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);font-size:16px;font-weight:700;cursor:pointer;line-height:1;color:white;">+</button>
               </div>
-              <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,0.9);white-space:nowrap;min-width:60px;text-align:right;">${fmt.format(item.precioUni * item.cantidad)}</div>
+              <div id="pvSub-${idx}" style="font-size:13px;font-weight:800;color:rgba(255,255,255,0.9);white-space:nowrap;min-width:60px;text-align:right;">${fmt.format(item.precioUni * item.cantidad)}</div>
               <button onmousedown="pvQuitarItem(${idx})" style="width:26px;height:26px;border-radius:50%;border:none;background:rgba(220,38,38,0.5);color:white;font-size:14px;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>
             </div>
         `).join('');
@@ -8283,6 +8340,11 @@ function showApp() {
 
     async function procesarVentaRapida() {
         if (_vrCarrito.length === 0) return;
+        const sinPrecio = _vrCarrito.find(x => !(x.precioUni > 0));
+        if (sinPrecio) {
+            showToast(`⚠️ Falta el precio de "${sinPrecio.nombre}"`, '#dc2626');
+            return;
+        }
         mostrarLoader("Registrando venta...");
         const metodo    = document.getElementById('vrMetodo').value;
         const pathAct   = fbPathActivo();
@@ -8398,7 +8460,12 @@ function showApp() {
 
         const ref = db.ref(pathAct).push();
         ref.set(dataVenta).then(() => {
-            registros.push({ id: ref.key, ...dataVenta });
+            // Chequeamos si ya está (puede haber llegado por el listener en tiempo
+            // real casi al mismo tiempo) para no duplicarla en la lista local.
+            const idxYaEsta = registros.findIndex(x => x.id === ref.key);
+            if (idxYaEsta === -1) registros.push({ id: ref.key, ...dataVenta });
+            else registros[idxYaEsta] = { id: ref.key, ...dataVenta };
+            _proyectarPublico(ref.key, dataVenta);
 
             // Descontar stock de cada ítem
             const stockPromesas = _vrCarrito.map(item =>
@@ -11268,7 +11335,7 @@ function showApp() {
     // Solo se publican estos campos (los que ve el cliente en el seguimiento).
     // NUNCA se publican datos sensibles: PIN/patrón de desbloqueo, notas
     // internas, costo de repuesto, etc. El registro real queda 100% privado.
-    var _CAMPOS_PUBLICOS = ['estado','senaOriginal','sena','saldoCobrado','precio','orden','modelo','marca','equipo','color','fecha','falla','obs','imei','cliente','archivado','motivoGarantia','descuentoValor','descuentoTipo','descuentoMonto','descuentoEfectivo','descuentoEntregaMonto','descuentoEntregaTipo','descuentoEntregaValor'];
+    var _CAMPOS_PUBLICOS = ['estado','senaOriginal','sena','saldoCobrado','precio','orden','modelo','marca','equipo','color','fecha','falla','obs','imei','cliente','archivado','motivoGarantia','descuentoValor','descuentoTipo','descuentoMonto','descuentoEfectivo','descuentoEntregaMonto','descuentoEntregaTipo','descuentoEntregaValor','tel','vencimientoGarantia','nroRecibo','esVentaRapida','itemsVenta','cantItems','metodoPagoSena','recargoTipo','recargoValor','recargoMonto'];
     function _proyectarPublico(id, data) {
         try {
             if (!id || !data || isClientMode) return;
@@ -11276,6 +11343,12 @@ function showApp() {
             _CAMPOS_PUBLICOS.forEach(function(k) {
                 if (data[k] !== undefined && data[k] !== null) pub[k] = data[k];
             });
+            // Fecha de entrega (para calcular días de garantía en el link público,
+            // que no incluye el historial completo por privacidad).
+            if (data.historialEstados) {
+                var evEnt = data.historialEstados.find(function(e) { return e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)'; });
+                if (evEnt && evEnt.fecha) pub.fechaEntrega = evEnt.fecha;
+            }
             db.ref(fbPathSeguimiento()).child(id).set(pub).catch(function() {});
         } catch (e) {}
     }
@@ -16946,9 +17019,9 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
           ${r.vencimientoGarantia ? (() => {
               let diasTxt = '';
               try {
-                  const evEntregado = (r.historialEstados || []).find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
-                  if (evEntregado && evEntregado.fecha) {
-                      const fEntrega = parseFechaAR(evEntregado.fecha);
+                  const fEntregaStr = _fechaEntregaDe(r);
+                  if (fEntregaStr) {
+                      const fEntrega = parseFechaAR(fEntregaStr);
                       const fVence   = parseFechaAR(r.vencimientoGarantia);
                       const dias = Math.round((fVence - fEntrega) / 86400000);
                       if (dias > 0) diasTxt = dias + ' días — ';
@@ -17100,9 +17173,9 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         if (r.vencimientoGarantia) {
             let diasGarantiaTxt = '';
             try {
-                const evEntregado = (r.historialEstados || []).find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
-                if (evEntregado && evEntregado.fecha) {
-                    const fEntrega = parseFechaAR(evEntregado.fecha);
+                const fEntregaStr = _fechaEntregaDe(r);
+                if (fEntregaStr) {
+                    const fEntrega = parseFechaAR(fEntregaStr);
                     const fVence   = parseFechaAR(r.vencimientoGarantia);
                     const dias = Math.round((fVence - fEntrega) / 86400000);
                     if (dias > 0) diasGarantiaTxt = dias + ' días — ';
@@ -17171,38 +17244,23 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             let tel = (r.tel || '').replace(/\D/g, '');
             if (tel && !tel.startsWith('54')) tel = '549' + tel;
             else if (tel && tel.startsWith('54') && !tel.startsWith('549')) tel = tel.replace(/^54/, '549');
-            const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
-            const wMsg   = `Hola ${r.cliente || ''}! 👋\n` +
+
+            // Link permanente (mismo mecanismo que el seguimiento de la orden) donde
+            // el cliente puede ver y descargar el recibo cuando quiera. Funciona igual
+            // en celular y en PC, a diferencia de compartir el archivo directamente.
+            const baseUrl = window.location.origin + window.location.pathname;
+            const link = `${baseUrl}?id=${r.id}&u=${currentUser}`;
+
+            const wMsg = `Hola ${r.cliente || ''}! 👋\n` +
                 `Te comparto el recibo de tu reparación en ${taller}.\n\n` +
                 `📄 Comprobante: ${nro}\n` +
                 `📱 Equipo: ${equipo}\n` +
                 `💰 Total: ${total}\n\n` +
+                `Podés verlo y descargarlo acá: ${link}\n\n` +
                 `Gracias por tu confianza! 🙌`;
 
-            const doc  = _buildPDFRecibo(r, nro, conf);
-            const blob = doc.output('blob');
-
-            // 1) Prioridad: compartir el PDF real adjunto (selector nativo → elegís
-            //    WhatsApp → WhatsApp te deja elegir el chat con el PDF ya cargado).
-            //    Esto es lo único que logra mandar el archivo en sí, no solo texto.
-            const file = new File([blob], nombre, { type: 'application/pdf' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({ files: [file], text: wMsg });
-                    return;
-                } catch(e) {
-                    if (e.name === 'AbortError') return; // canceló, no seguir al fallback
-                }
-            }
-
-            // 2) Fallback (el dispositivo no soporta compartir archivos): wa.me no admite
-            //    adjuntar PDF por URL, así que abrimos el chat del cliente con el texto
-            //    (directo a su número si está agendado) y bajamos el PDF para adjuntar a mano.
-            const msg = encodeURIComponent(wMsg);
-            const url = tel ? `https://wa.me/${tel}?text=${msg}` : `https://wa.me/?text=${msg}`;
+            const url = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(wMsg)}` : `https://wa.me/?text=${encodeURIComponent(wMsg)}`;
             window.open(url, '_blank');
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
         } catch(e) {
             if (typeof ocultarLoader === 'function') ocultarLoader();
         }
