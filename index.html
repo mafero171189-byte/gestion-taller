@@ -3213,8 +3213,7 @@ function showApp() {
      <p style="font-size:16px; font-weight:bold; margin-bottom:18px;">📋 Presupuesto PDF — ¿Qué querés hacer?</p>
      <div style="display:flex; flex-direction:column; gap:10px;">
       <button id="btnPresPDFVer" style="padding:13px; border:none; border-radius:10px; background:var(--secondary); color:white; font-weight:bold; font-size:14px; cursor:pointer;">👁️ Ver presupuesto</button>
-      <button id="btnPresPDFDescargar" style="padding:13px; border:none; border-radius:10px; background:var(--green-600); color:white; font-weight:bold; font-size:14px; cursor:pointer;">⬇️ Descargar</button>
-      <button id="btnPresPDFCompartir" style="padding:13px; border:none; border-radius:10px; background:var(--wapp); color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">📲 Compartir</button>
+      <button id="btnPresPDFWhatsapp" style="padding:13px; border:none; border-radius:10px; background:var(--wapp); color:white; font-weight:bold; font-size:14px; cursor:pointer; display:none;">📲 Enviar por WhatsApp</button>
      </div>
      <button onclick="document.getElementById('modalPDFPresupuesto').style.display='none'" style="margin-top:14px; border:none; background:none; color:var(--gray-600); cursor:pointer; font-size:13px;">Cerrar</button>
     </div>
@@ -15144,7 +15143,6 @@ document.addEventListener('click', function(e) {
     if (action === 'editar') editarPresupuesto(id);
     if (action === 'eliminar') eliminarPresupuesto(id);
     if (action === 'pdf') generarPDFPresupuesto(id);
-    if (action === 'wapp') enviarWappPresupuesto(id);
     if (action === 'quitar-item') quitarItemPresupuesto(id);
     if (action === 'crear-orden') crearOrdenDesdePresupuesto(id);
 });
@@ -15249,7 +15247,6 @@ function renderListaPresupuestos() {
             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
                 <button data-pres-action="editar" data-pres-id="${p.id}" style="background:var(--secondary); color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">✏️ EDITAR</button>
                 <button data-pres-action="pdf" data-pres-id="${p.id}" style="background:var(--purple-600); color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">🖨️ PDF</button>
-                <button data-pres-action="wapp" data-pres-id="${p.id}" style="background:var(--wapp); color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;">💬 WAPP</button>
                 ${p.estado === 'Aprobado' ? `<button data-pres-action="crear-orden" data-pres-id="${p.id}" style="background:linear-gradient(135deg,var(--green-600),var(--green-750)); color:white; border:none; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(5,150,105,0.3);">▶ CREAR ORDEN</button>` : ''}
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
@@ -15586,28 +15583,17 @@ function generarPDFPresupuesto(id) {
         const url = URL.createObjectURL(blob);
         const modal = document.getElementById('modalPDFPresupuesto');
         const btnVer  = document.getElementById('btnPresPDFVer');
-        const btnDesc = document.getElementById('btnPresPDFDescargar');
-        const btnComp = document.getElementById('btnPresPDFCompartir');
+        const btnWapp = document.getElementById('btnPresPDFWhatsapp');
 
         btnVer.onclick = () => {
             window.open(url, '_blank');
             modal.style.display = 'none';
         };
-        btnDesc.onclick = () => {
-            const a = document.createElement('a');
-            a.href = url; a.download = fileName; a.click();
+        btnWapp.style.display = 'block';
+        btnWapp.onclick = () => {
             modal.style.display = 'none';
+            enviarWappPresupuesto(id);
         };
-        if (navigator.canShare) {
-            btnComp.style.display = 'block';
-            btnComp.onclick = () => {
-                const file = new File([blob], fileName, { type: 'application/pdf' });
-                navigator.share({ title: 'Presupuesto ' + (p.nro || ''), files: [file] }).catch(() => {});
-                modal.style.display = 'none';
-            };
-        } else {
-            btnComp.style.display = 'none';
-        }
         modal.style.display = 'flex';
     });
 }
