@@ -5366,7 +5366,7 @@ function showApp() {
             const r = data.r;
             const conf = data.conf || {};
             const nro = r.nroRecibo || r.orden || 'REC';
-            const doc = r.esVentaRapida ? _buildPDFReciboVenta(r, conf, '') : _buildPDFRecibo(r, nro, conf);
+            const doc = r.esVentaRapida ? _buildPDFReciboVenta(r, conf, '') : window._buildPDFRecibo(r, nro, conf);
             const nombre = `Recibo_${nro}_${(r.cliente || 'cliente').replace(/\s+/g, '_')}.pdf`;
 
             // Primero intentamos abrir el PDF en una pestaña nueva (mismo método que
@@ -17218,6 +17218,10 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
 
         return doc;
     }
+    // Exponerla globalmente: el link público de seguimiento vive en otro bloque
+    // de <script> aparte (fuera de este módulo de Facturación) y necesita poder
+    // llamarla para generar el recibo desde ahí.
+    window._buildPDFRecibo = _buildPDFRecibo;
 
     window.factDescargarReciboPDF = function() {
         const r = _factReciboActual;
