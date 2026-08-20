@@ -5698,6 +5698,19 @@ function showApp() {
         window._presupuestoClienteData = p;
         window._presupuestoClienteConf = conf;
 
+        // ── Confirmación del cliente desde el link ────────────────────────
+        // Si el presupuesto ya tiene respuesta (o lo cambió el taller a mano)
+        // mostramos el cartel; si venció, no dejamos aceptar.
+        const estadoPres = p.estado || 'Pendiente';
+        let confirmarHtml = '';
+        if (estadoPres === 'Aprobado' || estadoPres === 'Rechazado') {
+            confirmarHtml = '<div style="display:flex;flex-direction:column;gap:10px;">' + _presCliBanner(estadoPres) + '</div>';
+        } else if (p.vencimiento && new Date(p.vencimiento + 'T00:00:00') < new Date(new Date().setHours(0,0,0,0))) {
+            confirmarHtml = '<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:12px;padding:14px;text-align:center;font-size:13px;font-weight:700;color:#92400e;line-height:1.5;">\u23F0 Este presupuesto est\u00E1 vencido.<br>Comunicate con el taller para que te lo actualice.</div>';
+        } else {
+            confirmarHtml = '<div id="pres-cli-acciones" style="display:flex;flex-direction:column;gap:10px;">' + _presCliBotonesHtml() + '</div>';
+        }
+
         container.innerHTML = `
             <div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);">
 
@@ -5725,7 +5738,8 @@ function showApp() {
                 ${itemsHtml}
                 ${obsHtml}
 
-                <div style="padding:20px 24px;display:flex;flex-direction:column;gap:10px;">
+                <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px;">
+                    ${confirmarHtml}
                     <button onclick="descargarPDFPresupuestoCliente()" style="width:100%;background:linear-gradient(135deg,var(--secondary),var(--navy-700));color:white;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(30,77,140,0.35);font-family:'Outfit',sans-serif;">
                         📄 Descargar Presupuesto PDF
                     </button>
@@ -5736,6 +5750,87 @@ function showApp() {
                 </div>
 
             </div>`;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CONFIRMACIÓN DEL PRESUPUESTO POR EL CLIENTE (desde el link público)
+    // El cliente NO escribe sobre el presupuesto: deja su respuesta en
+    // 'presupuestos_respuestas/{usuario}/{presid}' (nodo de una sola
+    // escritura). La app del taller la levanta, pasa el estado y borra
+    // la respuesta, así ese nodo queda siempre casi vacío.
+    // ═══════════════════════════════════════════════════════════════════
+    function _presCliBotonesHtml() {
+        return `<div style="font-size:13px;color:var(--slate-400);text-align:center;font-weight:600;">¿Avanzamos con la reparación?</div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="pedirConfirmacionPresCliente('Aprobado')" style="flex:1;background:linear-gradient(135deg,#059669,#047857);color:white;padding:15px 10px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(5,150,105,0.35);font-family:'Outfit',sans-serif;">✅ Aceptar</button>
+                <button onclick="pedirConfirmacionPresCliente('Rechazado')" style="flex:0 0 auto;background:var(--slate-100);color:var(--slate-600);padding:15px 18px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;">❌ Rechazar</button>
+            </div>`;
+    }
+
+    function _presCliBanner(resp) {
+        const ok = resp === 'Aprobado';
+        return `<div style="background:${ok ? '#d1fae5' : '#fee2e2'};border:1.5px solid ${ok ? '#059669' : '#dc2626'};border-radius:12px;padding:16px;text-align:center;">
+                <div style="font-size:26px;line-height:1;margin-bottom:8px;">${ok ? '✅' : '❌'}</div>
+                <div style="font-size:15px;font-weight:900;color:${ok ? '#065f46' : '#991b1b'};font-family:'Outfit',sans-serif;">${ok ? 'Presupuesto aceptado' : 'Presupuesto rechazado'}</div>
+                <div style="font-size:12.5px;color:${ok ? '#047857' : '#b91c1c'};margin-top:5px;line-height:1.5;">${ok ? 'El taller ya quedó avisado. ¡Gracias!' : 'El taller ya quedó avisado.'}</div>
+            </div>`;
+    }
+
+    function _presCliWappTaller(resp) {
+        const conf = window._presupuestoClienteConf || {};
+        const p = window._presupuestoClienteData || {};
+        const raw = String(conf.wappTicket || '').replace(/\D/g, '');
+        if (!raw) return '';
+        let num;
+        if (raw.startsWith('549'))      { num = raw; }
+        else if (raw.startsWith('54'))  { num = raw.replace(/^54/, '549'); }
+        else if (raw.startsWith('9') && raw.length >= 10) { num = '54' + raw; }
+        else                            { num = '549' + raw; }
+        const txt = (resp === 'Aprobado' ? '¡Hola! Acepto el presupuesto N° ' : 'Hola, rechazo el presupuesto N° ')
+            + (p.nro || '') + (p.cliente ? ' (' + p.cliente + ')' : '') + '.';
+        return `<a href="https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(txt)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;background:#25D366;color:white;padding:14px;border-radius:12px;font-size:14px;font-weight:800;text-decoration:none;font-family:'Outfit',sans-serif;">💬 Avisar al taller por WhatsApp</a>`;
+    }
+
+    function pedirConfirmacionPresCliente(resp) {
+        const box = document.getElementById('pres-cli-acciones');
+        if (!box) return;
+        const ok = resp === 'Aprobado';
+        box.innerHTML = `<div style="background:var(--slate-50);border:1.5px dashed ${ok ? '#059669' : '#dc2626'};border-radius:12px;padding:16px;">
+                <div style="font-size:14px;font-weight:800;color:var(--slate-850);margin-bottom:12px;text-align:center;line-height:1.45;">${ok ? '¿Confirmás que aceptás este presupuesto?' : '¿Confirmás que rechazás este presupuesto?'}</div>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="enviarRespuestaPresCliente('${resp}')" style="flex:1;background:${ok ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)'};color:white;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;">Sí, confirmar</button>
+                    <button onclick="volverAccionesPresCliente()" style="flex:0 0 auto;background:var(--slate-100);color:var(--slate-600);padding:13px 18px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;">Volver</button>
+                </div>
+            </div>`;
+    }
+
+    function volverAccionesPresCliente() {
+        const box = document.getElementById('pres-cli-acciones');
+        if (box) box.innerHTML = _presCliBotonesHtml();
+    }
+
+    function enviarRespuestaPresCliente(resp) {
+        const p = window._presupuestoClienteData;
+        const box = document.getElementById('pres-cli-acciones');
+        if (!p || !box) return;
+        if (resp !== 'Aprobado' && resp !== 'Rechazado') return;
+        const u = new URLSearchParams(window.location.search).get('u') || '';
+        if (!u) return;
+        box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--slate-400);font-size:14px;font-weight:700;">Enviando respuesta...</div>';
+        db.ref('presupuestos_respuestas/' + u + '/' + p.id).set({
+            resp: resp,
+            nro: String(p.nro || ''),
+            cliente: String(p.cliente || ''),
+            ts: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            window._presupuestoClienteData.estado = resp;
+            box.innerHTML = _presCliBanner(resp) + _presCliWappTaller(resp);
+        }).catch(() => {
+            // Si ya había respondido antes, la regla de una sola escritura
+            // rechaza el set. En cualquier caso le dejamos la salida por WhatsApp.
+            box.innerHTML = '<div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:12px;padding:14px;text-align:center;font-size:13px;font-weight:700;color:#92400e;line-height:1.5;">No pudimos registrar la respuesta.<br>Puede que ya la hayas enviado antes.</div>'
+                + (_presCliWappTaller(resp) || _presCliBotonesHtml());
+        });
     }
 
     function descargarPDFPresupuestoCliente() {
@@ -7141,6 +7236,82 @@ function showApp() {
                'letter-spacing:3px;font-family:monospace;">' + escaparHTML(pinStr) + '</span>';
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // AVISO DE RESPUESTAS DE PRESUPUESTO (cliente que acepta desde el link)
+    // Escucha 'presupuestos_respuestas/{u}'. Es un nodo diminuto y se vacía
+    // solo: apenas llega una respuesta se aplica al presupuesto y se borra,
+    // así no baja historial de nuevo en cada arranque (cuota de Firebase).
+    // No abre otra conexión: el SDK usa el mismo socket que ya está abierto.
+    // ═══════════════════════════════════════════════════════════════════
+    var _presAvisosPendientes = 0;
+
+    function _badgeNavPresupuesto(delta) {
+        const btn = document.getElementById('btn-nav-presupuesto');
+        if (!btn) return;
+        if (delta === 0) _presAvisosPendientes = 0; else _presAvisosPendientes += delta;
+        let b = document.getElementById('badge-nav-pres');
+        if (_presAvisosPendientes <= 0) { if (b) b.remove(); return; }
+        if (!b) {
+            btn.style.position = 'relative';
+            b = document.createElement('span');
+            b.id = 'badge-nav-pres';
+            b.style.cssText = 'position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#059669;color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.35);box-sizing:border-box;';
+            btn.appendChild(b);
+        }
+        b.textContent = _presAvisosPendientes;
+    }
+
+    function _avisarRespuestaPresupuesto(resp, data) {
+        const ok = resp === 'Aprobado';
+        const cli = data.cliente || 'El cliente';
+        const nro = data.nro ? ' N° ' + data.nro : '';
+        const texto = cli + (ok ? ' APROBÓ' : ' rechazó') + ' el presupuesto' + nro;
+        showToast((ok ? '✅ ' : '❌ ') + texto, ok ? '#059669' : '#dc2626');
+        _badgeNavPresupuesto(1);
+        try { if (navigator.vibrate) navigator.vibrate(ok ? [90, 70, 90] : 160); } catch(e) {}
+        try {
+            if (window.Notification && Notification.permission === 'granted') {
+                new Notification(ok ? '✅ Presupuesto aprobado' : '❌ Presupuesto rechazado', {
+                    body: texto,
+                    tag: 'pres-' + (data.nro || Date.now())
+                });
+            }
+        } catch(e) {}
+    }
+
+    function escucharRespuestasPresupuestos(u) {
+        if (!u) return;
+        if (window._presRespOff) { try { window._presRespOff(); } catch(e) {} }
+        const refResp = db.ref('presupuestos_respuestas/' + u);
+        const onResp = (snap) => {
+            const id = snap.key;
+            const data = snap.val() || {};
+            const resp = (data.resp === 'Aprobado' || data.resp === 'Rechazado') ? data.resp : null;
+            if (!resp) { refResp.child(id).remove().catch(() => {}); return; }
+            const pathPres = isUserAdmin ? 'presupuestos' : 'presupuestos_usuarios/' + u;
+            db.ref(pathPres).child(id).update({
+                estado: resp,
+                respuestaCliente: resp,
+                respuestaClienteFecha: data.ts || Date.now()
+            }).then(() => {
+                refResp.child(id).remove().catch(() => {});
+                try {
+                    if (typeof presupuestosCache !== 'undefined') {
+                        const pc = presupuestosCache.find(x => x.id === id);
+                        if (pc) { pc.estado = resp; pc.respuestaCliente = resp; }
+                    }
+                    const pag = document.getElementById('page-presupuesto');
+                    if (pag && pag.style.display !== 'none' && typeof renderListaPresupuestos === 'function') {
+                        renderListaPresupuestos();
+                    }
+                } catch(e) {}
+                _avisarRespuestaPresupuesto(resp, data);
+            }).catch(() => {});
+        };
+        refResp.on('child_added', onResp);
+        window._presRespOff = () => refResp.off('child_added', onResp);
+    }
+
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
         // Marca para el pintado temprano del caché: guardamos el currentUser
@@ -7376,6 +7547,9 @@ function showApp() {
                 }
             }
         });
+
+        // Avisos de presupuestos aceptados/rechazados por el cliente desde el link
+        try { escucharRespuestasPresupuestos(u); } catch(e) {}
 
         if (isStored) mostrarLoader("Cargando sistema...");
 
@@ -15161,6 +15335,16 @@ function presPathActivo() {
 }
 
 function cargarPresupuestos() {
+    // El usuario ya está mirando la pantalla: limpiamos el contador del nav
+    try { if (typeof _badgeNavPresupuesto === 'function') _badgeNavPresupuesto(0); } catch(e) {}
+    // Permiso de avisos del sistema: se pide una sola vez y con el toque del
+    // usuario ya hecho (entrar a la solapa), que es lo que exige iOS/Safari.
+    try {
+        if (window.Notification && Notification.permission === 'default' && !localStorage.getItem('st_notif_pedido')) {
+            localStorage.setItem('st_notif_pedido', '1');
+            Notification.requestPermission().catch(() => {});
+        }
+    } catch(e) {}
     if (presupuestoDescargado && presupuestosCache.length > 0) {
         // Ya tenemos los datos en memoria, solo renderizar
         document.getElementById('form-presupuesto-container').style.display = 'none';
