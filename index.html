@@ -5839,7 +5839,7 @@ function showApp() {
             // si esto falla, el presupuesto igual quedó Aprobado/Rechazado
             // (el Worker también repasa presupuestos_respuestas por las dudas).
             try {
-                fetch('https://mitallerweb.mafero171189.workers.dev/push-presupuesto', {
+                fetch('https://mtw-avisos.mafero171189.workers.dev/push-presupuesto', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ u: u, presid: p.id, resp: resp })
