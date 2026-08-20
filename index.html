@@ -86,6 +86,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -3649,7 +3650,10 @@ function showApp() {
     <div id="page-presupuesto" class="page" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
         <h2 style="margin:0; font-size:22px;">📋 Presupuestos</h2>
-        <button onclick="abrirFormPresupuesto()" style="background:linear-gradient(135deg,var(--secondary),#2d63b8); color:white; border:none; border-radius:10px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(30,77,140,0.3);">+ NUEVO PRESUPUESTO</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btn-activar-push" onclick="activarAvisosPush(false)" style="display:none; align-items:center; gap:6px; background:var(--slate-100); color:var(--slate-600); border:1.5px dashed var(--slate-300); border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:800; cursor:pointer;">🔔 Activar avisos</button>
+          <button onclick="abrirFormPresupuesto()" style="background:linear-gradient(135deg,var(--secondary),#2d63b8); color:white; border:none; border-radius:10px; padding:10px 18px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(30,77,140,0.3);">+ NUEVO PRESUPUESTO</button>
+        </div>
       </div>
       <div id="form-presupuesto-container" style="background:var(--slate-50); border:1.5px solid var(--slate-200); border-radius:14px; padding:18px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -4481,6 +4485,11 @@ function showApp() {
         appId: "1:403618822429:web:ace2540068e2edba9809f4"
     };
     
+    // Clave pública VAPID para notificaciones push (Firebase Console > Configuración
+    // del proyecto > Cloud Messaging > pestaña "Configuración web" > "Generar par de claves").
+    // Es UNA sola clave para toda la app, no algo que cargue cada taller.
+    const VAPID_PUBLIC_KEY = "BFOt49KZjggB_NTTn27zKhTAbOOTwPVMyadhYXI53PRnRkJeOK-pO746NlC6sEMSRjhoe6vSR0IM2hIUL5LqabE";
+
     // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
@@ -5825,6 +5834,17 @@ function showApp() {
         }).then(() => {
             window._presupuestoClienteData.estado = resp;
             box.innerHTML = _presCliBanner(resp) + _presCliWappTaller(resp);
+            // Avisamos al Worker para que dispare el push al taller AHORA MISMO,
+            // sin esperar a que alguien tenga la app abierta. Fire-and-forget:
+            // si esto falla, el presupuesto igual quedó Aprobado/Rechazado
+            // (el Worker también repasa presupuestos_respuestas por las dudas).
+            try {
+                fetch('https://mitallerweb.mafero171189.workers.dev/push-presupuesto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ u: u, presid: p.id, resp: resp })
+                }).catch(() => {});
+            } catch(e) {}
         }).catch(() => {
             // Si ya había respondido antes, la regla de una sola escritura
             // rechaza el set. En cualquier caso le dejamos la salida por WhatsApp.
@@ -7310,6 +7330,51 @@ function showApp() {
         };
         refResp.on('child_added', onResp);
         window._presRespOff = () => refResp.off('child_added', onResp);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // AVISOS PUSH (FCM) — Cero configuración para el taller: un toque en
+    // "Permitir" y listo. Se usan SOLO para el aviso de presupuesto
+    // aceptado/rechazado con la app cerrada (con la app abierta ya avisa
+    // el listener de escucharRespuestasPresupuestos, vía RTDB).
+    // ═══════════════════════════════════════════════════════════════════
+    function _pushSoportado() {
+        return ('serviceWorker' in navigator) && ('Notification' in window) && !!firebase.messaging.isSupported;
+    }
+
+    function _pushHabilitarBotonUI() {
+        const btn = document.getElementById('btn-activar-push');
+        if (!btn) return;
+        if (!_pushSoportado() || Notification.permission === 'denied') { btn.style.display = 'none'; return; }
+        btn.style.display = Notification.permission === 'granted' ? 'none' : 'inline-flex';
+    }
+
+    async function activarAvisosPush(silencioso = false) {
+        if (!_pushSoportado() || isClientMode || !currentUser) return;
+        try {
+            let permiso = Notification.permission;
+            if (permiso === 'default') {
+                if (silencioso) return; // no interrumpir sin que el usuario haya tocado el botón
+                permiso = await Notification.requestPermission();
+            }
+            _pushHabilitarBotonUI();
+            if (permiso !== 'granted') return;
+
+            const reg = window._swReg || await navigator.serviceWorker.ready;
+            const messaging = firebase.messaging();
+            const token = await messaging.getToken({ vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
+            if (!token) return;
+
+            const u = currentUser;
+            db.ref('fcm_tokens/' + u).child(token).set({
+                ts: firebase.database.ServerValue.TIMESTAMP,
+                ua: (navigator.userAgent || '').slice(0, 120)
+            }).then(() => {
+                if (!silencioso) showToast('🔔 Avisos activados', '#059669');
+            }).catch(() => {});
+        } catch (e) {
+            console.error('Push:', e);
+        }
     }
 
     function grantAccess(u, isAdmin, isStored = false) {
@@ -15076,12 +15141,14 @@ function showApp() {
     const blobManifest = new Blob([stringManifest], {type: 'application/json'});
     const manifestURL = URL.createObjectURL(blobManifest);
     document.head.insertAdjacentHTML('beforeend', `<link rel="manifest" href="${manifestURL}">`);
-    // 2. Registrar Service Worker dinámicamente (Obligatorio para Chrome)
-    const swCode = "self.addEventListener('install', (e) => self.skipWaiting()); self.addEventListener('fetch', (e) => {});";
-    const blobSW = new Blob([swCode], {type: 'application/javascript'});
-    const swURL = URL.createObjectURL(blobSW);
+    // 2. Registrar Service Worker REAL (antes era un blob URL: sirve para que
+    // Chrome instale la PWA, pero un blob NO puede recibir push). Este archivo
+    // vive en la raíz del sitio, junto al index.html: /sw.js
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(swURL).then(() => console.log('SW inyectado')).catch(console.error);
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('SW inyectado');
+            window._swReg = reg;
+        }).catch(console.error);
     }
 
     // ── MÓDULO DE ESCRITURAS PENDIENTES ──────────────────────────────────
@@ -15337,14 +15404,11 @@ function presPathActivo() {
 function cargarPresupuestos() {
     // El usuario ya está mirando la pantalla: limpiamos el contador del nav
     try { if (typeof _badgeNavPresupuesto === 'function') _badgeNavPresupuesto(0); } catch(e) {}
-    // Permiso de avisos del sistema: se pide una sola vez y con el toque del
-    // usuario ya hecho (entrar a la solapa), que es lo que exige iOS/Safari.
-    try {
-        if (window.Notification && Notification.permission === 'default' && !localStorage.getItem('st_notif_pedido')) {
-            localStorage.setItem('st_notif_pedido', '1');
-            Notification.requestPermission().catch(() => {});
-        }
-    } catch(e) {}
+    try { if (typeof _pushHabilitarBotonUI === 'function') _pushHabilitarBotonUI(); } catch(e) {}
+    // Si ya había dado permiso antes, refrescamos el token (silencioso).
+    // Si todavía no decidió, se le muestra el botón 🔔 en vez de pedirle
+    // el permiso sin que haya tocado nada (mejor UX y evita el bloqueo de iOS).
+    try { activarAvisosPush(true); _pushHabilitarBotonUI(); } catch(e) {}
     if (presupuestoDescargado && presupuestosCache.length > 0) {
         // Ya tenemos los datos en memoria, solo renderizar
         document.getElementById('form-presupuesto-container').style.display = 'none';
