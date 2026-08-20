@@ -7342,8 +7342,38 @@ function showApp() {
             });
         };
         const onRespErr = (err) => {
-            try { showToast('🛑 DIAG listener respuestas: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
             try { console.error('escucharRespuestasPresupuestos .on() falló', err); } catch(e) {}
+            // Reintento anti-carrera: si el permiso se negó porque la sesión de
+            // Firebase Auth todavía no había terminado de confirmarse, esperamos
+            // a que quede lista y reintentamos UNA vez (no en loop infinito).
+            if (!window._presRespReintentado) {
+                window._presRespReintentado = true;
+                try {
+                    const unsub = firebase.auth().onAuthStateChanged((user) => {
+                        if (user) {
+                            try { unsub(); } catch(e2) {}
+                            setTimeout(() => {
+                                window._presRespReintentado = false;
+                                escucharRespuestasPresupuestos(u);
+                            }, 400);
+                        }
+                    });
+                    // Por si onAuthStateChanged nunca dispara (ya estaba resuelto antes
+                    // de engancharlo), reintentamos igual a los 2s como red de seguridad.
+                    setTimeout(() => {
+                        if (window._presRespReintentado) {
+                            window._presRespReintentado = false;
+                            escucharRespuestasPresupuestos(u);
+                        }
+                    }, 2000);
+                } catch(e3) {
+                    try { showToast('🛑 DIAG listener respuestas: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
+                }
+            } else {
+                // Ya reintentamos una vez y volvió a fallar: esto ya no es una
+                // carrera de arranque, es un permiso real. Lo mostramos.
+                try { showToast('🛑 DIAG listener respuestas (2do intento): ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
+            }
         };
         refResp.on('child_added', onResp, onRespErr);
         window._presRespOff = () => refResp.off('child_added', onResp);
