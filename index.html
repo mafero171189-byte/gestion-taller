@@ -5300,10 +5300,20 @@ function showApp() {
             document.body.style.padding = '32px 16px 48px';
             document.body.style.boxSizing = 'border-box';
             const prespath = tecnicoUser === 'Admin' ? 'presupuestos' : 'presupuestos_usuarios/' + tecnicoUser;
-            db.ref(prespath).child(presupuestoId).once('value')
-            .then(snap => {
+            Promise.all([
+                db.ref(prespath).child(presupuestoId).once('value'),
+                db.ref('presupuestos_respuestas/' + tecnicoUser + '/' + presupuestoId).once('value').catch(() => null)
+            ])
+            .then(([snap, snapResp]) => {
                 if (snap.exists()) {
-                    renderVistaPresupuestoCliente({ id: presupuestoId, ...snap.val() }, container, tecnicoUser);
+                    const p = { id: presupuestoId, ...snap.val() };
+                    // Si el cliente ya había respondido antes (y el taller todavía
+                    // no abrió la app para aplicarlo al presupuesto real), usamos
+                    // esa respuesta para no repreguntar al refrescar la página.
+                    if (snapResp && snapResp.exists() && snapResp.val().resp) {
+                        p.estado = snapResp.val().resp;
+                    }
+                    renderVistaPresupuestoCliente(p, container, tecnicoUser);
                 } else {
                     container.innerHTML = `<div style="font-family:'Outfit',sans-serif;max-width:440px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.55);padding:48px 32px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">🔍</div><h2 style="color:var(--danger);font-size:20px;font-weight:900;margin:0 0 12px;font-family:'Outfit',sans-serif;">Presupuesto no encontrado</h2><p style="color:var(--gray-600);font-size:14px;line-height:1.6;margin:0;">El enlace no corresponde a ningún presupuesto activo. Comunicate con el taller.</p></div>`;
                 }
