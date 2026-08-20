@@ -7336,9 +7336,16 @@ function showApp() {
                     }
                 } catch(e) {}
                 _avisarRespuestaPresupuesto(resp, data);
-            }).catch(() => {});
+            }).catch((err) => {
+                try { showToast('🛑 DIAG update presupuesto: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
+                try { console.error('escucharRespuestasPresupuestos update() falló', err); } catch(e) {}
+            });
         };
-        refResp.on('child_added', onResp);
+        const onRespErr = (err) => {
+            try { showToast('🛑 DIAG listener respuestas: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
+            try { console.error('escucharRespuestasPresupuestos .on() falló', err); } catch(e) {}
+        };
+        refResp.on('child_added', onResp, onRespErr);
         window._presRespOff = () => refResp.off('child_added', onResp);
     }
 
