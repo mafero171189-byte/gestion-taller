@@ -21,14 +21,27 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Se dispara cuando llega un push y la app está CERRADA o en segundo plano.
+// El Worker manda el aviso como "data" solamente (sin bloque "notification"),
+// justamente para que este sea el ÚNICO lugar donde se dibuja la notificación.
+// Si el servidor mandara "notification", Chrome dibujaría una por su cuenta
+// además de esta y llegarían duplicadas.
 messaging.onBackgroundMessage((payload) => {
-    const titulo = (payload.notification && payload.notification.title) || (payload.data && payload.data.title) || 'Mi Taller Web';
-    const cuerpo = (payload.notification && payload.notification.body) || (payload.data && payload.data.body) || '';
-    self.registration.showNotification(titulo, {
-        body: cuerpo,
-        tag: (payload.data && payload.data.tag) || 'mtw-aviso',
-        data: payload.data || {},
-        requireInteraction: false
+    const d = payload.data || {};
+    const titulo = (payload.notification && payload.notification.title) || d.title || 'Mi Taller Web';
+    const cuerpo = (payload.notification && payload.notification.body) || d.body || '';
+    const tag = d.tag || 'mtw-aviso';
+
+    // Red de seguridad: si ya hay una notificación de este mismo presupuesto
+    // en pantalla, la cerramos antes de mostrar la nueva.
+    self.registration.getNotifications({ tag }).then((previas) => {
+        previas.forEach(n => n.close());
+        self.registration.showNotification(titulo, {
+            body: cuerpo,
+            tag: tag,
+            renotify: false,
+            data: d,
+            requireInteraction: false
+        });
     });
 });
 
