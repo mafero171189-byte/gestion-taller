@@ -7389,13 +7389,16 @@ function showApp() {
         return ('serviceWorker' in navigator) && ('Notification' in window) && !!firebase.messaging.isSupported;
     }
 
+    // Se pone en true cuando este dispositivo ya guardó su token en Firebase.
+    // Mientras sea false el botón queda a la vista para poder registrarlo.
+    let _pushTokenRegistrado = false;
+
     function _pushHabilitarBotonUI() {
         const btn = document.getElementById('btn-activar-push');
         if (!btn) return;
         if (!_pushSoportado()) { btn.style.display = 'none'; return; }
-        // Lo mostramos SIEMPRE (salvo que el navegador no soporte push). Antes lo
-        // escondíamos cuando el permiso ya estaba concedido, pero si el token no
-        // llegó a guardarse en Firebase quedaba sin forma de reintentar.
+        // Si este dispositivo ya quedó registrado, no hace falta mostrar nada.
+        if (_pushTokenRegistrado) { btn.style.display = 'none'; return; }
         btn.style.display = 'inline-flex';
         if (Notification.permission === 'denied') {
             btn.textContent = '🔕 Avisos bloqueados — tocá para ver cómo';
@@ -7451,6 +7454,8 @@ function showApp() {
                 ts: firebase.database.ServerValue.TIMESTAMP,
                 ua: (navigator.userAgent || '').slice(0, 120)
             }).then(() => {
+                _pushTokenRegistrado = true;
+                _pushHabilitarBotonUI(); // ya está registrado: el botón se esconde solo
                 if (!silencioso) showToast('🔔 Avisos activados — token guardado OK', '#059669');
             }).catch((eDb) => {
                 _diag('🛑 DIAG: no se pudo guardar el token en Firebase: ' + (eDb && eDb.message ? eDb.message : eDb));
