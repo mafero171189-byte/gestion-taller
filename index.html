@@ -3688,6 +3688,13 @@ function showApp() {
             <label style="font-weight:700; color:var(--gray-700); margin:0;">&#128295; Trabajos / Repuestos</label>
             <button type="button" data-pres-action="agregar-item" style="background:var(--secondary); color:white; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;">+ AGREGAR ÍTEM</button>
           </div>
+          <div style="position:relative; margin-bottom:10px;">
+            <input type="text" id="pres-buscar-stock" autocomplete="off"
+              oninput="filtrarStockPresupuesto()" onblur="hidePresStockAutocomplete()" onfocus="filtrarStockPresupuesto()"
+              placeholder="🔍 Buscar en mi stock (opcional)..."
+              style="width:100%; padding:10px 12px; border:1.5px dashed var(--indigo-200); border-radius:8px; font-size:13px; font-family:inherit; background:var(--indigo-25); box-sizing:border-box;">
+            <div id="pres-stock-autocomplete" class="autocomplete-list" style="width:100%;"></div>
+          </div>
           <div id="pres-items-container"></div>
           <div style="background:var(--secondary); color:white; border-radius:10px; padding:12px 16px; text-align:right; margin-top:10px; font-size:16px; font-weight:800;">TOTAL: <span id="pres-total-display">$0</span></div>
           <div style="margin-top:10px;">
@@ -15775,6 +15782,90 @@ function autoNroPresupuesto() {
     nroInput.value = String(maxNro + 1);
 }
 
+// ── Buscador de stock para armar presupuestos ────────────────────────────────
+// Trae nombre y precio de venta de un artículo del inventario y lo carga como
+// ítem del presupuesto, así no hay que escribirlo a mano cada vez.
+// NO descuenta stock: un presupuesto es solo una cotización. El descuento real
+// sigue ocurriendo cuando la orden se marca como Reparado.
+function hidePresStockAutocomplete() {
+    setTimeout(() => {
+        const listDiv = document.getElementById('pres-stock-autocomplete');
+        if (listDiv) listDiv.style.display = 'none';
+    }, 200);
+}
+
+function filtrarStockPresupuesto() {
+    const input = document.getElementById('pres-buscar-stock');
+    const listDiv = document.getElementById('pres-stock-autocomplete');
+    if (!input || !listDiv) return;
+
+    // Si el stock todavía no se cargó (el usuario nunca entró a la pestaña Stock)
+    if (typeof stockData !== 'undefined' && stockData.length === 0 && typeof window.cargarStockData === 'function') {
+        window.cargarStockData();
+    }
+
+    const val = normalizarBusqueda(input.value.trim());
+    listDiv.innerHTML = '';
+    if (!val) { listDiv.style.display = 'none'; return; }
+    if (typeof stockData === 'undefined' || !Array.isArray(stockData)) { listDiv.style.display = 'none'; return; }
+
+    // A diferencia de la venta rápida, acá SÍ mostramos los que están sin stock:
+    // se puede cotizar un repuesto que todavía hay que pedir.
+    const filtrados = stockData.filter(item =>
+        normalizarBusqueda(item.nombre || '').includes(val) ||
+        normalizarBusqueda(String(item.codigo || '')).includes(val)
+    ).slice(0, 12);
+
+    if (filtrados.length === 0) {
+        listDiv.innerHTML = '<div style="color:var(--slate-400); font-style:italic; cursor:default;">Sin resultados en tu stock</div>';
+        listDiv.style.display = 'block';
+        return;
+    }
+
+    filtrados.forEach(item => {
+        const disp = parseInt(item.cantidad) || 0;
+        const etiquetaStock = disp > 0
+            ? '<span style="color:var(--green-600); font-weight:700;">Disp: ' + disp + '</span>'
+            : '<span style="color:var(--danger); font-weight:700;">Sin stock</span>';
+        const div = document.createElement('div');
+        div.innerHTML = '<b>' + escaparHTML(item.nombre || '') + '</b>'
+            + '<span style="float:right; font-weight:700;">' + etiquetaStock
+            + ' | ' + fmt.format(parseFloat(item.precioVenta) || 0) + '</span>';
+        div.onmousedown = function() {
+            input.value = '';
+            listDiv.style.display = 'none';
+            agregarItemPresupuestoDesdeStock(item);
+        };
+        listDiv.appendChild(div);
+    });
+    listDiv.style.display = 'block';
+}
+
+function agregarItemPresupuestoDesdeStock(item) {
+    if (!item) return;
+    const nombre = item.nombre || '';
+    const precio = parseFloat(item.precioVenta) || 0;
+
+    // Si ese artículo ya está cargado en el presupuesto, sumamos cantidad en vez
+    // de repetir la línea.
+    const inputs = document.querySelectorAll('[id^="pres-item-desc-"]');
+    for (const inp of inputs) {
+        if ((inp.value || '').trim().toLowerCase() === nombre.trim().toLowerCase()) {
+            const idx = inp.id.split('-').pop();
+            const cantEl = document.getElementById('pres-item-cant-' + idx);
+            if (cantEl) {
+                cantEl.value = (parseInt(cantEl.value) || 1) + 1;
+                calcTotalPresupuesto();
+                showToast('➕ ' + nombre + ' (x' + cantEl.value + ')', '#059669');
+                return;
+            }
+        }
+    }
+
+    agregarItemPresupuesto(nombre, precio, 1);
+    showToast('✅ Agregado: ' + nombre, '#059669');
+}
+
 function agregarItemPresupuesto(desc = '', precio = '', cant = 1) {
     presItemCount++;
     const idx = presItemCount;
@@ -15782,7 +15873,7 @@ function agregarItemPresupuesto(desc = '', precio = '', cant = 1) {
     div.id = 'pres-item-' + idx;
     div.style.cssText = 'display:grid; grid-template-columns:1fr 90px 60px 36px; gap:6px; margin-bottom:6px; align-items:center;';
     div.innerHTML = `
-        <input type="text" placeholder="Descripción del trabajo/repuesto" value="${desc}" id="pres-item-desc-${idx}" style="padding:9px 10px; border:1.5px solid var(--slate-200); border-radius:8px; font-size:13px; font-family:inherit;">
+        <input type="text" placeholder="Descripción del trabajo/repuesto" value="${escaparHTML(desc)}" id="pres-item-desc-${idx}" style="padding:9px 10px; border:1.5px solid var(--slate-200); border-radius:8px; font-size:13px; font-family:inherit;">
         <input type="text" placeholder="Precio" value="${precio}" id="pres-item-precio-${idx}" inputmode="decimal" style="padding:9px 10px; border:1.5px solid var(--slate-200); border-radius:8px; font-size:13px; text-align:right; font-family:inherit;">
         <input type="number" min="1" value="${cant}" id="pres-item-cant-${idx}" inputmode="numeric" style="padding:9px 8px; border:1.5px solid var(--slate-200); border-radius:8px; font-size:13px; text-align:center; font-family:inherit;">
         <button type="button" data-pres-action="quitar-item" data-pres-id="${idx}" style="background:var(--red-100); color:var(--danger); border:none; border-radius:8px; padding:8px; font-size:14px; cursor:pointer; line-height:1;">✕</button>`;
