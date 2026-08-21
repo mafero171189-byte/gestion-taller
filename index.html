@@ -7392,12 +7392,28 @@ function showApp() {
     function _pushHabilitarBotonUI() {
         const btn = document.getElementById('btn-activar-push');
         if (!btn) return;
-        if (!_pushSoportado() || Notification.permission === 'denied') { btn.style.display = 'none'; return; }
-        btn.style.display = Notification.permission === 'granted' ? 'none' : 'inline-flex';
+        if (!_pushSoportado()) { btn.style.display = 'none'; return; }
+        // Lo mostramos SIEMPRE (salvo que el navegador no soporte push). Antes lo
+        // escondíamos cuando el permiso ya estaba concedido, pero si el token no
+        // llegó a guardarse en Firebase quedaba sin forma de reintentar.
+        btn.style.display = 'inline-flex';
+        if (Notification.permission === 'denied') {
+            btn.textContent = '🔕 Avisos bloqueados — tocá para ver cómo';
+        } else if (Notification.permission === 'granted') {
+            btn.textContent = '🔔 Re-registrar avisos';
+        } else {
+            btn.textContent = '🔔 Activar avisos';
+        }
     }
 
     async function activarAvisosPush(silencioso = false) {
-        if (!_pushSoportado() || isClientMode || !currentUser) return;
+        const _diag = (msg, color) => {
+            if (silencioso) return; // en modo automático no molestamos
+            try { showToast(msg, color || '#dc2626'); } catch(e) { try { alert(msg); } catch(e2) {} }
+        };
+        if (!_pushSoportado()) { _diag('🛑 DIAG: este navegador no soporta push (falta Notification/serviceWorker/PushManager)'); return; }
+        if (isClientMode) { _diag('🛑 DIAG: la app está en modo cliente, no taller'); return; }
+        if (!currentUser) { _diag('🛑 DIAG: no hay sesión iniciada (currentUser vacío)'); return; }
         try {
             let permiso = Notification.permission;
             if (permiso === 'default') {
@@ -7405,21 +7421,42 @@ function showApp() {
                 permiso = await Notification.requestPermission();
             }
             _pushHabilitarBotonUI();
-            if (permiso !== 'granted') return;
+            if (permiso !== 'granted') { _diag('🛑 DIAG: permiso de notificaciones = ' + permiso + '. Hay que habilitarlo en Ajustes de Android o en el candado del navegador'); return; }
 
-            const reg = window._swReg || await navigator.serviceWorker.ready;
-            const messaging = firebase.messaging();
-            const token = await messaging.getToken({ vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
-            if (!token) return;
+            let reg;
+            try {
+                reg = window._swReg || await navigator.serviceWorker.ready;
+            } catch (eSw) {
+                _diag('🛑 DIAG: falló el service worker: ' + (eSw && eSw.message ? eSw.message : eSw)); return;
+            }
+            if (!reg) { _diag('🛑 DIAG: no hay service worker registrado (sw.js no cargó)'); return; }
+
+            let messaging;
+            try {
+                messaging = firebase.messaging();
+            } catch (eMsg) {
+                _diag('🛑 DIAG: firebase.messaging() falló: ' + (eMsg && eMsg.message ? eMsg.message : eMsg)); return;
+            }
+
+            let token;
+            try {
+                token = await messaging.getToken({ vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
+            } catch (eTok) {
+                _diag('🛑 DIAG getToken falló: ' + (eTok && eTok.message ? eTok.message : eTok)); return;
+            }
+            if (!token) { _diag('🛑 DIAG: getToken devolvió vacío (sin error). Suele ser el navegador bloqueando el push de Google'); return; }
 
             const u = currentUser;
             db.ref('fcm_tokens/' + u).child(token).set({
                 ts: firebase.database.ServerValue.TIMESTAMP,
                 ua: (navigator.userAgent || '').slice(0, 120)
             }).then(() => {
-                if (!silencioso) showToast('🔔 Avisos activados', '#059669');
-            }).catch(() => {});
+                if (!silencioso) showToast('🔔 Avisos activados — token guardado OK', '#059669');
+            }).catch((eDb) => {
+                _diag('🛑 DIAG: no se pudo guardar el token en Firebase: ' + (eDb && eDb.message ? eDb.message : eDb));
+            });
         } catch (e) {
+            _diag('🛑 DIAG error general: ' + (e && e.message ? e.message : e));
             console.error('Push:', e);
         }
     }
