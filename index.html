@@ -4239,6 +4239,51 @@ function showApp() {
          <li>El botón 💬 abre un mensaje de WhatsApp con el link para que el cliente vea y descargue su presupuesto desde el celular.</li>
          <li>El botón <b>Crear Orden</b> convierte el presupuesto en una orden de reparación directamente, sin tener que volver a cargar los datos.</li>
         </ul>
+        <b>El cliente responde desde el link ✅❌</b>
+        <ul>
+         <li>Desde el link que le mandás por WhatsApp, el cliente puede <b>aceptar</b> o <b>rechazar</b> el presupuesto con un solo toque, sin llamarte ni escribirte.</li>
+         <li>Apenas responde, el presupuesto cambia de estado solo en tu lista — no tenés que hacer nada.</li>
+         <li>Si además tenés los avisos activados, te llega una <b>notificación al celular en el momento</b>, aunque tengas la app cerrada. Mirá la sección de Avisos más abajo.</li>
+         <li>El cliente solo puede responder una vez. Si se arrepiente, tiene igual el botón de WhatsApp para escribirte.</li>
+        </ul>
+       </div>
+      </details>
+     </div>
+
+     <!-- SECCIÓN: AVISOS / NOTIFICACIONES PUSH -->
+     <div class="faq-accordion">
+      <details>
+       <summary class="faq-summary">🔔 Avisos en el celular (Notificaciones) <span>+</span></summary>
+       <div class="faq-content">
+        <p>Los <b>avisos</b> te llegan al celular o a la computadora cuando un cliente acepta o rechaza un presupuesto, <b>aunque tengas la app cerrada</b>. Así te enterás en el momento y no tenés que estar revisando.</p>
+        <b>Cómo activarlos</b>
+        <ul>
+         <li>Entrá a la pestaña <b>Presupuesto</b> y tocá el botón <b>🔔 Activar avisos</b>.</li>
+         <li>El navegador te va a pedir permiso para enviar notificaciones: tocá <b>Permitir</b>.</li>
+         <li>Listo. Cuando queda registrado, el botón desaparece solo.</li>
+        </ul>
+        <b>⚠️ Paso importante en Android</b>
+        <p>Android apaga el navegador cuando no lo usás para ahorrar batería, y con eso <b>los avisos no llegan nunca</b>. Hay que darle permiso una sola vez:</p>
+        <ul>
+         <li>Abrí <b>Ajustes</b> del teléfono</li>
+         <li>Entrá a <b>Aplicaciones</b></li>
+         <li>Buscá <b>Chrome</b> en la lista</li>
+         <li>Tocá <b>Batería</b></li>
+         <li>Elegí <b>Sin restricciones</b></li>
+        </ul>
+        <p>Si tenés un <b>Samsung, Xiaomi o Motorola</b>, además suelen traer su propio optimizador de batería aparte. Buscalo en Ajustes y sacá a Chrome de ahí también.</p>
+        <b>Cada dispositivo por separado</b>
+        <ul>
+         <li>Si usás el sistema en el celular y en la computadora, tenés que activar los avisos <b>en cada uno</b>. Son independientes.</li>
+         <li>En la computadora no hace falta tocar nada de batería: funciona directo.</li>
+        </ul>
+        <b>No me llegan los avisos</b>
+        <ul>
+         <li>Revisá primero el paso de la batería de arriba — es la causa más común por lejos.</li>
+         <li>Fijate que las notificaciones de Chrome estén activadas en <b>Ajustes → Aplicaciones → Chrome → Notificaciones</b>.</li>
+         <li>Verificá que no tengas el modo <b>No molestar</b> encendido.</li>
+         <li>Si nada de eso funciona, volvé a la pestaña Presupuesto y tocá <b>🔔 Re-registrar avisos</b> si el botón aparece.</li>
+        </ul>
        </div>
       </details>
      </div>
@@ -7345,34 +7390,37 @@ function showApp() {
             try { console.error('escucharRespuestasPresupuestos .on() falló', err); } catch(e) {}
             // Reintento anti-carrera: si el permiso se negó porque la sesión de
             // Firebase Auth todavía no había terminado de confirmarse, esperamos
-            // a que quede lista y reintentamos UNA vez (no en loop infinito).
-            if (!window._presRespReintentado) {
-                window._presRespReintentado = true;
+            // a que quede lista y reintentamos. Con TOPE: si son 2 intentos y
+            // sigue fallando, es un permiso real y frenamos — sin este tope el
+            // código podía quedar reintentando para siempre.
+            const MAX_REINTENTOS = 2;
+            if (typeof window._presRespIntentos !== 'number') window._presRespIntentos = 0;
+            if (window._presRespIntentos < MAX_REINTENTOS && !window._presRespEsperando) {
+                window._presRespIntentos++;
+                window._presRespEsperando = true;
+                const reintentar = () => {
+                    if (!window._presRespEsperando) return; // ya reintentamos por el otro camino
+                    window._presRespEsperando = false;
+                    escucharRespuestasPresupuestos(u);
+                };
                 try {
                     const unsub = firebase.auth().onAuthStateChanged((user) => {
                         if (user) {
                             try { unsub(); } catch(e2) {}
-                            setTimeout(() => {
-                                window._presRespReintentado = false;
-                                escucharRespuestasPresupuestos(u);
-                            }, 400);
+                            setTimeout(reintentar, 400);
                         }
                     });
-                    // Por si onAuthStateChanged nunca dispara (ya estaba resuelto antes
-                    // de engancharlo), reintentamos igual a los 2s como red de seguridad.
-                    setTimeout(() => {
-                        if (window._presRespReintentado) {
-                            window._presRespReintentado = false;
-                            escucharRespuestasPresupuestos(u);
-                        }
-                    }, 2000);
-                } catch(e3) {
-                    try { showToast('🛑 DIAG listener respuestas: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
+                } catch(e3) {}
+                // Por si onAuthStateChanged nunca dispara (ya estaba resuelto antes
+                // de engancharlo), reintentamos igual a los 2s como red de seguridad.
+                setTimeout(reintentar, 2000);
+            } else if (window._presRespIntentos >= MAX_REINTENTOS) {
+                // Agotamos los reintentos: esto ya no es una carrera de arranque,
+                // es un permiso real. Lo mostramos una sola vez.
+                if (!window._presRespAvisado) {
+                    window._presRespAvisado = true;
+                    try { showToast('⚠️ No se pudieron escuchar las respuestas de presupuestos: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
                 }
-            } else {
-                // Ya reintentamos una vez y volvió a fallar: esto ya no es una
-                // carrera de arranque, es un permiso real. Lo mostramos.
-                try { showToast('🛑 DIAG listener respuestas (2do intento): ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
             }
         };
         refResp.on('child_added', onResp, onRespErr);
@@ -7749,6 +7797,10 @@ function showApp() {
         });
 
         // Avisos de presupuestos aceptados/rechazados por el cliente desde el link
+        // Reseteamos los contadores: cada login nuevo arranca con sus reintentos.
+        window._presRespIntentos = 0;
+        window._presRespEsperando = false;
+        window._presRespAvisado = false;
         try { escucharRespuestasPresupuestos(u); } catch(e) {}
 
         if (isStored) mostrarLoader("Cargando sistema...");
