@@ -7409,6 +7409,47 @@ function showApp() {
         }
     }
 
+    // Android suele "dormir" el navegador para ahorrar batería y con eso los
+    // avisos no llegan nunca. Una web no puede cambiar ese ajuste (solo las apps
+    // nativas pueden), así que lo mejor que podemos hacer es explicarlo bien.
+    function _mostrarGuiaBateriaAndroid(forzar) {
+        const esAndroid = /Android/i.test(navigator.userAgent || '');
+        if (!esAndroid) return;
+        if (!forzar) {
+            try { if (localStorage.getItem('mtw_guia_bateria_vista') === '1') return; } catch(e) {}
+        }
+        const prev = document.getElementById('mtw-guia-bateria');
+        if (prev) prev.remove();
+
+        const ov = document.createElement('div');
+        ov.id = 'mtw-guia-bateria';
+        ov.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,.72); z-index:99999; display:flex; align-items:center; justify-content:center; padding:18px;';
+        ov.innerHTML = `
+            <div style="background:#fff; border-radius:16px; max-width:420px; width:100%; max-height:88vh; overflow:auto; padding:22px; box-shadow:0 20px 50px rgba(0,0,0,.35);">
+                <div style="font-size:17px; font-weight:900; color:#0f172a; margin-bottom:4px;">🔔 Un paso más y quedás listo</div>
+                <div style="font-size:13.5px; color:#475569; line-height:1.55; margin-bottom:16px;">
+                    Android apaga el navegador cuando no lo usás, y con eso <b>los avisos no llegan</b>.
+                    Hay que darle permiso una sola vez:
+                </div>
+                <ol style="margin:0 0 16px 0; padding-left:20px; font-size:13.5px; color:#0f172a; line-height:1.9;">
+                    <li>Abrí <b>Ajustes</b> del teléfono</li>
+                    <li>Entrá a <b>Aplicaciones</b></li>
+                    <li>Buscá <b>Chrome</b> en la lista</li>
+                    <li>Tocá <b>Batería</b></li>
+                    <li>Elegí <b>Sin restricciones</b></li>
+                </ol>
+                <div style="background:#fef3c7; border:1.5px solid #f59e0b; border-radius:10px; padding:11px 13px; font-size:12.5px; color:#92400e; line-height:1.5; margin-bottom:16px;">
+                    En Samsung, Xiaomi o Motorola puede haber además un <b>optimizador de batería</b> propio. Si lo tenés, sacá Chrome de ahí también.
+                </div>
+                <button onclick="document.getElementById('mtw-guia-bateria').remove();"
+                    style="width:100%; background:#1e3a8a; color:#fff; border:none; border-radius:11px; padding:13px; font-size:14.5px; font-weight:800; cursor:pointer;">
+                    Entendido
+                </button>
+            </div>`;
+        document.body.appendChild(ov);
+        try { localStorage.setItem('mtw_guia_bateria_vista', '1'); } catch(e) {}
+    }
+
     async function activarAvisosPush(silencioso = false) {
         const _diag = (msg, color) => {
             if (silencioso) return; // en modo automático no molestamos
@@ -7456,7 +7497,12 @@ function showApp() {
             }).then(() => {
                 _pushTokenRegistrado = true;
                 _pushHabilitarBotonUI(); // ya está registrado: el botón se esconde solo
-                if (!silencioso) showToast('🔔 Avisos activados — token guardado OK', '#059669');
+                if (!silencioso) {
+                    showToast('🔔 Avisos activados — token guardado OK', '#059669');
+                    setTimeout(() => _mostrarGuiaBateriaAndroid(true), 900);
+                } else {
+                    _mostrarGuiaBateriaAndroid(false); // solo la primera vez
+                }
             }).catch((eDb) => {
                 _diag('🛑 DIAG: no se pudo guardar el token en Firebase: ' + (eDb && eDb.message ? eDb.message : eDb));
             });
@@ -16160,7 +16206,9 @@ function enviarWappPresupuesto(id) {
                 : '\n\n💰 *TOTAL: ' + fmt.format(total) + '*')
             + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual) + '*' : '')
             + (p.obs ? '\n\n📌 ' + p.obs : '')
-            + '\n\n🔎 *VER Y DESCARGAR PRESUPUESTO PDF AQUÍ:*\n' + presLink;
+            + '\n\n🔎 *VER EL PRESUPUESTO COMPLETO Y RESPONDER:*\n' + presLink
+            + '\n\n👆 Desde ese link podés *aceptar* o *rechazar* el presupuesto con un solo toque, y también descargarlo en PDF.'
+            + '\n\n💬 Si preferís, respondeme por acá mismo y lo cargamos nosotros. ¡Como te quede más cómodo!';
 
         // Open WhatsApp directly to the client number
         window.open('https://api.whatsapp.com/send?phone=' + num + '&text=' + encodeURIComponent(msj), '_blank');
