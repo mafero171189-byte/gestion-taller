@@ -7374,13 +7374,19 @@ function showApp() {
             db.ref(pathPres).child(id).update({
                 estado: resp,
                 respuestaCliente: resp,
-                respuestaClienteFecha: data.ts || Date.now()
+                respuestaClienteFecha: data.ts || Date.now(),
+                respuestaOrigen: 'cliente'
             }).then(() => {
                 refResp.child(id).remove().catch(() => {});
                 try {
                     if (typeof presupuestosCache !== 'undefined') {
                         const pc = presupuestosCache.find(x => x.id === id);
-                        if (pc) { pc.estado = resp; pc.respuestaCliente = resp; }
+                        if (pc) {
+                            pc.estado = resp;
+                            pc.respuestaCliente = resp;
+                            pc.respuestaClienteFecha = data.ts || Date.now();
+                            pc.respuestaOrigen = 'cliente';
+                        }
                     }
                     const pag = document.getElementById('page-presupuesto');
                     if (pag && pag.style.display !== 'none' && typeof renderListaPresupuestos === 'function') {
@@ -15561,6 +15567,9 @@ function showApp() {
 // ===================================================
 
 var presupuestosCache = [];
+// Filtro de estado activo en la lista de presupuestos: 'Todos' | 'Pendiente' |
+// 'Aprobado' | 'Rechazado' | 'Vencido'
+var presFiltroEstado = 'Todos';
 var presupuestoDescargado = false;
 var presupuestoEditandoId = null;
 var presItemCount = 0;
@@ -15580,6 +15589,15 @@ document.addEventListener('click', function(e) {
     if (action === 'pdf') generarPDFPresupuesto(id);
     if (action === 'quitar-item') quitarItemPresupuesto(id);
     if (action === 'crear-orden') crearOrdenDesdePresupuesto(id);
+
+    // Badges de la barra de arriba: funcionan como filtro por estado.
+    const chip = e.target.closest('[data-pres-filtro]');
+    if (chip) {
+        const f = chip.getAttribute('data-pres-filtro');
+        // Tocar el filtro que ya está activo lo desactiva (vuelve a Todos).
+        presFiltroEstado = (presFiltroEstado === f) ? 'Todos' : f;
+        renderListaPresupuestos();
+    }
 });
 document.addEventListener('change', function(e) {
     const t = e.target.closest('[data-pres-estado]');
@@ -15628,8 +15646,7 @@ function renderListaPresupuestos() {
     const lista = document.getElementById('lista-presupuestos');
     if (!lista) return;
     let items = presupuestosCache;
-
-    // Stats bar
+    // Stats bar — además de contar, cada badge funciona como FILTRO.
     const statsBar = document.getElementById('pres-stats-bar');
     if (statsBar && presupuestosCache.length) {
         const hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -15641,10 +15658,34 @@ function renderListaPresupuestos() {
             else pendiente++;
             if (p.vencimiento) { const vd = new Date(p.vencimiento + 'T00:00:00'); if (vd < hoy && est !== 'Rechazado') vencido++; }
         });
-        const badge = (label, count, bg, color) => count > 0 ? `<span style="background:${bg};color:${color};border-radius:20px;padding:5px 12px;font-size:12px;font-weight:800;">${label} ${count}</span>` : '';
-        statsBar.innerHTML = badge('🕐 Pendientes', pendiente, '#fef3c7', '#92400e') + badge('✅ Aprobados', aprobado, '#d1fae5', '#065f46') + badge('❌ Rechazados', rechazado, '#fee2e2', '#991b1b') + (vencido ? badge('⏰ Vencidos', vencido, '#fee2e2', '#dc2626') : '');
+        const activo = presFiltroEstado;
+        const badge = (label, count, bg, color, filtro) => {
+            if (count <= 0 && filtro !== 'Todos') return '';
+            const sel = activo === filtro;
+            return `<span data-pres-filtro="${filtro}" style="background:${sel ? color : bg}; color:${sel ? '#fff' : color}; border:2px solid ${sel ? color : 'transparent'}; border-radius:20px; padding:5px 12px; font-size:12px; font-weight:800; cursor:pointer; user-select:none;">${label}${count !== null ? ' ' + count : ''}</span>`;
+        };
+        statsBar.innerHTML =
+            badge('📋 Todos', presupuestosCache.length, 'var(--slate-100)', 'var(--slate-600)', 'Todos')
+            + badge('🕐 Pendientes', pendiente, '#fef3c7', '#92400e', 'Pendiente')
+            + badge('✅ Aprobados', aprobado, '#d1fae5', '#065f46', 'Aprobado')
+            + badge('❌ Rechazados', rechazado, '#fee2e2', '#991b1b', 'Rechazado')
+            + (vencido ? badge('⏰ Vencidos', vencido, '#fee2e2', '#dc2626', 'Vencido') : '');
         statsBar.style.display = 'flex';
     } else if (statsBar) { statsBar.style.display = 'none'; }
+
+    // Filtro por estado (los badges de arriba)
+    if (presFiltroEstado && presFiltroEstado !== 'Todos') {
+        const hoyF = new Date(); hoyF.setHours(0,0,0,0);
+        if (presFiltroEstado === 'Vencido') {
+            items = items.filter(p => {
+                if (!p.vencimiento) return false;
+                const vd = new Date(p.vencimiento + 'T00:00:00');
+                return vd < hoyF && (p.estado || 'Pendiente') !== 'Rechazado';
+            });
+        } else {
+            items = items.filter(p => (p.estado || 'Pendiente') === presFiltroEstado);
+        }
+    }
 
     if (q) items = items.filter(p =>
         (p.nro || '').toLowerCase().includes(q) ||
@@ -15652,7 +15693,10 @@ function renderListaPresupuestos() {
         (p.equipo || '').toLowerCase().includes(q)
     );
     if (!items.length) {
-        lista.innerHTML = '<p style="text-align:center; color:var(--slate-400); padding:30px;">No hay presupuestos guardados.</p>';
+        const hayFiltro = (presFiltroEstado && presFiltroEstado !== 'Todos') || q;
+        lista.innerHTML = hayFiltro
+            ? '<p style="text-align:center; color:var(--slate-400); padding:30px;">No hay presupuestos que coincidan con el filtro.</p>'
+            : '<p style="text-align:center; color:var(--slate-400); padding:30px;">No hay presupuestos guardados.</p>';
         return;
     }
     lista.innerHTML = items.map(p => {
@@ -15683,6 +15727,17 @@ function renderListaPresupuestos() {
                 </div>
                 <span style="background:${estadoBg}; color:${estadoColor}; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px;">${p.estado || 'Pendiente'}</span>
             </div>
+            ${(function(){
+                // Fecha en que el presupuesto fue aprobado o rechazado
+                const est = p.estado || 'Pendiente';
+                if (est === 'Pendiente' || !p.respuestaClienteFecha) return '';
+                const f = new Date(p.respuestaClienteFecha);
+                if (isNaN(f.getTime())) return '';
+                const cuando = f.toLocaleDateString(_localeActual) + ' ' + f.toLocaleTimeString(_localeActual, {hour:'2-digit', minute:'2-digit'});
+                const quien = p.respuestaOrigen === 'taller' ? 'en el taller' : 'por el cliente';
+                const icono = est === 'Aprobado' ? '✅' : '❌';
+                return `<div style="font-size:11.5px; color:${estadoColor}; font-weight:700; margin-bottom:8px;">${icono} ${est} ${quien} el ${cuando}</div>`;
+            })()}
             <div style="font-size:16px; font-weight:800; color:var(--gray-900); margin-bottom:2px;">👤 ${p.cliente || '-'}</div>
             <div style="font-size:13px; color:var(--gray-600); margin-bottom:10px;">📱 ${[p.equipo, p.marca, p.modelo].filter(Boolean).join(' ') || '-'}</div>
             ${precioHtml}
@@ -16044,11 +16099,25 @@ function eliminarPresupuesto(id) {
 
 function cambiarEstadoPresupuesto(id, estado) {
     if (!estado) return;
-    db.ref(presPathActivo()).child(id).update({ estado }).then(() => {
+    // Guardamos también CUÁNDO se cambió, para poder mostrarlo y filtrar por eso.
+    // Si vuelve a Pendiente, limpiamos la fecha (ya no hay respuesta).
+    const cambios = { estado };
+    if (estado === 'Pendiente') {
+        cambios.respuestaClienteFecha = null;
+        cambios.respuestaOrigen = null;
+    } else {
+        cambios.respuestaClienteFecha = Date.now();
+        cambios.respuestaOrigen = 'taller';
+    }
+    db.ref(presPathActivo()).child(id).update(cambios).then(() => {
         showToast('Estado: ' + estado, estado === 'Aprobado' ? '#059669' : estado === 'Rechazado' ? '#dc2626' : '#d97706');
         // Actualizar el cache en memoria para que el botón CREAR ORDEN aparezca/desaparezca
         const pInCache = presupuestosCache.find(x => x.id === id);
-        if (pInCache) pInCache.estado = estado;
+        if (pInCache) {
+            pInCache.estado = estado;
+            pInCache.respuestaClienteFecha = cambios.respuestaClienteFecha;
+            pInCache.respuestaOrigen = cambios.respuestaOrigen;
+        }
         renderListaPresupuestos();
     });
 }
