@@ -7343,7 +7343,7 @@ function showApp() {
         b.textContent = _presAvisosPendientes;
     }
 
-    function _avisarRespuestaPresupuesto(resp, data) {
+    function _avisarRespuestaPresupuesto(resp, data, presId) {
         const ok = resp === 'Aprobado';
         const cli = data.cliente || 'El cliente';
         const nro = data.nro ? ' N° ' + data.nro : '';
@@ -7351,12 +7351,27 @@ function showApp() {
         showToast((ok ? '✅ ' : '❌ ') + texto, ok ? '#059669' : '#dc2626');
         _badgeNavPresupuesto(1);
         try { if (navigator.vibrate) navigator.vibrate(ok ? [90, 70, 90] : 160); } catch(e) {}
+
+        // Notificación del sistema para cuando la app está minimizada o en otra
+        // pestaña: ahí el toast no se ve, y el push del servidor puede no llegar
+        // porque este mismo listener ya procesó la respuesta antes.
+        // IMPORTANTE: en Android, `new Notification(...)` está prohibido y falla
+        // en silencio. Hay que usar el service worker.
+        // Usamos el MISMO tag que el push del servidor ('pres-' + id) para que,
+        // si llegan las dos, se pisen y se vea una sola.
         try {
             if (window.Notification && Notification.permission === 'granted') {
-                new Notification(ok ? '✅ Presupuesto aprobado' : '❌ Presupuesto rechazado', {
-                    body: texto,
-                    tag: 'pres-' + (data.nro || Date.now())
-                });
+                const titulo = ok ? '✅ Presupuesto aprobado' : '❌ Presupuesto rechazado';
+                const tag = 'pres-' + (presId || data.nro || Date.now());
+                const opts = { body: texto, tag: tag, data: { url: '/' } };
+                const reg = window._swReg;
+                if (reg && reg.showNotification) {
+                    reg.showNotification(titulo, opts);
+                } else if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                    navigator.serviceWorker.ready.then(r => r.showNotification(titulo, opts)).catch(() => {});
+                } else {
+                    new Notification(titulo, opts); // escritorio viejo
+                }
             }
         } catch(e) {}
     }
@@ -7393,7 +7408,7 @@ function showApp() {
                         renderListaPresupuestos();
                     }
                 } catch(e) {}
-                _avisarRespuestaPresupuesto(resp, data);
+                _avisarRespuestaPresupuesto(resp, data, id);
             }).catch((err) => {
                 try { showToast('🛑 DIAG update presupuesto: ' + (err && err.message ? err.message : err), '#dc2626'); } catch(e) {}
                 try { console.error('escucharRespuestasPresupuestos update() falló', err); } catch(e) {}
