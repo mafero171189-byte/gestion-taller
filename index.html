@@ -15589,15 +15589,18 @@ document.addEventListener('click', function(e) {
     if (action === 'pdf') generarPDFPresupuesto(id);
     if (action === 'quitar-item') quitarItemPresupuesto(id);
     if (action === 'crear-orden') crearOrdenDesdePresupuesto(id);
+});
 
-    // Badges de la barra de arriba: funcionan como filtro por estado.
+// Badges de la barra de arriba: funcionan como filtro por estado.
+// Va en su PROPIO listener: el de arriba hace `return` cuando el clic no cae
+// sobre un [data-pres-action], y los badges no tienen ese atributo.
+document.addEventListener('click', function(e) {
     const chip = e.target.closest('[data-pres-filtro]');
-    if (chip) {
-        const f = chip.getAttribute('data-pres-filtro');
-        // Tocar el filtro que ya está activo lo desactiva (vuelve a Todos).
-        presFiltroEstado = (presFiltroEstado === f) ? 'Todos' : f;
-        renderListaPresupuestos();
-    }
+    if (!chip) return;
+    const f = chip.getAttribute('data-pres-filtro');
+    // Tocar el filtro que ya está activo lo desactiva (vuelve a Todos).
+    presFiltroEstado = (presFiltroEstado === f) ? 'Todos' : f;
+    renderListaPresupuestos();
 });
 document.addEventListener('change', function(e) {
     const t = e.target.closest('[data-pres-estado]');
