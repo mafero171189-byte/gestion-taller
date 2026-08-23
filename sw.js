@@ -20,29 +20,17 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Se dispara cuando llega un push y la app está CERRADA o en segundo plano.
-// El Worker manda el aviso como "data" solamente (sin bloque "notification"),
-// justamente para que este sea el ÚNICO lugar donde se dibuja la notificación.
-// Si el servidor mandara "notification", Chrome dibujaría una por su cuenta
-// además de esta y llegarían duplicadas.
+// El Worker manda el aviso CON bloque "notification", así que Chrome ya lo
+// muestra por su cuenta apenas llega el push — sin depender de que este service
+// worker alcance a despertarse (era el motivo por el que a veces no llegaba
+// ninguna notificación estando el navegador ocupado en otras páginas).
+//
+// Por eso acá NO dibujamos otra: si lo hiciéramos, llegarían DOS.
+// Este handler queda solo para que el SDK no muestre su versión genérica y para
+// dejar registro si alguna vez hay que depurar.
 messaging.onBackgroundMessage((payload) => {
-    const d = payload.data || {};
-    const titulo = (payload.notification && payload.notification.title) || d.title || 'Mi Taller Web';
-    const cuerpo = (payload.notification && payload.notification.body) || d.body || '';
-    const tag = d.tag || 'mtw-aviso';
-
-    // Red de seguridad: si ya hay una notificación de este mismo presupuesto
-    // en pantalla, la cerramos antes de mostrar la nueva.
-    self.registration.getNotifications({ tag }).then((previas) => {
-        previas.forEach(n => n.close());
-        self.registration.showNotification(titulo, {
-            body: cuerpo,
-            tag: tag,
-            renotify: false,
-            data: d,
-            requireInteraction: false
-        });
-    });
+    // Intencionalmente vacío: la notificación la muestra Chrome.
+    // NO agregar showNotification acá — duplica el aviso.
 });
 
 // Al tocar la notificación, abre (o enfoca) la app.
