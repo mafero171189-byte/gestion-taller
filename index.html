@@ -3324,19 +3324,18 @@ function showApp() {
       <button id="btnLicPrueba" onclick="seleccionarTipoLic('prueba')" style="flex:1; padding:10px; border-radius:10px; border:2px solid var(--amber-200); background:var(--amber-100); color:var(--amber-800); font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">🧪 PRUEBA</button>
       <button id="btnLicPermanente" onclick="seleccionarTipoLic('permanente')" style="flex:1; padding:10px; border-radius:10px; border:2px solid var(--gray-200); background:var(--green-100); color:var(--green-800); font-weight:800; cursor:pointer; transition:0.2s; font-size:13px;">♾️ PERMANENTE</button>
      </div>
+     <label style="font-size:11px; font-weight:800; color:var(--gray-600); text-transform:uppercase; display:block; margin-bottom:6px;">Plan</label>
+     <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button id="btnPlanMensual" onclick="seleccionarPlanLic('mensual')" style="flex:1; padding:8px; border-radius:8px; border:2px solid var(--gray-200); background:var(--gray-50); color:var(--gray-600); font-weight:800; cursor:pointer; font-size:12px;">Mensual</button>
+      <button id="btnPlanAnual" onclick="seleccionarPlanLic('anual')" style="flex:1; padding:8px; border-radius:8px; border:2px solid var(--gray-200); background:var(--gray-50); color:var(--gray-600); font-weight:800; cursor:pointer; font-size:12px;">Anual</button>
+     </div>
      <div id="licFechaContainer" style="margin-bottom:16px;">
       <label style="font-size:11px; font-weight:800; color:var(--gray-600); text-transform:uppercase; display:block; margin-bottom:6px;">Fecha de Vencimiento</label> <input type="date" id="licFechaExp" style="width:100%; padding:10px; border:2px solid var(--gray-200); border-radius:8px; font-size:14px; box-sizing:border-box;">
             <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
        <button id="btn-dias-7" onclick="sumarDiasLic(7, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--gray-200); background:var(--gray-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--gray-600); transition:0.2s;">+7 días</button>
        <button id="btn-dias-15" onclick="sumarDiasLic(15, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--gray-200); background:var(--gray-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--gray-600); transition:0.2s;">+15 días</button>
        <button id="btn-dias-30" onclick="sumarDiasLic(30, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--gray-200); background:var(--gray-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--gray-600); transition:0.2s;">+30 días</button>
-       <button id="btn-dias-90" onclick="sumarDiasLic(90, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--gray-200); background:var(--gray-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--gray-600); transition:0.2s;">+90 días</button>
        <button id="btn-dias-365" onclick="sumarDiasLic(365, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--green-200); background:var(--green-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--green-700); transition:0.2s;">+1 año</button>
-      </div>
-      <label style="font-size:11px; font-weight:800; color:var(--gray-600); text-transform:uppercase; display:block; margin:14px 0 6px;">Plan</label>
-      <div style="display:flex; gap:8px;">
-       <button id="btnPlanMensual" onclick="seleccionarPlanLic('mensual')" style="flex:1; padding:8px; border-radius:8px; border:2px solid var(--gray-200); background:var(--gray-50); color:var(--gray-600); font-weight:800; cursor:pointer; font-size:12px;">Mensual</button>
-       <button id="btnPlanAnual" onclick="seleccionarPlanLic('anual')" style="flex:1; padding:8px; border-radius:8px; border:2px solid var(--gray-200); background:var(--gray-50); color:var(--gray-600); font-weight:800; cursor:pointer; font-size:12px;">Anual</button>
       </div>
      </div>
      <div style="display:flex; gap:10px; margin-top:8px;">
@@ -3989,14 +3988,6 @@ function showApp() {
       <div style="display:flex; gap:10px; margin-top:5px;">
        <input type="text" id="new-user-wa" placeholder="Ej: 54911..." style="flex:1;">
        <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:0 20px;">ACTIVAR</button>
-      </div>
-     </div>
-     <div class="card-form" style="background: var(--green-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--green-250); margin-bottom: 20px;">
-      <label style="color:var(--green-800); font-weight:800;">⭐ Activar Licencia Mensual (tras pago)</label>
-      <p style="font-size:12px; color:var(--gray-600); margin:6px 0 10px 0;">Usá este botón cuando un cliente te envíe el comprobante de pago de Mercado Pago.</p>
-      <div style="display:flex; gap:10px; margin-top:5px;">
-       <input type="text" id="activar-pago-wa" placeholder="Número WhatsApp del cliente (Ej: 54911...)" style="flex:1;">
-       <button onclick="activarLicenciaManual()" class="btn" style="background:var(--green-600); color:white; padding:0 20px; white-space:nowrap;">✅ ACTIVAR</button>
       </div>
      </div>
      
@@ -14211,7 +14202,7 @@ function showApp() {
         if (input) input.removeAttribute('data-fecha-base');
         
         // Limpiar la selección de los botones de días para la próxima vez
-        const botonesDias = ['btn-dias-7', 'btn-dias-15', 'btn-dias-30', 'btn-dias-90', 'btn-dias-365'];
+        const botonesDias = ['btn-dias-7', 'btn-dias-15', 'btn-dias-30', 'btn-dias-365'];
         botonesDias.forEach(id => {
             let b = document.getElementById(id);
             if(b) {
@@ -14272,7 +14263,7 @@ function showApp() {
         input.value = base.toISOString().split('T')[0];
         
         // Resetear visualmente todos los botones
-        const botonesDias = ['btn-dias-7', 'btn-dias-15', 'btn-dias-30', 'btn-dias-90', 'btn-dias-365'];
+        const botonesDias = ['btn-dias-7', 'btn-dias-15', 'btn-dias-30', 'btn-dias-365'];
         botonesDias.forEach(id => {
             let b = document.getElementById(id);
             if(b) {
