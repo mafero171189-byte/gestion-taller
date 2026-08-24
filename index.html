@@ -698,8 +698,8 @@
         body.dark-mode .mp-modal-box { background: var(--gray-900); }
         body.dark-mode .mp-step-text { color: var(--gray-300); }
         body.dark-mode .mp-step-text b { color: var(--gray-50); }
-        /* MODALES CONFIRMAR ACTIVAR / TIPO LICENCIA */
-        #modalConfirmarActivar, #modalTipoLicencia {
+        /* MODAL TIPO LICENCIA */
+        #modalTipoLicencia {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(8,12,24,0.82); z-index: 12500;
             display: none; align-items: center; justify-content: center;
@@ -6860,6 +6860,52 @@ function showApp() {
     let loginIntentos = parseInt(localStorage.getItem('st_login_intentos') || '0');
     let loginBloqueadoHasta = parseInt(localStorage.getItem('st_login_bloqueado') || '0');
 
+    // ── SESIONES MÚLTIPLES POR PLAN ─────────────────────────────────────────
+    // Antes: un solo `tokenSesion` que se pisaba en cada login, expulsando
+    // cualquier otra sesión abierta. Ahora: un mapa `sesiones` con una entrada
+    // por dispositivo logueado, con un tope según el plan — 1 para
+    // prueba/mensual, 3 para anual. Al pasarse del tope, se saca la sesión
+    // más vieja (no la más nueva, para no expulsar al que recién entró).
+    function registrarSesionActiva(u, token) {
+        const refUser = db.ref('usuarios_registrados/' + u);
+        refUser.once('value').then(snap => {
+            const d = snap.val() || {};
+            const maxSesiones = (d.tipoLicencia === 'permanente' && d.planTipo === 'anual') ? 3 : 1;
+            const sesiones = Object.assign({}, d.sesiones || {});
+            sesiones[token] = Date.now();
+            // Ordenamos de más vieja a más nueva y sacamos las que sobran.
+            const entradas = Object.entries(sesiones).sort((a, b) => a[1] - b[1]);
+            while (entradas.length > maxSesiones) {
+                const [tokenViejo] = entradas.shift();
+                delete sesiones[tokenViejo];
+            }
+            // tokenSesion queda como referencia de "última sesión" nada más,
+            // ya no es lo que decide si te expulsan.
+            refUser.update({ sesiones: sesiones, tokenSesion: token }).catch(() => {});
+        }).catch(() => {});
+    }
+
+    function _miTokenSesion() {
+        try {
+            const t = JSON.parse(localStorage.getItem('st_matias_token'));
+            return (t && t.expira > Date.now()) ? t.valor : null;
+        } catch(e) { return localStorage.getItem('st_matias_token'); }
+    }
+
+    // true si esta sesión ya no es válida (otro dispositivo la desplazó).
+    function _sesionFueExpulsada(dataUser) {
+        const miToken = _miTokenSesion();
+        if (!miToken) return false;
+        if (dataUser.sesiones && typeof dataUser.sesiones === 'object') {
+            // Sistema nuevo: ¿sigo en el mapa de sesiones activas?
+            return !dataUser.sesiones[miToken];
+        }
+        // El usuario todavía no volvió a loguearse desde la actualización (no
+        // tiene `sesiones` creado todavía) — usamos el chequeo viejo para no
+        // expulsar sesiones legítimas que ya estaban abiertas.
+        return !!(dataUser.tokenSesion && dataUser.tokenSesion !== miToken);
+    }
+
     function checkAccess() {
         let rawU = document.getElementById('userIn').value.trim().toLowerCase();
         const p = document.getElementById('passIn').value.trim();
@@ -6894,6 +6940,15 @@ function showApp() {
             }
         }
 
+        // ── SESIONES MÚLTIPLES POR PLAN ─────────────────────────────────────
+        // Antes: un solo `tokenSesion` que se pisaba en cada login, expulsando
+        // cualquier otra sesión abierta. Ahora: un mapa `sesiones` con una
+        // entrada por dispositivo logueado, con un tope según el plan — 1 para
+        // prueba/mensual, 3 para anual. Al pasarse del tope, se saca la sesión
+        // más vieja (no la más nueva, para no expulsar al que recién entró).
+        // Van declaradas afuera de checkAccess() porque también las usa
+        // grantAccess(), que es otra función.
+
         const doLogin = (emailFinal) => {
             if (u !== 'admin') localStorage.setItem('st_login_wa', u);
             if (remember) localStorage.setItem('st_session_recordada', '1');
@@ -6913,7 +6968,7 @@ function showApp() {
                     localStorage.setItem('st_matias_token', JSON.stringify(tokenData));
 
                     if (u !== 'admin') {
-                        db.ref('usuarios_registrados/' + u).update({ tokenSesion: token }).catch(() => {});
+                        registrarSesionActiva(u, token);
                     }
 
                     appIniciada = false;
@@ -7465,54 +7520,6 @@ function showApp() {
         });
     }
 
-            function activarLicenciaManual(numeroWa) {
-        if (!numeroWa) {
-            numeroWa = document.getElementById('activar-pago-wa') ? document.getElementById('activar-pago-wa').value.trim() : '';
-        }
-        if (!numeroWa || numeroWa.length < 10) { showToast("Número inválido", "#dc2626"); return; }
-        numeroWa = numeroWa.replace(/\D/g, '');
-
-        document.getElementById('confirmarActivarNumero').innerText = numeroWa;
-        const modal = document.getElementById('modalConfirmarActivar');
-        modal.style.display = 'flex';
-
-        document.getElementById('btnConfirmarActivarSi').onclick = function() {
-            modal.style.display = 'none';
-            const inputActivar = document.getElementById('activar-pago-wa');
-            if (inputActivar) inputActivar.value = '';
-            
-            mostrarLoader("Activando y sumando días...");
-
-            db.ref('usuarios_registrados/' + numeroWa).once('value', snap => {
-                const data = snap.val() || {};
-                const ahora = Date.now();
-                let baseFecha;
-
-                if (data.fechaExpiracion && data.fechaExpiracion > ahora) {
-                    baseFecha = data.fechaExpiracion;
-                } else {
-                    baseFecha = ahora;
-                }
-
-                const nuevaExpiracion = baseFecha + (30 * 24 * 60 * 60 * 1000);
-
-                db.ref('usuarios_registrados/' + numeroWa).update({
-                    tipoLicencia: 'permanente',
-                    fechaExpiracion: nuevaExpiracion,
-                    estado: 'activo'
-                })
-                .then(() => {
-                    ocultarLoader();
-                    showToast("✅ ¡Licencia extendida 30 días para " + numeroWa + "!", "#059669");
-                    setTimeout(() => listarUsuarios(), 1000);
-                })
-                .catch((err) => {
-                    ocultarLoader();
-                    showToast(mensajeFirebaseAmigable(err), "#dc2626");
-                });
-            });
-        };
-    }
 
 
         function generarSVGPatron(pinStr) {
@@ -8059,10 +8066,11 @@ function showApp() {
                     mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
                 }
                 else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de 30 días ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
+                    const nombrePlan = dataUser.planTipo === 'anual' ? 'anual' : 'mensual';
+                    mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
                 }
-                else if (dataUser.tokenSesion && dataUser.tokenSesion !== (() => { try { const t = JSON.parse(localStorage.getItem('st_matias_token')); return (t && t.expira > Date.now()) ? t.valor : null; } catch(e) { return localStorage.getItem('st_matias_token'); } })()) {
-                    mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
+                else if (_sesionFueExpulsada(dataUser)) {
+                    mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo, o se alcanzó el máximo de dispositivos conectados a la vez.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
                 }
 
                 if (dataUser && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
@@ -8338,6 +8346,15 @@ function showApp() {
     }
 
     function logout() { 
+        // Liberamos nuestro lugar en la lista de sesiones activas ANTES de
+        // cerrar la sesión de Firebase Auth — una vez deslogueado, ya no
+        // tenemos permiso para escribir en nuestro propio registro.
+        try {
+            if (currentUser && currentUser !== 'admin') {
+                const miToken = _miTokenSesion();
+                if (miToken) db.ref('usuarios_registrados/' + currentUser + '/sesiones/' + miToken).remove().catch(() => {});
+            }
+        } catch(e) {}
         firebase.auth().signOut().then(() => {
             localStorage.removeItem('st_matias_token');
             localStorage.removeItem('st_login_intentos');
@@ -15070,23 +15087,6 @@ function showApp() {
       "> <span style="font-size: 18px;">📎</span> <span>ENVIAR COMPROBANTE</span> </a>
 
      <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
-    </div>
-   </div>
-  </div>
-  <!-- MODAL CONFIRMAR ACTIVAR LICENCIA PERMANENTE -->
-  <div id="modalConfirmarActivar">
-   <div class="confirm-modal-box">
-    <div class="confirm-modal-header">
-     <div class="confirm-modal-icon verde">⭐</div>
-     <h3>Activar Licencia Mensual</h3>
-     <p>¿Activar licencia mensual para el número
-      <br>
-      <b id="confirmarActivarNumero">—</b>?</p>
-    </div>
-    <div class="confirm-modal-divider"></div>
-    <div class="confirm-modal-footer">
-     <button class="btn-confirmar-verde" id="btnConfirmarActivarSi">✅ Sí, activar ahora</button>
-     <button class="btn-confirm-cancelar" onclick="document.getElementById('modalConfirmarActivar').style.display='none'">Cancelar</button>
     </div>
    </div>
   </div>
