@@ -6892,10 +6892,22 @@ function showApp() {
         } catch(e) { return localStorage.getItem('st_matias_token'); }
     }
 
+    function _miLoginTs() {
+        try {
+            const t = JSON.parse(localStorage.getItem('st_matias_token'));
+            return (t && t.loginTs) ? t.loginTs : 0;
+        } catch(e) { return 0; }
+    }
+
     // true si esta sesión ya no es válida (otro dispositivo la desplazó).
     function _sesionFueExpulsada(dataUser) {
         const miToken = _miTokenSesion();
         if (!miToken) return false;
+        // Ventana de gracia: recién logueado, registrarSesionActiva puede no
+        // haber terminado de escribir todavía (lee y después escribe, tarda
+        // un toque más que antes). Sin esto, la primera foto que llega del
+        // servidor puede ser la de ANTES de este login y nos auto-expulsa.
+        if (Date.now() - _miLoginTs() < 8000) return false;
         if (dataUser.sesiones && typeof dataUser.sesiones === 'object') {
             // Sistema nuevo: ¿sigo en el mapa de sesiones activas?
             return !dataUser.sesiones[miToken];
@@ -6964,7 +6976,13 @@ function showApp() {
                     localStorage.removeItem('st_login_bloqueado');
 
                     const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-                    const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000 };
+                    // loginTs marca CUÁNDO logueamos localmente. Lo usa
+                    // _sesionFueExpulsada para dar unos segundos de gracia:
+                    // registrarSesionActiva tarda un toque en escribir el token
+                    // en el servidor (lee y después escribe), y sin esta gracia
+                    // podíamos leer una foto vieja de Firebase todavía sin
+                    // nuestra sesión anotada, y auto-expulsarnos por error.
+                    const tokenData = { valor: token, expira: Date.now() + 30 * 24 * 60 * 60 * 1000, loginTs: Date.now() };
                     localStorage.setItem('st_matias_token', JSON.stringify(tokenData));
 
                     if (u !== 'admin') {
