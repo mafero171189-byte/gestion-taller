@@ -5588,12 +5588,22 @@ function showApp() {
         
         db.ref(pathPerfil).once('value')
         .then(snap => {
-            generarHTMLCliente(regEncontrado, container, snap.val() || {});
+            _confClientePublicoCache = snap.val() || {};
+            generarHTMLCliente(regEncontrado, container, _confClientePublicoCache);
         })
         .catch(err => {
-            generarHTMLCliente(regEncontrado, container, { nombreTaller: "Servicio Técnico" });
+            _confClientePublicoCache = { nombreTaller: "Servicio Técnico" };
+            generarHTMLCliente(regEncontrado, container, _confClientePublicoCache);
         });
     }
+
+    // Cache del perfil público ya leído por renderVistaCliente/
+    // renderVistaPresupuestoCliente. Los botones "Ver PDF" y "Descargar PDF"
+    // lo usan de acá en vez de pedirlo de nuevo a Firebase al tocarlos: ese
+    // viaje de ida y vuelta, aunque sea rápido, alcanza para que el celular
+    // ya no considere el toque como "gesto reciente" — y ahí el navegador,
+    // en vez de abrir una vista previa, fuerza la descarga.
+    let _confClientePublicoCache = null;
     
     // Botón "Escribinos por WhatsApp" para las vistas públicas (seguimiento y
     // presupuesto). Usa el número de contacto del taller (wappTicket); si no
@@ -5799,10 +5809,13 @@ function showApp() {
 
     function verPDFCliente() {
         const r = registros[0]; if(!r) return;
-        // El cliente ve esto SIN login — currentUser puede ser null/otra
-        // sesión. Usamos el número del link (?u=), igual que en renderVistaCliente,
-        // y leemos del espejo público (no de usuarios_registrados, que ya no
-        // se puede leer sin ser el dueño de la cuenta).
+        // Usamos el perfil ya cacheado por renderVistaCliente (ver comentario
+        // arriba de _confClientePublicoCache) para que el PDF abra al toque,
+        // en vez de perder el gesto del usuario esperando otra lectura.
+        if (_confClientePublicoCache) {
+            generarEImprimirPDF(r, _confClientePublicoCache, null, null, null, { modo: 'cliente' });
+            return;
+        }
         const urlParams = new URLSearchParams(window.location.search);
         const tecnicoUser = urlParams.get('u') || currentUser;
         const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
@@ -5814,18 +5827,20 @@ function showApp() {
 
     function descargarPDFCliente() {
         const r = registros[0]; if(!r) return;
-        const urlParams = new URLSearchParams(window.location.search);
-        const tecnicoUser = urlParams.get('u') || currentUser;
-        const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
-        mostrarLoader("Generando PDF...");
-        db.ref(path).once('value', snap => {
-            generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
+        const generarConConf = (conf) => {
+            generarEImprimirPDF(r, conf, (blob, nro) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url; a.download = `Orden-${nro}.pdf`; a.click();
                 URL.revokeObjectURL(url);
             }, null, null, { modo: 'cliente' });
-        });
+        };
+        if (_confClientePublicoCache) { generarConConf(_confClientePublicoCache); return; }
+        const urlParams = new URLSearchParams(window.location.search);
+        const tecnicoUser = urlParams.get('u') || currentUser;
+        const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
+        mostrarLoader("Generando PDF...");
+        db.ref(path).once('value', snap => { generarConConf(snap.val() || {}); });
     }
 
     function renderVistaPresupuestoCliente(p, container, tecnicoUser) {
