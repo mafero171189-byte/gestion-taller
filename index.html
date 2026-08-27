@@ -4002,6 +4002,14 @@ function showApp() {
       </div>
      </div>
 
+          <!-- MIGRACIÓN PERFIL PÚBLICO (usar una vez) -->
+     <div class="card-form" style="background: var(--amber-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--amber-300); margin-bottom: 20px;">
+      <label style="color:var(--amber-800); font-weight:900; font-size:15px;">🔒 Migrar Perfiles Públicos</label>
+      <p style="font-size:12px; color:var(--amber-780); margin:6px 0 12px 0;">Copia nombre/logo/WhatsApp de contacto de cada cliente existente al nuevo espejo público, para que la página de seguimiento y presupuesto del cliente dejen de leer el registro completo. Usar una sola vez — es seguro tocarlo de nuevo, no rompe nada si ya se corrió.</p>
+      <button id="btnMigrarPerfilPublico" onclick="migrarPerfilesPublicos()" class="btn" style="background:var(--amber-600); color:white; padding:10px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">🔒 MIGRAR AHORA</button>
+      <div id="migrarPerfilPublicoStatus" style="font-size:12px; color:var(--gray-600); margin-top:8px; display:none;"></div>
+     </div>
+
           <!-- CONFIGURACIÓN DE PRECIOS -->
      <h3 style="margin:0 0 15px 0; font-size:16px; color:var(--gray-900);">💳 Configuración de Precios Públicos</h3>
      <div class="card-form" style="background: var(--green-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--green-250); margin-bottom: 20px;">
@@ -5573,7 +5581,10 @@ function showApp() {
         // que puede ser null cuando el cliente abre el link sin estar logueado.
         const urlParams = new URLSearchParams(window.location.search);
         const tecnicoUser = urlParams.get('u') || currentUser;
-        const pathPerfil = (tecnicoUser === 'Admin') ? 'configuracion/admin' : 'usuarios_registrados/' + tecnicoUser;
+        // OJO: esta pantalla la ve el cliente SIN login. No puede leer
+        // usuarios_registrados/{wa} entero (ahí vive si pagó, su WhatsApp de
+        // login, etc) — usa el espejo público con solo nombre/logo/subtítulo.
+        const pathPerfil = (tecnicoUser === 'Admin') ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
         
         db.ref(pathPerfil).once('value')
         .then(snap => {
@@ -5794,7 +5805,9 @@ function showApp() {
     }
 
     function renderVistaPresupuestoCliente(p, container, tecnicoUser) {
-        const pathPerfil = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + tecnicoUser;
+        // Misma razón que en renderVistaCliente: acá no hay login, solo el
+        // espejo público.
+        const pathPerfil = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
         db.ref(pathPerfil).once('value')
         .then(snap => { generarHTMLPresupuestoCliente(p, container, snap.val() || {}); })
         .catch(() => { generarHTMLPresupuestoCliente(p, container, { nombreTaller: 'Servicio Técnico' }); });
@@ -8541,6 +8554,14 @@ function showApp() {
         let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia, pais: nPais };
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64;
 
+        // Copia pública: la página de seguimiento y el presupuesto que ve el
+        // cliente (sin login) NO pueden leer usuarios_registrados/{wa} entero
+        // — ahí vive si pagó, su WhatsApp de login, etc. Así que mantenemos
+        // un espejo aparte con solo lo que necesitan mostrar: nombre, logo,
+        // subtítulo y el WhatsApp de contacto del ticket.
+        const perfilPublicoUpdates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp };
+        if (updates.logo !== undefined) perfilPublicoUpdates.logo = updates.logo;
+
         mostrarLoader("Guardando Perfil...");
 
         // Bug 14 fix: si hay nueva clave, intentar cambiarla PRIMERO.
@@ -8555,6 +8576,11 @@ function showApp() {
             .then(() => {
                 if (newP) showToast("CLAVE ACTUALIZADA ✅", "#059669");
                 return db.ref(path).update(updates);
+            })
+            .then(() => {
+                // Admin ya es público en configuracion/admin, no necesita espejo.
+                if (isUserAdmin) return null;
+                return db.ref('perfil_publico/' + currentUser).update(perfilPublicoUpdates);
             })
             .then(() => {
                 ocultarLoader();
@@ -14950,6 +14976,51 @@ function showApp() {
         }).catch(() => {
             if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
             showToast('Error al guardar', '#dc2626');
+        });
+    }
+
+    // Copia nombre/logo/subtítulo/wappTicket de cada usuario existente al
+    // nuevo nodo perfil_publico, que es lo único que puede leer alguien sin
+    // login (seguimiento y presupuesto del cliente). Se puede tocar de nuevo
+    // sin problema — vuelve a copiar los mismos datos, no rompe nada.
+    function migrarPerfilesPublicos() {
+        const btn = document.getElementById('btnMigrarPerfilPublico');
+        const status = document.getElementById('migrarPerfilPublicoStatus');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Migrando...'; }
+        if (status) { status.style.display = 'block'; status.innerText = 'Leyendo usuarios...'; }
+
+        db.ref('usuarios_registrados').once('value').then(snap => {
+            const usuarios = snap.val() || {};
+            const updates = {};
+            let count = 0;
+            Object.keys(usuarios).forEach(wa => {
+                const d = usuarios[wa] || {};
+                const campo = {};
+                if (d.nombreTaller !== undefined) campo.nombreTaller = d.nombreTaller;
+                if (d.subtitulo !== undefined)    campo.subtitulo    = d.subtitulo;
+                if (d.logo !== undefined)         campo.logo         = d.logo;
+                if (d.wappTicket !== undefined)   campo.wappTicket   = d.wappTicket;
+                if (Object.keys(campo).length === 0) return; // nada cargado, no hay nada que copiar
+                Object.keys(campo).forEach(k => { updates[wa + '/' + k] = campo[k]; });
+                count++;
+            });
+
+            if (count === 0) {
+                if (status) status.innerText = 'No hay nada para migrar.';
+                if (btn) { btn.disabled = false; btn.textContent = '🔒 MIGRAR AHORA'; }
+                return;
+            }
+
+            return db.ref('perfil_publico').update(updates).then(() => {
+                if (status) status.innerText = `✅ Listo — ${count} perfiles copiados.`;
+                if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Migrado!'; }
+                showToast(`✅ ${count} perfiles públicos migrados`, '#059669');
+                setTimeout(() => { if (btn) btn.textContent = '🔒 MIGRAR AHORA'; }, 4000);
+            });
+        }).catch(err => {
+            if (btn) { btn.disabled = false; btn.textContent = '🔒 MIGRAR AHORA'; }
+            if (status) status.innerText = 'Error: ' + (err.message || err.code || err);
+            showToast('Error al migrar', '#dc2626');
         });
     }
 
