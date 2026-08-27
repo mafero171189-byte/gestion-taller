@@ -5595,6 +5595,20 @@ function showApp() {
         });
     }
     
+    // Botón "Escribinos por WhatsApp" para las vistas públicas (seguimiento y
+    // presupuesto). Usa el número de contacto del taller (wappTicket); si no
+    // está cargado, no muestra nada — no rompe el link, solo no aparece.
+    function _botonContactoTaller(wappTicket) {
+        const raw = String(wappTicket || '').replace(/\D/g, '');
+        if (!raw) return '';
+        let num;
+        if (raw.startsWith('549'))      num = raw;
+        else if (raw.startsWith('54'))  num = raw.replace(/^54/, '549');
+        else if (raw.startsWith('9') && raw.length >= 10) num = '54' + raw;
+        else                            num = '549' + raw;
+        return `<a href="https://api.whatsapp.com/send?phone=${num}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;color:#25D366;font-size:12.5px;font-weight:800;text-decoration:none;">💬 Escribinos por WhatsApp</a>`;
+    }
+
     function generarHTMLCliente(regEncontrado, container, conf) {
         const nombreTaller = conf.nombreTaller || "Servicio Técnico";
         const subtitulo = conf.subtitulo || "Seguimiento de Equipo";
@@ -5722,6 +5736,7 @@ function showApp() {
 
                     <div style="border-top:1px solid var(--slate-100);padding-top:22px;">
                         <p style="color:var(--slate-400);font-size:13px;line-height:1.6;margin:0;">Gracias por confiar en <b style="color:var(--slate-600);">${nombreTaller}</b>.<br>Ante cualquier consulta, comunicate con el taller.</p>
+                        ${_botonContactoTaller(conf.wappTicket)}
                     </div>
                 </div>
 
@@ -5776,6 +5791,7 @@ function showApp() {
 
                 <div style="padding:12px 24px 20px;text-align:center;background:var(--slate-50);border-top:1px solid var(--gray-150);">
                     <p style="margin:0;font-size:12px;color:var(--slate-400);">Ante cualquier consulta, comunicate con el taller</p>
+                    ${_botonContactoTaller(conf.wappTicket)}
                 </div>
 
             </div>`;
@@ -5783,7 +5799,13 @@ function showApp() {
 
     function verPDFCliente() {
         const r = registros[0]; if(!r) return;
-        const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        // El cliente ve esto SIN login — currentUser puede ser null/otra
+        // sesión. Usamos el número del link (?u=), igual que en renderVistaCliente,
+        // y leemos del espejo público (no de usuarios_registrados, que ya no
+        // se puede leer sin ser el dueño de la cuenta).
+        const urlParams = new URLSearchParams(window.location.search);
+        const tecnicoUser = urlParams.get('u') || currentUser;
+        const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
             generarEImprimirPDF(r, snap.val() || {}, null, null, null, { modo: 'cliente' }); // solo copia cliente
@@ -5792,7 +5814,9 @@ function showApp() {
 
     function descargarPDFCliente() {
         const r = registros[0]; if(!r) return;
-        const path = currentUser === 'Admin' ? 'configuracion/admin' : 'usuarios_registrados/' + currentUser;
+        const urlParams = new URLSearchParams(window.location.search);
+        const tecnicoUser = urlParams.get('u') || currentUser;
+        const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
             generarEImprimirPDF(r, snap.val() || {}, (blob, nro) => {
@@ -8559,7 +8583,7 @@ function showApp() {
         // — ahí vive si pagó, su WhatsApp de login, etc. Así que mantenemos
         // un espejo aparte con solo lo que necesitan mostrar: nombre, logo,
         // subtítulo y el WhatsApp de contacto del ticket.
-        const perfilPublicoUpdates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp };
+        const perfilPublicoUpdates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia };
         if (updates.logo !== undefined) perfilPublicoUpdates.logo = updates.logo;
 
         mostrarLoader("Guardando Perfil...");
@@ -15000,6 +15024,7 @@ function showApp() {
                 if (d.subtitulo !== undefined)    campo.subtitulo    = d.subtitulo;
                 if (d.logo !== undefined)         campo.logo         = d.logo;
                 if (d.wappTicket !== undefined)   campo.wappTicket   = d.wappTicket;
+                if (d.garantia !== undefined)     campo.garantia     = d.garantia;
                 if (Object.keys(campo).length === 0) return; // nada cargado, no hay nada que copiar
                 Object.keys(campo).forEach(k => { updates[wa + '/' + k] = campo[k]; });
                 count++;
