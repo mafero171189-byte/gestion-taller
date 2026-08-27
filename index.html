@@ -7079,7 +7079,13 @@ function showApp() {
 
         mostrarLoader('Creando cuenta y abriendo el taller...');
 
-        const expiracion = Date.now() + (window.DIAS_PRUEBA || 30) * 24 * 60 * 60 * 1000;
+        // Respaldo alineado con el resto de la app (15, no 30): la regla de
+        // Firebase ahora limita esto server-side según configuracion/sistema/
+        // diasPrueba (con el mismo respaldo de 15 si no está cargado). Si acá
+        // usáramos un número más alto "por las dudas", un registro legítimo
+        // que caiga justo antes de que cargue la config podría chocar contra
+        // el tope del servidor y fallar.
+        const expiracion = Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000;
         appIniciada = false;
 
         // FIX: guardar wa ANTES de crear la cuenta en Firebase
