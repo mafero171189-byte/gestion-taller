@@ -5371,6 +5371,8 @@ function showApp() {
 
     function mostrarExpulsion(msg) {
         if (dbRef) dbRef.off();
+        if (window._syncListenersStock) { try { window._syncListenersStock.forEach(fn => fn()); } catch(e) {} }
+        if (window._syncListenersPres)  { try { window._syncListenersPres.forEach(fn => fn());  } catch(e) {} }
         ocultarLoader();
         document.getElementById('passModal').style.display = 'none';
         document.getElementById('statusModal').style.display = 'none';
@@ -8447,13 +8449,55 @@ function showApp() {
         // CORRECCIÓN: Desconectamos el Stock del "tiempo real" global
         window.cargarStockData = () => {
             const pathStock = isAdmin ? 'stock' : 'stock_usuarios/' + u;
-            db.ref(pathStock).once('value', snap => {
+            const refStock = db.ref(pathStock);
+            refStock.once('value', snap => {
                 const v = snap.val();
                 stockData = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
                 cargarStockMinimoGlobal();
                 if(document.getElementById('page-stock').style.display === 'block') renderStock();
                 // Re-evaluar onboarding ahora que el stock está cargado
                 if (typeof iniciarOnboarding === 'function') iniciarOnboarding();
+
+                // ── SINCRONIZACIÓN EN TIEMPO REAL DE STOCK ───────────────
+                // Mismo patrón que las órdenes: escuchamos solo los cambios
+                // reales del nodo, no volvemos a bajar todo el árbol.
+                // _syncListoStock ignora la ráfaga de child_added que dispara
+                // Firebase al conectar por cada ítem que ya existía.
+                if (window._syncListenersStock) {
+                    try { window._syncListenersStock.forEach(fn => fn()); } catch(e) {}
+                }
+                window._syncListenersStock = [];
+                let _syncListoStock = false;
+                setTimeout(() => { _syncListoStock = true; }, 2000);
+
+                const onCambioStock = childSnap => {
+                    if (!_syncListoStock) return;
+                    const id = childSnap.key;
+                    const data = childSnap.val();
+                    if (!data) return;
+                    const idx = stockData.findIndex(a => a.id === id);
+                    if (idx !== -1) stockData[idx] = { id, ...data };
+                    else stockData.push({ id, ...data });
+                    if (document.getElementById('page-stock').style.display === 'block') renderStock();
+                    showToast('🔄 Stock actualizado', '#0ea5e9');
+                };
+
+                const onRemovidoStock = childSnap => {
+                    if (!_syncListoStock) return;
+                    stockData = stockData.filter(a => a.id !== childSnap.key);
+                    if (document.getElementById('page-stock').style.display === 'block') renderStock();
+                };
+
+                refStock.on('child_added',   onCambioStock);
+                refStock.on('child_changed', onCambioStock);
+                refStock.on('child_removed', onRemovidoStock);
+
+                window._syncListenersStock = [
+                    () => refStock.off('child_added',   onCambioStock),
+                    () => refStock.off('child_changed', onCambioStock),
+                    () => refStock.off('child_removed', onRemovidoStock)
+                ];
+                // ─────────────────────────────────────────────────────────
             });
         };
         window.cargarStockData(); // Carga inicial
@@ -16252,6 +16296,48 @@ function cargarPresupuestos() {
             document.getElementById('form-presupuesto-container').style.display = 'none';
         }
         renderListaPresupuestos();
+
+        // ── SINCRONIZACIÓN EN TIEMPO REAL DE PRESUPUESTOS ────────────────
+        // Mismo patrón que órdenes y stock. Queda escuchando aunque el
+        // usuario se vaya de esta pestaña — por eso el chequeo de arriba
+        // (presupuestoDescargado) no vuelve a pisar el listener cada vez
+        // que se re-entra a la pantalla, sigue siendo el mismo.
+        const refPres = db.ref(presPathActivo());
+        if (window._syncListenersPres) {
+            try { window._syncListenersPres.forEach(fn => fn()); } catch(e) {}
+        }
+        window._syncListenersPres = [];
+        let _syncListoPres = false;
+        setTimeout(() => { _syncListoPres = true; }, 2000);
+
+        const onCambioPres = childSnap => {
+            if (!_syncListoPres) return;
+            const id = childSnap.key;
+            const data = childSnap.val();
+            if (!data) return;
+            const idx = presupuestosCache.findIndex(p => p.id === id);
+            if (idx !== -1) presupuestosCache[idx] = { id, ...data };
+            else presupuestosCache.unshift({ id, ...data }); // más nuevo primero, igual que el .reverse() inicial
+            renderListaPresupuestos();
+            showToast('🔄 Presupuestos actualizados', '#0ea5e9');
+        };
+
+        const onRemovidoPres = childSnap => {
+            if (!_syncListoPres) return;
+            presupuestosCache = presupuestosCache.filter(p => p.id !== childSnap.key);
+            renderListaPresupuestos();
+        };
+
+        refPres.on('child_added',   onCambioPres);
+        refPres.on('child_changed', onCambioPres);
+        refPres.on('child_removed', onRemovidoPres);
+
+        window._syncListenersPres = [
+            () => refPres.off('child_added',   onCambioPres),
+            () => refPres.off('child_changed', onCambioPres),
+            () => refPres.off('child_removed', onRemovidoPres)
+        ];
+        // ─────────────────────────────────────────────────────────────────
     });
 }
 
