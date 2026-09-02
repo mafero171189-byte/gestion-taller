@@ -205,7 +205,7 @@
 
     <div class="actions">
       <a class="btn-primary" href="/">Volver al inicio</a>
-      <a class="btn-ghost" href="https://wa.me/5491135654094?text=Hola%2C%20entr%C3%A9%20a%20un%20link%20de%20Mi%20Taller%20Web%20que%20no%20funciona" target="_blank" rel="noopener">💬 Hablar con soporte</a>
+      <a id="waSoporteLink" class="btn-ghost" href="https://wa.me/5491135654094?text=Hola%2C%20entr%C3%A9%20a%20un%20link%20de%20Mi%20Taller%20Web%20que%20no%20funciona" target="_blank" rel="noopener">💬 Hablar con soporte</a>
     </div>
 
     <p class="hint"><b>¿Veías el seguimiento de una reparación o un presupuesto?</b> Ese link te lo comparte tu taller y puede haber quedado incompleto al copiarlo. Pedíselo de nuevo.</p>
@@ -215,6 +215,20 @@
 
   <script>
     document.getElementById('reqPath').textContent = location.pathname + location.search || '/';
+
+    // Mismo número que en index.html, cargado desde el mismo lugar
+    // (configuracion/sistema/soporteWhatsapp). Sin el SDK de Firebase acá
+    // — es solo una lectura REST liviana, para no cargarle peso a una
+    // página de error. Si falla o tarda, el link de arriba ya tiene el
+    // número actual escrito como respaldo, así que nunca queda roto.
+    fetch('https://github-c3e96-default-rtdb.firebaseio.com/configuracion/sistema/soporteWhatsapp.json')
+      .then(r => r.json())
+      .then(num => {
+        if (!num) return;
+        const link = document.getElementById('waSoporteLink');
+        if (link) link.href = link.href.replace(/wa\.me\/\d+/, 'wa.me/' + num);
+      })
+      .catch(() => {}); // si falla, se queda con el número de respaldo
   </script>
 
 </body>
