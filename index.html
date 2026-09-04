@@ -5361,11 +5361,29 @@ function showApp() {
         requestAnimationFrame(() => requestAnimationFrame(cb));
     }
 
+    // Red de seguridad general del loader: a veces la conexión (sobre todo
+    // en 4G) se cuelga a mitad de un login o una carga, y Firebase no llega
+    // a disparar ni éxito ni error — el loader se queda pegado hasta que el
+    // usuario recarga la página a mano. Si sigue visible pasados 15s,
+    // forzamos una reconexión real (mismo fix de "socket zombie" que ya
+    // usa el re-sync al volver a la pestaña) y lo liberamos, avisando.
+    let _loaderWatchdog = null;
     function mostrarLoader(msg = "Cargando...") {
         document.getElementById('loader-text').innerText = msg;
         document.getElementById('global-loader').style.display = 'flex';
+
+        if (_loaderWatchdog) clearTimeout(_loaderWatchdog);
+        _loaderWatchdog = setTimeout(() => {
+            if (document.getElementById('global-loader').style.display === 'none') return;
+            try { firebase.database().goOffline(); firebase.database().goOnline(); } catch(e) {}
+            ocultarLoader();
+            if (typeof showToast === 'function') {
+                showToast('La conexión está tardando más de lo normal. Probá de nuevo.', '#f59e0b');
+            }
+        }, 15000);
     }
     function ocultarLoader() {
+        if (_loaderWatchdog) { clearTimeout(_loaderWatchdog); _loaderWatchdog = null; }
         document.getElementById('global-loader').style.display = 'none';
     }
 
