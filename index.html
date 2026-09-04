@@ -3988,11 +3988,11 @@ function showApp() {
       <table style="width: 100%; min-width:600px;">
        <thead>
         <tr>
-         <th>Artículo</th>
+         <th style="cursor:pointer; white-space:nowrap;" onclick="ordenarStock('nombre')">Artículo <span id="stockOrdenIcono-nombre" style="font-size:11px;">⬆️</span></th>
          <th>Cód. Barras</th>
-         <th>Stock Actual</th>
-         <th>Costo</th>
-         <th>Precio Venta</th>
+         <th style="cursor:pointer; white-space:nowrap;" onclick="ordenarStock('cantidad')">Stock Actual <span id="stockOrdenIcono-cantidad" style="font-size:11px;">↕️</span></th>
+         <th style="cursor:pointer; white-space:nowrap;" onclick="ordenarStock('costo')">Costo <span id="stockOrdenIcono-costo" style="font-size:11px;">↕️</span></th>
+         <th style="cursor:pointer; white-space:nowrap;" onclick="ordenarStock('precioVenta')">Precio Venta <span id="stockOrdenIcono-precioVenta" style="font-size:11px;">↕️</span></th>
          <th>Acciones</th>
         </tr>
        </thead>
@@ -4102,9 +4102,9 @@ function showApp() {
       <table style="min-width: 100%;">
        <thead>
         <tr>
-         <th style="padding:10px 8px; font-size:11px;">Usuario / WhatsApp</th>
-         <th style="padding:10px 8px; font-size:11px;">Licencia</th>
-         <th style="padding:10px 8px; font-size:11px;">Vence / Alta</th>
+         <th style="padding:10px 8px; font-size:11px; cursor:pointer; white-space:nowrap;" onclick="ordenarLicencias('alta')">Usuario / WhatsApp <span id="licOrdenIcono-alta" style="font-size:10px;">↕️</span></th>
+         <th style="padding:10px 8px; font-size:11px; cursor:pointer; white-space:nowrap;" onclick="ordenarLicencias('licencia')">Licencia <span id="licOrdenIcono-licencia" style="font-size:10px;">↕️</span></th>
+         <th style="padding:10px 8px; font-size:11px; cursor:pointer; white-space:nowrap;" onclick="ordenarLicencias('vence')">Vence / Alta <span id="licOrdenIcono-vence" style="font-size:10px;">↕️</span></th>
          <th style="padding:10px 8px; font-size:11px;">Acc.</th>
         </tr>
        </thead>
@@ -4947,6 +4947,10 @@ function showApp() {
     Object.defineProperty(window, 'registros',          { get: () => registros,          set: v => { registros = v; } });
     Object.defineProperty(window, 'registrosArchivados', { get: () => registrosArchivados, set: v => { registrosArchivados = v; } });
     let stockData = []; 
+    // Orden de la tabla de Stock: 'nombre' (A-Z, como está hoy) o 'cantidad'
+    // (mayor a menor por defecto al elegirlo, con clic de nuevo invierte).
+    let sortColStock = 'nombre';
+    let sortAscStock = true;
     let historialDescargado = false; 
 
     // ── CONTABILIDAD: cache propio del archivo COMPLETO ─────────────────────
@@ -13000,13 +13004,40 @@ function showApp() {
         });
     }
 
+    // Clic en un encabezado de la tabla de Stock. Si ya está ordenando por esa
+    // columna, invierte la dirección; si cambia de columna, arranca con el
+    // sentido que tiene más sentido para cada una (nombre: A-Z, cantidad:
+    // mayor a menor).
+    function ordenarStock(col) {
+        if (sortColStock === col) {
+            sortAscStock = !sortAscStock;
+        } else {
+            sortColStock = col;
+            sortAscStock = (col === 'nombre'); // nombre arranca A-Z, el resto arranca mayor→menor
+        }
+        renderStock();
+    }
+
     function renderStock() {
         const bus = normalizarBusqueda(document.getElementById('search-stock').value);
         const body = document.getElementById('bodyStock');
         body.innerHTML = "";
 
         const filtrados = stockData.filter(i => normalizarBusqueda(i.nombre).includes(bus));
-        filtrados.sort((a,b) => a.nombre.localeCompare(b.nombre));
+        filtrados.sort((a,b) => {
+            if (sortColStock === 'nombre') {
+                return sortAscStock ? a.nombre.localeCompare(b.nombre) : b.nombre.localeCompare(a.nombre);
+            }
+            const valA = a[sortColStock] || 0;
+            const valB = b[sortColStock] || 0;
+            return sortAscStock ? (valA - valB) : (valB - valA);
+        });
+
+        const cols = ['nombre', 'cantidad', 'costo', 'precioVenta'];
+        cols.forEach(c => {
+            const icon = document.getElementById('stockOrdenIcono-' + c);
+            if (icon) icon.textContent = sortColStock === c ? (sortAscStock ? '⬆️' : '⬇️') : '↕️';
+        });
 
         // Calcular stock bajo para la campana (usa mínimo global como fallback)
         const minimoGlobal = window._stockMinimoGlobal || 2;
@@ -14149,6 +14180,35 @@ function showApp() {
 
     // ====== PANEL DE ADMIN: USUARIOS, LICENCIAS Y BACKUP ======
     let listadoUsuarios = [];
+    // Orden de la tabla de Licencias. 'alta' interpreta el texto de
+    // fechaAlta al vuelo (sin guardar nada nuevo en Firebase) para ordenar
+    // por fecha de creación; 'licencia' agrupa por estado (vencidas primero,
+    // después prueba, permanente mensual, permanente anual, suspendidas al
+    // final); 'vence' ordena por fecha de vencimiento.
+    // null = orden original (como llega de Firebase), sin tocar nada.
+    let sortColLic = null;
+    let sortAscLic = true;
+
+    function _rankLicencia(u) {
+        const tipoLic = u.tipoLicencia || 'prueba';
+        const expiracion = u.fechaExpiracion || null;
+        const diasRestantes = expiracion ? Math.ceil((expiracion - Date.now()) / (1000*60*60*24)) : null;
+        const estaExpirada = diasRestantes !== null && diasRestantes <= 0;
+        if (u.estado === 'suspendido') return 4;
+        if (estaExpirada) return 0;
+        if (tipoLic === 'permanente') return u.planTipo === 'anual' ? 3 : 2;
+        return 1; // prueba activa
+    }
+
+    function ordenarLicencias(col) {
+        if (sortColLic === col) {
+            sortAscLic = !sortAscLic;
+        } else {
+            sortColLic = col;
+            sortAscLic = true;
+        }
+        listarUsuarios();
+    }
 
     function tiempoRelativo(ts) {
         if (!ts) return null;
@@ -14300,7 +14360,40 @@ function showApp() {
         body.innerHTML = "";
         const AHORA = Date.now();
 
-        listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus)).forEach(u => {
+        let lista = listadoUsuarios.filter(u => (u.whatsapp || u.id).includes(bus));
+        if (sortColLic === 'licencia') {
+            lista = lista.slice().sort((a, b) => {
+                const diff = _rankLicencia(a) - _rankLicencia(b);
+                return sortAscLic ? diff : -diff;
+            });
+        } else if (sortColLic === 'vence') {
+            lista = lista.slice().sort((a, b) => {
+                const va = a.fechaExpiracion || 0;
+                const vb = b.fechaExpiracion || 0;
+                return sortAscLic ? (va - vb) : (vb - va);
+            });
+        } else if (sortColLic === 'alta') {
+            lista = lista.slice().sort((a, b) => {
+                const va = _parsearFechaAlta(a.fechaAlta);
+                const vb = _parsearFechaAlta(b.fechaAlta);
+                // Los que no se pueden leer van siempre al final, no importa
+                // la dirección — no sabemos su fecha real, así que no deben
+                // aparentar ser los más viejos ni los más nuevos.
+                if (va == null && vb == null) return 0;
+                if (va == null) return 1;
+                if (vb == null) return -1;
+                return sortAscLic ? (va - vb) : (vb - va);
+            });
+        }
+
+        const iconAlta = document.getElementById('licOrdenIcono-alta');
+        const iconLic = document.getElementById('licOrdenIcono-licencia');
+        const iconVence = document.getElementById('licOrdenIcono-vence');
+        if (iconAlta) iconAlta.textContent = sortColLic === 'alta' ? (sortAscLic ? '⬆️' : '⬇️') : '↕️';
+        if (iconLic) iconLic.textContent = sortColLic === 'licencia' ? (sortAscLic ? '⬆️' : '⬇️') : '↕️';
+        if (iconVence) iconVence.textContent = sortColLic === 'vence' ? (sortAscLic ? '⬆️' : '⬇️') : '↕️';
+
+        lista.forEach(u => {
                 const tipoLic = u.tipoLicencia || 'prueba';
                 const expiracion = u.fechaExpiracion || null;
                 const diasRestantes = expiracion ? Math.ceil((expiracion - AHORA) / (1000*60*60*24)) : null;
@@ -15262,6 +15355,29 @@ function showApp() {
             if (status) status.innerText = 'Error: ' + (err.message || err.code || err);
             showToast('Error al migrar', '#dc2626');
         });
+    }
+
+    // Interpreta el texto guardado en fechaAlta ("4/9/2026, 0:36:15") y lo
+    // convierte a milisegundos. Todos los locales de _PAISES formatean en
+    // día/mes/año, así que el orden de las partes es siempre el mismo — pero
+    // es texto escrito por el navegador de cada cliente en su momento, así
+    // que si algún registro viejo no calza con el formato esperado, se
+    // descarta en vez de arriesgar una fecha inventada.
+    function _parsearFechaAlta(str) {
+        if (!str || typeof str !== 'string') return null;
+        try {
+            const [fechaParte, horaParte] = str.split(',').map(s => s.trim());
+            if (!fechaParte) return null;
+            const [d, m, y] = fechaParte.split('/').map(n => parseInt(n, 10));
+            if (!d || !m || !y) return null;
+            let h = 0, min = 0, seg = 0;
+            if (horaParte) {
+                const partesHora = horaParte.split(':').map(n => parseInt(n, 10));
+                h = partesHora[0] || 0; min = partesHora[1] || 0; seg = partesHora[2] || 0;
+            }
+            const fecha = new Date(y, m - 1, d, h, min, seg);
+            return isNaN(fecha.getTime()) ? null : fecha.getTime();
+        } catch(e) { return null; }
     }
 
     function guardarMensajeGlobal() {
