@@ -4640,6 +4640,12 @@ function showApp() {
     // Es UNA sola clave para toda la app, no algo que cargue cada taller.
     const VAPID_PUBLIC_KEY = "BFOt49KZjggB_NTTn27zKhTAbOOTwPVMyadhYXI53PRnRkJeOK-pO746NlC6sEMSRjhoe6vSR0IM2hIUL5LqabE";
 
+    // Worker de Cloudflare que arma la preferencia de pago en Mercado Pago
+    // y recibe el webhook que activa la licencia en Firebase. Ver
+    // mp-webhook-worker.js — si algún día cambia el nombre/subdominio del
+    // Worker, es acá donde hay que actualizarlo.
+    const WORKER_MP_URL = 'https://billowing-star-385d.mafero171189.workers.dev';
+
     // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
@@ -7393,26 +7399,31 @@ function showApp() {
 
         document.getElementById('mpBtnIrAPagar').onclick = function() {
             const esAnual = _planPagoSeleccionado === 'anual';
-            const keyPrecio = esAnual ? 'mp_precio_anual' : 'mp_precio';
-            const keyLink = esAnual ? 'mp_link_anual' : 'mp_link_mensual';
-            Promise.all([
-                db.ref('configuracion/' + keyPrecio).once('value'),
-                db.ref('configuracion/' + keyLink).once('value')
-            ]).then(([snapPrecio, snapLink]) => {
-                const precio = snapPrecio.val() || '';
-                const link = snapLink.val();
-                if (!link) {
-                    showToast('⚠️ Falta cargar el link de Mercado Pago ' + (esAnual ? 'anual' : 'mensual') + ' en Configuración', '#dc2626');
-                    return;
-                }
-                const precioTexto = precio ? ` (AR$ ${precio})` : '';
-                const plan = esAnual ? 'anual' : 'mensual';
-                const mensaje = `Hola! Ya pagué la licencia ${plan} de Mi Taller Web por Mercado Pago${precioTexto}. \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
-                const urlWhatsapp = `https://wa.me/${window.WA_SOPORTE || '5491135654094'}?text=${encodeURIComponent(mensaje)}`;
-                cerrarModalPagoMP();
-                window.open(link, '_blank');
-                setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
-            });
+            const plan = esAnual ? 'anual' : 'mensual';
+            const btn = this;
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Generando el pago...';
+
+            fetch(WORKER_MP_URL + '/crear-pago', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ wa: currentUser, planType: plan })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok || !data.init_point) {
+                        throw new Error(data.error || 'No se pudo generar el link de pago');
+                    }
+                    cerrarModalPagoMP();
+                    // Mismo dispositivo, misma pestaña — vuelve solo con ?pago=ok
+                    window.location.href = data.init_point;
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
+                });
         };
     }
 
@@ -8112,6 +8123,27 @@ function showApp() {
                 document.querySelector('#app-content .container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
+
+        // ── VUELTA DE MERCADO PAGO ────────────────────────────────────────
+        // El checkout redirige acá con ?pago=ok/error/pendiente. El webhook
+        // de MP es lo que realmente activa la licencia en Firebase (puede
+        // tardar unos segundos más que el redirect), así que acá solo
+        // avisamos — no marcamos nada como activado nosotros.
+        (function _chequearVueltaMP() {
+            const p = new URLSearchParams(window.location.search).get('pago');
+            if (!p) return;
+            // Limpiar el parámetro de la URL para que un refresh no repita el aviso
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+
+            if (p === 'ok') {
+                showToast('✅ ¡Pago recibido! Activando tu licencia — puede tardar unos segundos...', '#059669');
+            } else if (p === 'pendiente') {
+                showToast('⏳ Tu pago está pendiente de aprobación en Mercado Pago.', '#f59e0b');
+            } else if (p === 'error') {
+                showToast('❌ El pago no se completó. Podés intentar de nuevo desde tu perfil.', '#dc2626');
+            }
+        })();
 
         // Lógica de Sistema (Bloqueo y Anuncios) - EN VIVO
         db.ref('configuracion/sistema').on('value', snap => {
