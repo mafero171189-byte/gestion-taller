@@ -7399,60 +7399,46 @@ function showApp() {
             const esAnual = _planPagoSeleccionado === 'anual';
             const plan = esAnual ? 'anual' : 'mensual';
             const btn = this;
-        const textoOriginal = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span>⏳</span> Generando el pago...';
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Generando el pago...';
 
-        // En celular abrimos en el navegador del sistema (no en el
-        // "cascarón" de la PWA instalada), porque ahí es donde Mercado
-        // Pago puede ofrecer "abrir en la app" vía Universal/App Links.
-        const esCelular = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-        const ventanaPago = esCelular ? window.open('', '_blank') : null;
+            // Navegamos SIEMPRE en la misma ventana (sin abrir pestaña nueva).
+            // Estando en la PWA instalada, navegar a un dominio externo como
+            // Mercado Pago no te saca de la app: Chrome muestra una barrita
+            // de navegación arriba mientras estás afuera, y cuando MP
+            // redirige de vuelta a mitallerweb.pages.dev esa barrita
+            // desaparece sola — sin pasos extra para volver a la app.
 
-        // Timeout de 45 segundos: si el usuario cierra la ventana, después
-        // de este tiempo el botón vuelve al estado normal automáticamente.
-        let timeoutId = null;
-        if (ventanaPago) {
-            timeoutId = setTimeout(() => {
+            // Timeout de 45 segundos: si el usuario vuelve atrás sin pagar
+            // (o se queda trabado el fetch), el botón vuelve a la normalidad.
+            const timeoutId = setTimeout(() => {
                 btn.disabled = false;
                 btn.innerHTML = textoOriginal;
-                showToast('⚠️ Se cerró la ventana de pago. Podés intentar de nuevo.', '#f59e0b');
-                try { ventanaPago.close(); } catch(e) {}
             }, 45000);
-        }
 
-        fetch(WORKER_MP_URL + '/crear-pago', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wa: currentUser, planType: plan })
-        })
-            .then(r => r.json())
-            .then(data => {
-                // Si llegamos acá, limpiar el timeout
-                if (timeoutId) clearTimeout(timeoutId);
-
-                if (!data.ok || !data.init_point) {
-                    throw new Error(data.error || 'No se pudo generar el link de pago');
-                }
-                cerrarModalPagoMP();
-                if (ventanaPago) {
-                    // Celular: ya está abierta en el navegador del sistema,
-                    // solo hace falta navegarla al link de pago.
-                    ventanaPago.location.href = data.init_point;
-                } else {
-                    // PC: misma pestaña — vuelve solo con ?pago=ok
-                    window.location.href = data.init_point;
-                }
+            fetch(WORKER_MP_URL + '/crear-pago', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ wa: currentUser, planType: plan })
             })
-            .catch(err => {
-                // Restaurar el botón en caso de error
-                if (timeoutId) clearTimeout(timeoutId);
-                try { if (ventanaPago) ventanaPago.close(); } catch(e) {}
-                btn.disabled = false;
-                btn.innerHTML = textoOriginal;
-                showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
-            });
-    };
+                .then(r => r.json())
+                .then(data => {
+                    clearTimeout(timeoutId);
+                    if (!data.ok || !data.init_point) {
+                        throw new Error(data.error || 'No se pudo generar el link de pago');
+                    }
+                    cerrarModalPagoMP();
+                    // Misma pestaña — vuelve sola con ?pago=ok
+                    window.location.href = data.init_point;
+                })
+                .catch(err => {
+                    clearTimeout(timeoutId);
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
+                });
+        };
     });
 
     function cerrarModalPagoMP() {
@@ -7486,23 +7472,11 @@ function showApp() {
         btn.disabled = true;
         btn.innerHTML = '<span>⏳</span> Generando el pago...';
 
-        // Mismo criterio que con Mercado Pago: en celular, al navegador del
-        // sistema (no adentro de la PWA instalada), para que PayPal pueda
-        // ofrecer abrir su propia app si está instalada.
-        const esCelular = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-        const ventanaPago = esCelular ? window.open('', '_blank') : null;
-
-        // Timeout de 45 segundos: si el usuario cierra la ventana, después
-        // de este tiempo el botón vuelve al estado normal automáticamente.
-        let timeoutId = null;
-        if (ventanaPago) {
-            timeoutId = setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = textoOriginal;
-                showToast('⚠️ Se cerró la ventana de pago. Podés intentar de nuevo.', '#f59e0b');
-                try { ventanaPago.close(); } catch(e) {}
-            }, 45000);
-        }
+        // Misma pestaña — ver comentario en el botón de Mercado Pago.
+        const timeoutId = setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }, 45000);
 
         fetch(WORKER_MP_URL + '/crear-pago-paypal', {
             method: 'POST',
@@ -7511,23 +7485,15 @@ function showApp() {
         })
             .then(r => r.json())
             .then(data => {
-                // Si llegamos acá, limpiar el timeout
-                if (timeoutId) clearTimeout(timeoutId);
-
+                clearTimeout(timeoutId);
                 if (!data.ok || !data.init_point) {
                     throw new Error(data.error || 'No se pudo generar el link de pago');
                 }
                 cerrarModalPagoMP();
-                if (ventanaPago) {
-                    ventanaPago.location.href = data.init_point;
-                } else {
-                    window.location.href = data.init_point;
-                }
+                window.location.href = data.init_point;
             })
             .catch(err => {
-                // Restaurar el botón en caso de error
-                if (timeoutId) clearTimeout(timeoutId);
-                try { if (ventanaPago) ventanaPago.close(); } catch(e) {}
+                clearTimeout(timeoutId);
                 btn.disabled = false;
                 btn.innerHTML = textoOriginal;
                 showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
@@ -8213,19 +8179,6 @@ function showApp() {
 
             if (p === 'ok') {
                 showToast('✅ ¡Pago recibido! Activando tu licencia — puede tardar unos segundos...', '#059669');
-                // Si estamos en una pestaña nueva (abierta desde celular), cerrar
-                // automáticamente después de 2 segundos para que vuelva a la PWA.
-                // window.close() solo funciona si la pestaña fue abierta por window.open(),
-                // lo cual es nuestro caso en celular. Si falla (por permisos o por estar
-                // en PC), simplemente el usuario ve el toast y vuelve a mano.
-                setTimeout(() => {
-                    try {
-                        window.close();
-                    } catch(e) {
-                        // Si no se puede cerrar, al menos la licencia ya está activada
-                        // en Firebase — cuando vuelva a la PWA lo verá.
-                    }
-                }, 2000);
             } else if (p === 'pendiente') {
                 showToast('⏳ Tu pago está pendiente de aprobación en Mercado Pago.', '#f59e0b');
             } else if (p === 'error') {
@@ -8262,12 +8215,6 @@ function showApp() {
                 .then(data => {
                     if (data.ok) {
                         showToast('✅ ¡Pago confirmado! Tu licencia ya está activa.', '#059669');
-                        // Mismo comportamiento que MP: cerrar la pestaña nueva después de 2 segundos
-                        setTimeout(() => {
-                            try {
-                                window.close();
-                            } catch(e) {}
-                        }, 2000);
                     } else {
                         showToast('⚠️ El pago no se pudo confirmar (' + (data.status || data.error || 'desconocido') + '). Escribinos por soporte si ya pagaste.', '#dc2626');
                     }
@@ -16317,7 +16264,17 @@ function showApp() {
     const manifestJSON = {
         "name": "Mi Taller Web",
         "short_name": "Mi Taller Web",
-        "start_url": location.href,
+        // Antes era location.href, que cambia según la URL exacta en la que
+        // estuvieras (con o sin ?pago=ok, etc). Eso le impedía a Android
+        // reconocer de forma estable qué URLs "pertenecen" a esta PWA
+        // instalada — sin scope ni start_url fijos, nunca podía ofrecer
+        // "abrir en la app" al volver de Mercado Pago/PayPal, quedaba
+        // siempre en el navegador. Con start_url y scope fijos (la raíz del
+        // sitio), Chrome puede reconocer que /?pago=ok pertenece a la app
+        // y abrirla directamente en vez de dejarte en el navegador.
+        "start_url": location.origin + '/',
+        "scope": location.origin + '/',
+        "id": "/",
         "display": "standalone",
         "background_color": "#06122a",
         "theme_color": "#06122a",
