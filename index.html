@@ -3196,7 +3196,7 @@ function showApp() {
       <label>Términos y Condiciones (Para el PDF)</label> <textarea id="confGarantia" rows="3" placeholder="Ej: Pasados los 90 días no nos hacemos cargo. La garantía es de 30 días." style="margin-bottom:10px; resize:none;"></textarea>
       <label>📧 Email de Recuperación</label>
       <input type="email" id="confEmailRecuperacion" placeholder="Tu email real, para recuperar la clave" autocomplete="email" style="margin-bottom:2px;">
-      <p style="font-size:11px; color:var(--gray-500); margin:0 0 10px 0;">Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.</p>
+      <p id="notaEmailRecuperacion" style="font-size:11px; color:var(--gray-500); margin:0 0 10px 0;">Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.</p>
       <label>Nueva Clave</label> <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
      </div>
      <div style="display:flex; gap:10px; margin-top:20px;">
@@ -3344,6 +3344,11 @@ function showApp() {
        <button id="btn-dias-30" onclick="sumarDiasLic(30, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--gray-200); background:var(--gray-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--gray-600); transition:0.2s;">+30 días</button>
        <button id="btn-dias-365" onclick="sumarDiasLic(365, this)" style="flex:1; padding:7px; border-radius:7px; border:1px solid var(--green-200); background:var(--green-50); font-size:12px; font-weight:700; cursor:pointer; color:var(--green-700); transition:0.2s;">+1 año</button>
       </div>
+     </div>
+     <div style="margin-bottom:16px;">
+      <label style="font-size:11px; font-weight:800; color:var(--gray-600); text-transform:uppercase; display:block; margin-bottom:6px;">Email de Recuperación</label>
+      <input type="email" id="licEmailRecuperacion" placeholder="Email real del cliente" style="width:100%; padding:10px; border:2px solid var(--gray-200); border-radius:8px; font-size:14px; box-sizing:border-box;">
+      <p style="font-size:11px; color:var(--gray-500); margin:4px 0 0 0;">El cliente no puede cambiarlo por su cuenta — solo vos desde acá.</p>
      </div>
      <div style="display:flex; gap:10px; margin-top:8px;">
       <button onclick="cerrarLicenciaModal()" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--gray-100); color:var(--gray-600); font-weight:bold; cursor:pointer;">CANCELAR</button>
@@ -4014,8 +4019,11 @@ function showApp() {
       <label>Nuevo Usuario (WhatsApp)</label>
       <div style="display:flex; gap:10px; margin-top:5px;">
        <input type="text" id="new-user-wa" placeholder="Ej: 54911..." style="flex:1;">
-       <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:0 20px;">ACTIVAR</button>
       </div>
+      <label style="margin-top:12px; display:block;">Email real del cliente (para que pueda recuperar su clave)</label>
+      <input type="email" id="new-user-email" placeholder="Ej: cliente@gmail.com" style="margin-top:5px;">
+      <p style="font-size:11px; color:var(--gray-500); margin:6px 0 0 0;">Queda fijo una vez creada la licencia — el cliente no lo puede cambiar solo.</p>
+      <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:12px 20px; width:100%; margin-top:14px;">ACTIVAR</button>
      </div>
      
           <!-- CONFIGURACIÓN DÍAS DE PRUEBA -->
@@ -4979,7 +4987,10 @@ function showApp() {
     let historialMesesCargados = {}; // cache por "YYYY-MM"
 
     let limiteTabla = 50;
-    let logoTemporalBase64 = null; 
+    let logoTemporalBase64 = null;
+    // true cuando el cliente ya tiene un email de recuperación cargado —
+    // en ese caso no lo puede cambiar por su cuenta desde Mi Perfil.
+    let _emailRecuperacionBloqueado = false;
     let appIniciada = false;
     let _authNullCount = 0; // cuántas veces onAuthStateChanged disparó con user=null (ver fix del flash app→login→app)
     let clienteRenderizado = false;
@@ -8719,7 +8730,24 @@ function showApp() {
             document.getElementById('confWappTicket').value = d.wappTicket || "";
             document.getElementById('confGarantia').value = d.garantia || "";
             document.getElementById('confPais').value = d.pais || "AR";
-            document.getElementById('confEmailRecuperacion').value = d.authEmail || "";
+            // Una vez que el admin (o el cliente, la primera vez) cargó el
+            // email real, el cliente ya no lo puede cambiar por su cuenta —
+            // si hace falta corregirlo, lo hace el admin desde Licencias.
+            const inputEmail = document.getElementById('confEmailRecuperacion');
+            const notaEmail = document.getElementById('notaEmailRecuperacion');
+            inputEmail.value = d.authEmail || "";
+            _emailRecuperacionBloqueado = !!(d.authEmail && !isUserAdmin);
+            if (_emailRecuperacionBloqueado) {
+                inputEmail.disabled = true;
+                inputEmail.style.background = 'var(--gray-100)';
+                inputEmail.style.color = 'var(--gray-500)';
+                notaEmail.innerText = '✅ Ya está cargado. Si necesitás corregirlo, contactá a soporte.';
+            } else {
+                inputEmail.disabled = false;
+                inputEmail.style.background = '';
+                inputEmail.style.color = '';
+                notaEmail.innerText = 'Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.';
+            }
             if (typeof aplicarLocale === 'function') aplicarLocale(d.pais || 'AR');
             
             logoTemporalBase64 = d.logo || null;
@@ -8816,7 +8844,13 @@ function showApp() {
         const nWapp = document.getElementById('confWappTicket').value.trim();
         const nGarantia = document.getElementById('confGarantia').value.trim();
         const nPais = document.getElementById('confPais').value || 'AR';
-        const nEmail = document.getElementById('confEmailRecuperacion').value.trim();
+        // Si ya estaba bloqueado (el cliente ya tenía un email cargado),
+        // ignoramos cualquier cambio en el campo — por más que esté
+        // "disabled" en el HTML, esto es un respaldo por si alguien lo
+        // edita a mano desde las herramientas de desarrollador.
+        const nEmail = _emailRecuperacionBloqueado
+            ? ''
+            : document.getElementById('confEmailRecuperacion').value.trim();
 
         if (nEmail && !nEmail.includes('@')) {
             showToast('⚠️ El email de recuperación no es válido', '#dc2626');
@@ -14366,6 +14400,11 @@ function showApp() {
     function crearLicencia() {
         const wa = document.getElementById('new-user-wa').value.replace(/\D/g, '');
         if(wa.length < 10) { showToast("Número inválido", "#dc2626"); return; }
+        const emailCliente = document.getElementById('new-user-email').value.trim();
+        if (emailCliente && !emailCliente.includes('@')) {
+            showToast("El email ingresado no es válido", "#dc2626");
+            return;
+        }
 
         document.getElementById('tipoLicenciaNumero').innerText = wa;
         const modalTipo = document.getElementById('modalTipoLicencia');
@@ -14394,11 +14433,15 @@ function showApp() {
                 // bloqueo por vencimiento, que sigue dependiendo únicamente
                 // de tipoLicencia + fechaExpiracion como siempre.
                 if (tipoLicencia === 'permanente') datosUsuario.planTipo = plan || 'mensual';
+                // El email real del cliente se carga ACÁ, al crear la licencia
+                // — no lo puede cambiar el cliente después desde Mi Perfil.
+                if (emailCliente) datosUsuario.authEmail = emailCliente;
                 db.ref(pathUsuario).set(datosUsuario).then(() => {
                     secondaryApp.auth().signOut();
                     let msj = `¡Hola! Tu sistema de gestión Mi Taller Web ya está activado.\n\n🌐 *Enlace:* ${window.location.href}\n👤 *Usuario:* ${wa}\n🔑 *Clave:* ${pwd}\n\nIngresá ahora para cambiar tu clave y cargar tu logo.`;
                     window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msj)}`, '_blank');
                     document.getElementById('new-user-wa').value = "";
+                    document.getElementById('new-user-email').value = "";
                     ocultarLoader();
                 });
             }).catch(err => {
@@ -14633,6 +14676,7 @@ function showApp() {
 
             document.getElementById('licModalWa').innerText = '📱 ' + wa;
             seleccionarTipoLic(_licTipoActual);
+            document.getElementById('licEmailRecuperacion').value = d.authEmail || '';
 
             if (d.fechaExpiracion) {
                 const fecha = new Date(d.fechaExpiracion);
@@ -14807,6 +14851,16 @@ function showApp() {
         // El plan (mensual/anual) solo tiene sentido para licencias permanentes,
         // no para pruebas.
         if (_licTipoActual === 'permanente') updates.planTipo = _licPlanActual;
+
+        const emailCliente = document.getElementById('licEmailRecuperacion').value.trim();
+        if (emailCliente && !emailCliente.includes('@')) {
+            ocultarLoader();
+            showToast('El email ingresado no es válido', '#f59e0b');
+            return;
+        }
+        // Solo tocamos el campo si tiene contenido — un campo vacío no borra
+        // un email que ya estaba cargado (para eso está el botón dedicado).
+        if (emailCliente) updates.authEmail = emailCliente;
 
         if (_licTipoActual === 'prueba') {
             const fechaStr = document.getElementById('licFechaExp').value;
