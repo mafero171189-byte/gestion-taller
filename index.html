@@ -2330,9 +2330,9 @@ function showApp() {
       <div class="feature-card reveal reveal-d2">
        <div class="feature-icon">🖼️</div>
        <div class="feature-title">Fotos por Orden</div>
-       <div class="feature-desc">Adjuntá hasta 5 fotos por reparación directamente desde el celular. Las imágenes se guardan en la nube y no ocupan espacio en el teléfono.</div>
+       <div class="feature-desc">Adjuntá fotos por reparación directamente desde el celular — hasta 5 con el plan mensual, hasta 15 con el anual. Las imágenes se guardan en la nube y no ocupan espacio en el teléfono.</div>
        <div class="feature-tags">
-        <span class="tag">Hasta 5 fotos</span><span class="tag">Compresión auto</span><span class="tag">Nube separada</span>
+        <span class="tag">5 fotos (mensual) · 15 (anual)</span><span class="tag">Compresión auto</span><span class="tag">Nube separada</span>
        </div>
       </div>
       <div class="feature-card reveal reveal-d3">
@@ -2507,7 +2507,7 @@ function showApp() {
         <li>Órdenes de reparación</li>
         <li>Estados y seguimiento</li>
         <li>WhatsApp integrado</li>
-        <li>Fotos por orden</li>
+        <li>Hasta 5 fotos por orden</li>
         <li>Stock con escáner de barras</li>
         <li>Presupuestos con PDF</li>
         <li>Venta Rápida de mostrador</li>
@@ -2557,6 +2557,7 @@ function showApp() {
         <li>Sin renovaciones mes a mes</li>
         <li>Soporte prioritario</li>
         <li>Actualizaciones incluidas</li>
+        <li><b>Hasta 15 fotos por orden</b></li>
         <li><b>Hasta 3 dispositivos a la vez</b></li>
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Anual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link" style="background:linear-gradient(135deg,#16a34a,#15803d);">Consultar por WhatsApp 📲</a>
@@ -4567,7 +4568,7 @@ function showApp() {
        <summary class="faq-summary">📷 Fotos y Archivos <span>+</span></summary>
        <div class="faq-content">
         <p><b>¿Por qué no puedo subir una foto?</b><br>El sistema comprime las fotos automáticamente. Si la subida falla, verificá la conexión a internet. Intentá con una foto de menor resolución si el problema persiste.</p>
-        <p><b>¿Cuántas fotos puedo subir por orden?</b><br>El límite es de <b>5 fotos por orden</b>. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: 2 / 5).</p>
+        <p><b>¿Cuántas fotos puedo subir por orden?</b><br>Depende del plan: <b>5 fotos por orden</b> con licencia de prueba o mensual, <b>15</b> con licencia anual. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: 2 / 5).</p>
         <p><b>¿Se borran mis fotos con el tiempo?</b><br>Sí. Las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan automáticamente. Los datos de la orden se conservan siempre.</p>
         <p><b>¿Cómo veo las fotos de una orden?</b><br>Tocá cualquier miniatura de foto en la tabla. Se abre el visor a pantalla completa con zoom por pellizco en el celular.</p>
        </div>
@@ -4919,6 +4920,11 @@ function showApp() {
         }
     });
     let isUserAdmin = false;
+    // Plan del usuario logueado, cacheado desde el listener de licencia en
+    // grantAccess() — lo usa _maxFotosPorOrden() (necesita leerlo de forma
+    // síncrona, sin ir a buscarlo a Firebase cada vez que se toca un botón).
+    let _miTipoLicencia = null;
+    let _miPlanTipo = null;
     let isClientMode = false;
     let currentUser = null;
     Object.defineProperty(window, 'isUserAdmin',  { get: () => isUserAdmin,  set: v => { isUserAdmin = v; } });
@@ -8381,7 +8387,13 @@ function showApp() {
             db.ref('usuarios_registrados/' + u).on('value', snap => {
                 const dataUser = snap.val();
                 if (!dataUser) return;
-                else if (dataUser.estado === 'suspendido') {
+                // Cacheado para _maxFotosPorOrden() y cualquier otro lugar
+                // que necesite el plan del usuario logueado sin ir a buscarlo
+                // a Firebase cada vez (se llama de forma síncrona).
+                _miTipoLicencia = dataUser.tipoLicencia || null;
+                _miPlanTipo = dataUser.planTipo || null;
+
+                if (dataUser.estado === 'suspendido') {
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
                 else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
@@ -12773,10 +12785,19 @@ function showApp() {
         });
     }
 
+    // Tope de fotos por orden. El admin no tiene límite. Para el resto,
+    // depende del plan: prueba y mensual, 5. Anual, 15 (beneficio del plan).
+    function _maxFotosPorOrden() {
+        if (isUserAdmin) return Infinity;
+        if (_miTipoLicencia === 'permanente' && _miPlanTipo === 'anual') return 15;
+        return 5;
+    }
+
     function agregarFotoTemporal(input) {
         if(input.files && input.files[0]) {
-            if(fotosTemporales.length >= 5) {
-                showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+            const max = _maxFotosPorOrden();
+            if(fotosTemporales.length >= max) {
+                showToast(`⚠️ Límite de ${max} fotos por orden alcanzado`, "#dc2626");
                 input.value = "";
                 return;
             }
@@ -12801,8 +12822,9 @@ function showApp() {
         });
         const contador = document.getElementById('fotoContador');
         if(contador) {
-            contador.innerText = `(${fotosTemporales.length} / 5)`;
-            contador.style.color = fotosTemporales.length >= 5 ? '#dc2626' : '#2d3a8c';
+            const max = _maxFotosPorOrden();
+            contador.innerText = isFinite(max) ? `(${fotosTemporales.length} / ${max})` : `(${fotosTemporales.length})`;
+            contador.style.color = fotosTemporales.length >= max ? '#dc2626' : '#2d3a8c';
         }
     }
     function eliminarFotoTemporal(id) { fotosTemporales = fotosTemporales.filter(f => f.id !== id); renderThumbnails(); }
@@ -12849,32 +12871,61 @@ function showApp() {
     function subirFotoDirecta(input) {
         if(!idParaFotos) return;
         if(input.files && input.files[0]) {
+            const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
+
             document.getElementById('loader-text').innerText = "Subiendo foto...";
             document.getElementById('global-loader').style.display = 'flex';
 
-            comprimirImagen(input.files[0], 800, 0.7, (base64) => {
-                const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
-                refFotos.once('value').then(snap => {
-                    let fotosActuales = (snap.val() || {}).fotos || [];
-                    if(fotosActuales.length >= 5) {
+            // Revisamos el tope ANTES de comprimir/subir, para no gastar una
+            // subida a Cloudinary si ya está lleno.
+            refFotos.once('value').then(snap => {
+                let fotosActuales = (snap.val() || {}).fotos || [];
+                const max = _maxFotosPorOrden();
+                if(fotosActuales.length >= max) {
+                    ocultarLoader();
+                    input.value = "";
+                    showToast(`⚠️ Límite de ${max} fotos por orden alcanzado`, "#dc2626");
+                    return;
+                }
+
+                comprimirImagen(input.files[0], 800, 0.7, async (base64) => {
+                    // Igual que al crear una orden nueva: subimos a Cloudinary
+                    // y en Firebase guardamos solo el link, no la imagen entera
+                    // — así esta vía pesa lo mismo que la otra, sin importar
+                    // el tope de fotos que se use.
+                    const url = await subirACloudinary(base64);
+                    if (!url) {
                         ocultarLoader();
                         input.value = "";
-                        showToast("⚠️ Límite de 5 fotos por orden alcanzado", "#dc2626");
+                        showToast("⚠️ No se pudo subir la foto a la nube. Probá de nuevo.", "#dc2626");
                         return;
                     }
-                    fotosActuales.push(base64);
-                    refFotos.update({fotos: fotosActuales}).then(() => {
-                        renderGaleria(fotosActuales);
-                        ocultarLoader();
-                        input.value = "";
+                    // Releemos por si otra sesión agregó fotos mientras esta se subía.
+                    refFotos.once('value').then(snap2 => {
+                        let fotosFinal = (snap2.val() || {}).fotos || [];
+                        if(fotosFinal.length >= max) {
+                            ocultarLoader();
+                            input.value = "";
+                            showToast(`⚠️ Límite de ${max} fotos por orden alcanzado`, "#dc2626");
+                            return;
+                        }
+                        fotosFinal.push(url);
+                        refFotos.update({fotos: fotosFinal}).then(() => {
+                            renderGaleria(fotosFinal);
+                            ocultarLoader();
+                            input.value = "";
+                        }).catch(() => {
+                            ocultarLoader();
+                            showToast("⚠️ Error al guardar la foto. Intentá de nuevo.", "#dc2626");
+                        });
                     }).catch(() => {
                         ocultarLoader();
-                        showToast("⚠️ Error al guardar la foto. Intentá de nuevo.", "#dc2626");
+                        showToast("⚠️ Error al conectar con Firebase. Revisá tu conexión.", "#dc2626");
                     });
-                }).catch(() => {
-                    ocultarLoader();
-                    showToast("⚠️ Error al conectar con Firebase. Revisá tu conexión.", "#dc2626");
                 });
+            }).catch(() => {
+                ocultarLoader();
+                showToast("⚠️ Error al conectar con Firebase. Revisá tu conexión.", "#dc2626");
             });
         }
     }
@@ -12882,10 +12933,25 @@ function showApp() {
     function eliminarFotoExistente(urlFoto) {
         if(!idParaFotos) return;
         if(!confirm("¿Seguro que querés eliminar esta foto?")) return;
-        
+
         const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
+        const cloudName = "dsbiva6k0";
         mostrarLoader("Eliminando foto...");
-        refFotos.once('value').then(snap => {
+
+        // Intentar borrar la imagen de Cloudinary también (no solo el link
+        // en Firebase) — si falla (ej: el preset no tiene unsigned delete
+        // habilitado, o es una foto vieja que nunca pasó por Cloudinary),
+        // seguimos igual: lo importante es que desaparezca de la orden.
+        const match = urlFoto.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/i);
+        const borradoCloudinary = match
+            ? fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ public_id: match[1], invalidate: true })
+              }).catch(() => {})
+            : Promise.resolve();
+
+        borradoCloudinary.then(() => refFotos.once('value')).then(snap => {
             let fotosActuales = (snap.val() || {}).fotos || [];
             // Borrar por URL para evitar desincronía de índices entre sesiones
             fotosActuales = fotosActuales.filter(f => f !== urlFoto);
