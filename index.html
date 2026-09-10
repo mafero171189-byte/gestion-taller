@@ -4036,14 +4036,6 @@ function showApp() {
        <button onclick="guardarPrecioMP()" class="btn" style="background: linear-gradient(135deg,#00b1ea,var(--mp-blue)); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
       </div>
       <div id="mpPrecioStatus" style="margin-top:10px; font-size:13px; color:var(--gray-600); display:none;"></div>
-      <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--green-250);">
-       <label style="color:var(--green-800); font-weight:800; font-size:12.5px;">🔗 Link de pago (Mercado Pago no permite pasar el monto por URL — hay que generar el link con el precio ya cargado en tu panel de Mercado Pago, y pegarlo acá)</label>
-       <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-        <input type="text" id="inputLinkMPMensual" placeholder="https://mpago.li/..." style="flex:1; padding:9px 12px; border:2px solid var(--green-250); border-radius:8px; font-size:13px; box-sizing:border-box; background:white;">
-        <button onclick="guardarLinkMPMensual()" class="btn" style="background: linear-gradient(135deg,#00b1ea,var(--mp-blue)); color:white; padding:0 16px; white-space:nowrap; min-height:40px; font-size:12px;">💾</button>
-       </div>
-       <div id="linkMPMensualStatus" style="margin-top:8px; font-size:12px; color:var(--gray-600);"></div>
-      </div>
      </div>
      
      <div class="card-form" style="background: var(--blue-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--blue-300); margin-bottom: 20px;">
@@ -4067,14 +4059,6 @@ function showApp() {
       </div>
       <div id="mpPrecioAnualStatus" style="margin-top:10px; font-size:13px; color:var(--gray-600); display:none;"></div>
       <div id="sugerenciaAnual" style="margin-top:10px; font-size:12.5px; color:var(--green-800); background:white; border:1px dashed var(--green-250); border-radius:8px; padding:9px 11px; display:none;"></div>
-      <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--green-250);">
-       <label style="color:var(--green-800); font-weight:800; font-size:12.5px;">🔗 Link de pago Anual (generalo en tu panel de Mercado Pago por el monto anual)</label>
-       <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-        <input type="text" id="inputLinkMPAnual" placeholder="https://mpago.li/..." style="flex:1; padding:9px 12px; border:2px solid var(--green-250); border-radius:8px; font-size:13px; box-sizing:border-box; background:white;">
-        <button onclick="guardarLinkMPAnual()" class="btn" style="background: linear-gradient(135deg,#16a34a,#15803d); color:white; padding:0 16px; white-space:nowrap; min-height:40px; font-size:12px;">💾</button>
-       </div>
-       <div id="linkMPAnualStatus" style="margin-top:8px; font-size:12px; color:var(--gray-600);"></div>
-      </div>
      </div>
 
      <div class="card-form" style="background: var(--blue-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--blue-300); margin-bottom: 20px;">
@@ -7630,41 +7614,6 @@ function showApp() {
         }
     }
 
-    function guardarLinkMPMensual() {
-        const val = (document.getElementById('inputLinkMPMensual').value || '').trim();
-        if (!val || !val.startsWith('http')) { showToast('Pegá un link válido (tiene que empezar con http)', '#f59e0b'); return; }
-        mostrarLoader('Guardando link...');
-        db.ref('configuracion/mp_link_mensual').set(val).then(() => {
-            ocultarLoader();
-            const status = document.getElementById('linkMPMensualStatus');
-            if (status) { status.textContent = '✅ Guardado'; status.style.color = '#059669'; }
-            showToast('✅ Link de Mercado Pago Mensual actualizado', '#059669');
-        }).catch(err => { ocultarLoader(); showToast(mensajeFirebaseAmigable(err), '#dc2626'); });
-    }
-
-    function guardarLinkMPAnual() {
-        const val = (document.getElementById('inputLinkMPAnual').value || '').trim();
-        if (!val || !val.startsWith('http')) { showToast('Pegá un link válido (tiene que empezar con http)', '#f59e0b'); return; }
-        mostrarLoader('Guardando link...');
-        db.ref('configuracion/mp_link_anual').set(val).then(() => {
-            ocultarLoader();
-            const status = document.getElementById('linkMPAnualStatus');
-            if (status) { status.textContent = '✅ Guardado'; status.style.color = '#059669'; }
-            showToast('✅ Link de Mercado Pago Anual actualizado', '#059669');
-        }).catch(err => { ocultarLoader(); showToast(mensajeFirebaseAmigable(err), '#dc2626'); });
-    }
-
-    function cargarLinksMPAdmin() {
-        db.ref('configuracion/mp_link_mensual').once('value', snap => {
-            const input = document.getElementById('inputLinkMPMensual');
-            if (input && snap.val() && document.activeElement !== input) input.value = snap.val();
-        });
-        db.ref('configuracion/mp_link_anual').once('value', snap => {
-            const input = document.getElementById('inputLinkMPAnual');
-            if (input && snap.val() && document.activeElement !== input) input.value = snap.val();
-        });
-    }
-
     function cargarPrecioMPAdmin() {
         db.ref('configuracion/mp_precio').once('value', snap => {
             const precio = snap.val();
@@ -8566,7 +8515,6 @@ function showApp() {
             cargarPrecioPaypalAdmin();
             cargarPrecioMPAdmin();
             cargarPreciosAnualesAdmin();
-            cargarLinksMPAdmin();
         }
     }
 
