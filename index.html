@@ -4031,7 +4031,7 @@ function showApp() {
       <label style="color:var(--green-800); font-weight:800;">💳 Precio en Mercado Pago (ARS)</label>
       <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
        <div style="position:relative; flex:1;">
-        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--green-800); font-size:16px;">AR$</span> <input type="number" id="inputPrecioMP" min="1" step="1" placeholder="5000" oninput="_mostrarSugerenciaAnual()" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--green-250); border-radius:8px; font-size:18px; font-weight:800; color:var(--green-800); box-sizing:border-box; background:white;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--green-800); font-size:16px;">AR$</span> <input type="text" inputmode="numeric" id="inputPrecioMP" placeholder="5000" oninput="_mostrarSugerenciaAnual()" onfocus="_alEnfocarPrecio(this)" onblur="_alSalirPrecio(this,false)" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--green-250); border-radius:8px; font-size:18px; font-weight:800; color:var(--green-800); box-sizing:border-box; background:white;">
        </div>
        <button onclick="guardarPrecioMP()" class="btn" style="background: linear-gradient(135deg,#00b1ea,var(--mp-blue)); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
       </div>
@@ -4042,7 +4042,7 @@ function showApp() {
       <label style="color:var(--blue-700); font-weight:800;">🌍 Precio en PayPal (USD)</label>
       <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
        <div style="position:relative; flex:1;">
-        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--blue-700); font-size:16px;">USD</span> <input type="number" id="inputPrecioPaypal" min="1" step="0.01" placeholder="15" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--blue-300); border-radius:8px; font-size:18px; font-weight:800; color:var(--blue-700); box-sizing:border-box; background:white;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--blue-700); font-size:16px;">USD</span> <input type="text" inputmode="decimal" id="inputPrecioPaypal" placeholder="15" onfocus="_alEnfocarPrecio(this)" onblur="_alSalirPrecio(this,true)" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--blue-300); border-radius:8px; font-size:18px; font-weight:800; color:var(--blue-700); box-sizing:border-box; background:white;">
        </div>
        <button onclick="guardarPrecioPaypal()" class="btn" style="background: linear-gradient(135deg,#003087,#009cde); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
       </div>
@@ -4053,7 +4053,7 @@ function showApp() {
       <label style="color:var(--green-800); font-weight:800;">📅 Precio ANUAL en Mercado Pago (ARS)</label>
       <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
        <div style="position:relative; flex:1;">
-        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--green-800); font-size:16px;">AR$</span> <input type="number" id="inputPrecioMPAnual" min="1" step="1" placeholder="50000" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--green-250); border-radius:8px; font-size:18px; font-weight:800; color:var(--green-800); box-sizing:border-box; background:white;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--green-800); font-size:16px;">AR$</span> <input type="text" inputmode="numeric" id="inputPrecioMPAnual" placeholder="50000" onfocus="_alEnfocarPrecio(this)" onblur="_alSalirPrecio(this,false)" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--green-250); border-radius:8px; font-size:18px; font-weight:800; color:var(--green-800); box-sizing:border-box; background:white;">
        </div>
        <button onclick="guardarPrecioMPAnual()" class="btn" style="background: linear-gradient(135deg,#16a34a,#15803d); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
       </div>
@@ -4065,7 +4065,7 @@ function showApp() {
       <label style="color:var(--blue-700); font-weight:800;">📅 Precio ANUAL en PayPal (USD)</label>
       <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
        <div style="position:relative; flex:1;">
-        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--blue-700); font-size:16px;">USD</span> <input type="number" id="inputPrecioPaypalAnual" min="1" step="0.01" placeholder="150" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--blue-300); border-radius:8px; font-size:18px; font-weight:800; color:var(--blue-700); box-sizing:border-box; background:white;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--blue-700); font-size:16px;">USD</span> <input type="text" inputmode="decimal" id="inputPrecioPaypalAnual" placeholder="150" onfocus="_alEnfocarPrecio(this)" onblur="_alSalirPrecio(this,true)" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--blue-300); border-radius:8px; font-size:18px; font-weight:800; color:var(--blue-700); box-sizing:border-box; background:white;">
        </div>
        <button onclick="guardarPrecioPaypalAnual()" class="btn" style="background: linear-gradient(135deg,#003087,#009cde); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
       </div>
@@ -7448,8 +7448,34 @@ function showApp() {
             });
     }
 
+    // ── Formateo de precios (separador de miles) ───────────────────────────
+    // Los 4 campos de precio son type="text" (no "number"): con "number" el
+    // único punto permitido es el decimal, así que si escribías "12.000"
+    // pensando en "doce mil" el navegador lo tomaba como 12,000 = 12 y se
+    // guardaba mal. Con texto podemos mostrar el punto de miles sin que
+    // rompa nada. El valor real SIEMPRE sale de _numeroDesdeInput(), nunca
+    // de leer el texto formateado a lo bruto.
+    function _numeroDesdeInput(input) {
+        if (!input) return NaN;
+        // Saca los puntos de miles y pasa la coma decimal (si hay) a punto
+        const limpio = input.value.replace(/\./g, '').replace(',', '.').trim();
+        return parseFloat(limpio);
+    }
+    function _alEnfocarPrecio(input) {
+        // Al tocar el campo se muestra el número pelado, más cómodo para editar
+        const num = _numeroDesdeInput(input);
+        if (!isNaN(num)) input.value = String(num).replace('.', ',');
+    }
+    function _alSalirPrecio(input, conDecimales) {
+        const num = _numeroDesdeInput(input);
+        if (isNaN(num)) return;
+        input.value = num.toLocaleString(_localeActual, conDecimales
+            ? { minimumFractionDigits: 0, maximumFractionDigits: 2 }
+            : { maximumFractionDigits: 0 });
+    }
+
     function guardarPrecioPaypal() {
-        const val = parseFloat(document.getElementById('inputPrecioPaypal').value);
+        const val = _numeroDesdeInput(document.getElementById('inputPrecioPaypal'));
         if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
         mostrarLoader('Guardando precio...');
         db.ref('configuracion/paypal_precio').set(val).then(() => {
@@ -7460,6 +7486,7 @@ function showApp() {
             status.style.color = '#059669';
             actualizarLabelPaypal(val);
             showToast(`✅ Precio PayPal actualizado: USD ${val}`, '#059669');
+            _alSalirPrecio(document.getElementById('inputPrecioPaypal'), true);
         }).catch(err => {
             ocultarLoader();
             showToast(mensajeFirebaseAmigable(err), '#dc2626');
@@ -7479,7 +7506,7 @@ function showApp() {
             const precio = snap.val();
             if (precio) {
                 const input = document.getElementById('inputPrecioPaypal');
-                if (input) input.value = precio;
+                if (input) { input.value = precio; _alSalirPrecio(input, true); }
                 const status = document.getElementById('paypalPrecioStatus');
                 if (status) {
                     status.style.display = 'block';
@@ -7493,7 +7520,7 @@ function showApp() {
 
     // ── PRECIOS DEL PLAN ANUAL ──────────────────────────────────────────────
     function guardarPrecioMPAnual() {
-        const val = parseFloat(document.getElementById('inputPrecioMPAnual').value);
+        const val = _numeroDesdeInput(document.getElementById('inputPrecioMPAnual'));
         if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
 
         const fbUser = firebase.auth().currentUser;
@@ -7509,6 +7536,7 @@ function showApp() {
             status.innerHTML = `✅ Precio anual guardado: <b>AR$ ${val.toLocaleString(_localeActual)}</b> · Ya se ve en la página de planes.`;
             status.style.color = '#059669';
             showToast(`✅ Precio anual actualizado`, '#059669');
+            _alSalirPrecio(document.getElementById('inputPrecioMPAnual'), false);
             _mostrarSugerenciaAnual();
         }).catch(err => {
             ocultarLoader();
@@ -7522,7 +7550,7 @@ function showApp() {
     }
 
     function guardarPrecioPaypalAnual() {
-        const val = parseFloat(document.getElementById('inputPrecioPaypalAnual').value);
+        const val = _numeroDesdeInput(document.getElementById('inputPrecioPaypalAnual'));
         if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
 
         const fbUser = firebase.auth().currentUser;
@@ -7538,6 +7566,7 @@ function showApp() {
             status.innerHTML = `✅ Precio anual guardado: <b>USD ${val}</b>`;
             status.style.color = '#059669';
             showToast('✅ Precio anual PayPal actualizado', '#059669');
+            _alSalirPrecio(document.getElementById('inputPrecioPaypalAnual'), true);
         }).catch(err => {
             ocultarLoader();
             showToast('Error: ' + (err.message || String(err)), '#dc2626');
@@ -7549,8 +7578,8 @@ function showApp() {
     function _mostrarSugerenciaAnual() {
         const el = document.getElementById('sugerenciaAnual');
         if (!el) return;
-        const mens = parseFloat(document.getElementById('inputPrecioMP')?.value);
-        const anual = parseFloat(document.getElementById('inputPrecioMPAnual')?.value);
+        const mens = _numeroDesdeInput(document.getElementById('inputPrecioMP'));
+        const anual = _numeroDesdeInput(document.getElementById('inputPrecioMPAnual'));
         if (!mens || mens <= 0) { el.style.display = 'none'; return; }
         const doce = mens * 12;
         let txt = 'Mensual x12 = <b>AR$ ' + doce.toLocaleString(_localeActual) + '</b>'
@@ -7569,17 +7598,17 @@ function showApp() {
     function cargarPreciosAnualesAdmin() {
         db.ref('configuracion/mp_precio_anual').once('value', snap => {
             const input = document.getElementById('inputPrecioMPAnual');
-            if (input && snap.val() && document.activeElement !== input) input.value = snap.val();
+            if (input && snap.val() && document.activeElement !== input) { input.value = snap.val(); _alSalirPrecio(input, false); }
             _mostrarSugerenciaAnual();
         });
         db.ref('configuracion/paypal_precio_anual').once('value', snap => {
             const input = document.getElementById('inputPrecioPaypalAnual');
-            if (input && snap.val() && document.activeElement !== input) input.value = snap.val();
+            if (input && snap.val() && document.activeElement !== input) { input.value = snap.val(); _alSalirPrecio(input, true); }
         });
     }
 
     function guardarPrecioMP() {
-        const val = parseFloat(document.getElementById('inputPrecioMP').value);
+        const val = _numeroDesdeInput(document.getElementById('inputPrecioMP'));
         if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
 
         const fbUser = firebase.auth().currentUser;
@@ -7592,10 +7621,11 @@ function showApp() {
             ocultarLoader();
             const status = document.getElementById('mpPrecioStatus');
             status.style.display = 'block';
-            status.innerHTML = `✅ Precio guardado: <b>AR$ ${val}</b> · El botón de Mercado Pago ya se actualizó para todos los usuarios.`;
+            status.innerHTML = `✅ Precio guardado: <b>AR$ ${val.toLocaleString(_localeActual)}</b> · El botón de Mercado Pago ya se actualizó para todos los usuarios.`;
             status.style.color = '#059669';
             actualizarLabelMP(val);
-            showToast(`✅ Precio MP actualizado: AR$ ${val}`, '#059669');
+            showToast(`✅ Precio MP actualizado: AR$ ${val.toLocaleString(_localeActual)}`, '#059669');
+            _alSalirPrecio(document.getElementById('inputPrecioMP'), false);
         }).catch(err => {
             ocultarLoader();
             const msg = err.message || String(err);
@@ -7629,7 +7659,7 @@ function showApp() {
             const precio = snap.val();
             if (precio) {
                 const input = document.getElementById('inputPrecioMP');
-                if (input) input.value = precio;
+                if (input) { input.value = precio; _alSalirPrecio(input, false); }
                 const status = document.getElementById('mpPrecioStatus');
                 if (status) {
                     status.style.display = 'block';
