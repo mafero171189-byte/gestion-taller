@@ -2883,14 +2883,8 @@ function showApp() {
    <div class="login-card" id="panelOlvideClave" style="display:none;">
     <div style="font-size: 40px; margin-bottom: -5px;">🔑</div>
     <h2>Olvidé mi Clave</h2>
-    <p>Ingresá tu WhatsApp y te enviamos un enlace de recuperación a tu email registrado.</p>
-    <div class="phone-row">
-     <div class="dial-btn" id="dialBtnRecovery" onclick="toggleDial('dropRecovery',this)">
-      <span id="dialFlagRecovery">🇦🇷</span> <span id="dialCodeRecovery">+54</span> <span class="arrow">▼</span>
-     </div>
-     <div class="dial-dropdown" id="dropRecovery"></div>
-     <input type="tel" inputmode="numeric" id="recoveryWa" placeholder="Tu número de WhatsApp" autocomplete="off">
-    </div>
+    <p>Ingresá el email con el que te registraste y te enviamos un enlace de recuperación.</p>
+    <input type="email" id="recoveryEmail" placeholder="Tu email registrado" autocomplete="email" style="margin:0;">
     <button class="btn-login" style="background:linear-gradient(135deg,var(--purple-700),#6c3483);" onclick="enviarRecuperacionClave()">📧 ENVIAR ENLACE DE RECUPERACIÓN</button>
     <p id="recoveryMsg" style="font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
     <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:var(--gray-500); font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
@@ -7248,57 +7242,54 @@ function showApp() {
 
     // ====== RECUPERACIÓN DE CLAVE ======
     function enviarRecuperacionClave() {
-        let wa = (window.getFullPhone ? getFullPhone('dialBtnRecovery','recoveryWa') : document.getElementById('recoveryWa').value).replace(/\D/g,'').trim();
+        const email = document.getElementById('recoveryEmail').value.trim();
         const msgEl = document.getElementById('recoveryMsg');
         msgEl.style.display = 'none';
 
-        if (wa.length < 10) {
+        if (!email || !email.includes('@')) {
             msgEl.style.color = '#dc2626';
-            msgEl.innerText   = '⚠️ Ingresá tu WhatsApp con código de país (Ej: 5491112345678).';
+            msgEl.innerText   = '⚠️ Ingresá un email válido.';
             msgEl.style.display = 'block';
             return;
         }
 
-        mostrarLoader('Buscando tu cuenta...');
+        mostrarLoader('Verificando cuenta...');
 
-        try {
-            db.ref('solicitudes_registro/' + wa + '/authEmail').once('value')
-                .then(snap => {
-                    const authEmail = snap.val();
-                    if (!authEmail) {
-                        ocultarLoader();
-                        msgEl.style.color   = '#dc2626';
-                        msgEl.innerText     = '⚠️ No encontramos una cuenta con ese WhatsApp. Verificá el número o registrate.';
-                        msgEl.style.display = 'block';
-                        return;
-                    }
-                    return firebase.auth().sendPasswordResetEmail(authEmail).then(() => {
-                        ocultarLoader();
-                        msgEl.style.color   = '#059669';
-                        const emailMask = authEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3');
-                        msgEl.innerText     = '✅ Enlace enviado a ' + emailMask + '. Revisá tu bandeja de entrada (también spam).';
-                        msgEl.style.display = 'block';
-                        document.getElementById('recoveryWa').value = '';
-                    });
-                })
-                .catch((err) => {
+        // A propósito le preguntamos primero a Firebase si el email tiene una
+        // cuenta antes de mandar el link, para poder avisar "no está
+        // registrado" en vez del mensaje neutro. Ojo: esto le confirma a
+        // cualquiera (sin loguearse) qué emails son clientes tuyos — es lo
+        // que pediste, pero es la contra de sacar el mensaje neutro.
+        firebase.auth().fetchSignInMethodsForEmail(email)
+            .then(methods => {
+                if (!methods || methods.length === 0) {
                     ocultarLoader();
                     msgEl.style.color   = '#dc2626';
-                    if (err.code === 'auth/user-not-found') {
-                        msgEl.innerText = '⚠️ No existe una cuenta con ese email. Registrate.';
-                    } else if (err.code === 'auth/network-request-failed') {
-                        msgEl.innerText = '⚠️ Sin conexión. Verificá tu red e intentá de nuevo.';
-                    } else {
-                        msgEl.innerText = '❌ Error: ' + (err.message || err.code);
-                    }
+                    msgEl.innerText     = '⚠️ No encontramos una cuenta con ese email.';
                     msgEl.style.display = 'block';
+                    return;
+                }
+                return firebase.auth().sendPasswordResetEmail(email).then(() => {
+                    ocultarLoader();
+                    msgEl.style.color   = '#059669';
+                    const emailMask = email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+                    msgEl.innerText     = '✅ Enlace enviado a ' + emailMask + '. Revisá tu bandeja de entrada (también spam).';
+                    msgEl.style.display = 'block';
+                    document.getElementById('recoveryEmail').value = '';
                 });
-        } catch(e) {
-            ocultarLoader();
-            msgEl.style.color   = '#dc2626';
-            msgEl.innerText     = '❌ Número inválido o error de sistema.';
-            msgEl.style.display = 'block';
-        }
+            })
+            .catch((err) => {
+                ocultarLoader();
+                msgEl.style.color   = '#dc2626';
+                if (err.code === 'auth/network-request-failed') {
+                    msgEl.innerText = '⚠️ Sin conexión. Verificá tu red e intentá de nuevo.';
+                } else if (err.code === 'auth/invalid-email') {
+                    msgEl.innerText = '⚠️ Ese email no es válido.';
+                } else {
+                    msgEl.innerText = '❌ Error: ' + (err.message || err.code);
+                }
+                msgEl.style.display = 'block';
+            });
     }
 
     function cerrarBannerLicencia(event) {
@@ -15246,6 +15237,14 @@ function showApp() {
         const mode = urlParams.get('mode');
         actionCode = urlParams.get('oobCode');
         if (mode === 'resetPassword' && actionCode) {
+            // El link de recuperación tiene que ir directo al formulario de
+            // nueva contraseña. Si no ocultamos la landing acá, el modal de
+            // abajo queda tapado (landing-page tiene z-index más alto) hasta
+            // que el usuario toca "Ingresar al Sistema" a mano.
+            const lp = document.getElementById('landing-page');
+            if (lp) lp.style.display = 'none';
+            sessionStorage.setItem('st_landing_skipped', 'true');
+
             document.getElementById('panelLogin').style.display = 'none';
             document.getElementById('panelOlvideClave').style.display = 'none';
             document.getElementById('panelNuevaClave').style.display = 'block';
@@ -15705,7 +15704,6 @@ function showApp() {
     const DIALS = [
         { flagId:'dialFlagLogin',    codeId:'dialCodeLogin',    dropId:'dropLogin',    btnId:'dialBtnLogin' },
         { flagId:'dialFlagReg',      codeId:'dialCodeReg',      dropId:'dropReg',      btnId:'dialBtnReg' },
-        { flagId:'dialFlagRecovery', codeId:'dialCodeRecovery', dropId:'dropRecovery', btnId:'dialBtnRecovery' },
     ];
     // Mapa código -> dial config (para getFullPhone)
     const dialCodeMap = {}; // dropId -> current dial code
