@@ -15515,7 +15515,7 @@ function showApp() {
     <div class="mp-modal-header">
      <div class="mp-logo-wrap">💳</div>
      <h3 id="mpModalTitulo">Activar Licencia Mensual</h3>
-     <p>Pago seguro a través de Mercado Pago</p>
+     <p>Activación automática al confirmarse el pago</p>
      <div style="display:flex; gap:4px; background:rgba(0,0,0,0.15); border-radius:10px; padding:4px; margin-top:12px;">
       <button id="btnPlanPagoMensual" onclick="seleccionarPlanPago('mensual')" style="flex:1; padding:9px; border:none; border-radius:7px; font-weight:800; font-size:13px; cursor:pointer; font-family:'Outfit',sans-serif; transition:0.2s;">Mensual</button>
       <button id="btnPlanPagoAnual" onclick="seleccionarPlanPago('anual')" style="flex:1; padding:9px; border:none; border-radius:7px; font-weight:800; font-size:13px; cursor:pointer; font-family:'Outfit',sans-serif; transition:0.2s;">Anual</button>
@@ -15525,19 +15525,19 @@ function showApp() {
      <div class="mp-step">
       <div class="mp-step-num">1</div>
       <div class="mp-step-text">
-       Elegí <b>Mercado Pago</b> (Argentina) o <b>PayPal</b> (Internacional) para pagar tu licencia.
+       Elegí el plan (<b>Mensual</b> o <b>Anual</b>) y tocá <b>Mercado Pago</b> (Argentina) o <b>PayPal</b> (Internacional).
       </div>
      </div>
      <div class="mp-step">
       <div class="mp-step-num">2</div>
       <div class="mp-step-text">
-       Una vez pagado, abrimos <b>WhatsApp</b> automáticamente con el mensaje listo.
+       Pagás en la plataforma que elegiste y volvés solo a Mi Taller Web.
       </div>
      </div>
      <div class="mp-step">
       <div class="mp-step-num">3</div>
       <div class="mp-step-text">
-       Enviá el <b>comprobante</b> y activamos tu cuenta en minutos. ✅
+       Tu licencia se activa <b>automáticamente</b>. No hace falta mandar comprobante. ✅
       </div>
      </div>
     </div>
@@ -15545,25 +15545,25 @@ function showApp() {
      <button class="mp-btn-pagar" id="mpBtnIrAPagar"><span>💳</span> IR A MERCADO PAGO — <span id="mpPrecioLabel">AR$ ...</span></button>
      <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde);"><span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span></button>
      
-     <a href="https://wa.me/5491135654094?text=Hola%2C%20acabo%20de%20pagar%20mi%20licencia%20de%20Mi%20Taller%20Web.%20Te%20env%C3%ADo%20el%20comprobante%20a%20continuaci%C3%B3n." target="_blank" class="wa-soporte-link" style="
+     <a href="https://wa.me/5491135654094?text=Hola%2C%20tuve%20un%20problema%20al%20pagar%20mi%20licencia%20de%20Mi%20Taller%20Web%20y%20no%20se%20activ%C3%B3." target="_blank" class="wa-soporte-link" style="
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        padding: 14px 10px;
+        padding: 12px 10px;
         border-radius: 12px;
-        background-color: #25d366;
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 800;
+        background-color: transparent;
+        border: 1.5px solid #25d366;
+        color: #25d366;
+        font-size: 12.5px;
+        font-weight: 700;
         font-family: 'Outfit', sans-serif;
         text-decoration: none;
         cursor: pointer;
-        box-shadow: 0 4px 18px rgba(37, 211, 102, 0.4);
         width: 100%;
         box-sizing: border-box;
         transition: all 0.2s ease;
-      "> <span style="font-size: 18px;">📎</span> <span>ENVIAR COMPROBANTE</span> </a>
+      "> <span style="font-size: 16px;">💬</span> <span>¿Pagaste y no se activó? Escribinos</span> </a>
 
      <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
     </div>
