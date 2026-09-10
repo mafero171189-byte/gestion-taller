@@ -7395,6 +7395,16 @@ function showApp() {
             btn.disabled = true;
             btn.innerHTML = '<span>⏳</span> Generando el pago...';
 
+            // En celular abrimos en el navegador del sistema (no en el
+            // "cascarón" de la PWA instalada), porque ahí es donde Mercado
+            // Pago puede ofrecer "abrir en la app" vía Universal/App Links —
+            // adentro de una PWA standalone eso suele estar bloqueado.
+            // El window.open('') va ANTES del fetch, en el mismo tick del
+            // click, porque si lo hacemos después (ya con el resultado del
+            // fetch) los navegadores lo tratan como pop-up y lo bloquean.
+            const esCelular = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+            const ventanaPago = esCelular ? window.open('', '_blank') : null;
+
             fetch(WORKER_MP_URL + '/crear-pago', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -7406,10 +7416,17 @@ function showApp() {
                         throw new Error(data.error || 'No se pudo generar el link de pago');
                     }
                     cerrarModalPagoMP();
-                    // Mismo dispositivo, misma pestaña — vuelve solo con ?pago=ok
-                    window.location.href = data.init_point;
+                    if (ventanaPago) {
+                        // Celular: ya está abierta en el navegador del sistema,
+                        // solo hace falta navegarla al link de pago.
+                        ventanaPago.location.href = data.init_point;
+                    } else {
+                        // PC: misma pestaña — vuelve solo con ?pago=ok
+                        window.location.href = data.init_point;
+                    }
                 })
                 .catch(err => {
+                    if (ventanaPago) ventanaPago.close();
                     btn.disabled = false;
                     btn.innerHTML = textoOriginal;
                     showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
@@ -7433,6 +7450,12 @@ function showApp() {
         btn.disabled = true;
         btn.innerHTML = '<span>⏳</span> Generando el pago...';
 
+        // Mismo criterio que con Mercado Pago: en celular, al navegador del
+        // sistema (no adentro de la PWA instalada), para que PayPal pueda
+        // ofrecer abrir su propia app si está instalada.
+        const esCelular = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+        const ventanaPago = esCelular ? window.open('', '_blank') : null;
+
         fetch(WORKER_MP_URL + '/crear-pago-paypal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -7444,9 +7467,14 @@ function showApp() {
                     throw new Error(data.error || 'No se pudo generar el link de pago');
                 }
                 cerrarModalPagoMP();
-                window.location.href = data.init_point;
+                if (ventanaPago) {
+                    ventanaPago.location.href = data.init_point;
+                } else {
+                    window.location.href = data.init_point;
+                }
             })
             .catch(err => {
+                if (ventanaPago) ventanaPago.close();
                 btn.disabled = false;
                 btn.innerHTML = textoOriginal;
                 showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
