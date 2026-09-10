@@ -3317,7 +3317,10 @@ function showApp() {
      <p style="font-size: 14px; color: var(--gray-600); margin-bottom: 20px;">Se borrará el acceso y <b>absolutamente todas las órdenes</b> de este número al instante.
       <br>
       <br>
-      Esta acción NO se puede deshacer.</p>
+      Esta acción NO se puede deshacer.
+      <br>
+      <br>
+      <span style="display:block; background:var(--amber-50); border:1px solid var(--amber-300); border-radius:8px; padding:8px 10px; color:var(--amber-800); font-size:12.5px; text-align:left;">⚠️ Esto borra los datos de la app, pero <b>no libera el número en Firebase Authentication</b>. Si más adelante creás una licencia nueva para este mismo WhatsApp, puede fallar — para reusarlo de verdad hay que borrar también al usuario desde la consola de Firebase (Authentication → Users).</span></p>
      <div style="display:flex; gap:10px; margin-top:20px;">
       <button onclick="closeDeleteLicenseModal()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--gray-100); color:var(--gray-600); font-weight:bold; cursor:pointer;">CANCELAR</button>
       <button id="confirmDeleteLicenseBtn" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:white; font-weight:bold; cursor:pointer;">SÍ, BORRAR TODO</button>
@@ -3351,9 +3354,12 @@ function showApp() {
       </div>
      </div>
      <div style="margin-bottom:16px;">
-      <label style="font-size:11px; font-weight:800; color:var(--gray-600); text-transform:uppercase; display:block; margin-bottom:6px;">Email de Recuperación</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+       <label style="font-size:11px; font-weight:800; color:var(--gray-600); text-transform:uppercase; margin:0;">Email de Recuperación</label>
+       <button type="button" id="btnDesbloquearEmailLic" onclick="desbloquearEmailLic()" style="display:none; background:none; border:none; color:var(--secondary); font-size:11px; font-weight:800; cursor:pointer; padding:2px 4px;">✏️ Editar</button>
+      </div>
       <input type="email" id="licEmailRecuperacion" placeholder="Email real del cliente" style="width:100%; padding:10px; border:2px solid var(--gray-200); border-radius:8px; font-size:14px; box-sizing:border-box;">
-      <p style="font-size:11px; color:var(--gray-500); margin:4px 0 0 0;">El cliente no puede cambiarlo por su cuenta — solo vos desde acá.</p>
+      <p id="notaEmailLic" style="font-size:11px; color:var(--gray-500); margin:4px 0 0 0;">El cliente no puede cambiarlo por su cuenta — solo vos desde acá.</p>
      </div>
      <div style="display:flex; gap:10px; margin-top:8px;">
       <button onclick="cerrarLicenciaModal()" style="flex:1; padding:12px; border-radius:8px; border:none; background:var(--gray-100); color:var(--gray-600); font-weight:bold; cursor:pointer;">CANCELAR</button>
@@ -8143,35 +8149,41 @@ function showApp() {
                 localStorage.setItem(claveLocal, ahora);
             }
 
-            // Sincronizar el email real de Firebase Auth con el que haya en
-            // la base — necesario para las cuentas donde el admin cargó el
-            // email desde Licencias (en vez de que el cliente lo cargue él
-            // mismo desde Mi Perfil). El admin, al crear/editar la licencia,
-            // solo puede guardar ese email en la base — no puede cambiar la
-            // cuenta de Auth de otra persona (eso requiere permisos que solo
-            // tiene el dueño de la cuenta). Este chequeo corre acá, una vez
-            // que el cliente ya inició sesión con su propia cuenta.
-            // Ojo: Firebase exige que el login sea "reciente" (~5 min) para
-            // permitir este cambio. En un login recién tipeado (WhatsApp +
-            // clave) esto funciona directo. Pero grantAccess() también corre
-            // en sesiones ya guardadas de antes (la mayoría de las veces) —
-            // ahí Firebase rechaza el cambio con 'auth/requires-recent-login'.
-            // Para esos casos mostramos el banner de abajo pidiendo reingresar;
-            // con un login fresco, la sincronización se completa sola.
+            // Sincronizar authEmail entre la base y la cuenta de Auth — hay
+            // dos casos distintos:
+            //
+            // 1) Cuentas creadas desde Licencias: el admin carga el email real
+            //    en la BASE, pero la cuenta de Auth sigue con el email falso
+            //    ({wa}@mitallerweb.com). Acá hay que actualizar Auth para que
+            //    coincida. Firebase exige que el login sea "reciente" (~5 min)
+            //    para esto — en un login recién tipeado funciona directo, pero
+            //    en una sesión ya guardada de antes (lo más común) lo rechaza
+            //    con 'auth/requires-recent-login'; ahí mostramos el banner de
+            //    abajo pidiendo reingresar.
+            //
+            // 2) Cuentas de auto-registro: la cuenta de Auth YA tiene el email
+            //    real desde que se registraron, pero nunca quedó copiado a
+            //    usuarios_registrados/authEmail (grantAccess solo copia otros
+            //    campos al activar la cuenta). Sin este paso, Mi Perfil les
+            //    muestra el campo vacío y editable, como si nunca hubieran
+            //    cargado nada — cuando en realidad ya está fijo desde que se
+            //    registraron. Acá solo hace falta copiarlo a la base, sin
+            //    tocar Auth (ya está bien) — por eso este caso no tiene el
+            //    problema de sesión vieja del caso 1.
             db.ref('usuarios_registrados/' + u + '/authEmail').once('value').then(snap => {
                 const authEmailGuardado = snap.val();
                 const emailActualAuth = (firebase.auth().currentUser && firebase.auth().currentUser.email) || '';
+                const esEmailFalso = emailActualAuth.toLowerCase().endsWith('@mitallerweb.com');
+
                 if (authEmailGuardado && authEmailGuardado.toLowerCase() !== emailActualAuth.toLowerCase()) {
                     firebase.auth().currentUser.updateEmail(authEmailGuardado).catch(err => {
-                        // La sesión guardada de antes no alcanza para esta
-                        // operación (Firebase exige un login "reciente" para
-                        // cambiar el email). Le pedimos que vuelva a entrar —
-                        // con eso alcanza, no hace falta nada más de nuestro lado.
                         if (err && err.code === 'auth/requires-recent-login') {
                             const banner = document.getElementById('banner-relogin-requerido');
                             if (banner) banner.style.display = 'block';
                         }
                     });
+                } else if (!authEmailGuardado && !esEmailFalso && emailActualAuth) {
+                    db.ref('usuarios_registrados/' + u + '/authEmail').set(emailActualAuth).catch(() => {});
                 }
             }).catch(() => {});
         }
@@ -14483,7 +14495,11 @@ function showApp() {
                 });
             }).catch(err => {
                 ocultarLoader();
-                showToast("Error: El número ya tiene licencia o hubo un fallo.", "#dc2626");
+                if (err && err.code === 'auth/email-already-in-use') {
+                    showToast("⚠️ Ese número ya existe en Firebase Authentication (aunque no tenga licencia activa en la app) — probablemente se borró antes sin borrar también al usuario en Authentication → Users.", "#dc2626");
+                } else {
+                    showToast("Error: " + (err && (err.message || err.code) || "fallo desconocido"), "#dc2626");
+                }
             });
         }
 
@@ -14527,10 +14543,20 @@ function showApp() {
     function resetearClaveUsuario(wa) {
         // Bug 10 fix: no es posible cambiar la clave desde el cliente sin Admin SDK.
         // Usamos sendPasswordResetEmail con el email real del usuario (mecanismo oficial Firebase).
-        mostrarLoader("Enviando email de recuperación...");
+        mostrarLoader("Buscando email del cliente...");
 
         db.ref('usuarios_registrados/' + wa + '/authEmail').once('value').then(snap => {
-            const emailUsuario = snap.val() || (wa + '@mitallerweb.com');
+            const emailUsuario = snap.val();
+            if (!emailUsuario) {
+                ocultarLoader();
+                // Antes esto caía en {wa}@mitallerweb.com sin avisar — un envío
+                // que casi seguro no llega a ningún lado (ese dominio no tiene
+                // casilla real) y el admin veía "✅ enviado" creyendo que
+                // funcionó. Mejor avisar directo y mandarlo a cargar el email.
+                showToast('⚠️ Este cliente no tiene un email cargado. Cargalo en "Editar Licencia" y probá de nuevo.', '#f59e0b');
+                return;
+            }
+            mostrarLoader("Enviando email de recuperación...");
             return firebase.auth().sendPasswordResetEmail(emailUsuario).then(() => {
                 return db.ref('solicitudes_reset/' + wa).update({ estado: 'atendido', claveEnviada: true });
             }).then(() => {
@@ -14713,7 +14739,27 @@ function showApp() {
 
             document.getElementById('licModalWa').innerText = '📱 ' + wa;
             seleccionarTipoLic(_licTipoActual);
-            document.getElementById('licEmailRecuperacion').value = d.authEmail || '';
+
+            // Si ya tiene un email cargado, arranca bloqueado para no
+            // tocarlo sin querer mientras se edita el resto de la licencia
+            // (fecha, tipo, plan). Hace falta tocar "✏️ Editar" a propósito.
+            const inputEmailLic = document.getElementById('licEmailRecuperacion');
+            const btnDesbloq = document.getElementById('btnDesbloquearEmailLic');
+            const notaEmailLic = document.getElementById('notaEmailLic');
+            inputEmailLic.value = d.authEmail || '';
+            if (d.authEmail) {
+                inputEmailLic.disabled = true;
+                inputEmailLic.style.background = 'var(--gray-100)';
+                inputEmailLic.style.color = 'var(--gray-500)';
+                btnDesbloq.style.display = 'inline-block';
+                notaEmailLic.innerText = 'El cliente no puede cambiarlo por su cuenta — solo vos desde acá.';
+            } else {
+                inputEmailLic.disabled = false;
+                inputEmailLic.style.background = '';
+                inputEmailLic.style.color = '';
+                btnDesbloq.style.display = 'none';
+                notaEmailLic.innerText = 'Todavía no tiene un email cargado — podés cargarlo acá.';
+            }
 
             if (d.fechaExpiracion) {
                 const fecha = new Date(d.fechaExpiracion);
@@ -14880,6 +14926,17 @@ function showApp() {
         }
     }
 
+    function desbloquearEmailLic() {
+        const input = document.getElementById('licEmailRecuperacion');
+        const nota = document.getElementById('notaEmailLic');
+        input.disabled = false;
+        input.style.background = '';
+        input.style.color = '';
+        input.focus();
+        nota.innerText = '✏️ Editando — el cliente sigue sin poder cambiarlo por su cuenta.';
+        document.getElementById('btnDesbloquearEmailLic').style.display = 'none';
+    }
+
     function guardarLicencia() {
         if (!_licWaActual) return;
         mostrarLoader('Guardando licencia...');
@@ -14889,16 +14946,21 @@ function showApp() {
         // no para pruebas.
         if (_licTipoActual === 'permanente') updates.planTipo = _licPlanActual;
 
-        const emailCliente = document.getElementById('licEmailRecuperacion').value.trim();
+        const inputEmailLic = document.getElementById('licEmailRecuperacion');
+        const emailCliente = inputEmailLic.value.trim();
         if (emailCliente && !emailCliente.includes('@')) {
             ocultarLoader();
             showToast('El email ingresado no es válido', '#f59e0b');
             return;
         }
-        // Solo tocamos el campo si tiene contenido — dejarlo vacío significa
-        // "no tocar el email", no "borrarlo". Si hace falta borrar uno
-        // cargado por error, hay que hacerlo directo desde Firebase.
-        if (emailCliente) updates.authEmail = emailCliente;
+        // El campo bloqueado (gris, sin tocar "✏️ Editar") NUNCA se toca —
+        // así protegemos contra ediciones sin querer, como pediste.
+        // Pero una vez desbloqueado a propósito, si lo vaciaste es porque
+        // querés borrarlo — ahí SÍ hay que guardar el vacío, si no,
+        // "vaciar y guardar" no haría nada y quedaría el valor viejo.
+        if (!inputEmailLic.disabled) {
+            updates.authEmail = emailCliente || null;
+        }
 
         if (_licTipoActual === 'prueba') {
             const fechaStr = document.getElementById('licFechaExp').value;
