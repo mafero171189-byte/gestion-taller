@@ -4624,10 +4624,11 @@ function showApp() {
     // Es UNA sola clave para toda la app, no algo que cargue cada taller.
     const VAPID_PUBLIC_KEY = "BFOt49KZjggB_NTTn27zKhTAbOOTwPVMyadhYXI53PRnRkJeOK-pO746NlC6sEMSRjhoe6vSR0IM2hIUL5LqabE";
 
-    // Worker de Cloudflare que arma la preferencia de pago en Mercado Pago
-    // y recibe el webhook que activa la licencia en Firebase. Ver
+    // Worker de Cloudflare que arma los pagos (Mercado Pago y PayPal) y
+    // activa la licencia en Firebase cuando se confirman. Ver
     // mp-webhook-worker.js — si algún día cambia el nombre/subdominio del
-    // Worker, es acá donde hay que actualizarlo.
+    // Worker, es acá donde hay que actualizarlo. El nombre quedó "WORKER_MP_URL"
+    // de cuando solo era Mercado Pago, pero es el mismo Worker para los dos.
     const WORKER_MP_URL = 'https://billowing-star-385d.mafero171189.workers.dev';
 
     // Inicialización Dual Segura
@@ -7421,21 +7422,30 @@ function showApp() {
             return;
         }
         const esAnual = _planPagoSeleccionado === 'anual';
-        const keyPrecio = esAnual ? 'paypal_precio_anual' : 'paypal_precio';
+        const plan = esAnual ? 'anual' : 'mensual';
+        const btn = document.getElementById('btnPayPal');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Generando el pago...';
 
-        db.ref('configuracion/' + keyPrecio).once('value', snap => {
-            const precio = snap.val() || (esAnual ? 150 : 15);
-            // A diferencia de Mercado Pago, paypal.me SÍ soporta el monto en la
-            // URL — no hace falta crear un link nuevo por cada precio.
-            const linkPayPal = `https://paypal.me/MatiasRodriguez1789/${precio}USD`;
-            const plan = esAnual ? 'internacional anual' : 'internacional';
-            const mensaje = `Hola! Ya pagué la licencia ${plan} de Mi Taller Web por PayPal (USD ${precio}). \nMi número registrado es: ${currentUser}. \nAcá adjunto el comprobante para la activación.`;
-            const urlWhatsapp = `https://wa.me/${window.WA_SOPORTE || '5491135654094'}?text=${encodeURIComponent(mensaje)}`;
-
-            cerrarModalPagoMP();
-            window.open(linkPayPal, '_blank');
-            setTimeout(() => { window.open(urlWhatsapp, '_blank'); }, 2000);
-        });
+        fetch(WORKER_MP_URL + '/crear-pago-paypal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wa: currentUser, planType: plan })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok || !data.init_point) {
+                    throw new Error(data.error || 'No se pudo generar el link de pago');
+                }
+                cerrarModalPagoMP();
+                window.location.href = data.init_point;
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+                showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
+            });
     }
 
     function guardarPrecioPaypal() {
@@ -8092,6 +8102,44 @@ function showApp() {
             } else if (p === 'error') {
                 showToast('❌ El pago no se completó. Podés intentar de nuevo desde tu perfil.', '#dc2626');
             }
+        })();
+
+        // ── VUELTA DE PAYPAL ────────────────────────────────────────────────
+        // A diferencia de MP, PayPal no tiene webhook acá — hay que capturar
+        // el pago activamente al volver (?paypal_return=1&token=<ORDER_ID>,
+        // el token lo agrega PayPal solo). El Worker valida y activa la
+        // licencia en el mismo paso, ver /capturar-pago-paypal.
+        (function _chequearVueltaPaypal() {
+            const params = new URLSearchParams(window.location.search);
+            const cleanUrl = window.location.pathname;
+
+            if (params.get('paypal_cancel')) {
+                window.history.replaceState({}, document.title, cleanUrl);
+                showToast('El pago con PayPal fue cancelado.', '#f59e0b');
+                return;
+            }
+
+            const orderId = params.get('token');
+            if (!params.get('paypal_return') || !orderId) return;
+            window.history.replaceState({}, document.title, cleanUrl);
+
+            showToast('⏳ Confirmando tu pago con PayPal...', '#f59e0b');
+            fetch(WORKER_MP_URL + '/capturar-pago-paypal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        showToast('✅ ¡Pago confirmado! Tu licencia ya está activa.', '#059669');
+                    } else {
+                        showToast('⚠️ El pago no se pudo confirmar (' + (data.status || data.error || 'desconocido') + '). Escribinos por soporte si ya pagaste.', '#dc2626');
+                    }
+                })
+                .catch(() => {
+                    showToast('⚠️ No pudimos confirmar el pago automáticamente. Escribinos por soporte con el comprobante.', '#dc2626');
+                });
         })();
 
         // Lógica de Sistema (Bloqueo y Anuncios) - EN VIVO
