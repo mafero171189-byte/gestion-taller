@@ -7390,12 +7390,15 @@ function showApp() {
         cargarPrecioMPAdmin();
     }
 
-    // Asignar el onclick del botón MP UNA SOLA VEZ al cargar la página,
-    // no cada vez que se abre el modal (así evitamos asignarlo múltiples veces)
-    document.getElementById('mpBtnIrAPagar').onclick = function() {
-        const esAnual = _planPagoSeleccionado === 'anual';
-        const plan = esAnual ? 'anual' : 'mensual';
-        const btn = this;
+    // Asignar el onclick del botón MP UNA SOLA VEZ (no cada vez que se abre
+    // el modal). Hay que esperar a DOMContentLoaded porque este script corre
+    // ANTES de que el botón exista en el HTML (está más abajo en la página) —
+    // sin esto, getElementById devuelve null y rompe la asignación.
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('mpBtnIrAPagar').onclick = function() {
+            const esAnual = _planPagoSeleccionado === 'anual';
+            const plan = esAnual ? 'anual' : 'mensual';
+            const btn = this;
         const textoOriginal = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span>⏳</span> Generando el pago...';
@@ -7450,6 +7453,7 @@ function showApp() {
                 showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
             });
     };
+    });
 
     function cerrarModalPagoMP() {
         document.getElementById('modalPagoMP').style.display = 'none';
