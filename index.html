@@ -2923,6 +2923,11 @@ function showApp() {
     <button id="trial-banner-close" onclick="cerrarBannerLicencia(event)" title="Cerrar">✕</button>
    </div>
 
+<div id="banner-relogin-requerido" style="display:none; background:linear-gradient(135deg,#fde68a,#fcd34d); color:#78350f; padding:12px 15px; text-align:center; font-size:13px; font-weight:700; border-bottom:2px solid #f59e0b;">
+    🔐 Actualizamos tu email de recuperación — para terminar de aplicarlo, volvé a iniciar sesión.
+    <button onclick="logout()" style="margin-left:8px; background:#78350f; color:white; border:none; padding:6px 14px; border-radius:6px; font-weight:800; font-size:12px; cursor:pointer;">Reingresar ahora</button>
+   </div>
+
 <div id="volumen-banner">
     <div id="volumen-banner-inner" onclick="setModoVista('activo'); cerrarBannerVolumen(event);">
      📦 Tenés <b id="volumen-banner-cantidad">0</b> reparaciones activas · Revisá las viejas o "No reparado" y archivalas (📁) para que la app funcione más rápido
@@ -8137,6 +8142,38 @@ function showApp() {
                 db.ref('usuarios_registrados/' + u).update({ ultimoIngreso: ahora }).catch(() => {});
                 localStorage.setItem(claveLocal, ahora);
             }
+
+            // Sincronizar el email real de Firebase Auth con el que haya en
+            // la base — necesario para las cuentas donde el admin cargó el
+            // email desde Licencias (en vez de que el cliente lo cargue él
+            // mismo desde Mi Perfil). El admin, al crear/editar la licencia,
+            // solo puede guardar ese email en la base — no puede cambiar la
+            // cuenta de Auth de otra persona (eso requiere permisos que solo
+            // tiene el dueño de la cuenta). Este chequeo corre acá, una vez
+            // que el cliente ya inició sesión con su propia cuenta.
+            // Ojo: Firebase exige que el login sea "reciente" (~5 min) para
+            // permitir este cambio. En un login recién tipeado (WhatsApp +
+            // clave) esto funciona directo. Pero grantAccess() también corre
+            // en sesiones ya guardadas de antes (la mayoría de las veces) —
+            // ahí Firebase rechaza el cambio con 'auth/requires-recent-login'.
+            // Para esos casos mostramos el banner de abajo pidiendo reingresar;
+            // con un login fresco, la sincronización se completa sola.
+            db.ref('usuarios_registrados/' + u + '/authEmail').once('value').then(snap => {
+                const authEmailGuardado = snap.val();
+                const emailActualAuth = (firebase.auth().currentUser && firebase.auth().currentUser.email) || '';
+                if (authEmailGuardado && authEmailGuardado.toLowerCase() !== emailActualAuth.toLowerCase()) {
+                    firebase.auth().currentUser.updateEmail(authEmailGuardado).catch(err => {
+                        // La sesión guardada de antes no alcanza para esta
+                        // operación (Firebase exige un login "reciente" para
+                        // cambiar el email). Le pedimos que vuelva a entrar —
+                        // con eso alcanza, no hace falta nada más de nuestro lado.
+                        if (err && err.code === 'auth/requires-recent-login') {
+                            const banner = document.getElementById('banner-relogin-requerido');
+                            if (banner) banner.style.display = 'block';
+                        }
+                    });
+                }
+            }).catch(() => {});
         }
         
         // --- NUEVO: Cargar órdenes del caché para que aparezcan al INSTANTE ---
@@ -14858,8 +14895,9 @@ function showApp() {
             showToast('El email ingresado no es válido', '#f59e0b');
             return;
         }
-        // Solo tocamos el campo si tiene contenido — un campo vacío no borra
-        // un email que ya estaba cargado (para eso está el botón dedicado).
+        // Solo tocamos el campo si tiene contenido — dejarlo vacío significa
+        // "no tocar el email", no "borrarlo". Si hace falta borrar uno
+        // cargado por error, hay que hacerlo directo desde Firebase.
         if (emailCliente) updates.authEmail = emailCliente;
 
         if (_licTipoActual === 'prueba') {
