@@ -2507,7 +2507,7 @@ function showApp() {
         <li>Órdenes de reparación</li>
         <li>Estados y seguimiento</li>
         <li>WhatsApp integrado</li>
-        <li>Hasta 5 fotos por orden</li>
+        <li>Hasta 2 fotos por orden</li>
         <li>Stock con escáner de barras</li>
         <li>Presupuestos con PDF</li>
         <li>Venta Rápida de mostrador</li>
@@ -2535,6 +2535,7 @@ function showApp() {
         <li>Acceso a nuevas funciones</li>
         <li>Soporte prioritario</li>
         <li>Actualizaciones incluidas</li>
+        <li><b>Hasta 5 fotos por orden</b></li>
         <li>1 dispositivo conectado</li>
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Mensual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link">Consultar por WhatsApp 📲</a>
@@ -4568,7 +4569,7 @@ function showApp() {
        <summary class="faq-summary">📷 Fotos y Archivos <span>+</span></summary>
        <div class="faq-content">
         <p><b>¿Por qué no puedo subir una foto?</b><br>El sistema comprime las fotos automáticamente. Si la subida falla, verificá la conexión a internet. Intentá con una foto de menor resolución si el problema persiste.</p>
-        <p><b>¿Cuántas fotos puedo subir por orden?</b><br>Depende del plan: <b>5 fotos por orden</b> con licencia de prueba o mensual, <b>15</b> con licencia anual. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real (ej: 2 / 5).</p>
+        <p><b>¿Cuántas fotos puedo subir por orden?</b><br>Depende del plan: <b>2 fotos</b> con licencia de prueba, <b>5</b> con licencia mensual, <b>15</b> con licencia anual. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real.</p>
         <p><b>¿Se borran mis fotos con el tiempo?</b><br>Sí. Las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan automáticamente. Los datos de la orden se conservan siempre.</p>
         <p><b>¿Cómo veo las fotos de una orden?</b><br>Tocá cualquier miniatura de foto en la tabla. Se abre el visor a pantalla completa con zoom por pellizco en el celular.</p>
        </div>
@@ -12786,10 +12787,11 @@ function showApp() {
     }
 
     // Tope de fotos por orden. El admin no tiene límite. Para el resto,
-    // depende del plan: prueba y mensual, 5. Anual, 15 (beneficio del plan).
+    // depende del plan: prueba, 2. Mensual, 5. Anual, 15 (beneficio del plan).
     function _maxFotosPorOrden() {
         if (isUserAdmin) return Infinity;
         if (_miTipoLicencia === 'permanente' && _miPlanTipo === 'anual') return 15;
+        if (_miTipoLicencia === 'prueba') return 2;
         return 5;
     }
 
