@@ -7457,6 +7457,21 @@ function showApp() {
 
     function cerrarModalPagoMP() {
         document.getElementById('modalPagoMP').style.display = 'none';
+        // Restaurar los botones a su estado normal siempre que se cierra el
+        // modal — por si quedaron trabados en "Generando el pago..." (ej:
+        // el usuario tocó Cancelar mientras el pedido de pago estaba en
+        // vuelo). Sin esto, la próxima vez que se abre el modal el botón
+        // sigue roto hasta que el fetch original termine solo.
+        const btnMP = document.getElementById('mpBtnIrAPagar');
+        if (btnMP) {
+            btnMP.disabled = false;
+            btnMP.innerHTML = '<span>💳</span> IR A MERCADO PAGO — <span id="mpPrecioLabel">AR$ ...</span>';
+        }
+        const btnPP = document.getElementById('btnPayPal');
+        if (btnPP) {
+            btnPP.disabled = false;
+            btnPP.innerHTML = '<span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span>';
+        }
     }
 
     function pagarConPayPal() {
