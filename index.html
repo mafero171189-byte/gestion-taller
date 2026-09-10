@@ -3399,7 +3399,7 @@ function showApp() {
        <button onclick="document.getElementById('inputFotoAccionGal').click()" style="background:var(--secondary); color:white; border:none; width:45px; height:45px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;">🖼️</button>
       </div>
      </div>
-     <input type="file" id="inputFotoAccionCam" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)"> <input type="file" id="inputFotoAccionGal" accept="image/*" style="display:none" onchange="subirFotoDirecta(this)">
+     <input type="file" id="inputFotoAccionCam" accept="image/*" capture="environment" style="display:none" onchange="subirFotoDirecta(this)"> <input type="file" id="inputFotoAccionGal" accept="image/*" multiple style="display:none" onchange="subirFotoDirecta(this)">
     </div>
    </div>
    <div id="modalHistorialCliente" class="modal-overlay" style="z-index: 4900;">
@@ -3669,7 +3669,7 @@ function showApp() {
        <div id="desktop-submit-row" class="full form-submit-original" style="display:flex; gap:10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
         <button type="submit" id="btnSubmit" class="btn btn-main" style="flex:2; min-width:150px;">REGISTRAR</button>
         <button type="button" id="btnLimpiar" class="btn" style="background:var(--slate-400); color:white; flex:1;" onclick="clickLimpiar()">LIMPIAR</button>
-        <input type="file" id="inputFotoCam" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)"> <input type="file" id="inputFotoGal" accept="image/*" style="display:none" onchange="agregarFotoTemporal(this)">
+        <input type="file" id="inputFotoCam" accept="image/*" capture="environment" style="display:none" onchange="agregarFotoTemporal(this)"> <input type="file" id="inputFotoGal" accept="image/*" multiple style="display:none" onchange="agregarFotoTemporal(this)">
        </div>
       </div>
      </form>
@@ -12794,18 +12794,33 @@ function showApp() {
     }
 
     function agregarFotoTemporal(input) {
-        if(input.files && input.files[0]) {
-            const max = _maxFotosPorOrden();
-            if(fotosTemporales.length >= max) {
-                showToast(`⚠️ Límite de ${max} fotos por orden alcanzado`, "#dc2626");
-                input.value = "";
-                return;
+        if(input.files && input.files.length) {
+            const archivos = Array.from(input.files);
+            let omitidas = 0;
+
+            // Procesamos de a una (comprimir es más pesado si se hace todo
+            // junto) — cada una entra a fotosTemporales apenas termina, así
+            // la galería se va llenando en vivo en vez de esperar a todas.
+            function procesarSiguiente(i) {
+                if (i >= archivos.length) {
+                    input.value = "";
+                    if (omitidas > 0) {
+                        showToast(`⚠️ ${omitidas} foto${omitidas !== 1 ? 's no entraron' : ' no entró'} por el límite de ${_maxFotosPorOrden()} por orden`, "#f59e0b");
+                    }
+                    return;
+                }
+                if (fotosTemporales.length >= _maxFotosPorOrden()) {
+                    omitidas += (archivos.length - i);
+                    procesarSiguiente(archivos.length);
+                    return;
+                }
+                comprimirImagen(archivos[i], 800, 0.7, (base64) => {
+                    fotosTemporales.push({id: Date.now() + '_' + i, b64: base64});
+                    renderThumbnails();
+                    procesarSiguiente(i + 1);
+                });
             }
-            comprimirImagen(input.files[0], 800, 0.7, (base64) => {
-                const id = Date.now();
-                fotosTemporales.push({id: id, b64: base64});
-                renderThumbnails();
-            });
+            procesarSiguiente(0);
         }
     }
 
@@ -12816,7 +12831,7 @@ function showApp() {
             c.innerHTML += `
                 <div style="position:relative; width:50px; height:50px;">
                     <img src="${f.b64}" class="thumb-preview">
-                    <button type="button" onclick="eliminarFotoTemporal(${f.id})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer;">X</button>
+                    <button type="button" onclick="eliminarFotoTemporal('${f.id}')" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer;">X</button>
                 </div>
             `;
         });
@@ -12870,63 +12885,67 @@ function showApp() {
 
     function subirFotoDirecta(input) {
         if(!idParaFotos) return;
-        if(input.files && input.files[0]) {
+        if(input.files && input.files.length) {
             const refFotos = db.ref('fotos_ordenes/' + currentUser).child(idParaFotos);
+            const archivos = Array.from(input.files);
+            const comprimir = (file) => new Promise(res => comprimirImagen(file, 800, 0.7, res));
 
-            document.getElementById('loader-text').innerText = "Subiendo foto...";
+            let subidas = 0, omitidas = 0, fallidas = 0;
+
+            document.getElementById('loader-text').innerText = archivos.length > 1 ? `Subiendo foto 1 de ${archivos.length}...` : "Subiendo foto...";
             document.getElementById('global-loader').style.display = 'flex';
 
-            // Revisamos el tope ANTES de comprimir/subir, para no gastar una
-            // subida a Cloudinary si ya está lleno.
-            refFotos.once('value').then(snap => {
-                let fotosActuales = (snap.val() || {}).fotos || [];
-                const max = _maxFotosPorOrden();
-                if(fotosActuales.length >= max) {
-                    ocultarLoader();
-                    input.value = "";
-                    showToast(`⚠️ Límite de ${max} fotos por orden alcanzado`, "#dc2626");
-                    return;
+            (async () => {
+                for (let i = 0; i < archivos.length; i++) {
+                    if (archivos.length > 1) {
+                        document.getElementById('loader-text').innerText = `Subiendo foto ${i + 1} de ${archivos.length}...`;
+                    }
+
+                    // Revisamos el tope antes de cada una — por si otra
+                    // sesión agregó fotos mientras tanto, o ya nos llenamos
+                    // en esta misma tanda.
+                    const snap = await refFotos.once('value').catch(() => null);
+                    if (!snap) { fallidas += (archivos.length - i); break; }
+                    const max = _maxFotosPorOrden();
+                    const fotosHastaAhora = (snap.val() || {}).fotos || [];
+                    if (fotosHastaAhora.length >= max) {
+                        omitidas += (archivos.length - i);
+                        break;
+                    }
+
+                    const base64 = await comprimir(archivos[i]);
+                    // Igual que al crear una orden nueva: subimos a Cloudinary
+                    // y en Firebase guardamos solo el link, no la imagen
+                    // entera — así esta vía pesa lo mismo que la otra.
+                    const url = await subirACloudinary(base64);
+                    if (!url) { fallidas++; continue; }
+
+                    // Releemos justo antes de escribir, por si algo cambió
+                    // mientras se subía a Cloudinary.
+                    const snap2 = await refFotos.once('value').catch(() => null);
+                    if (!snap2) { fallidas++; continue; }
+                    let fotosFinal = (snap2.val() || {}).fotos || [];
+                    if (fotosFinal.length >= max) { omitidas++; continue; }
+                    fotosFinal.push(url);
+                    try {
+                        await refFotos.update({fotos: fotosFinal});
+                        renderGaleria(fotosFinal);
+                        subidas++;
+                    } catch(e) {
+                        fallidas++;
+                    }
                 }
 
-                comprimirImagen(input.files[0], 800, 0.7, async (base64) => {
-                    // Igual que al crear una orden nueva: subimos a Cloudinary
-                    // y en Firebase guardamos solo el link, no la imagen entera
-                    // — así esta vía pesa lo mismo que la otra, sin importar
-                    // el tope de fotos que se use.
-                    const url = await subirACloudinary(base64);
-                    if (!url) {
-                        ocultarLoader();
-                        input.value = "";
-                        showToast("⚠️ No se pudo subir la foto a la nube. Probá de nuevo.", "#dc2626");
-                        return;
-                    }
-                    // Releemos por si otra sesión agregó fotos mientras esta se subía.
-                    refFotos.once('value').then(snap2 => {
-                        let fotosFinal = (snap2.val() || {}).fotos || [];
-                        if(fotosFinal.length >= max) {
-                            ocultarLoader();
-                            input.value = "";
-                            showToast(`⚠️ Límite de ${max} fotos por orden alcanzado`, "#dc2626");
-                            return;
-                        }
-                        fotosFinal.push(url);
-                        refFotos.update({fotos: fotosFinal}).then(() => {
-                            renderGaleria(fotosFinal);
-                            ocultarLoader();
-                            input.value = "";
-                        }).catch(() => {
-                            ocultarLoader();
-                            showToast("⚠️ Error al guardar la foto. Intentá de nuevo.", "#dc2626");
-                        });
-                    }).catch(() => {
-                        ocultarLoader();
-                        showToast("⚠️ Error al conectar con Firebase. Revisá tu conexión.", "#dc2626");
-                    });
-                });
-            }).catch(() => {
                 ocultarLoader();
-                showToast("⚠️ Error al conectar con Firebase. Revisá tu conexión.", "#dc2626");
-            });
+                input.value = "";
+                const partes = [];
+                if (subidas > 0)  partes.push(`✅ ${subidas} foto${subidas !== 1 ? 's agregadas' : ' agregada'}`);
+                if (omitidas > 0) partes.push(`${omitidas} no entraron por el límite de ${_maxFotosPorOrden()}`);
+                if (fallidas > 0) partes.push(`${fallidas} fallaron al subir`);
+                if (partes.length) {
+                    showToast(partes.join(' — '), (omitidas > 0 || fallidas > 0) ? "#f59e0b" : "#059669");
+                }
+            })();
         }
     }
 
