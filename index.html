@@ -2332,7 +2332,7 @@ function showApp() {
        <div class="feature-title">Fotos por Orden</div>
        <div class="feature-desc">Adjuntá fotos por reparación directamente desde el celular — hasta 5 con el plan mensual, hasta 15 con el anual. Las imágenes se guardan en la nube y no ocupan espacio en el teléfono.</div>
        <div class="feature-tags">
-        <span class="tag">5 fotos (mensual) · 15 (anual)</span><span class="tag">Compresión auto</span><span class="tag">Nube separada</span>
+        <span class="tag" id="landing-tag-fotos">5 fotos (mensual) · 15 (anual)</span><span class="tag">Compresión auto</span><span class="tag">Nube separada</span>
        </div>
       </div>
       <div class="feature-card reveal reveal-d3">
@@ -2507,13 +2507,13 @@ function showApp() {
         <li>Órdenes de reparación</li>
         <li>Estados y seguimiento</li>
         <li>WhatsApp integrado</li>
-        <li>Hasta 2 fotos por orden</li>
+        <li id="landing-li-fotos-prueba">Hasta 2 fotos por orden</li>
         <li>Stock con escáner de barras</li>
         <li>Presupuestos con PDF</li>
         <li>Venta Rápida de mostrador</li>
         <li>Contabilidad completa</li>
         <li>Tickets y PDF</li>
-        <li>1 dispositivo conectado</li>
+        <li id="landing-li-disp-prueba">1 dispositivo conectado</li>
        </ul>
        <a href="#" onclick="showApp(); return false;" class="plan-btn plan-btn-ghost">Empezar prueba gratuita</a>
       </div>
@@ -2535,8 +2535,8 @@ function showApp() {
         <li>Acceso a nuevas funciones</li>
         <li>Soporte prioritario</li>
         <li>Actualizaciones incluidas</li>
-        <li><b>Hasta 5 fotos por orden</b></li>
-        <li>1 dispositivo conectado</li>
+        <li><b id="landing-li-fotos-mensual">Hasta 5 fotos por orden</b></li>
+        <li id="landing-li-disp-mensual">1 dispositivo conectado</li>
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Mensual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link">Consultar por WhatsApp 📲</a>
       </div>
@@ -2558,8 +2558,8 @@ function showApp() {
         <li>Sin renovaciones mes a mes</li>
         <li>Soporte prioritario</li>
         <li>Actualizaciones incluidas</li>
-        <li><b>Hasta 15 fotos por orden</b></li>
-        <li><b>Hasta 3 dispositivos a la vez</b></li>
+        <li><b id="landing-li-fotos-anual">Hasta 15 fotos por orden</b></li>
+        <li><b id="landing-li-disp-anual">Hasta 3 dispositivos a la vez</b></li>
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Anual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link" style="background:linear-gradient(135deg,#16a34a,#15803d);">Consultar por WhatsApp 📲</a>
       </div>
@@ -4050,6 +4050,48 @@ function showApp() {
       </div>
      </div>
 
+          <!-- CONFIGURACIÓN DISPOSITIVOS POR PLAN -->
+     <div class="card-form" style="background: var(--blue-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--blue-300); margin-bottom: 20px;">
+      <label style="color:var(--blue-700); font-weight:900; font-size:15px;">📱 Dispositivos Conectados por Plan</label>
+      <p style="font-size:12px; color:var(--blue-700); margin:6px 0 12px 0;">Cuántos dispositivos a la vez puede tener conectados cada cliente, según su plan. El admin no tiene límite. Esto es la base — dispositivosExtra (en 📱 Dispositivos, por cliente) se suma encima.</p>
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+       <div style="flex:1;">
+        <label style="font-size:11px; color:var(--blue-700); display:block; margin-bottom:4px;">Prueba</label>
+        <input type="number" id="inputDispPrueba" min="1" max="50" value="1" style="width:100%; padding:10px; border:1.5px solid var(--blue-300); border-radius:8px; font-size:15px; font-weight:800; text-align:center; box-sizing:border-box;">
+       </div>
+       <div style="flex:1;">
+        <label style="font-size:11px; color:var(--blue-700); display:block; margin-bottom:4px;">Mensual</label>
+        <input type="number" id="inputDispMensual" min="1" max="50" value="1" style="width:100%; padding:10px; border:1.5px solid var(--blue-300); border-radius:8px; font-size:15px; font-weight:800; text-align:center; box-sizing:border-box;">
+       </div>
+       <div style="flex:1;">
+        <label style="font-size:11px; color:var(--blue-700); display:block; margin-bottom:4px;">Anual</label>
+        <input type="number" id="inputDispAnual" min="1" max="50" value="3" style="width:100%; padding:10px; border:1.5px solid var(--blue-300); border-radius:8px; font-size:15px; font-weight:800; text-align:center; box-sizing:border-box;">
+       </div>
+      </div>
+      <button id="btnGuardarLimitesDisp" onclick="guardarLimitesDispositivos()" class="btn" style="background:var(--secondary); color:white; padding:10px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">💾 GUARDAR</button>
+     </div>
+
+          <!-- CONFIGURACIÓN FOTOS POR PLAN -->
+     <div class="card-form" style="background: var(--purple-25); padding: 20px; border-radius: 12px; border: 1.5px solid var(--purple-100); margin-bottom: 20px;">
+      <label style="color:var(--purple-800); font-weight:900; font-size:15px;">📸 Fotos por Orden según Plan</label>
+      <p style="font-size:12px; color:var(--purple-800); margin:6px 0 12px 0;">Cuántas fotos puede adjuntar cada cliente por orden de reparación, según su plan. El admin no tiene límite.</p>
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+       <div style="flex:1;">
+        <label style="font-size:11px; color:var(--purple-800); display:block; margin-bottom:4px;">Prueba</label>
+        <input type="number" id="inputFotosPrueba" min="1" max="100" value="2" style="width:100%; padding:10px; border:1.5px solid var(--purple-100); border-radius:8px; font-size:15px; font-weight:800; text-align:center; box-sizing:border-box;">
+       </div>
+       <div style="flex:1;">
+        <label style="font-size:11px; color:var(--purple-800); display:block; margin-bottom:4px;">Mensual</label>
+        <input type="number" id="inputFotosMensual" min="1" max="100" value="5" style="width:100%; padding:10px; border:1.5px solid var(--purple-100); border-radius:8px; font-size:15px; font-weight:800; text-align:center; box-sizing:border-box;">
+       </div>
+       <div style="flex:1;">
+        <label style="font-size:11px; color:var(--purple-800); display:block; margin-bottom:4px;">Anual</label>
+        <input type="number" id="inputFotosAnual" min="1" max="100" value="15" style="width:100%; padding:10px; border:1.5px solid var(--purple-100); border-radius:8px; font-size:15px; font-weight:800; text-align:center; box-sizing:border-box;">
+       </div>
+      </div>
+      <button id="btnGuardarLimitesFotos" onclick="guardarLimitesFotos()" class="btn" style="background:var(--secondary); color:white; padding:10px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">💾 GUARDAR</button>
+     </div>
+
           <!-- CONFIGURACIÓN DE PRECIOS -->
      <h3 style="margin:0 0 15px 0; font-size:16px; color:var(--gray-900);">💳 Configuración de Precios Públicos</h3>
      <div class="card-form" style="background: var(--green-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--green-250); margin-bottom: 20px;">
@@ -4543,7 +4585,7 @@ function showApp() {
         <p><b>Me olvidé mi contraseña, ¿qué hago?</b><br>Desde la pantalla de inicio de sesión, tocá <b>"🔑 Olvidé mi clave"</b> e ingresá tu número de WhatsApp. Si tenés un email de recuperación cargado, te vamos a mandar un link ahí para elegir una clave nueva. Revisá también la carpeta de spam.</p>
         <p><b>¿Cómo cambio mi contraseña actual?</b><br>Ingresá a <b>👤 Mi Perfil</b>, escribí la nueva clave en el campo "Nueva Clave" y presioná "ACTUALIZAR".</p>
         <p><b>Me aparece el mensaje "Acceso Denegado".</b><br>Ocurre en dos situaciones: (1) llegaste al máximo de dispositivos conectados a la vez para tu plan y se cerró la sesión más antigua para dejarte entrar; (2) tu licencia fue suspendida — contactá al soporte.</p>
-        <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br>Depende del plan: con licencia de prueba o mensual, <b>1 dispositivo</b> a la vez. Con licencia anual, <b>hasta 3</b>. Si te conectás en uno de más, se cierra automáticamente la sesión más vieja (no la que recién abriste) para hacerle lugar.</p>
+        <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br><span id="faq-texto-dispositivos">Depende del plan: con licencia de prueba o mensual, <b>1 dispositivo</b> a la vez. Con licencia anual, <b>hasta 3</b>. Si te conectás en uno de más, se cierra automáticamente la sesión más vieja (no la que recién abriste) para hacerle lugar.</span></p>
        </div>
       </details>
      </div>
@@ -4569,7 +4611,7 @@ function showApp() {
        <summary class="faq-summary">📷 Fotos y Archivos <span>+</span></summary>
        <div class="faq-content">
         <p><b>¿Por qué no puedo subir una foto?</b><br>El sistema comprime las fotos automáticamente. Si la subida falla, verificá la conexión a internet. Intentá con una foto de menor resolución si el problema persiste.</p>
-        <p><b>¿Cuántas fotos puedo subir por orden?</b><br>Depende del plan: <b>2 fotos</b> con licencia de prueba, <b>5</b> con licencia mensual, <b>15</b> con licencia anual. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real.</p>
+        <p><b>¿Cuántas fotos puedo subir por orden?</b><br><span id="faq-texto-fotos">Depende del plan: <b>2 fotos</b> con licencia de prueba, <b>5</b> con licencia mensual, <b>15</b> con licencia anual. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real.</span></p>
         <p><b>¿Se borran mis fotos con el tiempo?</b><br>Sí. Las fotos de órdenes con más de <b>45 días de antigüedad</b> se eliminan automáticamente. Los datos de la orden se conservan siempre.</p>
         <p><b>¿Cómo veo las fotos de una orden?</b><br>Tocá cualquier miniatura de foto en la tabla. Se abre el visor a pantalla completa con zoom por pellizco en el celular.</p>
        </div>
@@ -4741,6 +4783,79 @@ function showApp() {
         const inputDP = document.getElementById('inputDiasPrueba');
         if (inputDP && document.activeElement !== inputDP) inputDP.value = d;
     });
+
+    // ── LÍMITES POR PLAN (DISPOSITIVOS Y FOTOS) EN TIEMPO REAL ──────────────
+    // window.LIMITES es lo que consultan _maxDispositivosPorPlan() y
+    // _maxFotosPorOrden() — arranca con los valores que ya venía usando el
+    // código antes de ser configurables, como respaldo si todavía no se
+    // cargó nada desde Firebase o el admin nunca los tocó.
+    window.LIMITES = {
+        dispositivos: { prueba: 1, mensual: 1, anual: 3 },
+        fotos: { prueba: 2, mensual: 5, anual: 15 }
+    };
+    db.ref('configuracion/limites').on('value', snap => {
+        const l = snap.val() || {};
+        window.LIMITES = {
+            dispositivos: Object.assign({ prueba: 1, mensual: 1, anual: 3 }, l.dispositivos || {}),
+            fotos: Object.assign({ prueba: 2, mensual: 5, anual: 15 }, l.fotos || {})
+        };
+        _actualizarInformativosLimites();
+    });
+
+    // Actualiza TODOS los lugares informativos (landing + FAQ interno) con
+    // los valores actuales de window.LIMITES — se llama sola cada vez que el
+    // admin guarda un cambio (el listener de arriba dispara en todas las
+    // pestañas abiertas, no solo en la del admin) y una vez al cargar la app.
+    function _actualizarInformativosLimites() {
+        const L = window.LIMITES;
+        const disp = L.dispositivos, fotos = L.fotos;
+        const plural = (n, s, p) => n === 1 ? s : p;
+
+        // Landing — tarjetas de planes
+        const liDispPrueba = document.getElementById('landing-li-disp-prueba');
+        if (liDispPrueba) liDispPrueba.innerText = `${disp.prueba} ${plural(disp.prueba, 'dispositivo conectado', 'dispositivos conectados')}`;
+        const liFotosPrueba = document.getElementById('landing-li-fotos-prueba');
+        if (liFotosPrueba) liFotosPrueba.innerText = `Hasta ${fotos.prueba} ${plural(fotos.prueba, 'foto', 'fotos')} por orden`;
+
+        const liDispMensual = document.getElementById('landing-li-disp-mensual');
+        if (liDispMensual) liDispMensual.innerText = `${disp.mensual} ${plural(disp.mensual, 'dispositivo conectado', 'dispositivos conectados')}`;
+        const liFotosMensual = document.getElementById('landing-li-fotos-mensual');
+        if (liFotosMensual) liFotosMensual.innerText = `Hasta ${fotos.mensual} ${plural(fotos.mensual, 'foto', 'fotos')} por orden`;
+
+        const liDispAnual = document.getElementById('landing-li-disp-anual');
+        if (liDispAnual) liDispAnual.innerText = `Hasta ${disp.anual} ${plural(disp.anual, 'dispositivo a la vez', 'dispositivos a la vez')}`;
+        const liFotosAnual = document.getElementById('landing-li-fotos-anual');
+        if (liFotosAnual) liFotosAnual.innerText = `Hasta ${fotos.anual} ${plural(fotos.anual, 'foto', 'fotos')} por orden`;
+
+        const tagFotos = document.getElementById('landing-tag-fotos');
+        if (tagFotos) tagFotos.innerText = `${fotos.mensual} fotos (mensual) · ${fotos.anual} (anual)`;
+
+        // FAQ interno
+        const faqDisp = document.getElementById('faq-texto-dispositivos');
+        if (faqDisp) faqDisp.innerHTML = `Depende del plan: con licencia de prueba, ${disp.prueba} ${plural(disp.prueba, 'dispositivo', 'dispositivos')} a la vez. Con licencia mensual, ${disp.mensual}. Con licencia anual, hasta ${disp.anual}. Si te conectás en uno de más, se cierra automáticamente la sesión más vieja (no la que recién abriste) para hacerle lugar.`;
+        const faqFotos = document.getElementById('faq-texto-fotos');
+        if (faqFotos) faqFotos.innerHTML = `Depende del plan: <b>${fotos.prueba} ${plural(fotos.prueba, 'foto', 'fotos')}</b> con licencia de prueba, <b>${fotos.mensual}</b> con licencia mensual, <b>${fotos.anual}</b> con licencia anual. El contador junto al botón de fotos te muestra cuántas llevás en tiempo real.`;
+
+        // Cuadro de configuración (admin) — no pisar mientras está escribiendo
+        ['prueba','mensual','anual'].forEach(plan => {
+            const inD = document.getElementById('inputDisp' + plan.charAt(0).toUpperCase() + plan.slice(1));
+            if (inD && document.activeElement !== inD) inD.value = disp[plan];
+            const inF = document.getElementById('inputFotos' + plan.charAt(0).toUpperCase() + plan.slice(1));
+            if (inF && document.activeElement !== inF) inF.value = fotos[plan];
+        });
+    }
+
+    // Tope de dispositivos conectados a la vez, según el tipo/plan de
+    // licencia — centralizado acá para no tener el mismo cálculo repetido
+    // en registrarSesionActiva() y en el modal de Dispositivos Extra (admin).
+    // Lee de window.LIMITES (configurable en Licencias), con el mismo
+    // respaldo que ya traía el código antes de ser configurable.
+    function _maxDispositivosPorPlan(tipoLicencia, planTipo) {
+        const L = (window.LIMITES && window.LIMITES.dispositivos) || {};
+        if (tipoLicencia === 'permanente' && planTipo === 'anual') return L.anual != null ? L.anual : 3;
+        if (tipoLicencia === 'permanente') return L.mensual != null ? L.mensual : 1;
+        return L.prueba != null ? L.prueba : 1;
+    }
 
     // ── WHATSAPP DE SOPORTE EN TIEMPO REAL ───────────────────────────────
     // Único lugar donde vive el número real. Todos los links wa.me/... de
@@ -7011,16 +7126,16 @@ function showApp() {
     // ── SESIONES MÚLTIPLES POR PLAN ─────────────────────────────────────────
     // Antes: un solo `tokenSesion` que se pisaba en cada login, expulsando
     // cualquier otra sesión abierta. Ahora: un mapa `sesiones` con una entrada
-    // por dispositivo logueado, con un tope según el plan — 1 para
-    // prueba/mensual, 3 para anual — más lo que el admin le haya sumado a
-    // mano en dispositivosExtra (ver modal 📱 en Licencias). Al pasarse del
-    // tope, se saca la sesión más vieja (no la más nueva, para no expulsar
-    // al que recién entró).
+    // por dispositivo logueado, con un tope según el plan (configurable en
+    // Licencias — ver _maxDispositivosPorPlan) más lo que el admin le haya
+    // sumado a mano en dispositivosExtra (ver modal 📱 en Licencias). Al
+    // pasarse del tope, se saca la sesión más vieja (no la más nueva, para
+    // no expulsar al que recién entró).
     function registrarSesionActiva(u, token) {
         const refUser = db.ref('usuarios_registrados/' + u);
         refUser.once('value').then(snap => {
             const d = snap.val() || {};
-            const base = (d.tipoLicencia === 'permanente' && d.planTipo === 'anual') ? 3 : 1;
+            const base = _maxDispositivosPorPlan(d.tipoLicencia, d.planTipo);
             const maxSesiones = base + (parseInt(d.dispositivosExtra, 10) || 0);
             const sesiones = Object.assign({}, d.sesiones || {});
             sesiones[token] = Date.now();
@@ -12787,12 +12902,13 @@ function showApp() {
     }
 
     // Tope de fotos por orden. El admin no tiene límite. Para el resto,
-    // depende del plan: prueba, 2. Mensual, 5. Anual, 15 (beneficio del plan).
+    // depende del plan (configurable en Licencias — ver window.LIMITES).
     function _maxFotosPorOrden() {
         if (isUserAdmin) return Infinity;
-        if (_miTipoLicencia === 'permanente' && _miPlanTipo === 'anual') return 15;
-        if (_miTipoLicencia === 'prueba') return 2;
-        return 5;
+        const L = (window.LIMITES && window.LIMITES.fotos) || {};
+        if (_miTipoLicencia === 'permanente' && _miPlanTipo === 'anual') return L.anual != null ? L.anual : 15;
+        if (_miTipoLicencia === 'prueba') return L.prueba != null ? L.prueba : 2;
+        return L.mensual != null ? L.mensual : 5;
     }
 
     function agregarFotoTemporal(input) {
@@ -14884,14 +15000,14 @@ function showApp() {
     }
 
     // ====== MODAL DISPOSITIVOS EXTRA (ADMIN) ======
-    // El límite de sesiones simultáneas sale del plan (1 prueba/mensual,
-    // 3 anual — ver registrarSesionActiva). dispositivosExtra es un plus
+    // El límite base de sesiones simultáneas sale del plan (configurable en
+    // Licencias — ver _maxDispositivosPorPlan). dispositivosExtra es un plus
     // ADITIVO por cliente puntual, encima de lo que le toque por plan.
     let _dispWaActual = null;
 
     function _pintarInfoDispositivos(d) {
         const tipoLic = d.tipoLicencia || 'prueba';
-        const base = (tipoLic === 'permanente' && d.planTipo === 'anual') ? 3 : 1;
+        const base = _maxDispositivosPorPlan(tipoLic, d.planTipo);
         const extra = parseInt(d.dispositivosExtra, 10) || 0;
         const total = base + extra;
         const planTxt = tipoLic === 'permanente' ? (d.planTipo === 'anual' ? 'Anual' : 'Mensual') : 'Prueba';
@@ -15672,6 +15788,57 @@ function showApp() {
             if (regDias) regDias.textContent = d;
             if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
             showToast('✅ Días de prueba actualizados a ' + val + ' días', '#059669');
+            setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR'; }, 3000);
+        }).catch(() => {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
+            showToast('Error al guardar', '#dc2626');
+        });
+    }
+
+    function guardarLimitesDispositivos() {
+        const vals = {
+            prueba:  parseInt(document.getElementById('inputDispPrueba').value, 10),
+            mensual: parseInt(document.getElementById('inputDispMensual').value, 10),
+            anual:   parseInt(document.getElementById('inputDispAnual').value, 10)
+        };
+        for (const k in vals) {
+            if (!vals[k] || vals[k] < 1 || vals[k] > 50) {
+                showToast('Ingresá números entre 1 y 50 en los tres campos', '#f59e0b');
+                return;
+            }
+        }
+        const btn = document.getElementById('btnGuardarLimitesDisp');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+        db.ref('configuracion/limites/dispositivos').update(vals).then(() => {
+            // No hace falta actualizar el DOM acá — el listener de arriba
+            // (configuracion/limites) dispara solo apenas se guarda esto,
+            // en esta pestaña y en todas las que estén abiertas.
+            if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
+            showToast('✅ Límite de dispositivos actualizado', '#059669');
+            setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR'; }, 3000);
+        }).catch(() => {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
+            showToast('Error al guardar', '#dc2626');
+        });
+    }
+
+    function guardarLimitesFotos() {
+        const vals = {
+            prueba:  parseInt(document.getElementById('inputFotosPrueba').value, 10),
+            mensual: parseInt(document.getElementById('inputFotosMensual').value, 10),
+            anual:   parseInt(document.getElementById('inputFotosAnual').value, 10)
+        };
+        for (const k in vals) {
+            if (!vals[k] || vals[k] < 1 || vals[k] > 100) {
+                showToast('Ingresá números entre 1 y 100 en los tres campos', '#f59e0b');
+                return;
+            }
+        }
+        const btn = document.getElementById('btnGuardarLimitesFotos');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+        db.ref('configuracion/limites/fotos').update(vals).then(() => {
+            if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
+            showToast('✅ Límite de fotos actualizado', '#059669');
             setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR'; }, 3000);
         }).catch(() => {
             if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR'; }
