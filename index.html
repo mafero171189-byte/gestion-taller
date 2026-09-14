@@ -5055,6 +5055,12 @@ function showApp() {
     // síncrona, sin ir a buscarlo a Firebase cada vez que se toca un botón).
     let _miTipoLicencia = null;
     let _miPlanTipo = null;
+    // Cacheados desde el mismo listener, para que el chequeo periódico de
+    // vencimiento (más abajo) compare contra la hora actual SIN volver a
+    // consultar Firebase — así no gasta cuota de lecturas.
+    let _miFechaExpiracion = null;
+    let _licenciaVencidaYaMostrada = false;
+    let _intervaloChequeoLicencia = null;
     let isClientMode = false;
     let currentUser = null;
     Object.defineProperty(window, 'isUserAdmin',  { get: () => isUserAdmin,  set: v => { isUserAdmin = v; } });
@@ -5582,6 +5588,24 @@ function showApp() {
         _pagoAbiertoDesdeExpulsion = true;
         document.getElementById('expulsadoModal').style.display = 'none';
         mostrarPanelContactoAdmin();
+    }
+
+    function _evaluarEstadoLicencia(dataUser) {
+        if (dataUser.estado === 'suspendido') {
+            mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
+        }
+        else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
+            _licenciaVencidaYaMostrada = true;
+            mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nElegí un plan para activar tu licencia y seguir usando Mi Taller Web.", true);
+        }
+        else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
+            _licenciaVencidaYaMostrada = true;
+            const nombrePlan = dataUser.planTipo === 'anual' ? 'anual' : 'mensual';
+            mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nRenovala ahora para seguir usando Mi Taller Web.", true);
+        }
+        else if (_sesionFueExpulsada(dataUser)) {
+            mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo, o se alcanzó el máximo de dispositivos conectados a la vez.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
+        }
     }
 
     function forzarSalida() { logout(); }
@@ -8548,19 +8572,33 @@ function showApp() {
                 // a Firebase cada vez (se llama de forma síncrona).
                 _miTipoLicencia = dataUser.tipoLicencia || null;
                 _miPlanTipo = dataUser.planTipo || null;
+                _miFechaExpiracion = dataUser.fechaExpiracion || null;
+                // Si llega una licencia vigente (activación/renovación), permitir
+                // que el chequeo periódico vuelva a avisar si en el futuro vence.
+                if (!(_miFechaExpiracion && _miFechaExpiracion < Date.now())) {
+                    _licenciaVencidaYaMostrada = false;
+                }
 
-                if (dataUser.estado === 'suspendido') {
-                    mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
-                }
-                else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nElegí un plan para activar tu licencia y seguir usando Mi Taller Web.", true);
-                }
-                else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    const nombrePlan = dataUser.planTipo === 'anual' ? 'anual' : 'mensual';
-                    mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nRenovala ahora para seguir usando Mi Taller Web.", true);
-                }
-                else if (_sesionFueExpulsada(dataUser)) {
-                    mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo, o se alcanzó el máximo de dispositivos conectados a la vez.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
+                _evaluarEstadoLicencia(dataUser);
+
+                // Chequeo periódico: como el listener de arriba solo se dispara
+                // cuando algo ESCRIBE en el registro de este usuario (no cuando
+                // simplemente pasa el tiempo), sin esto alguien podría dejar la
+                // sesión abierta después de vencida y seguir usando la app hasta
+                // recargar la página. Compara la hora contra el dato ya cacheado
+                // arriba — no vuelve a consultar Firebase, cero costo extra.
+                if (!_intervaloChequeoLicencia) {
+                    _intervaloChequeoLicencia = setInterval(() => {
+                        if (_miFechaExpiracion && _miFechaExpiracion < Date.now() && !_licenciaVencidaYaMostrada) {
+                            _licenciaVencidaYaMostrada = true;
+                            if (_miTipoLicencia === 'prueba') {
+                                mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nElegí un plan para activar tu licencia y seguir usando Mi Taller Web.", true);
+                            } else {
+                                const nombrePlan = _miPlanTipo === 'anual' ? 'anual' : 'mensual';
+                                mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nRenovala ahora para seguir usando Mi Taller Web.", true);
+                            }
+                        }
+                    }, 5 * 60 * 1000); // cada 5 minutos
                 }
 
                 if (dataUser && dataUser.fechaExpiracion && dataUser.estado !== 'suspendido') {
