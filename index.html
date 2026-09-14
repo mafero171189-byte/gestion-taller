@@ -88,9 +88,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     /* === SCANNER DE CÓDIGO DE BARRAS === */
     #scannerModal {
@@ -2685,7 +2683,7 @@ function showApp() {
       <div style="position:relative;">
         <div style="display:flex;gap:8px;align-items:center;">
           <input type="text" id="vrBusqueda" placeholder="Buscar artículo en stock..."
-            oninput="filtrarVentaRapida()" onfocus="filtrarVentaRapida()" onblur="hideVrAutocomplete()"
+            oninput="_debounced('vr', filtrarVentaRapida)" onfocus="filtrarVentaRapida()" onblur="hideVrAutocomplete()"
             autocomplete="off"
             style="flex:1;padding:10px 12px;border:2px solid var(--purple-700);border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;box-sizing:border-box;outline:none;">
           <button type="button" class="btn-scan-inline" onclick="abrirScanner('venta-rapida')" title="Escanear" style="background:var(--purple-900);border-color:var(--purple-700);color:#c084fc;">📷</button>
@@ -2962,7 +2960,7 @@ function showApp() {
      <p style="color: var(--success); font-weight: bold; font-size: 18px; margin-top: 0;">¡Equipo Reparado!</p>
      <p style="font-size: 13px; color: var(--gray-600); margin-bottom: 15px;">¿Usaste repuestos del stock? Buscalos y agregalos a la lista:</p>
      <div style="position: relative; text-align: left;">
-      <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" oninput="filtrarStockModal()" onfocus="filtrarStockModal()" onblur="hideAutocomplete('repuestoModalUsado')" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid var(--secondary); border-radius: 8px; box-sizing: border-box; font-size:14px;">
+      <input type="text" id="repuestoModalUsado" placeholder="🔎 Buscar (Ej: Batería, Pin...)" oninput="_debounced('stockModal', filtrarStockModal)" onfocus="filtrarStockModal()" onblur="hideAutocomplete('repuestoModalUsado')" autocomplete="off" style="width: 100%; padding: 10px; border: 2px solid var(--secondary); border-radius: 8px; box-sizing: border-box; font-size:14px;">
       <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
      </div>
      <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
@@ -3775,7 +3773,7 @@ function showApp() {
           </div>
           <div style="position:relative; margin-bottom:10px;">
             <input type="text" id="pres-buscar-stock" autocomplete="off"
-              oninput="filtrarStockPresupuesto()" onblur="hidePresStockAutocomplete()" onfocus="filtrarStockPresupuesto()"
+              oninput="_debounced('stockPres', filtrarStockPresupuesto)" onblur="hidePresStockAutocomplete()" onfocus="filtrarStockPresupuesto()"
               placeholder="🔍 Buscar en mi stock (opcional)..."
               style="width:100%; padding:10px 12px; border:1.5px dashed var(--indigo-200); border-radius:8px; font-size:13px; font-family:inherit; background:var(--indigo-25); box-sizing:border-box;">
             <div id="pres-stock-autocomplete" class="autocomplete-list" style="width:100%;"></div>
@@ -3837,7 +3835,7 @@ function showApp() {
      </div>
      <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 20px;"></div>
      <div style="margin-bottom: 15px;">
-      <input type="text" id="search-conta" placeholder="🔎 Buscar movimiento por Orden, Cliente, Concepto o Método..." oninput="renderTablaContabilidad()" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--gray-200); box-sizing: border-box; font-size:15px;">
+      <input type="text" id="search-conta" placeholder="🔎 Buscar movimiento por Orden, Cliente, Concepto o Método..." oninput="_debounced('conta', renderTablaContabilidad)" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--gray-200); box-sizing: border-box; font-size:15px;">
      </div>
      <div id="contabilidad-diaria"></div>
     </div>
@@ -3968,7 +3966,7 @@ function showApp() {
       </div>
       <div style="margin-bottom:12px;">
         <input type="text" id="search-ventas" placeholder="🔎 Buscar por N° venta, nombre o artículo..."
-          oninput="renderTablaVentas()"
+          oninput="_debounced('ventas', renderTablaVentas)"
           style="width:100%;padding:11px;border-radius:8px;border:1px solid var(--gray-200);box-sizing:border-box;font-size:14px;">
       </div>
       <div id="ventas-tabla-wrap"></div>
@@ -3980,7 +3978,7 @@ function showApp() {
         <div id="historial-mes-nav-ventas" style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;margin-bottom:10px;gap:8px;"></div>
         <!-- Buscador -->
         <input type="text" id="historial-reparaciones-search" placeholder="🔎 Buscar por cliente, equipo, N° orden..."
-          oninput="renderHistorialEnVentas(registrosArchivados)"
+          oninput="_debounced('histVentas', () => renderHistorialEnVentas(registrosArchivados))"
           style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--gray-200);box-sizing:border-box;font-size:14px;font-family:'Outfit',sans-serif;outline:none;margin-bottom:12px;">
         <!-- Cards del historial -->
         <div id="historial-tabla-ventas-wrap"></div>
@@ -5174,6 +5172,35 @@ function showApp() {
     
     let debounceTimer;
     let _autoOrdenTimer;
+
+    // Debounce genérico para buscadores que antes re-renderizaban la tabla
+    // entera en CADA tecla presionada (Contabilidad, Ventas, Historial, Venta
+    // Rápida, Stock). Con esto, esperan a que el usuario deje de escribir
+    // ~220ms antes de renderizar — mismo resultado visual, muchísimo menos
+    // trabajo en listas largas.
+    const _debounceTimers = {};
+    function _debounced(key, fn, delay = 220) {
+        clearTimeout(_debounceTimers[key]);
+        _debounceTimers[key] = setTimeout(fn, delay);
+    }
+
+    // Carga diferida de librerías pesadas (Quagga, pdf.js) que antes se
+    // descargaban SIEMPRE al abrir la app, aunque el usuario nunca escaneara
+    // un código de barras ni imprimiera un PDF. Ahora se piden recién cuando
+    // hacen falta. Cachea la promesa por URL, así si se llama dos veces no
+    // inyecta el <script> de nuevo ni vuelve a descargar.
+    const _scriptsCargados = {};
+    function _cargarScriptExterno(url) {
+        if (_scriptsCargados[url]) return _scriptsCargados[url];
+        _scriptsCargados[url] = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = url;
+            s.onload = () => resolve();
+            s.onerror = () => { delete _scriptsCargados[url]; reject(new Error('No se pudo cargar ' + url)); };
+            document.head.appendChild(s);
+        });
+        return _scriptsCargados[url];
+    }
 
     // ── Configuración regional dinámica ────────────────────────────────────────
     const _PAISES = {
@@ -6761,6 +6788,11 @@ function showApp() {
             const w = window.open(url, '_blank');
             if (!w) { const a = document.createElement('a'); a.href = url; a.download = `Orden-${nro}.pdf`; a.click(); }
         };
+        if (!window.pdfjsLib) {
+            try {
+                await _cargarScriptExterno('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+            } catch (e) { /* sigue al fallback de abajo */ }
+        }
         if (!window.pdfjsLib) { abrirPDFNormal(); return; }
         try {
             mostrarLoader('Preparando impresión...');
@@ -18595,7 +18627,10 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         statusEl.textContent = 'Iniciando cámara...';
 
         if (typeof Quagga === 'undefined') {
-            statusEl.textContent = '⚠️ Librería no disponible. Usá USB/BT.';
+            statusEl.textContent = 'Cargando lector de cámara...';
+            _cargarScriptExterno('https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js')
+                .then(() => _iniciarCamara())
+                .catch(() => { statusEl.textContent = '⚠️ No se pudo cargar la cámara. Usá USB/BT.'; });
             return;
         }
 
