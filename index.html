@@ -4686,6 +4686,24 @@ function showApp() {
        </div>
       </details>
      </div>
+
+     <!-- FAQ 8: ATAJOS DE TECLADO -->
+     <div class="faq-accordion">
+      <details>
+       <summary class="faq-summary">⌨️ Atajos de Teclado <span>+</span></summary>
+       <div class="faq-content">
+        <p><b>¿Hay atajos para moverme más rápido entre secciones?</b><br>Sí, usando una PC o notebook (no aplica en celular). Mantené presionado <b>Alt</b> y tocá un número para saltar directo a esa sección:</p>
+        <p style="margin:10px 0 0;line-height:1.9;">
+        <b>Alt + 1</b> → Gestión<br>
+        <b>Alt + 2</b> → Ventas<br>
+        <b>Alt + 3</b> → Presupuesto<br>
+        <b>Alt + 4</b> → Contabilidad<br>
+        <b>Alt + 5</b> → Stock
+        </p>
+        <p><b>¿Algún otro atajo?</b><br>Las flechas <b>← →</b> del teclado cambian de pestaña cuando el foco no está en un campo de texto. Y dentro de los formularios, <b>Enter</b> avanza al siguiente campo, igual que Tab.</p>
+       </div>
+      </details>
+     </div>
     </div>
    </div>
   </div>
@@ -19031,6 +19049,13 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         const descMonto  = parseFloat(r.descuentoMonto) || 0;
         const descEntrega = parseFloat(r.descuentoEntregaMonto) || 0;
         const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
+        // OJO: no usar "|| total" acá — si no se cobró nada, sena+saldoCob da 0,
+        // y en JS "0 || total" descarta el 0 por ser falsy y muestra el total
+        // completo como si estuviera pagado. Bug real que mostraba "TOTAL
+        // ABONADO" con el precio entero en órdenes "Entregado sin cobrar".
+        const totalNeto      = Math.max(total - descEntrega, 0);
+        const abonado        = Math.min(sena + saldoCob, totalNeto);
+        const saldoPendiente = Math.max(totalNeto - abonado, 0);
 
         cont.innerHTML = `
           <div style="text-align:center;margin-bottom:18px;padding-bottom:16px;border-bottom:2px dashed #e5e7eb;">
@@ -19085,8 +19110,12 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             </div>` : ''}
             <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
               <span style="font-size:15px;font-weight:800;color:#111827;">TOTAL ABONADO</span>
-              <span style="font-size:18px;font-weight:900;color:#059669;">${_fmtMonto(Math.min(sena + saldoCob, total - descEntrega) || total)}</span>
+              <span style="font-size:18px;font-weight:900;color:#059669;">${_fmtMonto(abonado)}</span>
             </div>
+            ${saldoPendiente > 0 ? `<div style="display:flex;justify-content:space-between;padding:10px 12px;margin-top:4px;background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;">
+              <span style="font-size:14px;font-weight:800;color:#b91c1c;">⚠️ SALDO PENDIENTE</span>
+              <span style="font-size:16px;font-weight:900;color:#b91c1c;">${_fmtMonto(saldoPendiente)}</span>
+            </div>` : ''}
           </div>
           ${r.vencimientoGarantia ? (() => {
               let diasTxt = '';
@@ -19159,7 +19188,10 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         const descMonto    = parseFloat(r.descuentoMonto) || 0;
         const descEntrega  = parseFloat(r.descuentoEntregaMonto) || 0;
         const precioEfectivoRecibo = Math.max(0, total - descEntrega);
-        const totalAbonado = Math.min(sena + saldoCob, precioEfectivoRecibo) || precioEfectivoRecibo;
+        // Mismo bug corregido que en la vista previa: sin "|| precioEfectivoRecibo",
+        // que descartaba un abonado real de $0 y mostraba el total como pagado.
+        const totalAbonado    = Math.min(sena + saldoCob, precioEfectivoRecibo);
+        const saldoPendientePDF = Math.max(precioEfectivoRecibo - totalAbonado, 0);
         const equipoFull = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
 
         // Header
@@ -19240,6 +19272,17 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         doc.text('TOTAL ABONADO', margen + 6, y + 9);
         doc.text(_fmtMonto(totalAbonado), margen + ancho - 6, y + 9, { align: 'right' });
         y += 20;
+
+        // Saldo pendiente (ej: orden "Entregado sin cobrar" o cobro parcial)
+        if (saldoPendientePDF > 0) {
+            doc.setFillColor(254, 242, 242);
+            doc.setDrawColor(252, 165, 165);
+            doc.roundedRect(margen, y, ancho, 14, 3, 3, 'FD');
+            doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(185, 28, 28);
+            doc.text('SALDO PENDIENTE', margen + 6, y + 9);
+            doc.text(_fmtMonto(saldoPendientePDF), margen + ancho - 6, y + 9, { align: 'right' });
+            y += 20;
+        }
 
         // Garantía (si la orden se entregó con garantía)
         if (r.vencimientoGarantia) {
