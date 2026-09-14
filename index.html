@@ -2817,7 +2817,21 @@ function showApp() {
     <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
     <h3 style="color: var(--danger); margin-top: 0; font-size: 20px;">Acceso Denegado</h3>
     <p id="expulsionMensaje" style="color: var(--gray-600); font-size: 15px; line-height: 1.5; margin-bottom: 20px;"></p>
-    <button onclick="forzarSalida()" class="btn btn-main" style="background: var(--danger);">ENTENDIDO</button>
+
+    <div id="expulsionOpcionesPago" style="display:none; margin-bottom: 14px;">
+     <button onclick="irAPagarDesdeExpulsion()" class="btn btn-main" style="background: linear-gradient(135deg,#059669,#047857); margin-bottom: 10px;">💳 Ver planes y pagar</button>
+     <a href="https://wa.me/5491135654094?text=Hola%2C%20mi%20licencia%20de%20Mi%20Taller%20Web%20venci%C3%B3%20y%20necesito%20ayuda." target="_blank" style="
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 11px 10px; border-radius: 12px; background: transparent;
+        border: 1.5px solid #25d366; color: #25d366; font-size: 13px; font-weight: 700;
+        font-family: 'Outfit', sans-serif; text-decoration: none; cursor: pointer; margin-bottom: 10px;">
+      💬 Contactar soporte por WhatsApp
+     </a>
+    </div>
+
+    <button onclick="forzarSalida()" class="btn" style="background: var(--gray-100); color: var(--gray-600);">
+     <span id="expulsionBtnTexto">ENTENDIDO</span>
+    </button>
    </div>
   </div>
   <div id="login-overlay">
@@ -5530,7 +5544,12 @@ function showApp() {
         document.getElementById('global-loader').style.display = 'none';
     }
 
-    function mostrarExpulsion(msg) {
+    // Si el modal de expulsión se abrió con opción de pago, y el usuario entra
+    // a pagar y después cancela, hay que volver a mostrar la expulsión (no
+    // dejarlo "colgado" en una app sin datos sincronizados).
+    let _pagoAbiertoDesdeExpulsion = false;
+
+    function mostrarExpulsion(msg, conOpcionPago) {
         if (dbRef) dbRef.off();
         if (window._syncListenersStock) { try { window._syncListenersStock.forEach(fn => fn()); } catch(e) {} }
         if (window._syncListenersPres)  { try { window._syncListenersPres.forEach(fn => fn());  } catch(e) {} }
@@ -5543,9 +5562,26 @@ function showApp() {
         document.getElementById('modalCobroEntregado').style.display = 'none';
         document.getElementById('modalNoReparado').style.display = 'none';
         document.getElementById('modalVentaRapida').style.display = 'none';
-        
+
         document.getElementById('expulsionMensaje').innerText = msg;
+
+        const opcionesPago = document.getElementById('expulsionOpcionesPago');
+        const btnTexto = document.getElementById('expulsionBtnTexto');
+        if (conOpcionPago) {
+            opcionesPago.style.display = 'block';
+            btnTexto.innerText = 'Salir por ahora';
+        } else {
+            opcionesPago.style.display = 'none';
+            btnTexto.innerText = 'ENTENDIDO';
+        }
+
         document.getElementById('expulsadoModal').style.display = 'flex';
+    }
+
+    function irAPagarDesdeExpulsion() {
+        _pagoAbiertoDesdeExpulsion = true;
+        document.getElementById('expulsadoModal').style.display = 'none';
+        mostrarPanelContactoAdmin();
     }
 
     function forzarSalida() { logout(); }
@@ -7587,6 +7623,10 @@ function showApp() {
 
     function cerrarModalPagoMP() {
         document.getElementById('modalPagoMP').style.display = 'none';
+        if (_pagoAbiertoDesdeExpulsion) {
+            _pagoAbiertoDesdeExpulsion = false;
+            document.getElementById('expulsadoModal').style.display = 'flex';
+        }
         // Restaurar los botones a su estado normal siempre que se cierra el
         // modal — por si quedaron trabados en "Generando el pago..." (ej:
         // el usuario tocó Cancelar mientras el pedido de pago estaba en
@@ -8513,11 +8553,11 @@ function showApp() {
                     mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
                 }
                 else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
-                    mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nContactá al administrador para activar tu licencia y continuar usando Mi Taller Web.");
+                    mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nElegí un plan para activar tu licencia y seguir usando Mi Taller Web.", true);
                 }
                 else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
                     const nombrePlan = dataUser.planTipo === 'anual' ? 'anual' : 'mensual';
-                    mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nContactá al administrador para renovarla y continuar usando Mi Taller Web.");
+                    mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nRenovala ahora para seguir usando Mi Taller Web.", true);
                 }
                 else if (_sesionFueExpulsada(dataUser)) {
                     mostrarExpulsion("Se ha iniciado sesión con esta cuenta desde otro dispositivo, o se alcanzó el máximo de dispositivos conectados a la vez.\n\nPor seguridad, hemos cerrado tu sesión aquí.");
