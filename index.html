@@ -10036,7 +10036,8 @@ function showApp() {
             const r = getRegistro(idParaEstado);
             if (r) {
                 r.notaReparacion = notaRep;
-                db.ref(pathRep).child(idParaEstado).update({ notaReparacion: notaRep });
+                db.ref(pathRep).child(idParaEstado).update({ notaReparacion: notaRep })
+                    .catch(() => showToast('⚠️ La nota se guardó localmente pero no se pudo sincronizar. Revisá tu conexión.', '#f59e0b'));
             }
         }
 
@@ -12100,9 +12101,19 @@ function showApp() {
             var precioActual   = parseFloat(r.precio) || 0;
             var senaActual     = parseFloat(r.sena) || 0;
             var descMonto      = parseFloat(r.descuentoMonto) || 0;
+            var descEntregaMonto = parseFloat(r.descuentoEntregaMonto) || 0;
             var precioEfectivo = precioActual > 0 && descMonto > 0 ? Math.max(0, precioActual - descMonto) : precioActual;
             var tieneDescuento = descMonto > 0 && precioActual > 0;
-            var saldo          = precioEfectivo - senaActual;
+            // Mismo criterio que en los otros lugares que calculan saldo (modal de
+            // cobro/entrega): si fue reingresado por garantía, r.sena ya representa
+            // todo lo cobrado hasta la entrega anterior, así que no hay que volver a
+            // restar descuentoEntregaMonto (ya está reflejado en ese sena). Si no,
+            // el descuento de entrega sí se descuenta del precio efectivo.
+            var fueEntregadoAntesHist = r.historialEstados && r.historialEstados.some(function(h){ return h.estado === 'Entregado' || h.estado === 'Entregado (Cortesía)'; });
+            if (!(fueEntregadoAntesHist || r.garantiaYaPagada)) {
+                precioEfectivo = Math.max(0, precioEfectivo - descEntregaMonto);
+            }
+            var saldo          = Math.max(0, precioEfectivo - senaActual);
 
             var fechaMostrar = r.fecha || '';
             if (r.archivado && r.historialEstados) {
@@ -12428,7 +12439,7 @@ function showApp() {
         document.getElementById('metodoPago').value = "A Cotizar";
 
         fotosTemporales = []; 
-        document.getElementById('formThumbnails').innerHTML = "";
+        renderThumbnails(); // limpia la galería Y actualiza el contador "(0 / X)" según el plan
         localStorage.removeItem('st_matias_draft');
         
         if(typeof limpiarPattern === 'function') limpiarPattern();
@@ -12943,7 +12954,7 @@ function showApp() {
         document.getElementById('costo-inner').style.display = "none"; 
         
         fotosTemporales = [];
-        document.getElementById('formThumbnails').innerHTML = "";
+        renderThumbnails(); // limpia la galería Y actualiza el contador "(0 / X)" según el plan
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
