@@ -4830,6 +4830,7 @@ function showApp() {
             fotos: Object.assign({ prueba: 2, mensual: 5, anual: 15 }, l.fotos || {})
         };
         _actualizarInformativosLimites();
+        if (typeof _actualizarContadorFotos === 'function') _actualizarContadorFotos();
     });
 
     // Actualiza TODOS los lugares informativos (landing + FAQ interno) con
@@ -8442,6 +8443,7 @@ function showApp() {
         // --------------------------------------------------------------------
 
         isUserAdmin = isAdmin;
+        if (typeof _actualizarContadorFotos === 'function') _actualizarContadorFotos();
         isClientMode = false;
         const pathActivo = isAdmin ? 'reparaciones' : 'reparaciones_usuarios/' + u;
         dbRef = db.ref(pathActivo);
@@ -8623,6 +8625,7 @@ function showApp() {
                 _miTipoLicencia = dataUser.tipoLicencia || null;
                 _miPlanTipo = dataUser.planTipo || null;
                 _miFechaExpiracion = dataUser.fechaExpiracion || null;
+                if (typeof _actualizarContadorFotos === 'function') _actualizarContadorFotos();
                 // Si llega una licencia vigente (activación/renovación), permitir
                 // que el chequeo periódico vuelva a avisar si en el futuro vence.
                 if (!(_miFechaExpiracion && _miFechaExpiracion < Date.now())) {
@@ -13092,6 +13095,15 @@ function showApp() {
                 </div>
             `;
         });
+        _actualizarContadorFotos();
+    }
+
+    // Solo repinta el número "(x / max)" sin tocar la galería — se llama
+    // desde renderThumbnails() y también apenas isUserAdmin/_miTipoLicencia
+    // terminan de cargar desde Firebase, para que el tope correcto aparezca
+    // aunque el usuario haya abierto el formulario antes de que esos datos
+    // llegaran (si no, el contador quedaba pegado en el valor por defecto).
+    function _actualizarContadorFotos() {
         const contador = document.getElementById('fotoContador');
         if(contador) {
             const max = _maxFotosPorOrden();
