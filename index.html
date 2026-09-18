@@ -12913,6 +12913,12 @@ function showApp() {
         }).catch(() => {});
 
         
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function editar(id) {
+        const r = getRegistro(id); if(!r) return;
+        idEditando = id;
         document.getElementById('nroOrden').value = r.orden;
         document.getElementById('cliente').value = r.cliente;
         document.getElementById('tel').value = r.tel;
