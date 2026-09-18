@@ -11960,7 +11960,6 @@ function showApp() {
                     historialMesesCargados[key] = filtradosMes;
                     registrosArchivados = filtradosMes;
                     historialDescargado = true;
-                    migrarVencimientosGarantia(filtradosMes); // corregir vencimientos de garantía antiguos (+1 día)
                     actualizarListasAutocompletado();
                     ocultarLoader();
                     renderTable();
@@ -11991,7 +11990,6 @@ function showApp() {
                 registrosArchivados = filtradosMes;
                 historialDescargado = true;
                 migrarIndiceHistorial(todos); // migrar índice con fechaEntrega para próximas veces
-                migrarVencimientosGarantia(todos); // corregir vencimientos de garantía antiguos (+1 día)
                 actualizarListasAutocompletado();
                 ocultarLoader();
                 renderTable();
