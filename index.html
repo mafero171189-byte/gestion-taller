@@ -12911,59 +12911,7 @@ function showApp() {
                 }).catch(() => {});
             }
         }).catch(() => {});
-    }
-    // ────────────────────────────────────────────────────────────────────────
 
-    // MIGRACIÓN DE GARANTÍAS: Corrige los vencimientos de garantía antiguos (+1 día)
-    function migrarVencimientosGarantia(ordenes) {
-        const pathArchivado = fbPathArchivado();
-        const batch = {};
-        let conteoActualizadas = 0;
-
-        ordenes.forEach(r => {
-            if (r.vencimientoGarantia && r.id) {
-                try {
-                    // Parsear la fecha (formato DD/MM/YYYY o similar)
-                    const fechaParts = r.vencimientoGarantia.split('/');
-                    if (fechaParts.length === 3) {
-                        const dia = parseInt(fechaParts[0]);
-                        const mes = parseInt(fechaParts[1]);
-                        const anio = parseInt(fechaParts[2]);
-                        
-                        // Crear fecha y sumar 1 día
-                        const fecha = new Date(anio, mes - 1, dia);
-                        fecha.setDate(fecha.getDate() + 1);
-                        
-                        // Formatear de vuelta
-                        const nuevaFecha = fecha.toLocaleDateString(_localeActual);
-                        
-                        // Solo actualizar si cambió
-                        if (nuevaFecha !== r.vencimientoGarantia) {
-                            batch[r.id] = { vencimientoGarantia: nuevaFecha };
-                            conteoActualizadas++;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Error al migrar garantía de orden ' + r.id + ':', e);
-                }
-            }
-        });
-
-        // Actualizar en Firebase (de a lotes para no sobrecargar)
-        if (Object.keys(batch).length > 0) {
-            console.log('Migrando ' + conteoActualizadas + ' vencimientos de garantía...');
-            db.ref(pathArchivado).update(batch).then(() => {
-                showToast('✅ ' + conteoActualizadas + ' garantías actualizadas correctamente', '#22c55e');
-            }).catch(err => {
-                console.error('Error al actualizar garantías:', err);
-            });
-        }
-    }
-    // ────────────────────────────────────────────────────────────────────────
-
-    async function editar(id) {
-        const r = getRegistro(id); if(!r) return;
-        idEditando = id;
         
         document.getElementById('nroOrden').value = r.orden;
         document.getElementById('cliente').value = r.cliente;
@@ -19229,7 +19177,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
                   if (fEntregaStr) {
                       const fEntrega = parseFechaAR(fEntregaStr);
                       const fVence   = parseFechaAR(r.vencimientoGarantia);
-                      const dias = Math.round((fVence - fEntrega) / 86400000);
+                      const dias = Math.round((fVence - fEntrega) / 86400000) + 1;
                       if (dias > 0) diasTxt = dias + ' días — ';
                   }
               } catch(e) {}
@@ -19397,7 +19345,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
                 if (fEntregaStr) {
                     const fEntrega = parseFechaAR(fEntregaStr);
                     const fVence   = parseFechaAR(r.vencimientoGarantia);
-                    const dias = Math.round((fVence - fEntrega) / 86400000);
+                    const dias = Math.round((fVence - fEntrega) / 86400000) + 1;
                     if (dias > 0) diasGarantiaTxt = dias + ' días — ';
                 }
             } catch(e) {}
