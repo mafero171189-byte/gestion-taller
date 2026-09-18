@@ -10186,7 +10186,7 @@ function showApp() {
         // --- NUEVO: GUARDAR FECHA DE VENCIMIENTO DE GARANTÍA ---
         if (diasGarantia > 0) {
             let hoy = new Date();
-            hoy.setDate(hoy.getDate() + diasGarantia);
+            hoy.setDate(hoy.getDate() + diasGarantia - 1);
             updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
@@ -10350,7 +10350,7 @@ function showApp() {
 
         if (diasGarantia > 0) {
             let hoy = new Date();
-            hoy.setDate(hoy.getDate() + diasGarantia);
+            hoy.setDate(hoy.getDate() + diasGarantia - 1);
             updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
@@ -10435,7 +10435,7 @@ function showApp() {
 
         if (diasGarantia > 0) {
             let hoy = new Date();
-            hoy.setDate(hoy.getDate() + diasGarantia);
+            hoy.setDate(hoy.getDate() + diasGarantia - 1);
             updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
