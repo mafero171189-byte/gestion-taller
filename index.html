@@ -10186,7 +10186,7 @@ function showApp() {
         // --- NUEVO: GUARDAR FECHA DE VENCIMIENTO DE GARANTÍA ---
         if (diasGarantia > 0) {
             let hoy = new Date();
-            hoy.setDate(hoy.getDate() + diasGarantia - 1);
+            hoy.setDate(hoy.getDate() + diasGarantia);
             updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
@@ -10350,7 +10350,7 @@ function showApp() {
 
         if (diasGarantia > 0) {
             let hoy = new Date();
-            hoy.setDate(hoy.getDate() + diasGarantia - 1);
+            hoy.setDate(hoy.getDate() + diasGarantia);
             updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
@@ -10435,7 +10435,7 @@ function showApp() {
 
         if (diasGarantia > 0) {
             let hoy = new Date();
-            hoy.setDate(hoy.getDate() + diasGarantia - 1);
+            hoy.setDate(hoy.getDate() + diasGarantia);
             updates.vencimientoGarantia = hoy.toLocaleDateString(_localeActual);
         } else {
             updates.vencimientoGarantia = "";
@@ -14322,7 +14322,12 @@ function showApp() {
             <div class="card-stats caja-primary"><b>✅ GANANCIA NETA</b><p style="color:var(--primary);">${fmt.format(gananciaNeta)}</p><span class="stat-icon">📊</span></div>
         `;
 
-        movimientosActuales = Object.values(movsMap).filter(m => m.ingreso > 0 || m.egreso > 0).map(m => {
+        movimientosActuales = Object.values(movsMap).filter(m =>
+            m.ingreso > 0 ||
+            m.egreso > 0 ||
+            (m.deudaPendiente || 0) > 0 ||
+            m.desc.has('🏷️ Descuento Total (100%)')
+        ).map(m => {
             const r = getRegistro(m.id);
             let metodoDetallado = m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo';
             
@@ -19188,7 +19193,8 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
                   if (fEntregaStr) {
                       const fEntrega = parseFechaAR(fEntregaStr);
                       const fVence   = parseFechaAR(r.vencimientoGarantia);
-                      const dias = Math.round((fVence - fEntrega) / 86400000) + 1;
+                      fEntrega.setHours(0,0,0,0); fVence.setHours(0,0,0,0);
+                      const dias = Math.round((fVence - fEntrega) / 86400000);
                       if (dias > 0) diasTxt = dias + ' días — ';
                   }
               } catch(e) {}
@@ -19356,7 +19362,8 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
                 if (fEntregaStr) {
                     const fEntrega = parseFechaAR(fEntregaStr);
                     const fVence   = parseFechaAR(r.vencimientoGarantia);
-                    const dias = Math.round((fVence - fEntrega) / 86400000) + 1;
+                    fEntrega.setHours(0,0,0,0); fVence.setHours(0,0,0,0);
+                    const dias = Math.round((fVence - fEntrega) / 86400000);
                     if (dias > 0) diasGarantiaTxt = dias + ' días — ';
                 }
             } catch(e) {}
