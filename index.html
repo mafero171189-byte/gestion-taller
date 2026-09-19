@@ -5433,9 +5433,12 @@ function showApp() {
     // Fecha de entrega de una orden: usa el campo directo si está (recibo público,
     // que no tiene el historial completo) o lo busca en historialEstados (privado).
     function _fechaEntregaDe(r) {
-        if (r.fechaEntrega) return r.fechaEntrega;
-        const ev = (r.historialEstados || []).find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
-        return ev ? ev.fecha : null;
+        // Para la garantía siempre vale la ÚLTIMA entrega: el vencimiento se
+        // recalcula en cada entrega, así que compararlo contra la primera
+        // (órdenes reingresadas por garantía) daría un número disparatado.
+        const ents = (r.historialEstados || []).filter(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+        if (ents.length > 0) return ents[ents.length - 1].fecha;
+        return r.fechaEntrega || null;
     }
 
     function normalizarBusqueda(s) {
@@ -5637,14 +5640,18 @@ function showApp() {
     }
 
     function _evaluarEstadoLicencia(dataUser) {
+        // tipoLicencia ausente se trata como 'prueba', igual que en el resto de la app.
+        // Sin esto, un nodo sin el campo nunca entraba a ninguna rama y la licencia
+        // vencida no expulsaba nunca.
+        const tipoLic = dataUser.tipoLicencia || 'prueba';
         if (dataUser.estado === 'suspendido') {
             mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
         }
-        else if (dataUser.tipoLicencia === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
+        else if (tipoLic === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
             _licenciaVencidaYaMostrada = true;
             mostrarExpulsion("⏳ Tu licencia de prueba de " + (window.DIAS_PRUEBA || 15) + " días ha vencido.\n\nElegí un plan para activar tu licencia y seguir usando Mi Taller Web.", true);
         }
-        else if (dataUser.tipoLicencia === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
+        else if (tipoLic === 'permanente' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
             _licenciaVencidaYaMostrada = true;
             const nombrePlan = dataUser.planTipo === 'anual' ? 'anual' : 'mensual';
             mostrarExpulsion("⏳ Tu licencia " + nombrePlan + " ha vencido.\n\nRenovala ahora para seguir usando Mi Taller Web.", true);
@@ -6522,6 +6529,10 @@ function showApp() {
             ocultarLoader();
             const conf = snap.val() || {};
             _generarYMostrarReciboVR(r, conf, nombreCliente || '');
+        }).catch(() => {
+            // Sin perfil no bloqueamos el recibo: se genera con los valores por defecto
+            ocultarLoader();
+            _generarYMostrarReciboVR(r, {}, nombreCliente || '');
         });
     }
 
@@ -12809,9 +12820,11 @@ function showApp() {
             });
             // Fecha de entrega (para calcular días de garantía en el link público,
             // que no incluye el historial completo por privacidad).
+            // Se proyecta la ÚLTIMA entrega, que es contra la que se calculó el
+            // vencimiento vigente (importa en órdenes reingresadas por garantía).
             if (data.historialEstados) {
-                var evEnt = data.historialEstados.find(function(e) { return e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)'; });
-                if (evEnt && evEnt.fecha) pub.fechaEntrega = evEnt.fecha;
+                var entsPub = data.historialEstados.filter(function(e) { return e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)'; });
+                if (entsPub.length > 0 && entsPub[entsPub.length - 1].fecha) pub.fechaEntrega = entsPub[entsPub.length - 1].fecha;
             }
             db.ref(fbPathSeguimiento()).child(id).set(pub).catch(function() {});
         } catch (e) {}
@@ -14511,6 +14524,7 @@ function showApp() {
                 }
 
                 Promise.all(stockPromesas).then(() => {
+                    borrarIndice(idOrden); // limpia índice de búsqueda + copia pública del cliente
                     registros = registros.filter(x => x.id !== idOrden);
                     registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
                     contaBorrarDeCache(idOrden);
@@ -14518,7 +14532,20 @@ function showApp() {
                     showToast("Venta Anulada (Stock repuesto)", "#dc2626");
                     cargarDatosContabilidad();
                     window.cargarStockData();
+                }).catch(err => {
+                    // La orden ya se borró: avisamos que el stock puede haber quedado sin reponer
+                    borrarIndice(idOrden);
+                    registros = registros.filter(x => x.id !== idOrden);
+                    registrosArchivados = registrosArchivados.filter(x => x.id !== idOrden);
+                    contaBorrarDeCache(idOrden);
+                    ocultarLoader();
+                    showToast("⚠️ Venta anulada, pero revisá el stock manualmente", "#f59e0b");
+                    cargarDatosContabilidad();
+                    window.cargarStockData();
                 });
+            }).catch(err => {
+                ocultarLoader();
+                showToast(mensajeFirebaseAmigable(err), "#dc2626");
             });
             return;
         }
@@ -14543,6 +14570,9 @@ function showApp() {
             ocultarLoader();
             showToast("Movimientos Financieros Anulados", "#dc2626");
             cargarDatosContabilidad();
+        }).catch(err => {
+            ocultarLoader();
+            showToast(mensajeFirebaseAmigable(err), "#dc2626");
         });
     }
 
@@ -14680,6 +14710,13 @@ function showApp() {
 
             const entrada = mapaOrdenes[r.id];
 
+            // El costo de repuesto se computa una sola vez por orden, entre o no
+            // por fecha de carga, y tanto en reparaciones como en ventas rápidas.
+            if (costoRep > 0 && !entrada._costoRepContado) {
+                entrada.costoRepuesto += costoRep;
+                entrada._costoRepContado = true;
+            }
+
             if (conicideIngreso) {
                 if (r.esVentaRapida) {
                     let pActual = parseFloat(r.precio) || 0;
@@ -14691,9 +14728,6 @@ function showApp() {
                         entrada.conceptos.push('Seña');
                         if (r.metodoPagoSena && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') entrada.metodos.add(r.metodoPagoSena);
                         entrada.totalCobrado += senaOrig;
-                    }
-                    if (costoRep > 0) {
-                        entrada.costoRepuesto += costoRep;
                     }
                 }
             }
@@ -17709,8 +17743,10 @@ function crearOrdenDesdePresupuesto(id) {
         if (p.descripcion && p.descripcion !== fallaFinal) {
             document.getElementById('obs').value = (p.obs ? p.obs + ' | ' : '') + p.descripcion;
         }
-        // Cargar precio final ya con descuento aplicado
-        const precioBase = totalFinal > 0 ? totalFinal : totalBruto;
+        // Cargar precio final ya con descuento aplicado.
+        // Si hay descuento cargado vale totalFinal aunque dé 0 (descuento del 100%);
+        // el fallback a totalBruto es solo para presupuestos sin descuento.
+        const precioBase = descuentoMonto > 0 ? totalFinal : totalBruto;
         if (precioBase > 0) {
             const precioEl = document.getElementById('precio');
             if (precioEl) {
