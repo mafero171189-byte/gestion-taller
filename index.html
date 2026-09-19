@@ -14197,14 +14197,19 @@ function showApp() {
                 
                 let mov = movsMap[r.id];
 
-                if (coincideIngreso) {
+                // El costo de repuesto se computa siempre que la orden entre en el período
+                // (por fecha de carga o de entrega), sin importar por cuál de las dos matcheó.
+                if (!mov._costoRepuestoContado) {
                     let costoRep = parseFloat(r.costoRepuesto) || 0;
                     if (costoRep > 0) {
                         gastosRepuestos += costoRep;
                         mov.egreso += costoRep;
                         mov.desc.add('Repuesto');
                     }
-                    
+                    mov._costoRepuestoContado = true;
+                }
+
+                if (coincideIngreso) {
                     if (r.esVentaRapida) {
                         let pActual = parseFloat(r.precio) || 0;
                         if (pActual > 0) {
