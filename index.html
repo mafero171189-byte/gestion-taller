@@ -2162,7 +2162,7 @@
 
         #landing-page .footer-logo{ font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; color: var(--white-dim); }
 
-        #landing-page .footer-links{ display: flex; gap: 24px; }
+        #landing-page .footer-links{ display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 24px; }
 
         #landing-page .footer-links a{ font-size: 13px; color: var(--white-dim); text-decoration: none; transition: color 0.2s; }
 
@@ -2582,7 +2582,6 @@ function showApp() {
         <li>Fotos guardadas en la PC</li>
         <li>No hay cuota mensual</li>
         <li class="warn">Sin sincronización multi-dispositivo</li>
-        <li class="warn">Sin Actualizaciones</li>
         <li class="warn">Sin soporte técnico incluido</li>
        </ul>
        <p style="font-size:12.5px; color:var(--white-dim); margin-top:18px; line-height:1.5;">🔑 Necesitás un código de activación. <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20comprar%20Mi%20Taller%20Desktop" target="_blank" class="wa-soporte-link" style="color:#a78bfa; font-weight:700;">Comprá aquí</a> o <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20Mi%20Taller%20Desktop" target="_blank" class="wa-soporte-link" style="color:#a78bfa; font-weight:700;">contactanos</a>.</p>
@@ -2611,7 +2610,7 @@ function showApp() {
        <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">¿Mis datos están seguros?</span>
          <div class="faq-arrow">▾</div></button>
-        <div class="faq-a">Sí. Todos los datos se guardan en Firebase (Google), con encriptación y respaldo automático. Vos sos el único dueño de tu información — nosotros no tenemos acceso a los datos de tus clientes.</div>
+        <div class="faq-a">Sí. Los datos se guardan en Firebase (Google), con cifrado en tránsito y en reposo. Vos sos el dueño de tu información: solo accedemos a ella para darte soporte cuando nos lo pedís, por mantenimiento y seguridad, o si una ley nos obliga. Más detalles en la <a href="#privacidad" onclick="return openLegal('privacidad');" style="color:inherit; text-decoration:underline;">Política de Privacidad</a>.</div>
        </div>
        <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)"><span class="faq-q-text">¿Funciona sin internet?</span>
@@ -2654,6 +2653,8 @@ function showApp() {
     <div class="footer-logo">📱 Mi Taller Web</div>
     <div class="footer-links">
      <a href="#features">Funcionalidades</a> <a href="#planes">Planes</a> <a href="#faq">FAQ</a> <a href="#" onclick="showApp(); return false;">Ingresar</a>
+     <a href="#privacidad" onclick="return openLegal('privacidad');">Privacidad y condiciones</a>
+     <a href="#arrepentimiento" onclick="return openLegal('arrepentimiento');">Botón de arrepentimiento</a>
     </div>
     <div class="footer-copy">© 2026 Mi Taller Web — Todos los derechos reservados</div>
    </footer>
@@ -2883,6 +2884,7 @@ function showApp() {
      <input type="checkbox" id="rememberMe"> <label for="rememberMe">Recordar mis datos</label>
     </div>
     <button class="btn-login" onclick="checkAccess()">INGRESAR AL SISTEMA</button>
+    <p style="font-size:11px; color:var(--gray-500); margin:12px 0 0 0; line-height:1.4;">Al ingresar aceptás la <a href="#privacidad" onclick="return openLegal('privacidad');" style="color:var(--secondary); font-weight:700;">Política de Privacidad y Condiciones</a>.</p>
     <p id="loginError" style="color:var(--danger); font-size:13px; font-weight:bold; margin-top:15px; display:none;"></p>
     <div style="margin-top: 18px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
      <button onclick="mostrarPanelRegistro()" style="background:none; border:none; color:var(--secondary); font-size:13px; font-weight:700; cursor:pointer; text-decoration:underline; padding:0;">✨ Registrate gratis</button>
@@ -2916,6 +2918,11 @@ function showApp() {
      <br>
      ✔ <span id="landing-reg-dias">15</span> días sin costo · Sin tarjeta
     </div>
+    <div class="remember-group" style="align-items:flex-start; margin:12px 0 4px 0;">
+     <input type="checkbox" id="regAcepto" style="margin-top:2px; flex-shrink:0;">
+     <label for="regAcepto" style="font-size:12px; line-height:1.45; text-align:left;">Leí y acepto la <a href="#privacidad" onclick="return openLegal('privacidad');" style="color:var(--secondary); font-weight:700;">Política de Privacidad y Condiciones</a> y consiento el tratamiento de mis datos, incluida su transferencia a los proveedores allí indicados.</label>
+    </div>
+    <p style="font-size:10.5px; color:var(--gray-500); text-align:left; line-height:1.4; margin:6px 0 12px 0;">Solo pedimos WhatsApp y email para crear y gestionar tu cuenta. Tus derechos de acceso, rectificación y supresión (Ley 25.326) están detallados en la política.</p>
     <button class="btn-login" style="background:linear-gradient(135deg,var(--green-600),var(--green-750));" onclick="registrarUsuario()">🚀 CREAR MI CUENTA GRATIS</button>
     <p id="regError" style="color:var(--danger); font-size:13px; font-weight:bold; margin-top:12px; display:none;"></p>
     <button onclick="mostrarPanelLogin()" style="background:none; border:none; color:var(--gray-500); font-size:13px; cursor:pointer; margin-top:10px;">← Volver al login</button>
@@ -7535,6 +7542,8 @@ function showApp() {
         if (!email || !email.includes('@')) return mostrarRegError('⚠️ Ingresá un email válido — lo usarás para recuperar tu clave.');
         if (pass.length < 6)             return mostrarRegError('⚠️ La contraseña debe tener al menos 6 caracteres.');
         if (pass !== pass2)              return mostrarRegError('⚠️ Las contraseñas no coinciden.');
+        const chkAcepto = document.getElementById('regAcepto');
+        if (!chkAcepto || !chkAcepto.checked) return mostrarRegError('⚠️ Para crear tu cuenta tenés que aceptar los Términos y la Política de Privacidad.');
 
         mostrarLoader('Creando cuenta y abriendo el taller...');
 
@@ -7561,7 +7570,9 @@ function showApp() {
                     tipoLicencia:  'prueba',
                     fechaExpiracion: expiracion,
                     tipo:          'auto-registro',
-                    estado:        'pendiente-activacion'
+                    estado:        'pendiente-activacion',
+                    terminosVersion:     window.LEGAL_VERSION || '',
+                    terminosAceptadoTs:  Date.now()
                 });
             })
             .then(() => {
@@ -19750,5 +19761,117 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
    </div>
    <div id="pdfPrintImgWrap"><img id="pdfPrintImg" alt="Ticket"></div>
  </div>
+<!-- ═══════════════ PÁGINA LEGAL (versión mínima) ═══════════════ -->
+<style>
+  #legal-overlay{display:none;position:fixed;inset:0;z-index:200000;background:rgba(3,8,20,.88);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:max(env(safe-area-inset-top),10px) 10px max(env(safe-area-inset-bottom),10px);box-sizing:border-box;font-family:'Outfit','DM Sans',system-ui,sans-serif}
+  #legal-overlay .legal-box{max-width:720px;margin:0 auto;background:#fff;color:#1f2937;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  #legal-overlay .legal-head{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:10px 10px 10px 18px;background:#0b1430;border-radius:16px 16px 0 0;color:#fff;font-weight:700;font-size:15px}
+  #legal-overlay .legal-close{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:17px;cursor:pointer;line-height:1}
+  #legal-overlay .legal-body{padding:20px 20px 30px;font-size:14.5px;line-height:1.6;text-align:left}
+  #legal-overlay .legal-body h3{font-size:16px;margin:22px 0 6px;color:#0b1430;font-weight:800}
+  #legal-overlay .legal-body h3:first-child{margin-top:0}
+  #legal-overlay .legal-body p,#legal-overlay .legal-body li{margin:0 0 8px;color:#374151;font-size:14.5px}
+  #legal-overlay .legal-body ul{margin:0 0 10px;padding-left:20px}
+  #legal-overlay .legal-body a{color:#1e4d8c;font-weight:600;text-decoration:underline}
+  #legal-overlay .legal-note{background:#f1f5fb;border:1px solid #d6e0f0;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:12.5px}
+  #legal-overlay .legal-note p{font-size:12.5px;margin:0}
+  #legal-overlay .legal-btn{display:inline-block;background:#1e4d8c;color:#fff!important;text-decoration:none!important;font-weight:700;font-size:14px;padding:11px 16px;border-radius:10px;margin:4px 8px 4px 0}
+  #legal-overlay .legal-btn.alt{background:#059669}
+  #legal-overlay mark.legal-todo{background:#fde68a;color:#78350f;border-radius:4px;padding:0 4px;font-weight:700}
+</style>
+
+<div id="legal-overlay" role="dialog" aria-modal="true" aria-label="Privacidad y condiciones">
+  <div class="legal-box">
+    <div class="legal-head"><span>Privacidad y condiciones</span><button type="button" class="legal-close" id="legal-close-btn" onclick="closeLegal()" aria-label="Cerrar">✕</button></div>
+    <div class="legal-body" id="legal-body"></div>
+  </div>
+</div>
+
+<script>
+/* COMPLETÁ ESTOS DATOS ANTES DE PUBLICAR (lo vacío se ve resaltado en amarillo) */
+window.LEGAL_CFG = {
+  titular:   '',   // Nombre y apellido o razón social
+  cuit:      '',   // CUIT / CUIL
+  domicilio: '',   // Domicilio legal
+  email:     '',   // Email de contacto
+  whatsapp:  '5491135654094'
+};
+window.LEGAL_VERSION = '2026-09-24-min';   // cambiala si modificás el texto
+
+(function () {
+  var CFG = window.LEGAL_CFG;
+  var HASHES = { privacidad: 1, terminos: 1, cookies: 1, arrepentimiento: 1 };
+  var _prev = null;
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function v(k) { return CFG[k] ? esc(CFG[k]) : '<mark class="legal-todo">[completar: ' + k + ']</mark>'; }
+  function waNum() { return String(window.WA_SOPORTE || CFG.whatsapp || '').replace(/\D/g, ''); }
+  function mail() { return CFG.email ? '<a href="mailto:' + esc(CFG.email) + '">' + esc(CFG.email) + '</a>' : v('email'); }
+
+  function doc() {
+    var msg = 'Hola! Quiero ejercer mi derecho de arrepentimiento sobre mi contratación de Mi Taller Web. Mi número de cuenta es: ';
+    var wa = 'https://wa.me/' + waNum() + '?text=' + encodeURIComponent(msg);
+    var mb = CFG.email ? '<a class="legal-btn alt" href="mailto:' + esc(CFG.email) + '?subject=' + encodeURIComponent('Arrepentimiento - Mi Taller Web') + '">Por email</a>' : '';
+    return '' +
+    '<h3>Quiénes somos</h3>' +
+    '<p>Mi Taller Web</p>' +
+
+    '<h3>Qué datos guardamos</h3>' +
+    '<ul>' +
+    '<li><b>Tu cuenta:</b> WhatsApp, email y contraseña (la gestiona Firebase Authentication).</li>' +
+    '<li><b>Lo que cargás en el sistema:</b> órdenes, presupuestos, stock y los datos de tus clientes (nombre, teléfono, equipo, IMEI y fotos). Vos sos el responsable de esos datos y de contar con el consentimiento de tus clientes; nosotros solo los guardamos para prestarte el servicio.</li>' +
+    '<li><b>Pagos:</b> los procesan Mercado Pago o PayPal. No guardamos datos de tarjetas.</li>' +
+    '</ul>' +
+    '<p>Los usamos solo para darte el servicio, soporte y seguridad. No vendemos tus datos ni usamos analítica ni publicidad. Las fotos se borran a los 45 días y las cuentas suspendidas, a los 7 días de la suspensión.</p>' +
+
+    '<h3>Con quién los compartimos</h3>' +
+    '<p>Con los proveedores que hacen funcionar el sistema: Google (Firebase y tipografías), Cloudinary (fotos), Cloudflare, Mercado Pago y PayPal. Algunos están en el exterior; al aceptar consentís esa transferencia. Quien tenga el link de seguimiento de una orden puede ver los datos de esa orden, así que compartilo solo con tu cliente.</p>' +
+
+    '<h3>Cookies</h3>' +
+    '<p>No usamos cookies de publicidad ni de seguimiento. Solo guardamos en tu navegador lo necesario para mantener tu sesión y tus preferencias.</p>' +
+
+    '<h3>Tus derechos</h3>' +
+    '<p>Podés pedir acceso, corrección o eliminación de tus datos y de tu cuenta escribiendo por WhatsApp.</p>' +
+    '<div class="legal-note"><p>El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley Nº 25.326. La AGENCIA DE ACCESO A LA INFORMACIÓN PÚBLICA, en su carácter de Órgano de Control de la Ley Nº 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.</p></div>' +
+
+    '<h3>Condiciones del servicio</h3>' +
+    '<p>El servicio es para mayores de 18 años y uso comercial. Los datos de acceso son personales y sos responsable de su uso. Los planes se pagan por período y no se renuevan solos. No podés usarlo para fines ilícitos ni intentar acceder a datos de otras cuentas. No garantizamos que funcione sin interrupciones; te recomendamos conservar copias de tu información importante.</p>' +
+
+    '<h3 id="legal-arrepentimiento">Botón de arrepentimiento</h3>' +
+    '<p>Si contratás como consumidor, podés revocar la contratación dentro de los 10 días corridos desde que la contratás o activás, sin costo, y te devolvemos lo pagado por el mismo medio (Ley 24.240 y Res. 424/2020).</p>' +
+    '<p><a class="legal-btn" href="' + esc(wa) + '" target="_blank" rel="noopener noreferrer">Arrepentirme por WhatsApp</a>' + mb + '</p>' +
+    '<p style="font-size:12.5px;color:#6b7280">Reclamos: <a href="https://www.argentina.gob.ar/produccion/defensadelconsumidor/formulario" target="_blank" rel="noopener noreferrer">Defensa del Consumidor</a>. Última actualización: 24/09/2026.</p>';
+  }
+
+  window.openLegal = function (name) {
+    var ov = document.getElementById('legal-overlay'), body = document.getElementById('legal-body');
+    if (!ov || !body) return false;
+    var abierto = ov.style.display === 'block';
+    if (!abierto) _prev = document.activeElement;
+    body.innerHTML = doc();
+    ov.style.display = 'block';
+    ov.scrollTop = 0;
+    try { history.replaceState(null, '', location.pathname + location.search + '#' + (HASHES[name] ? name : 'privacidad')); } catch (e) {}
+    if (name === 'arrepentimiento') { var t = document.getElementById('legal-arrepentimiento'); if (t && t.scrollIntoView) t.scrollIntoView(); }
+    var c = document.getElementById('legal-close-btn'); if (c) c.focus();
+    return false;
+  };
+  window.closeLegal = function () {
+    var ov = document.getElementById('legal-overlay'); if (!ov) return;
+    ov.style.display = 'none';
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    try { if (_prev && _prev.focus) _prev.focus(); } catch (e) {}
+    _prev = null;
+  };
+  document.addEventListener('keydown', function (e) {
+    var ov = document.getElementById('legal-overlay');
+    if (e.key === 'Escape' && ov && ov.style.display === 'block') window.closeLegal();
+  });
+  function desdeHash() { var h = (location.hash || '').replace('#', '').toLowerCase(); if (HASHES[h]) window.openLegal(h); }
+  window.addEventListener('hashchange', desdeHash);
+  desdeHash();
+})();
+</script>
+<!-- ═══════════════ FIN PÁGINA LEGAL ═══════════════ -->
+
  </body>
 </html>
