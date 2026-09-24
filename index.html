@@ -1974,9 +1974,9 @@
 
         #landing-page .planes-grid{
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 24px;
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
@@ -2039,6 +2039,8 @@
             display: flex; align-items: center; justify-content: center;
             border: 1px solid rgba(16,185,129,0.25);
         }
+
+        #landing-page .plan-features li.warn::before{ content: '⚠'; color: var(--amber-500); background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); font-size: 10px; }
 
         #landing-page .plan-features li.muted{ opacity: 0.35; }
 
@@ -2560,6 +2562,30 @@ function showApp() {
         <li><b id="landing-li-disp-anual">Hasta 3 dispositivos a la vez</b></li>
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Anual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link" style="background:linear-gradient(135deg,#16a34a,#15803d);">Consultar por WhatsApp 📲</a>
+      </div>
+      <div class="plan-card reveal reveal-d3">
+       <div class="plan-name">Mi Taller Desktop</div>
+       <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Versión para PC, sin internet</p>
+       <div class="plan-price" style="color:#a78bfa; font-size:36px; display:flex; align-items:baseline; gap:6px;">
+        <small style="font-size:18px; font-weight:600; color:var(--white-dim);">AR$</small> <span id="landing-precio-mp-desktop" style="transition: opacity 0.4s;">…</span>
+       </div>
+       <div class="plan-period">pago único · sin suscripción</div>
+       <div style="margin-top:8px; padding:7px 12px; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.18); border-radius:8px; font-size:12px; color:var(--accent); display:flex; align-items:center; gap:6px;">
+        🌍 Internacional: <b>USD <span id="landing-precio-usd-desktop">…</span></b> vía PayPal
+       </div>
+       <div class="plan-divider"></div>
+       <ul class="plan-features">
+        <li>Portable</li>
+        <li>Funciona SIN internet</li>
+        <li>Datos 100% locales (privacidad total)</li>
+        <li>Licencia ligada al hardware</li>
+        <li>Fotos guardadas en la PC</li>
+        <li>No hay cuota mensual</li>
+        <li class="warn">Sin sincronización multi-dispositivo</li>
+        <li class="warn">Sin Actualizaciones</li>
+        <li class="warn">Sin soporte técnico incluido</li>
+       </ul>
+       <p style="font-size:12.5px; color:var(--white-dim); margin-top:18px; line-height:1.5;">🔑 Necesitás un código de activación. <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20comprar%20Mi%20Taller%20Desktop" target="_blank" class="wa-soporte-link" style="color:#a78bfa; font-weight:700;">Comprá aquí</a> o <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20Mi%20Taller%20Desktop" target="_blank" class="wa-soporte-link" style="color:#a78bfa; font-weight:700;">contactanos</a>.</p>
       </div>
      </div>
     </div>
@@ -4150,6 +4176,28 @@ function showApp() {
       </div>
       <div id="paypalPrecioAnualStatus" style="margin-top:10px; font-size:13px; color:var(--gray-600); display:none;"></div>
      </div>
+
+     <div class="card-form" style="background: var(--purple-25); padding: 20px; border-radius: 12px; border: 1.5px solid var(--purple-100); margin-bottom: 20px;">
+      <label style="color:var(--purple-800); font-weight:800;">🖥️ Precio Mi Taller Desktop en Mercado Pago (ARS · pago único)</label>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
+       <div style="position:relative; flex:1;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--purple-800); font-size:16px;">AR$</span> <input type="text" inputmode="numeric" id="inputPrecioMPDesktop" placeholder="80000" onfocus="_alEnfocarPrecio(this)" onblur="_alSalirPrecio(this,false)" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--purple-100); border-radius:8px; font-size:18px; font-weight:800; color:var(--purple-800); box-sizing:border-box; background:white;">
+       </div>
+       <button onclick="guardarPrecioMPDesktop()" class="btn" style="background: linear-gradient(135deg,#7c3aed,#5b21b6); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
+      </div>
+      <div id="mpPrecioDesktopStatus" style="margin-top:10px; font-size:13px; color:var(--gray-600); display:none;"></div>
+     </div>
+
+     <div class="card-form" style="background: var(--blue-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--blue-300); margin-bottom: 20px;">
+      <label style="color:var(--blue-700); font-weight:800;">🖥️ Precio Mi Taller Desktop en PayPal (USD · pago único)</label>
+      <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
+       <div style="position:relative; flex:1;">
+        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:800; color:var(--blue-700); font-size:16px;">USD</span> <input type="text" inputmode="decimal" id="inputPrecioPaypalDesktop" placeholder="80" onfocus="_alEnfocarPrecio(this)" onblur="_alSalirPrecio(this,true)" style="width:100%; padding:10px 12px 10px 52px; border:2px solid var(--blue-300); border-radius:8px; font-size:18px; font-weight:800; color:var(--blue-700); box-sizing:border-box; background:white;">
+       </div>
+       <button onclick="guardarPrecioPaypalDesktop()" class="btn" style="background: linear-gradient(135deg,#003087,#009cde); color:white; padding:0 20px; white-space:nowrap; min-height:44px;">💾 GUARDAR</button>
+      </div>
+      <div id="paypalPrecioDesktopStatus" style="margin-top:10px; font-size:13px; color:var(--gray-600); display:none;"></div>
+     </div>
      
      <div id="resetRequestsPanel" style="display:none; background:var(--indigo-25); border:1.5px solid var(--orange-200); border-radius:12px; padding:18px; margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -4972,6 +5020,29 @@ function showApp() {
     db.ref('configuracion/paypal_precio_anual').on('value', snap => {
         const precio = snap.val();
         const el = document.getElementById('landing-precio-usd-anual');
+        if (el) {
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.textContent = precio || '—';
+                el.style.opacity = '1';
+            }, 200);
+        }
+    });
+    // ── MI TALLER DESKTOP (pago único) ───────────────────────────────────────
+    db.ref('configuracion/mp_precio_desktop').on('value', snap => {
+        const precio = snap.val();
+        const el = document.getElementById('landing-precio-mp-desktop');
+        if (el) {
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.textContent = precio ? Number(precio).toLocaleString(_localeActual) : '—';
+                el.style.opacity = '1';
+            }, 200);
+        }
+    });
+    db.ref('configuracion/paypal_precio_desktop').on('value', snap => {
+        const precio = snap.val();
+        const el = document.getElementById('landing-precio-usd-desktop');
         if (el) {
             el.style.opacity = '0';
             setTimeout(() => {
@@ -7929,6 +8000,76 @@ function showApp() {
         });
     }
 
+    // ── PRECIOS MI TALLER DESKTOP (pago único) ──────────────────────────────
+    function guardarPrecioMPDesktop() {
+        const val = _numeroDesdeInput(document.getElementById('inputPrecioMPDesktop'));
+        if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
+
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser) { showToast('Error: sesión no activa.', '#dc2626'); return; }
+
+        mostrarLoader('Guardando precio Desktop...');
+        fbUser.getIdToken(true).then(() => {
+            return db.ref('configuracion/mp_precio_desktop').set(val);
+        }).then(() => {
+            ocultarLoader();
+            const status = document.getElementById('mpPrecioDesktopStatus');
+            status.style.display = 'block';
+            status.innerHTML = `✅ Precio Desktop guardado: <b>AR$ ${val.toLocaleString(_localeActual)}</b> · Ya se ve en la página de planes.`;
+            status.style.color = '#059669';
+            showToast('✅ Precio Desktop actualizado', '#059669');
+            _alSalirPrecio(document.getElementById('inputPrecioMPDesktop'), false);
+        }).catch(err => {
+            ocultarLoader();
+            const msg = err.message || String(err);
+            if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+                showToast('Sin permiso. Verificá las reglas de Firebase.', '#dc2626');
+            } else {
+                showToast('Error: ' + msg, '#dc2626');
+            }
+        });
+    }
+
+    function guardarPrecioPaypalDesktop() {
+        const val = _numeroDesdeInput(document.getElementById('inputPrecioPaypalDesktop'));
+        if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
+
+        const fbUser = firebase.auth().currentUser;
+        if (!fbUser) { showToast('Error: sesión no activa.', '#dc2626'); return; }
+
+        mostrarLoader('Guardando precio Desktop...');
+        fbUser.getIdToken(true).then(() => {
+            return db.ref('configuracion/paypal_precio_desktop').set(val);
+        }).then(() => {
+            ocultarLoader();
+            const status = document.getElementById('paypalPrecioDesktopStatus');
+            status.style.display = 'block';
+            status.innerHTML = `✅ Precio Desktop guardado: <b>USD ${val}</b>`;
+            status.style.color = '#059669';
+            showToast('✅ Precio Desktop PayPal actualizado', '#059669');
+            _alSalirPrecio(document.getElementById('inputPrecioPaypalDesktop'), true);
+        }).catch(err => {
+            ocultarLoader();
+            const msg = err.message || String(err);
+            if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+                showToast('Sin permiso. Verificá las reglas de Firebase.', '#dc2626');
+            } else {
+                showToast('Error: ' + msg, '#dc2626');
+            }
+        });
+    }
+
+    function cargarPreciosDesktopAdmin() {
+        db.ref('configuracion/mp_precio_desktop').once('value', snap => {
+            const input = document.getElementById('inputPrecioMPDesktop');
+            if (input && snap.val() && document.activeElement !== input) { input.value = snap.val(); _alSalirPrecio(input, false); }
+        });
+        db.ref('configuracion/paypal_precio_desktop').once('value', snap => {
+            const input = document.getElementById('inputPrecioPaypalDesktop');
+            if (input && snap.val() && document.activeElement !== input) { input.value = snap.val(); _alSalirPrecio(input, true); }
+        });
+    }
+
     function guardarPrecioMP() {
         const val = _numeroDesdeInput(document.getElementById('inputPrecioMP'));
         if (!val || val <= 0) { showToast('Ingresá un precio válido', '#f59e0b'); return; }
@@ -8975,6 +9116,7 @@ function showApp() {
             cargarPrecioPaypalAdmin();
             cargarPrecioMPAdmin();
             cargarPreciosAnualesAdmin();
+            cargarPreciosDesktopAdmin();
         }
     }
 
