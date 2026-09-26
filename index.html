@@ -10384,6 +10384,7 @@ function showApp() {
                     return db.ref(pathActivo).child(idParaEstado).remove();
                 }).then(() => {
                     clearTimeout(loaderTimeoutDeuda);
+                    escribirIndice(idParaEstado, copia, true);
                     registros = registros.filter(x => x.id !== idParaEstado);
                     if (historialDescargado) {
                         registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
@@ -10539,6 +10540,7 @@ function showApp() {
                 return db.ref(pathActivo).child(idParaEstado).remove();
             });
         }).then(() => {
+            escribirIndice(idParaEstado, r, true);
             registros = registros.filter(x => x.id !== idParaEstado);
             if (historialDescargado) {
                 registrosArchivados = registrosArchivados.filter(x => x.id !== idParaEstado);
@@ -11201,6 +11203,7 @@ function showApp() {
                 return db.ref(pathActivo).child(idParaEstado).remove();
             }).then(() => {
                 clearTimeout(loaderTimeout);
+                escribirIndice(idParaEstado, copia, true);
                 // Aplicar cambios locales SOLO después de confirmar Firebase
                 Object.assign(r, updates);
                 registros = registros.filter(x => x.id !== idParaEstado);
@@ -11275,8 +11278,25 @@ function showApp() {
     };
 
     async function openHistory(id) {
-        const r = getRegistro(id);
-        if(!r) return;
+        let r = getRegistro(id);
+        
+        // Si no está en memoria pero podría estar archivado, intentar cargar de Firebase
+        if (!r) {
+            try {
+                const snap = await db.ref(fbPathArchivado()).child(id).once('value');
+                if (snap.exists()) {
+                    r = { id, ...snap.val() };
+                    // Agregarlo a registrosArchivados para siguientes búsquedas
+                    if (!registrosArchivados.find(x => x.id === id)) {
+                        registrosArchivados.push(r);
+                    }
+                }
+            } catch(e) {
+                console.error('Error cargando orden archivada:', e);
+            }
+        }
+        
+        if (!r) return;
 
         const pinMostrar = r.pin ? await desencriptarPIN(r.pin, currentUser) : '';
         
@@ -12580,6 +12600,7 @@ function showApp() {
     };
 
     function clickLimpiar(skipToast = false) {
+        if (!skipToast) _hcOrigenNuevaOrden = false; // limpieza manual del usuario: cancela el flujo de "nueva orden desde historial"
         idEditando = null;
         const btnL = document.getElementById('btnLimpiar');
         if (btnL) { btnL.innerText = "LIMPIAR"; btnL.style.background = "#9ca3af"; }
@@ -12821,6 +12842,13 @@ function showApp() {
                 escribirIndice(nuevaRef.key, data, false);
                 if (!registros.find(r => r.id === nuevaRef.key)) {
                     registros.push({ id: nuevaRef.key, ...data });
+                }
+                // Si la orden se creó desde el botón + del Historial del Cliente,
+                // reabrir ese modal con los datos frescos.
+                if (_hcOrigenNuevaOrden && _hcClienteActivo) {
+                    _hcOrigenNuevaOrden = false;
+                    _invalidarCacheIndiceClientes();
+                    abrirHistorialCliente(_hcClienteActivo.nombre, _hcClienteActivo.tel);
                 }
                 subirFotosYFinalizar(nuevaRef.key, pathActivo, false, "REGISTRADO ✅", "#059669");
             };
@@ -15807,8 +15835,10 @@ function showApp() {
 
     // ====== HISTORIAL DE CLIENTE (VISTA RÁPIDA) ======
     let _hcClienteActivo = { nombre: '', tel: '' };
+    let _hcOrigenNuevaOrden = false; // true cuando la orden se crea desde el botón + del Historial del Cliente
 
     function nuevaOrdenDesdeHistorial() {
+        _hcOrigenNuevaOrden = true;
         document.getElementById('modalHistorialCliente').style.display = 'none';
         showPage('gestion');
         clickLimpiar(true);
@@ -15882,19 +15912,29 @@ function showApp() {
             document.getElementById('hcTotalDiv').innerText = `💰 Inversión Total: ${fmt.format(totalInvertido)}`;
         }
 
-        // Órdenes ya en memoria (activas + archivadas cargadas)
+        // Órdenes activas en memoria (siempre están todas, no dependen de ningún mes)
         const nombreLower = nombre.toLowerCase();
         const telLimpio2  = String(tel || '').replace(/\D/g, '');
-        const enMemoria = [...registros, ...registrosArchivados].filter(r =>
+        const activasDelCliente = registros.filter(r =>
             !r.esVentaRapida &&
             ((r.cliente || '').toLowerCase() === nombreLower ||
              (telLimpio2 && String(r.tel || '').replace(/\D/g, '') === telLimpio2))
         );
+        // Órdenes archivadas ya presentes en memoria (pueden ser de cualquier mes
+        // que se haya visitado antes en Historial de Reparaciones)
+        const archivadasEnMemoria = registrosArchivados.filter(r =>
+            !r.esVentaRapida &&
+            ((r.cliente || '').toLowerCase() === nombreLower ||
+             (telLimpio2 && String(r.tel || '').replace(/\D/g, '') === telLimpio2))
+        );
+        const enMemoria = [...activasDelCliente, ...archivadasEnMemoria];
         const idsEnMemoria = new Set(enMemoria.map(r => r.id));
 
-        // Buscar en índice los IDs archivados de este cliente que NO están en memoria.
-        // Reutiliza el cache del índice del autocomplete (localStorage 7 días),
-        // así en sesiones posteriores es 0 lecturas Firebase.
+        // Siempre se consulta el índice completo de Firebase como fuente de verdad
+        // de qué órdenes archivadas pertenecen a este cliente — registrosArchivados
+        // puede tener solo el mes que se vio por última vez en Historial de
+        // Reparaciones (esa lista se REEMPLAZA al cambiar de mes), así que no
+        // alcanza para saber si falta algo.
         function _procesarIndice(indice) {
             const idsFaltantes = Object.keys(indice).filter(id => {
                 if (idsEnMemoria.has(id)) return false;
@@ -15922,42 +15962,14 @@ function showApp() {
             }).catch(() => _renderHistorial(enMemoria));
         }
 
-        // Intentar cache local primero
-        let indiceCache = _indiceClientesCache;
-        if (!indiceCache) {
-            try {
-                const raw = localStorage.getItem(_INDICE_CACHE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Date.now() - parsed.ts < _INDICE_CACHE_TTL) {
-                        // Convertir formato cache {nombreLower: tel} a formato índice {id: {cliente, tel, archivado}}
-                        // El cache de clientes no tiene IDs — necesitamos el índice completo
-                        indiceCache = null; // formato diferente, no sirve directo
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // Cache del índice completo (separado del cache de clientes)
-        const _IDX_FULL_KEY = 'mtw_indice_full_v1';
-        let indiceFull = null;
-        try {
-            const rawFull = localStorage.getItem(_IDX_FULL_KEY);
-            if (rawFull) {
-                const parsed = JSON.parse(rawFull);
-                if (Date.now() - parsed.ts < _INDICE_CACHE_TTL) indiceFull = parsed.data;
-            }
-        } catch(e) {}
-
-        if (indiceFull) {
-            _procesarIndice(indiceFull);
-        } else {
-            db.ref(fbPathIndice()).once('value').then(snapIdx => {
-                const indice = snapIdx.val() || {};
-                try { localStorage.setItem(_IDX_FULL_KEY, JSON.stringify({ ts: Date.now(), data: indice })); } catch(e) {}
-                _procesarIndice(indice);
-            }).catch(() => _renderHistorial(enMemoria));
-        }
+        // Siempre se lee el índice fresco de Firebase (sin cache local): este modal
+        // necesita reflejar el estado real en cada apertura, y un cache de hasta
+        // 7 días puede ocultar órdenes archivadas recientes.
+        db.ref(fbPathIndice()).once('value').then(snapIdx => {
+            const indice = snapIdx.val() || {};
+            try { localStorage.setItem('mtw_indice_full_v1', JSON.stringify({ ts: Date.now(), data: indice })); } catch(e) {}
+            _procesarIndice(indice);
+        }).catch(() => _renderHistorial(enMemoria));
     }
 
     // ====== MANTENIMIENTO: LIMPIEZA DE FOTOS ======
