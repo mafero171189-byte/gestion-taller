@@ -13691,7 +13691,10 @@ function showApp() {
         } else {
             const nuevaRef = db.ref(pathStock).push();
             nuevaRef.set(data).then(() => { 
-                stockData.push({ id: nuevaRef.key, ...data });
+                // El listener child_added de Firebase ya pudo haber agregado el ítem (evento local optimista): upsert para no duplicar
+                const idxNuevo = stockData.findIndex(x => x.id === nuevaRef.key);
+                if (idxNuevo !== -1) stockData[idxNuevo] = { id: nuevaRef.key, ...data };
+                else stockData.push({ id: nuevaRef.key, ...data });
                 limpiarStock(); 
                 ocultarLoader(); 
                 showToast("ARTÍCULO CREADO", "#059669"); if (typeof actualizarOnboarding === "function") actualizarOnboarding();
