@@ -383,6 +383,21 @@
         .autocomplete-list { display: none; position: absolute; z-index: 9999; background: white; border: 1.5px solid var(--gray-200); border-radius: 10px; max-height: 180px; overflow-y: auto; width: 100%; box-shadow: 0 12px 28px rgba(0,0,0,0.15); margin-top: 2px; transition: background-color 0.3s, border-color 0.3s; }
         .autocomplete-list div { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); cursor: pointer; font-size: 15px; color: var(--gray-900); transition: background-color 0.2s, color 0.2s; font-family: 'Outfit', sans-serif; }
         .autocomplete-list div:last-child { border-bottom: none; }
+        /* Selector visual de qué valor del repuesto se suma a contabilidad */
+        .rp-modo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .rp-modo-btn { border: 2px solid var(--gray-200); background: #fff; border-radius: 12px; padding: 9px 4px 8px; cursor: pointer; font-family: 'Outfit', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; -webkit-tap-highlight-color: transparent; transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.1s; }
+        .rp-modo-btn:active { transform: scale(0.96); }
+        .rp-modo-btn .rp-ic { font-size: 20px; line-height: 1.1; }
+        .rp-modo-btn .rp-lb { font-size: 10.5px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.3px; }
+        .rp-modo-btn .rp-mt { font-size: 14px; font-weight: 800; color: var(--gray-900); }
+        .rp-modo-btn .rp-mt.sin { font-size: 11px; font-weight: 600; color: var(--gray-500); }
+        .rp-modo-btn.active { border-color: var(--success); background: var(--green-50); box-shadow: 0 0 0 3px rgba(5,150,105,0.16); }
+        .rp-modo-btn.active .rp-lb { color: var(--green-800); }
+        .rp-modo-btn.active .rp-mt:not(.sin) { color: var(--success); }
+        body.dark-mode .rp-modo-btn { background: transparent; }
+        body.dark-mode .rp-modo-btn .rp-mt { color: var(--gray-200); }
+        body.dark-mode .rp-modo-btn.active { background: rgba(5,150,105,0.18); }
+        body.dark-mode .rp-modo-btn.active .rp-lb { color: var(--gray-200); }
         .autocomplete-list div:active, .autocomplete-list div:hover { background: var(--indigo-25); color: var(--secondary); font-weight: bold; }
 
         .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-block; transition: background-color 0.3s, color 0.3s; font-family: 'Outfit', sans-serif; letter-spacing: 0.2px; }
@@ -2998,16 +3013,22 @@ function showApp() {
       <div id="autocomplete-repuestoModalUsado" class="autocomplete-list" style="width: 100%;"></div>
      </div>
      <div id="listaRepuestosModal" style="margin-top: 15px; text-align: left; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;"></div>
+     <div id="repuestoPrecioModoWrap" style="display:none; margin-top: 12px; text-align: left;">
+      <label style="font-size: 12px; font-weight: 700; color: var(--green-600); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 5px;">💰 Sumar a contabilidad</label>
+      <input type="hidden" id="repuestoPrecioModo" value="costo">
+      <div id="repuestoPrecioCards" class="rp-modo-grid"></div>
+      <div id="repuestoPrecioResumen" style="font-size: 12px; color: var(--gray-600); margin-top: 8px; line-height: 1.35;"></div>
+     </div>
      <div style="margin-top: 14px; text-align: left;">
       <label style="font-size: 12px; font-weight: 700; color: var(--green-600); text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 5px;">🔧 Nota de Reparación <span style="font-weight:400; text-transform:none; color:var(--gray-500);">(qué se hizo)</span></label>
       <textarea id="notaReparacionModal" rows="2" placeholder="Ej: Cambio de pantalla + limpieza de placa..." style="width: 100%; padding: 9px 10px; border: 2px solid var(--green-200); border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; box-sizing: border-box; background: var(--green-50); outline: none;"></textarea>
      </div>
      <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
-      <div style="display:flex; gap:10px;">
+      <div id="filaBtnsNoUse" style="display:flex; gap:10px;">
        <button onclick="procesarReparado(false, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--gray-100); color:var(--gray-600); font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (SOLO GUARDAR)</button>
        <button onclick="procesarReparado(false, true)" style="flex:1; padding:10px; border-radius:8px; border:2px solid var(--wapp); background:white; color:#16a34a; font-weight:bold; cursor:pointer; font-size: 11px;">NO USÉ (Y AVISAR)</button>
       </div>
-      <div style="display:flex; gap:10px;">
+      <div id="filaBtnsDescontar" style="display:none; gap:10px;">
        <button onclick="procesarReparado(true, false)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--green-100); color:var(--green-800); font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR (SOLO GUARDAR)</button>
        <button onclick="procesarReparado(true, true)" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--success); color:white; font-weight:bold; cursor:pointer; font-size: 11px;">DESCONTAR (Y AVISAR)</button>
       </div>
@@ -10119,34 +10140,60 @@ function showApp() {
     function filtrarStockModal() {
         if(isClientMode) return;
         const input = document.getElementById('repuestoModalUsado');
-        const val = normalizarBusqueda(input.value);
         const listDiv = document.getElementById('autocomplete-repuestoModalUsado');
+        if(!input || !listDiv) return;
         listDiv.innerHTML = '';
-        
-        const filtrados = stockData.filter(item => normalizarBusqueda(item.nombre).includes(val) && item.cantidad > 0);
-        
-        if (filtrados.length === 0) { listDiv.style.display = 'none'; return; }
-        
-        filtrados.forEach(item => {
+
+        // Si el stock todavía no se cargó, lo pedimos y reintentamos cuando llegue
+        if (stockData.length === 0 && typeof window.cargarStockData === 'function' && !window._stockModalReintento) {
+            window._stockModalReintento = true;
+            window.cargarStockData();
+            setTimeout(() => { window._stockModalReintento = false; filtrarStockModal(); }, 1200);
+        }
+
+        // Búsqueda por palabras sueltas (en cualquier orden) sobre nombre + código
+        const palabras = normalizarBusqueda(input.value).split(/\s+/).filter(Boolean);
+        const vistos = new Set();
+        const filtrados = stockData.filter(item => {
+            if (!item || vistos.has(item.id)) return false; // evita duplicados
+            vistos.add(item.id);
+            const texto = normalizarBusqueda((item.nombre || '') + ' ' + (item.codigo || ''));
+            return palabras.every(w => texto.includes(w));
+        });
+
+        listDiv.style.display = 'block';
+        if (filtrados.length === 0) {
+            const vacio = document.createElement('div');
+            vacio.style.cssText = 'color:var(--gray-500); cursor:default; font-size:13px;';
+            vacio.textContent = stockData.length === 0 ? 'No hay artículos cargados en el stock' : 'Sin resultados en el stock';
+            listDiv.appendChild(vacio);
+            return;
+        }
+
+        filtrados.slice(0, 30).forEach(item => {
+            const cant = parseInt(item.cantidad) || 0;
             const div = document.createElement('div');
-            div.innerHTML = `<b>${item.nombre}</b> <span style="color:var(--green-600); float:right; font-weight:bold;">Disp: ${item.cantidad}</span>`;
-            
-            div.onmousedown = function(e) { 
+            const pCosto = parseFloat(item.costo) || 0, pVenta = parseFloat(item.precioVenta) || 0;
+            div.innerHTML = `<b>${escaparHTML(item.nombre || '')}</b> <span style="color:${cant > 0 ? 'var(--green-600)' : 'var(--danger)'}; float:right; font-weight:bold;">${cant > 0 ? 'Disp: ' + cant : 'Sin stock'}</span>`
+                + `<span style="display:block; clear:both; font-size:12px; font-weight:600; color:var(--gray-500); padding-top:3px;">🧾 Costo ${pCosto > 0 ? fmt.format(pCosto) : '—'} &nbsp;·&nbsp; 🏷️ Venta ${pVenta > 0 ? fmt.format(pVenta) : '—'}</span>`;
+
+            div.onmousedown = function(e) {
+                e.preventDefault();
+                if (cant <= 0) { showToast("Sin stock disponible", "#f59e0b"); return; }
                 let existe = repuestosSeleccionadosModal.find(r => r.id === item.id);
                 if(existe) {
-                    if(existe.cant < item.cantidad) existe.cant++;
+                    if(existe.cant < cant) existe.cant++;
                     else showToast("No hay más stock disponible", "#f59e0b");
                 } else {
-                    repuestosSeleccionadosModal.push({ id: item.id, nombre: item.nombre, cant: 1, max: item.cantidad });
+                    repuestosSeleccionadosModal.push({ id: item.id, nombre: item.nombre, cant: 1, max: cant });
                 }
-                
-                input.value = ""; 
+
+                input.value = "";
                 listDiv.style.display = 'none';
                 renderRepuestosModal();
             };
             listDiv.appendChild(div);
         });
-        listDiv.style.display = 'block';
     }
 
     function renderRepuestosModal() {
@@ -10163,6 +10210,79 @@ function showApp() {
                 </div>
             `;
         });
+        actualizarResumenRepuestoPrecio();
+        actualizarBotonesReparado();
+    }
+
+    // Con repuestos elegidos: solo "Descontar". Sin repuestos: solo "No usé".
+    function actualizarBotonesReparado() {
+        const hayRepuestos = repuestosSeleccionadosModal.length > 0;
+        const noUse = document.getElementById('filaBtnsNoUse');
+        const desc = document.getElementById('filaBtnsDescontar');
+        if (noUse) noUse.style.display = hayRepuestos ? 'none' : 'flex';
+        if (desc) desc.style.display = hayRepuestos ? 'flex' : 'none';
+    }
+
+    // ── Valor de los repuestos de stock que se suma a contabilidad ──────────
+    // Modo: 'costo' (costo unitario), 'venta' (precio de venta) o 'ninguno'.
+    // Se recuerda en el dispositivo para no elegirlo cada vez.
+    function _modoPrecioRepuestoGuardado() {
+        try { const m = localStorage.getItem('mtw_repuesto_modo'); if (m === 'venta' || m === 'ninguno') return m; } catch(e) {}
+        return 'costo';
+    }
+    function _valorUnitRepuesto(id, modo) {
+        if (modo === 'ninguno') return 0;
+        const it = stockData.find(x => x.id === id);
+        if (!it) return 0;
+        return parseFloat(modo === 'venta' ? it.precioVenta : it.costo) || 0;
+    }
+    function cambiarModoPrecioRepuesto(v) {
+        const h = document.getElementById('repuestoPrecioModo');
+        if (h) h.value = v;
+        try { localStorage.setItem('mtw_repuesto_modo', v); } catch(e) {}
+        actualizarResumenRepuestoPrecio();
+    }
+    function actualizarResumenRepuestoPrecio() {
+        const wrap = document.getElementById('repuestoPrecioModoWrap');
+        const hid = document.getElementById('repuestoPrecioModo');
+        const cards = document.getElementById('repuestoPrecioCards');
+        const res = document.getElementById('repuestoPrecioResumen');
+        if (!wrap || !hid || !cards || !res) return;
+        wrap.style.display = repuestosSeleccionadosModal.length > 0 ? 'block' : 'none';
+        const modo = hid.value || 'costo';
+        const totC = repuestosSeleccionadosModal.reduce((a, r) => a + _valorUnitRepuesto(r.id, 'costo') * r.cant, 0);
+        const totV = repuestosSeleccionadosModal.reduce((a, r) => a + _valorUnitRepuesto(r.id, 'venta') * r.cant, 0);
+        const card = (m, ic, lb, tot) => `<button type="button" class="rp-modo-btn${modo === m ? ' active' : ''}" onclick="cambiarModoPrecioRepuesto('${m}')">
+            <span class="rp-ic">${ic}</span><span class="rp-lb">${lb}</span>
+            <span class="rp-mt${tot > 0 ? '' : ' sin'}">${m === 'ninguno' ? '—' : (tot > 0 ? fmt.format(tot) : 'Sin dato')}</span></button>`;
+        cards.innerHTML = card('costo', '🧾', 'Costo', totC) + card('venta', '🏷️', 'Venta', totV) + card('ninguno', '🚫', 'No sumar', 0);
+
+        if (modo === 'ninguno') { res.textContent = 'No se suma nada a contabilidad.'; return; }
+        const sinValor = repuestosSeleccionadosModal.filter(r => _valorUnitRepuesto(r.id, modo) <= 0).map(r => escaparHTML(r.nombre));
+        const total = modo === 'venta' ? totV : totC;
+        let h = total > 0
+            ? 'Se suma <b style="color:var(--success);">' + fmt.format(total) + '</b> como costo de repuesto.'
+            : 'Ningún artículo tiene ' + (modo === 'venta' ? 'precio de venta' : 'costo') + ' cargado en Stock.';
+        if (sinValor.length > 0 && total > 0) h += '<br>⚠️ Sin ' + (modo === 'venta' ? 'precio de venta' : 'costo') + ': ' + sinValor.join(', ');
+        res.innerHTML = h;
+    }
+
+    // Suma al costoRepuesto de la orden lo usado del stock (idempotente: si ya había
+    // un monto de stock sumado antes, lo reemplaza en vez de duplicarlo).
+    function _aplicarCostoRepuestosStock(r, updates, repuestosUsados) {
+        const total = repuestosUsados.reduce((a, x) => a + (Number(x.valorUni) || 0) * (Number(x.cant) || 0), 0);
+        const previo = parseFloat(r.costoRepuestoStock) || 0;
+        if (total <= 0 && previo <= 0) return;
+        const manual = Math.max(0, (parseFloat(r.costoRepuesto) || 0) - previo);
+        updates.costoRepuestoStock = total;
+        updates.costoRepuesto = manual + total;
+    }
+    // Al devolver los repuestos al stock, saca de contabilidad lo que se había sumado.
+    function _revertirCostoRepuestosStock(r, updates) {
+        const previo = parseFloat(r.costoRepuestoStock) || 0;
+        if (previo <= 0) return;
+        updates.costoRepuesto = Math.max(0, (parseFloat(r.costoRepuesto) || 0) - previo);
+        updates.costoRepuestoStock = null;
     }
 
     function modificarRepuestoModal(idx, sum) {
@@ -10189,7 +10309,12 @@ function showApp() {
                     return (cantActual || 0) - rep.cant;
                 });
             });
-            repuestosParaGuardar = repuestosSeleccionadosModal;
+            const modoPrecio = (document.getElementById('repuestoPrecioModo') || {}).value || 'costo';
+            repuestosParaGuardar = repuestosSeleccionadosModal.map(rep => ({
+                ...rep,
+                valorUni: _valorUnitRepuesto(rep.id, modoPrecio),
+                base: modoPrecio
+            }));
         } else if (descontar && repuestosSeleccionadosModal.length === 0) {
             showToast("⚠️ Agregá un repuesto o tocá las opciones de 'NO USÉ'", "#f59e0b");
             return;
@@ -10960,6 +11085,8 @@ function showApp() {
             document.getElementById('repuestoModalUsado').value = "";
             document.getElementById('notaReparacionModal').value = "";
             repuestosSeleccionadosModal = [];
+            const selModo = document.getElementById('repuestoPrecioModo');
+            if (selModo) selModo.value = _modoPrecioRepuestoGuardado();
             renderRepuestosModal();
             document.getElementById('modalUsoStock').style.display = 'flex';
             return; 
@@ -11141,6 +11268,7 @@ function showApp() {
                 });
             });
             updates.repuestosDescontados = null; 
+            _revertirCostoRepuestosStock(r, updates);
             delete r.repuestosDescontados; 
 
         }
@@ -11164,6 +11292,7 @@ function showApp() {
         if (repuestosUsados) {
             updates.repuestosDescontados = repuestosUsados;
             r.repuestosDescontados = repuestosUsados;
+            _aplicarCostoRepuestosStock(r, updates, repuestosUsados);
         }
         
         const pathActivo = fbPathActivo();
@@ -11341,7 +11470,7 @@ function showApp() {
             r.repuestosDescontados.forEach(rep => {
                 h += `<div class="history-item" style="border-left-color:var(--green-600);">
                         <b>Descontado</b>
-                        <span>${rep.cant}x ${escaparHTML(rep.nombre)}</span>
+                        <span>${rep.cant}x ${escaparHTML(rep.nombre)}${rep.valorUni > 0 ? ' · ' + fmt.format(rep.valorUni * rep.cant) + (rep.base === 'venta' ? ' (venta)' : ' (costo)') : ''}</span>
                       </div>`;
             });
             h += `</div>`;
