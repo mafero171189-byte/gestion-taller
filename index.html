@@ -627,10 +627,11 @@
 
         /* ===== Impresión del ticket como imagen del PDF real (para imprimir desde la app instalada) ===== */
         #pdfPrintOverlay { position: fixed; inset: 0; background: #525659; z-index: 100000; overflow: auto; -webkit-overflow-scrolling: touch; }
-        #pdfPrintOverlay .tpo-bar { position: sticky; top: 0; display: flex; gap: 10px; justify-content: center; padding: 12px; background: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+        #pdfPrintOverlay .tpo-bar { position: sticky; top: 0; left: 0; width: 100%; box-sizing: border-box; z-index: 5; display: flex; gap: 10px; justify-content: center; padding: 12px; background: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
         #pdfPrintOverlay .tpo-bar button { padding: 12px 22px; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; color: #fff; cursor: pointer; font-family: 'Outfit', sans-serif; }
         #pdfPrintOverlay .tpo-print { background: #2563eb; }
         #pdfPrintOverlay .tpo-close { background: #475569; }
+        #pdfPrintOverlay { touch-action: none; overscroll-behavior: contain; }
         #pdfPrintImgWrap { padding: 16px; text-align: center; }
         #pdfPrintImg { max-width: 100%; height: auto; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.4); }
         @media print {
@@ -6547,14 +6548,8 @@ function showApp() {
 
                     btnVer.onclick = () => {
                         modal.style.display = 'none';
-                        // App instalada (PWA): sin barra de navegador. Rasterizamos el PDF real
-                        // y lo imprimimos con window.print() (sale idéntico). En el navegador se abre el mismo PDF vertical apilado.
-                        if (esAppInstalada()) {
-                            generarEImprimirPDF(r, conf, (blobVert) => abrirImpresionPDF(blobVert, nro), qrCliente, qrTaller, { modo: 'doblevert' });
-                            return;
-                        }
-                        const w = window.open(urlDoble, '_blank');
-                        if (!w) { const a = document.createElement('a'); a.href = urlDoble; a.download = `Orden-${nro}.pdf`; a.click(); }
+                        // Rasterizamos el PDF real y lo mostramos con Imprimir / Cerrar y zoom (app y navegador).
+                        generarEImprimirPDF(r, conf, (blobVert) => abrirImpresionPDF(blobVert, nro), qrCliente, qrTaller, { modo: 'doblevert' });
                     };
                     btnDesc.onclick = () => {
                         const a = document.createElement('a');
@@ -6883,15 +6878,6 @@ function showApp() {
         });
     }
 
-    // Detecta si la app corre instalada (standalone / PWA), donde no hay barra de navegador.
-    function esAppInstalada() {
-        try {
-            return window.matchMedia('(display-mode: standalone)').matches
-                || window.matchMedia('(display-mode: fullscreen)').matches
-                || window.navigator.standalone === true;
-        } catch (e) { return false; }
-    }
-
     // Rasteriza el PDF REAL a imagen (pdf.js) y la muestra con botón Imprimir.
     // Al imprimir sale idéntico al PDF (colores y letras tal cual), en una sola hoja.
     async function abrirImpresionPDF(blob, nro) {
@@ -6901,11 +6887,20 @@ function showApp() {
             if (!w) { const a = document.createElement('a'); a.href = url; a.download = `Orden-${nro}.pdf`; a.click(); }
         };
         if (!window.pdfjsLib) {
-            try {
-                await _cargarScriptExterno('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
-            } catch (e) { /* sigue al fallback de abajo */ }
+            // hasta 3 intentos (la red del celu a veces falla la primera vez)
+            for (let intento = 0; intento < 3 && !window.pdfjsLib; intento++) {
+                try {
+                    await _cargarScriptExterno('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+                } catch (e) {
+                    await new Promise(r => setTimeout(r, 600));
+                }
+            }
         }
-        if (!window.pdfjsLib) { abrirPDFNormal(); return; }
+        if (!window.pdfjsLib) {
+            showToast('⚠️ No se pudo cargar el visor de impresión (revisá la conexión). Se abre el PDF común.', '#f59e0b');
+            abrirPDFNormal();
+            return;
+        }
         try {
             mostrarLoader('Preparando impresión...');
             if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -6927,11 +6922,15 @@ function showApp() {
             const ov = document.getElementById('pdfPrintOverlay');
             img.onload = () => ocultarLoader();
             img.src = dataUrl;
+            if (typeof window._resetZoomTicket === 'function') window._resetZoomTicket();
             ov.style.display = 'block';
             ov.scrollTop = 0;
+            ov.scrollLeft = 0;
             setTimeout(ocultarLoader, 800);
         } catch (e) {
+            console.error('abrirImpresionPDF:', e);
             ocultarLoader();
+            showToast('⚠️ No se pudo armar la vista de impresión: ' + ((e && e.message) || e), '#f59e0b');
             abrirPDFNormal();
         }
     }
@@ -6939,12 +6938,14 @@ function showApp() {
     function cerrarImpresionPDF() {
         const ov = document.getElementById('pdfPrintOverlay');
         const img = document.getElementById('pdfPrintImg');
+        if (typeof window._resetZoomTicket === 'function') window._resetZoomTicket();
         if (ov) ov.style.display = 'none';
         if (img) img.src = '';
         document.body.classList.remove('printing-pdf');
     }
 
     function imprimirPDFImg() {
+        if (typeof window._resetZoomTicket === 'function') window._resetZoomTicket();
         document.body.classList.add('printing-pdf');
         const limpiar = () => {
             document.body.classList.remove('printing-pdf');
@@ -13683,8 +13684,7 @@ function showApp() {
         // ─── TOUCH: PINCH + ARRASTRE ───
         let touch1 = null, touch2 = null;
         let touchStartX = 0, touchStartY = 0;
-        let touchPosX = 0, touchPosY = 0;
-        let tapTimer = null, lastTapTime = 0;
+        let lastTapTime = 0;
 
         function getTouchDist(t1, t2) {
             const dx = t1.clientX - t2.clientX;
@@ -13692,15 +13692,30 @@ function showApp() {
             return Math.sqrt(dx * dx + dy * dy);
         }
 
+        let swipeStartX = 0, swipeStartY = 0, swipeStartT = 0, swipeValid = false;
+
+        function navegarFoto(dir) {
+            if (viewerSrcs.length < 2) return;
+            viewerIdx = (viewerIdx + dir + viewerSrcs.length) % viewerSrcs.length;
+            resetZoom(false);
+            imgEl.src = viewerSrcs[viewerIdx];
+        }
+
         modal.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                swipeStartX = e.touches[0].clientX;
+                swipeStartY = e.touches[0].clientY;
+                swipeStartT = Date.now();
+                swipeValid = true;
+            } else {
+                swipeValid = false;
+            }
             if (e.touches.length === 1) {
                 touch1 = e.touches[0];
                 touch2 = null;
                 lastPinchDist = null;
                 touchStartX = touch1.clientX - posX;
                 touchStartY = touch1.clientY - posY;
-                touchPosX = posX;
-                touchPosY = posY;
             } else if (e.touches.length === 2) {
                 touch1 = e.touches[0];
                 touch2 = e.touches[1];
@@ -13735,6 +13750,17 @@ function showApp() {
 
         modal.addEventListener('touchend', (e) => {
             lastPinchDist = null;
+            // SWIPE horizontal para cambiar de foto (solo sin zoom)
+            if (swipeValid && e.touches.length === 0 && e.changedTouches.length === 1 && scale <= 1 && viewerSrcs.length > 1) {
+                const dx = e.changedTouches[0].clientX - swipeStartX;
+                const dy = e.changedTouches[0].clientY - swipeStartY;
+                if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && (Date.now() - swipeStartT) < 800) {
+                    swipeValid = false;
+                    lastTapTime = 0;
+                    navegarFoto(dx < 0 ? 1 : -1);
+                    return;
+                }
+            }
             if (e.changedTouches.length === 1 && scale <= 1) {
                 // Doble tap para hacer zoom x2 rápido
                 const now = Date.now();
@@ -13788,6 +13814,138 @@ function showApp() {
         };
     })();
     
+    // ====== ZOOM DEL TICKET (PINCH + DOBLE TAP) ======
+    function _initZoomTicket() {
+        const ov   = document.getElementById('pdfPrintOverlay');
+        const img  = document.getElementById('pdfPrintImg');
+        const wrap = document.getElementById('pdfPrintImgWrap');
+        if (!ov || !img || !wrap) return;
+        const MIN_Z = 1, MAX_Z = 5;
+        let zoom = 1, baseW = 0;
+        let pinchDist = null, pinchStartZoom = 1;
+        let lastTap = 0, lastTapX = 0, lastTapY = 0;
+
+        function medirBase() {
+            if (zoom === 1) baseW = img.getBoundingClientRect().width || (ov.clientWidth - 32) || (window.innerWidth - 32);
+        }
+
+        function aplicarZoom(nuevo, mx, my) {
+            nuevo = Math.min(MAX_Z, Math.max(MIN_Z, nuevo));
+            if (nuevo === zoom) return;
+            medirBase();
+            const k = nuevo / zoom;
+            const cx = ov.scrollLeft + mx;
+            const cy = ov.scrollTop + my;
+            zoom = nuevo;
+            if (zoom === 1) {
+                img.style.width = ''; img.style.maxWidth = '';
+                wrap.style.width = '';
+            } else {
+                const w = baseW * zoom;
+                img.style.maxWidth = 'none';
+                img.style.width = w + 'px';
+                wrap.style.width = (w + 32) + 'px';
+            }
+            ov.scrollLeft = cx * k - mx;
+            ov.scrollTop  = cy * k - my;
+        }
+
+        window._resetZoomTicket = function() {
+            zoom = 1; baseW = 0; pinchDist = null;
+            img.style.width = ''; img.style.maxWidth = '';
+            wrap.style.width = '';
+        };
+
+        function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
+
+        // Con touch-action:none el navegador no hace scroll ni zoom solo: lo manejamos nosotros
+        let lastX = 0, lastY = 0, velX = 0, velY = 0, lastMoveT = 0, momentumId = null, movedPx = 0;
+
+        function pararInercia() { if (momentumId) { cancelAnimationFrame(momentumId); momentumId = null; } }
+
+        function inercia() {
+            velX *= 0.95; velY *= 0.95;
+            if (Math.abs(velX) < 0.3 && Math.abs(velY) < 0.3) { momentumId = null; return; }
+            ov.scrollLeft -= velX; ov.scrollTop -= velY;
+            momentumId = requestAnimationFrame(inercia);
+        }
+
+        ov.addEventListener('touchstart', (e) => {
+            pararInercia();
+            if (e.touches.length === 2) {
+                medirBase();
+                pinchDist = dist(e.touches[0], e.touches[1]);
+                pinchStartZoom = zoom;
+                movedPx = 99;
+            } else if (e.touches.length === 1) {
+                lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+                velX = 0; velY = 0; movedPx = 0; lastMoveT = Date.now();
+            }
+        }, { passive: false });
+
+        ov.addEventListener('touchmove', (e) => {
+            if (e.cancelable) e.preventDefault();
+            if (e.touches.length === 2) {
+                if (!pinchDist) {
+                    medirBase();
+                    pinchDist = dist(e.touches[0], e.touches[1]);
+                    pinchStartZoom = zoom;
+                }
+                const d = dist(e.touches[0], e.touches[1]);
+                const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                movedPx = 99;
+                aplicarZoom(pinchStartZoom * (d / pinchDist), mx, my);
+            } else if (e.touches.length === 1 && !pinchDist) {
+                const t = e.touches[0];
+                const dx = t.clientX - lastX, dy = t.clientY - lastY;
+                movedPx += Math.abs(dx) + Math.abs(dy);
+                ov.scrollLeft -= dx; ov.scrollTop -= dy;
+                const now = Date.now(), dt = Math.max(1, now - lastMoveT);
+                velX = dx * (16 / dt); velY = dy * (16 / dt);
+                lastMoveT = now; lastX = t.clientX; lastY = t.clientY;
+            }
+        }, { passive: false });
+
+        ov.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) pinchDist = null;
+            if (e.touches.length === 1) {
+                // quedó un dedo después del pinch: seguir desde ahí sin saltos
+                lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; velX = 0; velY = 0;
+                return;
+            }
+            if (e.touches.length === 0 && e.changedTouches.length === 1) {
+                const t = e.changedTouches[0];
+                if (movedPx < 10) {
+                    // tap: doble tap sobre la imagen alterna zoom
+                    if (e.target === img) {
+                        const now = Date.now();
+                        if (now - lastTap < 300 && Math.abs(t.clientX - lastTapX) < 40 && Math.abs(t.clientY - lastTapY) < 40) {
+                            aplicarZoom(zoom > 1 ? 1 : 2.5, t.clientX, t.clientY);
+                            lastTap = 0;
+                        } else {
+                            lastTap = now; lastTapX = t.clientX; lastTapY = t.clientY;
+                        }
+                    }
+                } else if (Date.now() - lastMoveT < 80 && (Math.abs(velX) > 1 || Math.abs(velY) > 1)) {
+                    momentumId = requestAnimationFrame(inercia);
+                }
+            }
+        }, { passive: true });
+
+        ov.addEventListener('touchcancel', () => { pinchDist = null; }, { passive: true });
+
+        // PC: Ctrl + rueda para zoom
+        ov.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            aplicarZoom(zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+        }, { passive: false });
+    }
+    // El overlay del ticket está más abajo en el HTML: esperar a que el DOM esté completo
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initZoomTicket);
+    else _initZoomTicket();
+
     // ====== STOCK ======
     function guardarStock() {
         if(isClientMode) return;
