@@ -10490,6 +10490,8 @@ function showApp() {
         if (window._modoCobroDeuda) {
             window._modoCobroDeuda = false; window._cobroCotizarMode = false;
             updates.entregadoSinCobrar = false;
+            // Fecha real del cobro: la contabilidad imputa el ingreso al mes en que se pagó
+            updates.fechaCobroSaldo = _fmtFechaHora(new Date());
             
             const pathActivo = fbPathActivo();
             const pathArchivadoDeuda = fbPathArchivado();
@@ -14652,6 +14654,8 @@ function showApp() {
             }
 
             let coincideSaldo = false;
+            let coincideEntrega = false;
+            let fechaSaldoRef = null;
             let estadoEntregado = null;
             // Incluir órdenes con saldo cobrado O entregadas sin cobrar
             // También incluir órdenes archivadas con descuento 100% (saldoCobrado=0 pero tienen Entregado en historial y precio>0)
@@ -14662,19 +14666,25 @@ function showApp() {
                 estadoEntregado = r.historialEstados.find(e => e.estado === 'Entregado');
                 if (estadoEntregado) {
 
-                    let evPartes = estadoEntregado.fecha.split(/[, ]+/)[0].trim().split('/');
-                    if (evPartes.length === 3) {
+                    const _matchFechaConta = (fStr) => {
+                        let evP = (fStr || '').split(/[, ]+/)[0].trim().split('/');
+                        if (evP.length !== 3) return false;
                         if (diaFiltro) {
                             let df = diaFiltro.split('-');
-                            coincideSaldo = (evPartes[0].padStart(2,'0') === df[2] && evPartes[1].padStart(2,'0') === df[1] && evPartes[2] === df[0]);
-                        } else {
-                            coincideSaldo = (evPartes[1].padStart(2,'0') === targetMonthStr && evPartes[2] === targetYearStr);
+                            return (evP[0].padStart(2,'0') === df[2] && evP[1].padStart(2,'0') === df[1] && evP[2] === df[0]);
                         }
-                    }
+                        return (evP[1].padStart(2,'0') === targetMonthStr && evP[2] === targetYearStr);
+                    };
+                    // Fecha de entrega original (costo de repuesto, deuda pendiente)
+                    coincideEntrega = _matchFechaConta(estadoEntregado.fecha);
+                    // Fecha del cobro: si la orden se entregó sin cobrar y se pagó después,
+                    // el ingreso va al mes del pago (fechaCobroSaldo), no al de la entrega.
+                    fechaSaldoRef = (r.fechaCobroSaldo && !r.entregadoSinCobrar) ? r.fechaCobroSaldo : estadoEntregado.fecha;
+                    coincideSaldo = (fechaSaldoRef === estadoEntregado.fecha) ? coincideEntrega : _matchFechaConta(fechaSaldoRef);
                 }
             }
 
-            if (coincideIngreso || coincideSaldo) {
+            if (coincideIngreso || coincideSaldo || coincideEntrega) {
                 if (!movsMap[r.id]) {
                     let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
                     movsMap[r.id] = { id: r.id, orden: r.orden, cliente: r.esVentaRapida ? (r.cliente && r.cliente !== 'Venta de Mostrador' ? r.cliente : 'Venta de Mostrador') : r.cliente, desc: new Set(), metodo: new Set(), ingreso: 0, egreso: 0, fechaRaw: r.fecha, esVentaRapida: r.esVentaRapida, equipo: equipoCompleto };
@@ -14684,7 +14694,7 @@ function showApp() {
 
                 // El costo de repuesto se computa siempre que la orden entre en el período
                 // (por fecha de carga o de entrega), sin importar por cuál de las dos matcheó.
-                if (!mov._costoRepuestoContado) {
+                if (!mov._costoRepuestoContado && (coincideIngreso || coincideEntrega)) {
                     let costoRep = parseFloat(r.costoRepuesto) || 0;
                     if (costoRep > 0) {
                         gastosRepuestos += costoRep;
@@ -14735,7 +14745,7 @@ function showApp() {
                         mov.ingreso += cobro;
                         mov.desc.add('Saldo');
                         if(r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
-                        mov.fechaRaw = estadoEntregado.fecha; 
+                        mov.fechaRaw = fechaSaldoRef || estadoEntregado.fecha; 
                         
                         addIngreso(r.metodoPagoSaldo, cobro);
                     } else if (r.entregadoSinCobrar) {
@@ -14748,7 +14758,7 @@ function showApp() {
                         mov.desc.add('⚠️ Deuda Pendiente');
                     } else if (esDescuentoTotal) {
                         // Cobrado con descuento 100%: ingreso $0, se muestra como Descuento Total
-                        mov.fechaRaw = estadoEntregado.fecha;
+                        mov.fechaRaw = fechaSaldoRef || estadoEntregado.fecha;
                         mov.desc.add('🏷️ Descuento Total (100%)');
                         if (r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
                         else if (r.metodoPagoSena && r.metodoPagoSena !== '-') mov.metodo.add(r.metodoPagoSena);
@@ -15148,6 +15158,8 @@ function showApp() {
             let costoRep = parseFloat(r.costoRepuesto) || 0;
 
             let fechaEntrega = '', horaEntrega = '', cobroSaldo = 0, metodoSaldo = '';
+            let fechaCobroExp = '';
+            let fechaEntregaOrig = '';
             if (r.estado === 'Entregado' && !r.esVentaRapida && r.historialEstados) {
                 // CORRECCIÓN EXCEL: Usamos el PRIMER 'Entregado' para mantener la fecha original de cobro
                 let ent = r.historialEstados.find(e => e.estado === 'Entregado');
@@ -15155,15 +15167,20 @@ function showApp() {
 
                     fechaEntrega = ent.fecha.split(',')[0].trim();
                     horaEntrega = ent.fecha.split(',')[1] ? ent.fecha.split(',')[1].trim() : '';
+                    fechaEntregaOrig = ent.fecha;
+                    // Si se cobró después de entregar, el ingreso va a la fecha del cobro
+                    fechaCobroExp = (r.fechaCobroSaldo && !r.entregadoSinCobrar) ? r.fechaCobroSaldo : ent.fecha;
                     cobroSaldo = parseFloat(r.saldoCobrado) || 0;
                     metodoSaldo = r.metodoPagoSaldo || 'Efectivo';
                 }
             }
 
             const conicideIngreso = coincideFecha(r.fecha);
-            const coincidesaldo = fechaEntrega ? coincideFecha(fechaEntrega + ', ' + horaEntrega) : false;
+            const coincideEntregaExp = fechaEntregaOrig ? coincideFecha(fechaEntregaOrig) : false;
+            const coincidesaldo = fechaCobroExp ? (fechaCobroExp === fechaEntregaOrig ? coincideEntregaExp : coincideFecha(fechaCobroExp)) : false;
 
-            if (!conicideIngreso && !coincidesaldo) return;
+            // Entró solo por la entrega (se cobró en otro período): solo si hay costo de repuesto que mostrar
+            if (!conicideIngreso && !coincidesaldo && !(coincideEntregaExp && costoRep > 0)) return;
 
             if (!mapaOrdenes[r.id]) {
                 mapaOrdenes[r.id] = {
@@ -15184,7 +15201,7 @@ function showApp() {
 
             // El costo de repuesto se computa una sola vez por orden, entre o no
             // por fecha de carga, y tanto en reparaciones como en ventas rápidas.
-            if (costoRep > 0 && !entrada._costoRepContado) {
+            if (costoRep > 0 && !entrada._costoRepContado && (conicideIngreso || coincideEntregaExp || !fechaEntregaOrig)) {
                 entrada.costoRepuesto += costoRep;
                 entrada._costoRepContado = true;
             }
@@ -15208,7 +15225,7 @@ function showApp() {
                 entrada.conceptos.push('Saldo');
                 if (metodoSaldo) entrada.metodos.add(metodoSaldo);
                 entrada.totalCobrado += cobroSaldo;
-                entrada.fechaEntrega = fechaEntrega;
+                entrada.fechaEntrega = fechaCobroExp ? fechaCobroExp.split(',')[0].trim() : fechaEntrega;
             }
         });
 
