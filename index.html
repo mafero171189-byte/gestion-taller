@@ -7891,6 +7891,29 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         el.type = el.type === 'password' ? 'text' : 'password';
     }
 
+    // ====== PRUEBA GRATIS: registro cifrado de cuentas eliminadas ======
+    // Al eliminar una cuenta se guarda en cuentas_eliminadas/{hash} cuándo
+    // terminaba su prueba (el número va cifrado con SHA-256, no se guarda en
+    // claro). Si esa persona vuelve a registrarse con el mismo número, hereda
+    // los días que le quedaban en vez de arrancar otra prueba completa.
+    function _hashCuenta(wa) {
+        return crypto.subtle.digest('SHA-256', new TextEncoder().encode('mtw-trial:' + wa)).then(buf =>
+            Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 40));
+    }
+    function _expiracionPruebaHeredada(wa, base) {
+        return _hashCuenta(wa)
+            .then(h => db.ref('cuentas_eliminadas/' + h).once('value'))
+            .then(snap => {
+                const v = snap.val();
+                if (v && typeof v.trialFin === 'number') {
+                    // Mínimo 1 minuto a futuro para no chocar con reglas que pidan fecha futura.
+                    return Math.max(Math.min(base, v.trialFin), Date.now() + 60000);
+                }
+                return base;
+            })
+            .catch(() => base);
+    }
+
     // ====== REGISTRO AUTOMÁTICO OPTIMIZADO ======
     function registrarUsuario() {
         let wa = (window.getFullPhone ? getFullPhone('dialBtnReg','regWa') : document.getElementById('regWa').value).replace(/\D/g,'').trim();
@@ -9233,7 +9256,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 if (!snapCheck.exists()) {
                     db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
                         const solData = snapSol.val() || {};
-                        const expiracion = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
+                        const expBase = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
+                        return _expiracionPruebaHeredada(u, expBase).then(expiracion => ({ solData, expiracion }));
+                    }).then(({ solData, expiracion }) => {
                         db.ref('usuarios_registrados/' + u).set({
                             whatsapp: u,
                             fechaAlta: solData.fecha || _fmtFechaHora(new Date()),
@@ -9810,6 +9835,15 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
 
         const wa = currentUser;
+        // Registro mínimo cifrado: evita que borrar la cuenta reinicie la prueba gratis.
+        // Si las reglas de Firebase todavía no lo permiten, no frena la eliminación.
+        try {
+            const snapU = await db.ref('usuarios_registrados/' + wa).once('value');
+            const u = snapU.val() || {};
+            const trialFin = ((u.tipoLicencia || 'prueba') === 'prueba' && u.fechaExpiracion) ? u.fechaExpiracion : Date.now();
+            const h = await _hashCuenta(wa);
+            await db.ref('cuentas_eliminadas/' + h).set({ trialFin: trialFin, ts: Date.now() });
+        } catch (e) { console.warn('No se pudo guardar el registro de cuenta eliminada:', e && e.message); }
         // Dejar de escuchar cambios para que no reaccionen al borrado.
         try { if (dbRef) dbRef.off(); } catch (e) {}
         try { db.ref('usuarios_registrados/' + wa).off(); } catch (e) {}
@@ -9827,11 +9861,11 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const secundarios = [
             'presupuestos_respuestas/' + wa,
             'indices/' + wa,
-            'sync_ts/' + wa,
+            'contadores/' + wa,
             'seguimiento_publico/' + wa,
             'perfil_publico/' + wa,
-            'solicitudes_registro/' + wa,
-            'solicitudes_reset/' + wa
+            'fcm_tokens/' + wa,
+            'error_logs/' + wa
         ];
         try {
             await Promise.all(principales.map(r => db.ref(r).remove()));
@@ -9842,6 +9876,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
         // Estos nodos auxiliares pueden no existir o no tener permiso: no frenan el borrado.
         await Promise.all(secundarios.map(r => db.ref(r).remove().catch(() => {})));
+        // IMPORTANTE: el registro del usuario y la solicitud de registro se borran AL FINAL y en
+        // este orden. Las reglas de Firebase identifican al dueño con el email guardado en
+        // solicitudes_registro/{wa}/authEmail (y usuarios_registrados), así que si se borraran
+        // antes, ya no tendríamos permiso para borrar el resto.
         try {
             await db.ref('usuarios_registrados/' + wa).remove();
         } catch (e) {
@@ -9849,6 +9887,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             alert('❌ No se pudo borrar el registro de tu cuenta: ' + (e && e.message ? e.message : e) + '\n\nEscribile a soporte para terminar la eliminación.');
             return;
         }
+        await db.ref('solicitudes_registro/' + wa).remove().catch(() => {});
         try { await user.delete(); } catch (e) { /* si falla, igual ya no quedan datos */ }
 
         ocultarLoader();
@@ -16421,6 +16460,36 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         });
     };
 
+    // Borra TODOS los datos de un usuario (mismo alcance que "Eliminar mi cuenta" de
+    // Configuración). Los nodos principales frenan el proceso si fallan; los auxiliares no.
+    // El registro del usuario y la solicitud de registro van al final.
+    // Ojo: la cuenta de acceso (Firebase Auth) no se puede borrar desde acá.
+    function _borrarDatosUsuarioAdmin(wa) {
+        const principales = [
+            'reparaciones_usuarios/' + wa,
+            'reparaciones_archivadas_usuarios/' + wa,
+            'stock_usuarios/' + wa,
+            'presupuestos_usuarios/' + wa,
+            'gastos_extra_usuarios/' + wa,
+            'fotos_ordenes/' + wa
+        ];
+        const auxiliares = [
+            'presupuestos_respuestas/' + wa,
+            'indices/' + wa,
+            'contadores/' + wa,
+            'seguimiento_publico/' + wa,
+            'perfil_publico/' + wa,
+            'fcm_tokens/' + wa,
+            'error_logs/' + wa,
+            'sync_ts/' + wa,
+            'solicitudes_reset/' + wa
+        ];
+        return Promise.all(principales.map(r => db.ref(r).remove()))
+            .then(() => Promise.all(auxiliares.map(r => db.ref(r).remove().catch(() => {}))))
+            .then(() => db.ref('usuarios_registrados/' + wa).remove())
+            .then(() => db.ref('solicitudes_registro/' + wa).remove());
+    }
+
     // ====== CORRECCIÓN: BORRADO DEFINITIVO DE USUARIO ======
     function openDeleteLicenseModal(wa) { idParaEliminarLicencia = wa; document.getElementById('deleteLicenseModal').style.display='flex'; }
     function closeDeleteLicenseModal() { document.getElementById('deleteLicenseModal').style.display='none'; }
@@ -16431,14 +16500,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         
         const wa = idParaEliminarLicencia;
         
-        Promise.all([
-            db.ref('reparaciones_usuarios/' + wa).remove(),
-            db.ref('reparaciones_archivadas_usuarios/' + wa).remove(),
-            db.ref('stock_usuarios/' + wa).remove(),
-            db.ref('solicitudes_registro/' + wa).remove(),
-            db.ref('solicitudes_reset/' + wa).remove(),
-            db.ref('usuarios_registrados/' + wa).remove()
-        ]).then(() => {
+        _borrarDatosUsuarioAdmin(wa).then(() => {
             closeDeleteLicenseModal();
             ocultarLoader();
             showToast("BASE DE DATOS BORRADA ❌", "#dc2626");
@@ -16465,13 +16527,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 if(u.estado === 'suspendido' && u.fechaSuspension) {
                     if (AHORA - u.fechaSuspension > DIAS_7_EN_MS) {
                         promesas.push(
-                            Promise.all([
-                                db.ref('reparaciones_usuarios/' + wa).remove(),
-                                db.ref('reparaciones_archivadas_usuarios/' + wa).remove(),
-                                db.ref('stock_usuarios/' + wa).remove(),
-                                db.ref('solicitudes_registro/' + wa).remove(),
-                                db.ref('indices/' + wa).remove()
-                            ]).then(() => db.ref('usuarios_registrados/' + wa).remove())
+                            _borrarDatosUsuarioAdmin(wa)
                             .catch(err => console.warn('Error al limpiar licencia ' + wa + ':', err))
                         );
                     }
@@ -20621,7 +20677,7 @@ window.LEGAL_CFG = {
   email:     '',   // Email de contacto
   whatsapp:  '5491135654094'
 };
-window.LEGAL_VERSION = '2026-09-24-min';   // cambiala si modificás el texto
+window.LEGAL_VERSION = '2026-10-15-min';   // cambiala si modificás el texto
 
 (function () {
   var CFG = window.LEGAL_CFG;
@@ -20645,6 +20701,7 @@ window.LEGAL_VERSION = '2026-09-24-min';   // cambiala si modificás el texto
     '<li><b>Tu cuenta:</b> WhatsApp, email y contraseña (la gestiona Firebase Authentication).</li>' +
     '<li><b>Lo que cargás en el sistema:</b> órdenes, presupuestos, stock y los datos de tus clientes (nombre, teléfono, equipo, IMEI y fotos). Vos sos el responsable de esos datos y de contar con el consentimiento de tus clientes; nosotros solo los guardamos para prestarte el servicio.</li>' +
     '<li><b>Pagos:</b> los procesan Mercado Pago o PayPal. No guardamos datos de tarjetas.</li>' +
+    '<li><b>Si eliminás tu cuenta:</b> borramos todos tus datos. Solo conservamos un registro cifrado (no guardamos tu número en claro) con la fecha en que terminaba tu prueba gratuita, para que la prueba no se reinicie si volvés a registrarte con el mismo número.</li>' +
     '</ul>' +
     '<p>Los usamos solo para darte el servicio, soporte y seguridad. No vendemos tus datos ni usamos analítica ni publicidad. Las fotos se borran a los 45 días y las cuentas suspendidas, a los 7 días de la suspensión.</p>' +
 
@@ -20655,7 +20712,7 @@ window.LEGAL_VERSION = '2026-09-24-min';   // cambiala si modificás el texto
     '<p>No usamos cookies de publicidad ni de seguimiento. Solo guardamos en tu navegador lo necesario para mantener tu sesión y tus preferencias.</p>' +
 
     '<h3>Tus derechos</h3>' +
-    '<p>Podés pedir acceso, corrección o eliminación de tus datos y de tu cuenta escribiendo por WhatsApp.</p>' +
+    '<p>Podés pedir acceso, corrección o eliminación de tus datos y de tu cuenta escribiendo por WhatsApp, o eliminar tu cuenta y todos tus datos vos mismo desde Configuración dentro de la app.</p>' +
     '<div class="legal-note"><p>El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley Nº 25.326. La AGENCIA DE ACCESO A LA INFORMACIÓN PÚBLICA, en su carácter de Órgano de Control de la Ley Nº 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.</p></div>' +
 
     '<h3>Condiciones del servicio</h3>' +
