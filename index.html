@@ -2244,7 +2244,109 @@ function showApp() {
     }, 450);
 }
 </script>
- </head>
+ <style id="mobile-hamburger-css">
+/* ===== MENÚ HAMBURGUESA (solo móvil) ===== */
+#nav-hamb, #nav-sec-title, #nav-menu-overlay { display: none; }
+@media (max-width: 599px) {
+  nav .nav-scroll-area, nav .nav-fixed-right { display: none !important; }
+  nav { overflow: visible; padding: 6px 10px; }
+  nav #nav-hamb { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; width: 42px; height: 38px; padding: 0; position: relative; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px; cursor: pointer; flex-shrink: 0; }
+  #nav-hamb .hb-bar { display: block; width: 20px; height: 2.5px; border-radius: 2px; background: #fff; }
+  #nav-hamb .hb-dot { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #059669; color: #fff; font-size: 10px; font-weight: 900; display: none; align-items: center; justify-content: center; box-sizing: border-box; }
+  #nav-hamb.has-badge .hb-dot { display: flex; }
+  nav #nav-sec-title { display: block; margin-left: 12px; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #nav-menu-overlay { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 3000; background: rgba(0,0,0,0.45); }
+  #nav-menu-overlay.open { display: block; }
+  #nav-menu-panel { position: absolute; left: 10px; width: min(300px, 88vw); max-height: calc(100vh - 80px); overflow-y: auto; background: #fff; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.35); padding: 8px; box-sizing: border-box; }
+  #nav-menu-panel .nm-item { display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box; background: none; border: none; text-align: left; padding: 13px 14px; border-radius: 10px; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: #1f2937; cursor: pointer; }
+  #nav-menu-panel .nm-item.active { background: rgba(45,58,140,0.12); color: #2d3a8c; }
+  #nav-menu-panel .nm-item:active { background: rgba(45,58,140,0.18); }
+  #nav-menu-panel .nm-sep { height: 1px; background: rgba(0,0,0,0.1); margin: 6px 8px; }
+  #nav-menu-panel .nm-item.nm-danger { color: #dc2626; }
+  #nav-menu-panel .nm-item.nm-amber { color: #d97706; }
+  #nav-menu-panel .nm-badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #059669; color: #fff; font-size: 11px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+  body.dark-mode #nav-menu-panel { background: #12172e; box-shadow: 0 12px 40px rgba(0,0,0,0.7); }
+  body.dark-mode #nav-menu-panel .nm-item { color: #e5e7eb; }
+  body.dark-mode #nav-menu-panel .nm-item.active { background: rgba(99,118,255,0.2); color: #fff; }
+  body.dark-mode #nav-menu-panel .nm-sep { background: rgba(255,255,255,0.12); }
+  body.dark-mode #nav-menu-panel .nm-item.nm-danger { color: #ff7675; }
+  body.client-mode #nav-menu-overlay { display: none !important; }
+}
+</style>
+<style id="perfil-css">
+/* ===== MI PERFIL (ordenado por secciones) ===== */
+#passModal .modal-box { width: min(480px, 94vw); max-width: 94vw; padding: 0; text-align: left; display: flex; flex-direction: column; max-height: 92vh; overflow: hidden; }
+.pf-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
+.pf-head b { font-size: 17px; font-family: 'Outfit', sans-serif; }
+.pf-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--gray-500); line-height: 1; padding: 4px 8px; width: auto; }
+.pf-body { padding: 14px 16px 6px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; }
+.pf-card { background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 14px; padding: 14px 14px 12px; margin-bottom: 14px; }
+.pf-card-title { display: flex; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: var(--gray-900); margin: 0 0 12px; }
+.pf-card-title small { font-weight: 600; font-size: 11px; color: var(--gray-500); }
+.pf-card label { margin-top: 2px; }
+.pf-card input, .pf-card select, .pf-card textarea { margin-bottom: 10px; background: white; color: var(--gray-700); }
+.pf-note { font-size: 11px; color: var(--gray-500); margin: -4px 0 10px; line-height: 1.4; }
+.pf-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .pf-row2 { grid-template-columns: 1fr; gap: 0; } }
+.pf-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: white; padding: 10px; border-radius: 10px; border: 1px solid var(--gray-200); }
+.pf-foot { display: flex; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--gray-200); flex-shrink: 0; background: inherit; }
+.pf-foot button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; cursor: pointer; }
+.pf-foot .pf-cancel { background: var(--gray-100); color: var(--gray-600); }
+.pf-foot .pf-save { background: var(--secondary); color: white; }
+/* Mensajes de WhatsApp */
+.pf-wa-item { background: white; border: 1px solid var(--gray-200); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.pf-wa-item > summary { list-style: none; cursor: pointer; padding: 11px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--gray-900); }
+.pf-wa-item > summary::-webkit-details-marker { display: none; }
+.pf-wa-item > summary::after { content: '▾'; color: var(--gray-500); font-size: 13px; }
+.pf-wa-item[open] > summary::after { content: '▴'; }
+.pf-wa-tag { font-size: 10px; font-weight: 800; background: #d1fae5; color: #065f46; border-radius: 10px; padding: 2px 8px; margin-left: 6px; display: none; }
+.pf-wa-item.custom .pf-wa-tag { display: inline-block; }
+.pf-wa-inner { padding: 0 12px 12px; }
+.pf-wa-desc { font-size: 11.5px; color: var(--gray-600); margin: 0 0 8px; line-height: 1.4; }
+.pf-wa-inner textarea { font-size: 13px; line-height: 1.4; min-height: 150px; resize: vertical; margin-bottom: 6px; font-family: 'Outfit', sans-serif; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.pf-chip { width: auto; padding: 4px 9px; font-size: 11.5px; font-weight: 700; border-radius: 14px; border: 1px solid var(--gray-300); background: var(--gray-100); color: var(--gray-700); cursor: pointer; font-family: 'Outfit', sans-serif; }
+.pf-wa-actions { display: flex; gap: 8px; }
+.pf-wa-actions button { flex: 1; width: auto; padding: 9px; border-radius: 8px; border: none; font-size: 12px; font-weight: 800; cursor: pointer; font-family: 'Outfit', sans-serif; }
+.pf-wa-reset { background: var(--gray-100); color: var(--gray-600); }
+.pf-wa-prev { background: var(--wapp); color: white; }
+.pf-wa-preview { display: none; white-space: pre-wrap; background: #dcf8c6; color: #111; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 13px; line-height: 1.4; font-family: 'Outfit', sans-serif; word-break: break-word; }
+body.dark-mode .pf-head, body.dark-mode .pf-foot { border-color: rgba(255,255,255,0.1); }
+body.dark-mode .pf-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+body.dark-mode .pf-card-title { color: var(--slate-50); }
+body.dark-mode .pf-logo, body.dark-mode .pf-wa-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+body.dark-mode .pf-wa-item > summary { color: var(--slate-50); }
+body.dark-mode .pf-wa-desc { color: var(--gray-500); }
+body.dark-mode .pf-chip { background: rgba(255,255,255,0.08); color: var(--slate-50); border-color: rgba(255,255,255,0.15); }
+body.dark-mode .pf-wa-reset { background: rgba(255,255,255,0.1); color: var(--slate-50); }
+body.dark-mode .pf-foot .pf-cancel { background: rgba(255,255,255,0.1); color: var(--slate-50); }
+body.dark-mode .pf-wa-tag { background: #064e3b; color: #a7f3d0; }
+</style>
+<style id="fab-css">
+.pf-wa-grupo { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-500); margin: 12px 2px 6px; }
+.pf-wa-guia { background: transparent; }
+body.dark-mode .pf-wa-grupo { color: var(--gray-500); }
+#top-search-bar { display: none; }
+#gesture-zone-top.buscando .hdr-row { display: none !important; }
+#gesture-zone-top.buscando #top-search-bar { display: block; }
+#top-search-bar .tsb-inner { display: flex; align-items: center; gap: 8px; }
+#top-search-bar .tsb-ico { font-size: 18px; }
+#top-search-bar input { flex: 1; min-width: 0; margin: 0; padding: 9px 12px; border-radius: 10px; font-size: 15px; }
+#top-search-bar .tsb-close { flex-shrink: 0; background: var(--gray-100); border: none; border-radius: 50%; width: 34px; height: 34px; padding: 0; font-size: 14px; cursor: pointer; color: var(--gray-600); }
+body.dark-mode #top-search-bar .tsb-close { background: rgba(255,255,255,0.1); color: var(--slate-50); }
+body.client-mode #top-search-bar { display: none !important; }
+#btn-top-lupa { width: 34px; height: 34px; padding: 0; border: none; border-radius: 50%; background: var(--gray-100); font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+#btn-top-lupa.activo { background: var(--purple-700); box-shadow: 0 0 0 2px rgba(124,58,237,0.35); }
+body.dark-mode #btn-top-lupa { background: #1e1e2e; }
+body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
+#btn-top-vr { display: flex; align-items: center; gap: 5px; background: var(--purple-700); color: #fff; border: none; border-radius: 18px; padding: 6px 11px; font-size: 11px; font-weight: 800; font-family: 'Outfit', sans-serif; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+@media (max-width: 599px) {
+  #btn-top-ayuda { display: none !important; }
+  #top-gestion-actions { gap: 6px !important; }
+  #gesture-zone-top h2 { font-size: 19px; white-space: nowrap; }
+}
+</style>
+</head>
  <body onload="iniciarSeguridad()">
   <div id="landing-transition"></div>
   <!-- ═══════════════════════════════════════════════════
@@ -3224,59 +3326,94 @@ function showApp() {
     </div>
    </div>
    <div id="passModal" class="modal-overlay">
-    <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
-     <!-- ENCABEZADO CON BOTÓN CERRAR -->
-     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-      <p style="margin:0;"><b>👤 Mi Perfil - Configuración</b></p>
-      <button onclick="closePassModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-500);">✕</button>
+    <div class="modal-box">
+     <div class="pf-head">
+      <b>👤 Mi Perfil</b>
+      <button class="pf-close" onclick="closePassModal()" aria-label="Cerrar">✕</button>
      </div>
-     <!-- BLOQUE DE LICENCIA -->
-     <div id="perfilLicenciaBox" style="display:none; background:var(--gray-50); border-radius:12px; border:1.5px solid var(--gray-200); padding:16px 18px; margin-bottom:18px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-       <div>
-        <div style="font-size:10px; font-weight:800; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Estado de Licencia</div>
-        <div id="perfilLicBadge"></div>
+     <div class="pf-body">
+      <!-- LICENCIA -->
+      <div id="perfilLicenciaBox" class="pf-card" style="display:none;">
+       <div class="pf-card-title">🔑 Licencia</div>
+       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+         <div style="font-size:10px; font-weight:800; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Estado</div>
+         <div id="perfilLicBadge"></div>
+        </div>
+        <div id="perfilDiasBox" style="text-align:right;"></div>
        </div>
-       <div id="perfilDiasBox" style="text-align:right;"></div>
+       <div id="perfilBtnRenovar" style="margin-top:12px; display:none;">
+        <button onclick="closePassModal(); mostrarPanelContactoAdmin();" style="width:100%; padding:12px; background:linear-gradient(135deg,var(--amber-500),var(--warning)); color:white; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(245,158,11,0.35);">🔑 Renovar Licencia</button>
+       </div>
       </div>
-      <div id="perfilBtnRenovar" style="margin-top:12px; display:none;">
-       <button onclick="closePassModal(); mostrarPanelContactoAdmin();" style="width:100%; padding:12px; background:linear-gradient(135deg,var(--amber-500),var(--warning)); color:white; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(245,158,11,0.35);">🔑 Renovar Licencia</button>
+
+      <!-- DATOS DEL TALLER -->
+      <div class="pf-card">
+       <div class="pf-card-title">🏪 Datos del taller</div>
+       <label>Logo del local</label>
+       <div class="pf-logo">
+        <img id="logoPreview" src="" style="width:50px; height:50px; object-fit:contain; border:1px solid var(--gray-200); display:none; border-radius:5px; background:white;">
+        <input type="file" id="logoUpload" accept="image/*" style="display:none;" onchange="procesarLogoUpload(this)">
+        <button id="btnCargarLogo" onclick="document.getElementById('logoUpload').click()" style="background:var(--secondary); color:white; border:none; padding:9px 12px; border-radius:6px; font-size:12px; cursor:pointer; flex:1; font-weight:bold; width:auto;">📷 CARGAR LOGO</button>
+        <button onclick="borrarLogoUpload()" style="background:var(--danger); color:white; border:none; padding:9px 12px; border-radius:6px; cursor:pointer; font-weight:bold; width:auto;">✕</button>
+       </div>
+       <label>Nombre del taller</label>
+       <input type="text" id="confNombreTaller" placeholder="Escribí el nombre de tu taller">
+       <label>Descripción / Subtítulo</label>
+       <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular">
+       <div class="pf-row2">
+        <div>
+         <label>WhatsApp en ticket</label>
+         <input type="text" id="confWappTicket" placeholder="Ej: 54911...">
+        </div>
+        <div>
+         <label>País / Moneda</label>
+         <select id="confPais">
+          <option value="AR">🇦🇷 Argentina ($ ARS)</option>
+          <option value="BO">🇧🇴 Bolivia (Bs. BOB)</option>
+          <option value="CL">🇨🇱 Chile ($ CLP)</option>
+          <option value="CO">🇨🇴 Colombia ($ COP)</option>
+          <option value="EC">🇪🇨 Ecuador ($ USD)</option>
+          <option value="ES">🇪🇸 España (€ EUR)</option>
+          <option value="GT">🇬🇹 Guatemala (Q GTQ)</option>
+          <option value="MX">🇲🇽 México ($ MXN)</option>
+          <option value="PY">🇵🇾 Paraguay (₲ PYG)</option>
+          <option value="PE">🇵🇪 Perú (S/ PEN)</option>
+          <option value="DO">🇩🇴 Rep. Dominicana ($ DOP)</option>
+          <option value="UY">🇺🇾 Uruguay ($ UYU)</option>
+          <option value="VE">🇻🇪 Venezuela (Bs. VES)</option>
+         </select>
+        </div>
+       </div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <div class="pf-card">
+       <div class="pf-card-title">📄 Documentos <small>aparece en el PDF</small></div>
+       <label>Términos y condiciones</label>
+       <textarea id="confGarantia" rows="3" placeholder="Ej: Pasados los 90 días no nos hacemos cargo. La garantía es de 30 días." style="resize:none;"></textarea>
+      </div>
+
+      <!-- MENSAJES DE WHATSAPP -->
+      <div class="pf-card">
+       <div class="pf-card-title">💬 Mensajes de WhatsApp</div>
+       <p class="pf-note" style="margin-top:-6px;">Estos son los mensajes que se mandan a tus clientes. Ya vienen listos, pero podés cambiarlos como quieras. Tocá una variable para insertarla donde tengas el cursor.</p>
+       <div id="pfWaLista"></div>
+      </div>
+
+      <!-- CUENTA Y SEGURIDAD -->
+      <div class="pf-card">
+       <div class="pf-card-title">🔐 Cuenta y seguridad</div>
+       <label>📧 Email de recuperación</label>
+       <input type="email" id="confEmailRecuperacion" placeholder="Tu email real, para recuperar la clave" autocomplete="email" style="margin-bottom:4px;">
+       <p id="notaEmailRecuperacion" class="pf-note">Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.</p>
+       <label>Nueva clave</label>
+       <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar" style="margin-bottom:2px;">
       </div>
      </div>
-     <!-- FIN BLOQUE DE LICENCIA -->
-     <div style="text-align:left; margin-top:10px;">
-      <label>País / Moneda</label>
-      <select id="confPais" style="width:100%; padding:9px 10px; border:1.5px solid var(--gray-300); border-radius:7px; font-family:'Outfit',sans-serif; font-size:14px; margin-bottom:10px; background:white; color:var(--gray-700);">
-        <option value="AR">🇦🇷 Argentina ($ ARS)</option>
-        <option value="BO">🇧🇴 Bolivia (Bs. BOB)</option>
-        <option value="CL">🇨🇱 Chile ($ CLP)</option>
-        <option value="CO">🇨🇴 Colombia ($ COP)</option>
-        <option value="EC">🇪🇨 Ecuador ($ USD)</option>
-        <option value="ES">🇪🇸 España (€ EUR)</option>
-        <option value="GT">🇬🇹 Guatemala (Q GTQ)</option>
-        <option value="MX">🇲🇽 México ($ MXN)</option>
-        <option value="PY">🇵🇾 Paraguay (₲ PYG)</option>
-        <option value="PE">🇵🇪 Perú (S/ PEN)</option>
-        <option value="DO">🇩🇴 Rep. Dominicana ($ DOP)</option>
-        <option value="UY">🇺🇾 Uruguay ($ UYU)</option>
-        <option value="VE">🇻🇪 Venezuela (Bs. VES)</option>
-      </select>
-      <label>Logo del Local</label>
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; background: var(--white-95); padding: 10px; border-radius: 8px; border: 1px solid var(--gray-200);">
-       <img id="logoPreview" src="" style="width:50px; height:50px; object-fit:contain; border:1px solid var(--gray-200); display:none; border-radius:5px; background:white;"> <input type="file" id="logoUpload" accept="image/*" style="display:none;" onchange="procesarLogoUpload(this)">
-       <button id="btnCargarLogo" onclick="document.getElementById('logoUpload').click()" style="background:var(--secondary); color:white; border:none; padding:8px 12px; border-radius:5px; font-size:12px; cursor:pointer; flex:1; font-weight:bold;">📷 CARGAR LOGO</button>
-       <button onclick="borrarLogoUpload()" style="background:var(--danger); color:white; border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:bold;">X</button>
-      </div>
-      <label>Nombre del Taller</label> <input type="text" id="confNombreTaller" placeholder="Escribe el nombre de tu taller" style="margin-bottom:10px;"> <label>Descripción/Subtítulo</label> <input type="text" id="confSubtitulo" placeholder="Ej: Servicio Técnico Celular" style="margin-bottom:10px;"> <label>WhatsApp en Ticket</label> <input type="text" id="confWappTicket" placeholder="Ej: 54911..." style="margin-bottom:10px;">
-      <label>Términos y Condiciones (Para el PDF)</label> <textarea id="confGarantia" rows="3" placeholder="Ej: Pasados los 90 días no nos hacemos cargo. La garantía es de 30 días." style="margin-bottom:10px; resize:none;"></textarea>
-      <label>📧 Email de Recuperación</label>
-      <input type="email" id="confEmailRecuperacion" placeholder="Tu email real, para recuperar la clave" autocomplete="email" style="margin-bottom:2px;">
-      <p id="notaEmailRecuperacion" style="font-size:11px; color:var(--gray-500); margin:0 0 10px 0;">Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.</p>
-      <label>Nueva Clave</label> <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar">
-     </div>
-     <div style="display:flex; gap:10px; margin-top:20px;">
-      <button onclick="closePassModal()" style="flex:1; padding:10px; border-radius:8px; border:none;">CANCELAR</button>
-      <button onclick="updatePassword()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--secondary); color:white;">ACTUALIZAR</button>
+     <div class="pf-foot">
+      <button class="pf-cancel" onclick="closePassModal()">CANCELAR</button>
+      <button class="pf-save" onclick="updatePassword()">GUARDAR</button>
      </div>
     </div>
    </div>
@@ -3508,6 +3645,8 @@ function showApp() {
     </div>
    </div>
 <nav>
+    <button type="button" id="nav-hamb" aria-label="Menú" onclick="toggleNavMenu()"><span class="hb-bar"></span><span class="hb-bar"></span><span class="hb-bar"></span><span class="hb-dot" id="nav-hamb-dot"></span></button>
+    <span id="nav-sec-title">🖥️ GESTIÓN</span>
     <div class="nav-scroll-area">
     <button onclick="showPage('gestion')" id="btn-nav-gestion" class="active">🖥️ GESTIÓN</button>
     <button onclick="showPage('ventas')" id="btn-nav-ventas">🛒 VENTAS Y REPARACIONES</button>
@@ -3523,10 +3662,16 @@ function showApp() {
     <button onclick="logout()" style="color: #ff7675; font-size: 12px; font-weight: bold; background: none; border: none; cursor: pointer;">✖ SALIR</button>
    </div>
    </nav>
+   <div id="nav-menu-overlay" onclick="if(event.target===this)closeNavMenu()"><div id="nav-menu-panel"></div></div>
+
    <div id="gesture-zone-top">
-    <div style="display:flex; justify-content: space-between; align-items: center;">
+    <div class="hdr-row" style="display:flex; justify-content: space-between; align-items: center;">
      <h2 style="margin:0;">📱 Mi Taller Web</h2>
      <div style="display:flex; align-items:center; gap: 12px;">
+      <div id="top-gestion-actions" style="display:flex; align-items:center; gap:8px;">
+       <button id="btn-top-lupa" type="button" onclick="toggleBuscadorTop()" aria-label="Buscar">🔍</button>
+       <button id="btn-top-vr" type="button" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
+      </div>
       <button id="btn-top-ayuda" onclick="showPage('ayuda')" style="display:none; background: var(--gray-100); border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; color: var(--gray-600); font-weight: bold; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;"><span style="font-size: 14px;">❓</span> AYUDA</button>
       <div style="display:flex; align-items:center;">
        <span id="sync-msg" style="display:none; font-size:8px; color:var(--gray-600); margin-right:8px;">⏳ Esperando conexión...</span>
@@ -3534,6 +3679,7 @@ function showApp() {
       </div>
      </div>
     </div>
+    <div id="top-search-bar"><div class="tsb-inner"><span class="tsb-ico">🔎</span><input type="text" id="search" placeholder="Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" autocomplete="off"><button type="button" class="tsb-close" onclick="cerrarBuscadorTop()" aria-label="Cerrar búsqueda">✕</button></div></div>
    </div>
    <div class="container">
     <div id="page-gestion" class="page active" style="display:block;">
@@ -3748,8 +3894,6 @@ function showApp() {
       <button type="button" id="btnLimpiarMobile" class="btn btn-limpiar" onclick="clickLimpiar()">🗑️ LIMPIAR</button>
      </div>
      <div id="search-section" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-      <input type="text" id="search" placeholder="🔎 Buscar en órdenes activas e historial..." onkeyup="busquedaGlobal()" style="flex-grow:1; border-radius:8px; border:1px solid var(--gray-200); min-width: 200px;">
-      <button class="btn" style="background:var(--purple-700); color:white; font-size:12px;" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
       <div class="dropdown-filtro" id="dropdownFiltro">
        <div class="dropdown-filtro-backdrop" id="dropdownFiltroBackdrop" onclick="toggleDropdownFiltro()"></div>
        <button class="btn btn-dropdown-filtro" id="btnFiltroVista" onclick="toggleDropdownFiltro()">
@@ -4390,6 +4534,13 @@ function showApp() {
        <summary class="faq-summary">🛠️ Sección 1: Gestión — El Corazón del Taller <span>+</span></summary>
        <div class="faq-content">
         <p>La pestaña <b>Gestión</b> es donde ocurre todo. Desde acá ingresás equipos, seguís el estado de cada reparación y comunicás novedades al cliente.</p>
+        <b>📱 Usando el sistema en el celular</b>
+        <ul>
+         <li><b>Gestión es la pantalla principal.</b> Arriba ves el botón <b>☰ (tres rayas)</b> con el nombre de la sección en la que estás.</li>
+         <li>Al tocar <b>☰</b> se despliega el menú con todas las secciones: Gestión, Ventas y Reparaciones, Presupuesto, Contabilidad, Stock, <b>❓ Ayuda</b>, <b>👤 Mi Perfil</b>, el <b>modo oscuro/claro</b> y <b>✖ Salir</b>. Tocá afuera del menú o la sección elegida para cerrarlo.</li>
+         <li>Si hay avisos de presupuestos respondidos, ves un globito verde sobre el ☰ y junto a "Presupuesto" dentro del menú.</li>
+         <li>En la parte superior de Gestión están los botones <b>🔍 (buscador)</b> y <b>🛒 VENTA RÁPIDA</b>. En PC se ven en el mismo lugar.</li>
+        </ul>
         <b>A. Formulario de Ingreso de Equipo</b>
         <ul>
          <li><b>Cliente y WhatsApp:</b> Escribí el nombre del cliente. El número de WhatsApp debe incluir el código de país sin el "+", por ejemplo: <b>5491145678900</b>. El sistema usa ese número para enviar mensajes automáticos.</li>
@@ -4415,19 +4566,20 @@ function showApp() {
         <b>C. Acciones por Orden</b>
         <ul>
          <li><b>📄 PDF / Ticket:</b> Genera un ticket profesional en <b>dos copias</b> (taller y cliente) con logo, datos del equipo, precios, términos y condiciones, la <b>clave/patrón de desbloqueo</b> y un <b>código QR en cada copia</b>: el de la copia del taller abre la orden en el sistema, el de la copia del cliente muestra el seguimiento en vivo. Podés verlo, imprimirlo o compartirlo por WhatsApp directamente desde el botón.</li>
-         <li><b>💬 WhatsApp:</b> Abre un mensaje prediseñado con el estado actual y un link para que el cliente vea su seguimiento online.</li>
+         <li><b>💬 WhatsApp:</b> Abre un mensaje prediseñado con el estado actual y un link para que el cliente vea su seguimiento online. Hay un mensaje distinto según el estado (Pendiente, Reparado, Entregado, No reparado y otros) y <b>podés cambiar el texto de cada uno desde 👤 Mi Perfil → 💬 Mensajes de WhatsApp</b>. Si la orden tiene precio, el mensaje incluye total, lo abonado y el saldo.</li>
          <li><b>🕒 Historial:</b> Muestra todos los cambios de estado con fecha, hora y nota de reparación si la hay.</li>
          <li><b>✏️ Editar precio:</b> Actualizá el precio final si el presupuesto cambió durante la reparación.</li>
          <li><b>🗑️ Eliminar:</b> Borra la orden de forma permanente. Pedirá confirmación antes de proceder.</li>
         </ul>
         <b>D. Buscador y Filtros</b>
         <ul>
-         <li>Usá la <b>barra de búsqueda</b> para encontrar órdenes por cliente, equipo, número de orden o falla.</li>
+         <li>Tocá la <b>🔍 lupa</b> de la parte superior para buscar órdenes por cliente, equipo, número de orden o falla. El encabezado se transforma en el campo de búsqueda y, al escribir (o con Enter), te lleva solo a los resultados.</li>
+         <li>La <b>✕</b> cierra el buscador y borra lo escrito. La lupa se pinta de violeta mientras hay una búsqueda activa.</li>
          <li>El botón de filtro desplegable te permite cambiar la vista entre cuatro modos:</li>
          <li><b>👀 Ver Todo:</b> Muestra todas las órdenes activas (sin incluir ventas de mostrador).</li>
          <li><b>⏳ Pendientes:</b> Solo las órdenes con estado Pendiente.</li>
          <li><b>💰 Pendiente de Cobro:</b> Órdenes entregadas sin cobrar. Ideal para no perder de vista las deudas.</li>
-         <li><b>📁 Historial:</b> Muestra las reparaciones archivadas, navegable por mes.</li>
+         <li><b>📁 Historial:</b> Muestra las reparaciones archivadas, navegable por mes. Con ◀ ▶ vas de a un mes, o tocá el <b>📅 mes y año</b> del medio para abrir un calendario y saltar directo a cualquier mes.</li>
         </ul>
         <b>E. Perfil de Cliente</b>
         <ul>
@@ -4455,7 +4607,7 @@ function showApp() {
         </ul>
         <b>📁 Historial de Reparaciones</b>
         <ul>
-         <li>Muestra todas las órdenes de reparación archivadas (entregadas), organizadas por mes con navegación ← →.</li>
+         <li>Muestra todas las órdenes de reparación archivadas (entregadas), organizadas por mes con navegación ← →. Tocando el <b>📅 mes y año</b> se abre un calendario para ir directo a cualquier mes.</li>
          <li>Tiene su propio buscador para encontrar reparaciones por cliente, equipo o número de orden.</li>
          <li>Desde cada card del historial podés generar el PDF, ver el historial de estados y consultar los datos completos de la reparación.</li>
         </ul>
@@ -4590,7 +4742,7 @@ function showApp() {
         </ul>
         <b>Venta Rápida de Mostrador 🛒</b>
         <ul>
-         <li>Desde la pestaña <b>Gestión</b>, el botón 🛒 abre la Venta Rápida (modal emergente). También podés usar la pestaña <b>Ventas y Reparaciones → Nueva Venta</b> para el mismo resultado con más espacio en pantalla.</li>
+         <li>Desde la pestaña <b>Gestión</b>, el botón <b>🛒 VENTA RÁPIDA</b> de la parte superior (al lado de la lupa) abre la Venta Rápida (modal emergente). También podés usar la pestaña <b>Ventas y Reparaciones → Nueva Venta</b> para el mismo resultado con más espacio en pantalla.</li>
          <li>Ambas opciones permiten armar un carrito con múltiples artículos, ajustar cantidades y confirmar la venta con un solo toque.</li>
          <li>Ambas tienen los mismos botones de <b>🏷️ Descuento</b> y <b>💳 Recargo</b> que aparecen al agregar artículos al carrito.</li>
         </ul>
@@ -4603,14 +4755,21 @@ function showApp() {
       <details>
        <summary class="faq-summary">👤 Sección 6: Mi Perfil — Configuración del Taller <span>+</span></summary>
        <div class="faq-content">
-        <p>Accedé desde el botón <b>👤 MI PERFIL</b> en la barra superior. Acá configurás los datos que aparecen en todos tus tickets PDF y mensajes de WhatsApp.</p>
+        <p>Accedé desde el botón <b>👤 MI PERFIL</b> en la barra superior (en el celular: menú <b>☰ → Mi Perfil</b>). Está ordenado en secciones y los cambios se aplican al tocar <b>GUARDAR</b>.</p>
         <ul>
-         <li><b>País / Moneda:</b> Seleccioná tu país para que el sistema use el formato de moneda y fechas correcto. Disponible para Argentina, México, Colombia, Chile, Uruguay, Perú y más países de habla hispana.</li>
-         <li><b>Logo del taller:</b> Cargá una imagen JPG o PNG. Aparecerá en el encabezado de cada ticket PDF y en la vista de seguimiento del cliente.</li>
-         <li><b>Nombre del taller y subtítulo:</b> Por ejemplo "Servicio Técnico Celular". Aparece en el PDF y en el link del cliente.</li>
-         <li><b>WhatsApp en ticket:</b> El número que aparece en el pie del ticket para que el cliente te contacte.</li>
-         <li><b>Términos y condiciones:</b> El texto de garantía o condiciones generales que aparece al pie de cada PDF.</li>
-         <li><b>Nueva Clave:</b> Cambiá tu contraseña en cualquier momento. Dejá el campo vacío si no querés cambiarla.</li>
+         <li><b>🔑 Licencia:</b> Tu estado, los días restantes y el botón para renovar.</li>
+         <li><b>🏪 Datos del taller:</b> Logo (JPG o PNG), nombre, subtítulo, el <b>WhatsApp en ticket</b> (el número que aparece en el pie del ticket para que el cliente te contacte) y el <b>País / Moneda</b> para el formato de moneda y fechas.</li>
+         <li><b>📄 Documentos:</b> Los <b>términos y condiciones</b> (garantía o condiciones generales) que aparecen al pie de cada PDF.</li>
+         <li><b>💬 Mensajes de WhatsApp:</b> Los textos que se envían a tus clientes, ya listos para usar y editables (ver abajo).</li>
+         <li><b>🔐 Cuenta y seguridad:</b> Email de recuperación y <b>Nueva Clave</b>. Dejá la clave vacía si no querés cambiarla.</li>
+        </ul>
+        <b>💬 Personalizar los mensajes de WhatsApp</b>
+        <ul>
+         <li>Cada mensaje viene con su texto original. Tocá uno para abrirlo y editarlo: Orden pendiente, Equipo reparado, Equipo entregado, No reparado, Otros estados (garantía, etc.), Equipo reparado sin retirar, Compartir ticket, Enviar recibo y Envío de presupuesto.</li>
+         <li>Tocá una <b>{variable}</b> para insertarla donde tengas el cursor. Por ejemplo <b>{cliente}</b>, <b>{equipo}</b>, <b>{estado}</b>, <b>{total}</b>, <b>{saldo}</b>, <b>{fecha_entrega}</b>, <b>{garantia}</b> o <b>{link}</b>. La guía <b>ℹ️ ¿Qué significa cada variable?</b> las explica todas.</li>
+         <li>Si una variable queda vacía (por ejemplo <b>{saldo}</b> cuando el cliente no debe nada), esa línea del mensaje se omite sola.</li>
+         <li><b>👁️ Ver ejemplo</b> te muestra cómo quedaría con datos de prueba. <b>↩ Restaurar original</b> vuelve al texto de fábrica. Los mensajes que modificaste se marcan como <b>Personalizado</b>.</li>
+         <li>Dejá siempre <b>{link}</b> en los mensajes que lo traen: es el enlace de seguimiento o del documento que ve el cliente.</li>
         </ul>
        </div>
       </details>
@@ -4654,7 +4813,7 @@ function showApp() {
         </ul>
         <b>📲 Modo Oscuro</b>
         <ul>
-         <li>Activalo desde el botón en la barra superior. El sistema recuerda tu preferencia para la próxima vez que entres.</li>
+         <li>Activalo desde el botón 🌙 en la barra superior (en el celular, desde el menú <b>☰</b>). El sistema recuerda tu preferencia para la próxima vez que entres.</li>
         </ul>
        </div>
       </details>
@@ -4673,7 +4832,7 @@ function showApp() {
        <summary class="faq-summary">🔐 Acceso y Seguridad <span>+</span></summary>
        <div class="faq-content">
         <p><b>Me olvidé mi contraseña, ¿qué hago?</b><br>Desde la pantalla de inicio de sesión, tocá <b>"🔑 Olvidé mi clave"</b> e ingresá tu número de WhatsApp. Si tenés un email de recuperación cargado, te vamos a mandar un link ahí para elegir una clave nueva. Revisá también la carpeta de spam.</p>
-        <p><b>¿Cómo cambio mi contraseña actual?</b><br>Ingresá a <b>👤 Mi Perfil</b>, escribí la nueva clave en el campo "Nueva Clave" y presioná "ACTUALIZAR".</p>
+        <p><b>¿Cómo cambio mi contraseña actual?</b><br>Ingresá a <b>👤 Mi Perfil</b>, escribí la nueva clave en el campo "Nueva clave" (sección Cuenta y seguridad) y presioná "GUARDAR".</p>
         <p><b>Me aparece el mensaje "Acceso Denegado".</b><br>Ocurre en dos situaciones: (1) llegaste al máximo de dispositivos conectados a la vez para tu plan y se cerró la sesión más antigua para dejarte entrar; (2) tu licencia fue suspendida — contactá al soporte.</p>
         <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br><span id="faq-texto-dispositivos">Depende del plan: con licencia de prueba o mensual, <b>1 dispositivo</b> a la vez. Con licencia anual, <b>hasta 3</b>. Si te conectás en uno de más, se cierra automáticamente la sesión más vieja (no la que recién abriste) para hacerle lugar.</span></p>
        </div>
@@ -4688,8 +4847,10 @@ function showApp() {
         <p><b>¿Cómo genero el ticket de una reparación?</b><br>Presioná el botón 📄 en la fila de la orden. Se genera un PDF en <b>dos copias</b> (taller y cliente), con el logo de tu taller, los datos de la reparación, el desglose de pagos, tus términos y condiciones, la clave/patrón de desbloqueo y un <b>código QR en cada copia</b>. Desde el modal podés verlo/imprimirlo en una pestaña nueva o compartirlo directamente por WhatsApp u otras apps.</p>
         <p><b>¿Cómo lo imprimo desde el celular?</b><br>Con el PDF abierto, tocá el ícono de compartir y seleccioná tu impresora. Si tenés una impresora térmica por Bluetooth o Wi-Fi, también aparece como opción.</p>
         <p><b>¿Para qué sirven los QR que aparecen en el ticket?</b><br>Son dos. El de la <b>copia del cliente</b> es de seguimiento: al escanearlo, el cliente accede en tiempo real al estado de su reparación sin necesidad de guardar ningún link ni contactarte. El de la <b>copia del taller</b> abre la orden directamente en el sistema para editarla o cambiarle el estado sin buscarla a mano.</p>
-        <p><b>Mi logo no aparece en el PDF.</b><br>Verificá en <b>👤 Mi Perfil</b> que hayas cargado la imagen con "📷 CARGAR LOGO" y presionado "ACTUALIZAR". El logo debe ser JPG o PNG.</p>
+        <p><b>Mi logo no aparece en el PDF.</b><br>Verificá en <b>👤 Mi Perfil</b> que hayas cargado la imagen con "📷 CARGAR LOGO" y presionado "GUARDAR". El logo debe ser JPG o PNG.</p>
         <p><b>¿Puedo personalizar el ticket?</b><br>Sí. El nombre, subtítulo, WhatsApp del taller y los términos y condiciones configurados en Mi Perfil aparecen en todos los tickets.</p>
+        <p><b>¿Puedo cambiar los mensajes de WhatsApp que se envían a mis clientes?</b><br>Sí. Entrá a <b>👤 Mi Perfil → 💬 Mensajes de WhatsApp</b>, abrí el mensaje que querés cambiar, editá el texto y tocá <b>GUARDAR</b>. Siempre podés volver al original con <b>↩ Restaurar original</b>.</p>
+        <p><b>En el celular no encuentro las secciones ni Ayuda.</b><br>Tocá el botón <b>☰</b> (tres rayas) de la parte superior: ahí están todas las secciones, Ayuda, Mi Perfil, el modo oscuro y Salir.</p>
         <p><b>¿El cliente puede descargar su propio ticket?</b><br>Sí. La vista de seguimiento que recibe por WhatsApp incluye un botón para descargar su propio PDF.</p>
        </div>
       </details>
@@ -5638,7 +5799,8 @@ function showApp() {
             if (!num.startsWith('54')) num = '549' + num;
 
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
-            const msj = `¡Hola ${r.cliente}! ¿Cómo estás? Te hablo de ${nombreTaller}, tu equipo ${equipoCompleto} ya lleva más de 15 días reparado.`;
+            window._waCustom = conf.plantillasWA || {};
+            const msj = waRender('olvidado', Object.assign(waVarsOrden(r, conf), { cliente: r.cliente, taller: nombreTaller, equipo: equipoCompleto }));
             
             window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msj)}`, '_blank');
 
@@ -6565,12 +6727,8 @@ function showApp() {
                         if (tel && !tel.startsWith('54')) tel = '549' + tel;
                         else if (tel && tel.startsWith('54') && !tel.startsWith('549')) tel = tel.replace(/^54/, '549');
                         const equipoWA = [r.equipo, r.marca, r.modelo].filter(Boolean).join(' ');
-                        const msg = `Hola ${r.cliente || ''}! 👋\n` +
-                            `Te comparto el ticket de tu orden.\n\n` +
-                            `📌 Orden: ${r.orden || ''}\n` +
-                            `📱 Equipo: ${equipoWA}\n` +
-                            `🛠️ Estado: ${r.estado || ''}\n\n` +
-                            `Podés verlo y descargarlo acá: ${linkSeg}`;
+                        window._waCustom = conf.plantillasWA || {};
+                        const msg = waRender('ticket', Object.assign(waVarsOrden(r, conf), { cliente: r.cliente || '', orden: r.orden || '', equipo: equipoWA, estado: r.estado || '', link: linkSeg }));
                         const urlWa = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
                         window.open(urlWa, '_blank');
                         modal.style.display = 'none';
@@ -8545,6 +8703,7 @@ function showApp() {
                             const searchInput = document.getElementById('search');
                             if (searchInput) {
                                 searchInput.value = reg.orden || _pAbrir;
+                                if (window.topSearchSync) topSearchSync(true);
                                 renderTable();
                                 // Scroll a la orden filtrada
                                 setTimeout(() => {
@@ -9217,6 +9376,7 @@ function showApp() {
     }
 
     function openPassModal() { 
+        window._waEditorListo = false;
         const path = fbPathPerfil();
         db.ref(path).once('value', snap => {
             const d = snap.val() || {};
@@ -9244,6 +9404,7 @@ function showApp() {
                 notaEmail.innerText = 'Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.';
             }
             if (typeof aplicarLocale === 'function') aplicarLocale(d.pais || 'AR');
+            try { waConstruirEditor(d.plantillasWA || {}); } catch(e) { console.error(e); }
             
             logoTemporalBase64 = d.logo || null;
             const prev = document.getElementById('logoPreview');
@@ -9356,6 +9517,14 @@ function showApp() {
         let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia, pais: nPais };
         if (nEmail) updates.authEmail = nEmail;
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64;
+        // Mensajes de WhatsApp: solo se guardan los que el taller modificó
+        // (null borra la personalización y vuelve al texto original).
+        if (window._waEditorListo) {
+            const waCustom = waLeerEditor();
+            updates.plantillasWA = Object.keys(waCustom).length ? waCustom : null;
+            const faltanLink = waPlantillasSinLink(waCustom);
+            if (faltanLink.length) showToast('⚠️ Sin {link} en: ' + faltanLink.join(', ') + '. El cliente no podrá abrir el enlace.', '#f59e0b');
+        }
 
         // Copia pública: la página de seguimiento y el presupuesto que ve el
         // cliente (sin login) NO pueden leer usuarios_registrados/{wa} entero
@@ -10374,17 +10543,22 @@ function showApp() {
             
             const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
             
-            let msjPlano = "";
-            
-            if(nombreHeader) msjPlano += `*${nombreHeader}*`;
-            if(subHeader) msjPlano += ` - ${subHeader}`;
+            let encabezadoWA = "";
+            if(nombreHeader) encabezadoWA += `*${nombreHeader}*`;
+            if(subHeader) encabezadoWA += ` - ${subHeader}`;
             
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
 
-            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${equipoCompleto}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
-            msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
+            window._waCustom = conf.plantillasWA || {};
+            const msjFinalWA = waRender('noreparado', Object.assign(waVarsOrden(r, conf), {
+                encabezado: encabezadoWA,
+                orden: nroLimpio,
+                cliente: r.cliente,
+                equipo: equipoCompleto,
+                link: seguimientoLink
+            }));
             
-            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjFinalWA)}`, '_blank');
         });
     }
 
@@ -12224,7 +12398,7 @@ function showApp() {
         bar.style.display = 'flex';
         bar.innerHTML =
             '<button onclick="navegarHistorialMes(-1)" style="background:none;border:1.5px solid var(--gray-200);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--gray-600);font-family:\'Outfit\',sans-serif;" title="Mes anterior">◀ Anterior</button>' +
-            '<span style="font-size:14px;font-weight:800;color:var(--secondary);font-family:\'Outfit\',sans-serif;">📅 ' + label + '</span>' +
+            '<button type="button" onclick="abrirSelectorMes(\'gestion\')" title="Elegir mes y año" style="background:none;border:1.5px dashed var(--gray-300);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;font-weight:800;color:var(--secondary);font-family:\'Outfit\',sans-serif;">📅 ' + label + ' ▾</button>' +
             '<button onclick="navegarHistorialMes(1)" ' + (esHoy ? 'disabled style="opacity:0.35;cursor:not-allowed;' : 'style="') + 'background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;color:#6b7280;font-family:\'Outfit\',sans-serif;" title="Mes siguiente">Siguiente ▶</button>';
     }
 
@@ -12367,7 +12541,7 @@ function showApp() {
         var esHoy = historialMesOffsetVentas === 0;
         bar.innerHTML =
             '<button onclick="navegarHistorialMesVentas(-1)" style="background:none;border:1.5px solid var(--gray-200);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--gray-600);font-family:\'Outfit\',sans-serif;">◀ Anterior</button>' +
-            '<span style="font-size:14px;font-weight:800;color:var(--secondary);font-family:\'Outfit\',sans-serif;">📅 ' + label + '</span>' +
+            '<button type="button" onclick="abrirSelectorMes(\'ventas\')" title="Elegir mes y año" style="background:none;border:1.5px dashed var(--gray-300);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;font-weight:800;color:var(--secondary);font-family:\'Outfit\',sans-serif;">📅 ' + label + ' ▾</button>' +
             '<button onclick="navegarHistorialMesVentas(1)" ' + (esHoy ? 'disabled style="opacity:0.35;cursor:not-allowed;' : 'style="') + 'background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;color:#6b7280;font-family:\'Outfit\',sans-serif;">Siguiente ▶</button>';
     }
 
@@ -13028,7 +13202,7 @@ function showApp() {
             modoPendientes = false;
             modoCobro = false;
             limiteTabla = 50; 
-            if (document.getElementById('search')) document.getElementById('search').value = "";
+            if (document.getElementById('search')) { document.getElementById('search').value = ""; if (window.topSearchSync) topSearchSync(); }
             
             clickLimpiar(true);
             ocultarLoader();
@@ -13307,14 +13481,14 @@ function showApp() {
             const baseUrl = window.location.origin + window.location.pathname; 
             const seguimientoLink = `${baseUrl}?id=${r.id}&u=${currentUser}`;
             
-            let msjPlano = "";
-            
-            if(nombreHeader) msjPlano += `*${nombreHeader}*`;
-            if(subHeader) msjPlano += ` - ${subHeader}`;
+            let encabezadoWA = "";
+            if(nombreHeader) encabezadoWA += `*${nombreHeader}*`;
+            if(subHeader) encabezadoWA += ` - ${subHeader}`;
             
             let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo}`.trim();
             
-            msjPlano += `\n\n📌 *ORDEN:* ${nroLimpio}\n👤 *CLIENTE:* ${r.cliente}\n📱 *EQUIPO:* ${equipoCompleto}\n🛠️ *ESTADO ACTUAL:* ${r.estado}\n`;
+            // msjPlano acumula acá SOLO el bloque de precios (se inserta en {precios})
+            let msjPlano = "";
             
             // Mostrar precio, seña y descuento si existen
             const precioWA = parseFloat(r.precio) || 0;
@@ -13360,14 +13534,19 @@ function showApp() {
                 }
             }
             
-            if(r.estado === 'Reparado') {
-                msjPlano += `\n✅ *¡Tu equipo ya está listo y podés pasar a retirarlo!*`;
-            }
+            window._waCustom = conf.plantillasWA || {};
+            const msjFinalWA = waRender(waKeyEstado(r.estado), Object.assign(waVarsOrden(r, conf), {
+                encabezado: encabezadoWA,
+                orden: nroLimpio,
+                cliente: r.cliente,
+                equipo: equipoCompleto,
+                estado: r.estado,
+                precios: msjPlano.trim(),
+                aviso_listo: r.estado === 'Reparado' ? '✅ *¡Tu equipo ya está listo y podés pasar a retirarlo!*' : '',
+                link: seguimientoLink
+            }));
             
-            msjPlano += `\n\n🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n${seguimientoLink}`;
-            msjPlano += `\n\n----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_`;
-            
-            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjPlano)}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msjFinalWA)}`, '_blank');
         });
     }
 
@@ -14363,6 +14542,7 @@ function showApp() {
         document.getElementById('page-' + pageId).style.display = 'block';
         const btnNav = document.getElementById('btn-nav-' + pageId);
         if (btnNav) btnNav.classList.add('active');
+        try { if (window._navMenuSync) window._navMenuSync(pageId); } catch(e) {}
         if (pageId === 'gestion' && typeof iniciarOnboarding === 'function' && currentUser) iniciarOnboarding();
         if (pageId === 'contabilidad') cargarDatosContabilidad();
         if (pageId === 'ventas') {
@@ -18474,23 +18654,26 @@ function enviarWappPresupuesto(id) {
         const presLink = `${baseUrl}?presid=${id}&u=${currentUser}`;
         const descMontoPres = parseFloat(p.descuentoMonto) || 0;
         const totalConDesc = descMontoPres > 0 ? Math.max(0, total - descMontoPres) : total;
-        const msj = '¡Hola ' + (p.cliente || '') + '! 👋 Te envío el presupuesto de *' + nombreTaller + '*.'
-            + '\n\n📋 *PRESUPUESTO N° ' + (p.nro || '') + '*'
-            + '\n📅 Fecha: ' + (p.fecha || '')
-            + (equipoStr ? '\n📱 Equipo: ' + equipoStr : '')
-            + (p.descripcion ? '\n🔧 ' + p.descripcion : '')
-            + (descMontoPres > 0
-                ? '\n\n💰 Precio: ' + fmt.format(total)
-                  + '\n🏷️ ' + (p.descuentoTipo === '%' ? 'Descuento ' + (p.descuentoValor || '') + '%' : 'Descuento')
-                  + (p.descuentoEfectivo ? ' (pago en efectivo)' : '') + ': -' + fmt.format(descMontoPres)
-                  + '\n✅ *TOTAL A PAGAR: ' + fmt.format(totalConDesc) + '*'
-                  + (p.descuentoEfectivo ? '\n⚠️ _Precio válido únicamente con pago en efectivo._' : '')
-                : '\n\n💰 *TOTAL: ' + fmt.format(total) + '*')
-            + (p.vencimiento ? '\n⏳ *Válido hasta: ' + new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual) + '*' : '')
-            + (p.obs ? '\n\n📌 ' + p.obs : '')
-            + '\n\n🔎 *VER EL PRESUPUESTO COMPLETO Y RESPONDER:*\n' + presLink
-            + '\n\n👆 Desde ese link podés *aceptar* o *rechazar* el presupuesto con un solo toque, y también descargarlo en PDF.'
-            + '\n\n💬 Si preferís, respondeme por acá mismo y lo cargamos nosotros. ¡Como te quede más cómodo!';
+        const precioTxtPres = descMontoPres > 0
+            ? '💰 Precio: ' + fmt.format(total)
+              + '\n🏷️ ' + (p.descuentoTipo === '%' ? 'Descuento ' + (p.descuentoValor || '') + '%' : 'Descuento')
+              + (p.descuentoEfectivo ? ' (pago en efectivo)' : '') + ': -' + fmt.format(descMontoPres)
+              + '\n✅ *TOTAL A PAGAR: ' + fmt.format(totalConDesc) + '*'
+              + (p.descuentoEfectivo ? '\n⚠️ _Precio válido únicamente con pago en efectivo._' : '')
+            : '💰 *TOTAL: ' + fmt.format(total) + '*';
+        window._waCustom = conf.plantillasWA || {};
+        const msj = waRender('presupuesto', {
+            cliente: p.cliente || '',
+            taller: nombreTaller,
+            nro: p.nro || '',
+            fecha: p.fecha || '',
+            equipo: equipoStr,
+            descripcion: p.descripcion || '',
+            precio: precioTxtPres,
+            vencimiento: p.vencimiento ? new Date(p.vencimiento + 'T00:00:00').toLocaleDateString(_localeActual) : '',
+            observaciones: p.obs || '',
+            link: presLink
+        });
 
         // Open WhatsApp directly to the client number
         window.open('https://api.whatsapp.com/send?phone=' + num + '&text=' + encodeURIComponent(msj), '_blank');
@@ -19950,13 +20133,8 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             const baseUrl = window.location.origin + window.location.pathname;
             const link = `${baseUrl}?id=${r.id}&u=${currentUser}`;
 
-            const wMsg = `Hola ${r.cliente || ''}! 👋\n` +
-                `Te comparto el recibo de tu reparación en ${taller}.\n\n` +
-                `📄 Comprobante: ${nro}\n` +
-                `📱 Equipo: ${equipo}\n` +
-                `💰 Total: ${total}\n\n` +
-                `Podés verlo y descargarlo acá: ${link}\n\n` +
-                `Gracias por tu confianza! 🙌`;
+            window._waCustom = conf.plantillasWA || {};
+            const wMsg = waRender('recibo', Object.assign(waVarsOrden(r, conf), { cliente: r.cliente || '', taller: taller, comprobante: nro, equipo: equipo, total: total, link: link }));
 
             const url = tel ? `https://wa.me/${tel}?text=${encodeURIComponent(wMsg)}` : `https://wa.me/?text=${encodeURIComponent(wMsg)}`;
             window.open(url, '_blank');
@@ -20193,5 +20371,439 @@ window.LEGAL_VERSION = '2026-09-24-min';   // cambiala si modificás el texto
 </script>
 <!-- ═══════════════ FIN PÁGINA LEGAL ═══════════════ -->
 
- </body>
+ <script id="mobile-hamburger-js">
+(function(){
+  var TITLES = {gestion:'🖥️ GESTIÓN', ventas:'🛒 VENTAS Y REPARACIONES', presupuesto:'📋 PRESUPUESTO', contabilidad:'💰 CONTABILIDAD', stock:'📦 STOCK', usuarios:'🔑 LICENCIAS', mantenimiento:'⚙️ MANTENIMIENTO', ayuda:'❓ AYUDA'};
+  var ITEMS = ['gestion','ventas','presupuesto','contabilidad','stock','usuarios','mantenimiento'];
+  var current = 'gestion';
+  function $(id){ return document.getElementById(id); }
+  function esMovil(){ return window.matchMedia && window.matchMedia('(max-width: 599px)').matches; }
+
+  window._navMenuSync = function(pageId){
+    current = pageId || current;
+    var t = $('nav-sec-title');
+    if (t) t.textContent = TITLES[current] || '';
+    closeNavMenu();
+  };
+
+  function badgeCount(){
+    var b = $('badge-nav-pres');
+    return b ? (b.textContent || '').trim() : '';
+  }
+  function syncDot(){
+    var h = $('nav-hamb'), d = $('nav-hamb-dot');
+    if (!h || !d) return;
+    var n = badgeCount();
+    d.textContent = n;
+    h.classList.toggle('has-badge', !!n);
+  }
+
+  function mkItem(html, cls, fn){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'nm-item' + (cls ? ' ' + cls : '');
+    b.innerHTML = html;
+    b.addEventListener('click', function(){ closeNavMenu(); fn(); });
+    return b;
+  }
+
+  function buildMenu(){
+    var panel = $('nav-menu-panel');
+    if (!panel) return;
+    panel.innerHTML = '';
+    ITEMS.forEach(function(id){
+      var orig = $('btn-nav-' + id);
+      if (!orig || orig.style.display === 'none') return;
+      var label = TITLES[id];
+      if (id === 'presupuesto') {
+        var n = badgeCount();
+        if (n) label += ' <span class="nm-badge">' + n + '</span>';
+      }
+      panel.appendChild(mkItem(label, id === current ? 'active' : '', function(){ orig.click(); }));
+    });
+    var ayuda = $('btn-top-ayuda');
+    if (ayuda && ayuda.style.display !== 'none') {
+      panel.appendChild(mkItem(TITLES.ayuda, current === 'ayuda' ? 'active' : '', function(){ if (typeof showPage === 'function') showPage('ayuda'); }));
+    }
+    var sep = document.createElement('div'); sep.className = 'nm-sep'; panel.appendChild(sep);
+    var perfil = $('btn-nav-perfil');
+    if (perfil && perfil.style.display !== 'none') {
+      panel.appendChild(mkItem('👤 MI PERFIL', 'nm-amber', function(){ perfil.click(); }));
+    }
+    var dark = document.body.classList.contains('dark-mode');
+    panel.appendChild(mkItem(dark ? '☀️ Modo claro' : '🌙 Modo oscuro', '', function(){ if (typeof toggleDarkMode === 'function') toggleDarkMode(); }));
+    panel.appendChild(mkItem('✖ SALIR', 'nm-danger', function(){ if (typeof logout === 'function') logout(); }));
+  }
+
+  window.toggleNavMenu = function(){
+    var ov = $('nav-menu-overlay');
+    if (!ov) return;
+    if (ov.classList.contains('open')) { closeNavMenu(); return; }
+    if (!esMovil()) return;
+    buildMenu();
+    var nav = document.querySelector('nav');
+    var top = nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) + 6 : 56;
+    $('nav-menu-panel').style.top = top + 'px';
+    ov.classList.add('open');
+  };
+  window.closeNavMenu = function(){
+    var ov = $('nav-menu-overlay');
+    if (ov) ov.classList.remove('open');
+  };
+
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeNavMenu(); });
+  window.addEventListener('resize', function(){ if (!esMovil()) closeNavMenu(); });
+
+  function init(){
+    var pres = $('btn-nav-presupuesto');
+    if (pres && window.MutationObserver) {
+      new MutationObserver(syncDot).observe(pres, {childList:true, subtree:true, characterData:true});
+    }
+    syncDot();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script id="wa-plantillas-js">
+(function(){
+  var FOOT = '----------------------------\n⚠️ _Este es un mensaje automático, por favor no responder_\n_¡Muchas gracias!_';
+  var VARS = {
+    encabezado:'Nombre y subtítulo del taller', orden:'Número de orden', cliente:'Nombre del cliente', equipo:'Equipo (tipo, marca y modelo)',
+    estado:'Estado de la orden', falla:'Falla o trabajo a realizar', precios:'Bloque de precio, descuento y saldo (se arma solo)',
+    total:'Total a pagar', abonado:'Lo que ya pagó (seña + pagos)', saldo:'Lo que todavía debe (vacío si no debe nada)',
+    aviso_listo:'Aviso "ya está listo" (solo si está Reparado)', fecha_ingreso:'Fecha en que ingresó el equipo',
+    fecha_entrega:'Fecha de entrega (vacío si todavía no se entregó)', garantia:'Tus términos y condiciones de Mi Perfil',
+    whatsapp_taller:'WhatsApp del taller (el que cargaste en Mi Perfil)', link:'Link de seguimiento', taller:'Nombre del taller',
+    comprobante:'Número de comprobante', nro:'N° de presupuesto', fecha:'Fecha', descripcion:'Descripción del trabajo',
+    precio:'Bloque de precio / total (se arma solo)', vencimiento:'Fecha de validez', observaciones:'Observaciones'
+  };
+  var EXTRA_ORDEN = ['falla','total','abonado','saldo','fecha_ingreso','fecha_entrega','garantia','whatsapp_taller'];
+  var EJ_ORDEN = {falla:'Cambio de módulo', total:'$45.000', abonado:'$10.000', saldo:'$35.000', fecha_ingreso:'12/10/2026', fecha_entrega:'', garantia:'Garantía de 30 días.', whatsapp_taller:'5491112345678'};
+  var EJ_ESTADO = {encabezado:'*Mi Taller* - Servicio Técnico', orden:'0042', cliente:'Juan Pérez', equipo:'Celular Samsung A54', precios:'💰 *Total: $45.000*\n💵 *Abonado:* $10.000\n⏳ *Saldo pendiente:* $35.000', aviso_listo:'', link:'https://…/?id=abc123'};
+  function ej(o){ return Object.assign({}, EJ_ORDEN, EJ_ESTADO, o); }
+
+  var CUERPO_A = '{encabezado}\n\n📌 *ORDEN:* {orden}\n👤 *CLIENTE:* {cliente}\n📱 *EQUIPO:* {equipo}\n🛠️ *ESTADO ACTUAL:* {estado}\n\n{precios}\n\n';
+  var CUERPO_B = '🔎 *SEGUÍ TU REPARACIÓN Y DESCARGÁ TU TICKET PDF AQUÍ:*\n{link}\n\n' + FOOT;
+  var VARS_ESTADO = ['encabezado','orden','cliente','equipo','estado','falla','precios','total','abonado','saldo','fecha_ingreso','fecha_entrega','garantia','whatsapp_taller','link'];
+
+  var DEF = {
+    estado_pendiente: { grupo:'Avisos de la orden', titulo:'⏳ Orden pendiente', desc:'Se envía cuando mandás el WhatsApp de una orden que está Pendiente.', needLink:true,
+      vars:VARS_ESTADO, texto: CUERPO_A + CUERPO_B, ejemplo: ej({estado:'Pendiente'}) },
+    estado_reparado: { grupo:'Avisos de la orden', titulo:'✅ Equipo reparado', desc:'Se envía al avisar que el equipo está listo para retirar.', needLink:true,
+      vars:VARS_ESTADO.concat(['aviso_listo']), texto: CUERPO_A + '{aviso_listo}\n\n' + CUERPO_B, ejemplo: ej({estado:'Reparado', aviso_listo:'✅ *¡Tu equipo ya está listo y podés pasar a retirarlo!*'}) },
+    estado_entregado: { grupo:'Avisos de la orden', titulo:'📦 Equipo entregado', desc:'Se envía cuando mandás el WhatsApp de una orden ya entregada.', needLink:true,
+      vars:VARS_ESTADO, texto: CUERPO_A + CUERPO_B, ejemplo: ej({estado:'Entregado', fecha_entrega:'15/10/2026', saldo:''}) },
+    noreparado: { grupo:'Avisos de la orden', titulo:'❌ Equipo no reparado', desc:'Se envía cuando el equipo no pudo repararse.', needLink:true,
+      vars:['encabezado','orden','cliente','equipo','falla','fecha_ingreso','whatsapp_taller','link'],
+      texto:'{encabezado}\n\n📌 *ORDEN:* {orden}\n👤 *CLIENTE:* {cliente}\n📱 *EQUIPO:* {equipo}\n🛠️ *ESTADO:* Ha sido revisado pero lamentablemente NO PUDO SER REPARADO ❌. Podés pasar a retirarlo cuando gustes.\n\n' + CUERPO_B,
+      ejemplo: ej({}) },
+    estado: { grupo:'Avisos de la orden', titulo:'📲 Otros estados (Garantía, etc.)', desc:'Se usa para cualquier estado que no tenga mensaje propio (por ejemplo Reingreso por garantía).', needLink:true,
+      vars:VARS_ESTADO.concat(['aviso_listo']), texto: CUERPO_A + '{aviso_listo}\n\n' + CUERPO_B, ejemplo: ej({estado:'Garantía'}) },
+    olvidado: { grupo:'Recordatorios y envíos', titulo:'⏰ Equipo reparado sin retirar', desc:'Recordatorio para equipos reparados hace más de 15 días.', needLink:false,
+      vars:['cliente','taller','equipo','orden','saldo','whatsapp_taller'],
+      texto:'¡Hola {cliente}! ¿Cómo estás? Te hablo de {taller}, tu equipo {equipo} ya lleva más de 15 días reparado.',
+      ejemplo: ej({taller:'Mi Taller'}) },
+    ticket: { grupo:'Recordatorios y envíos', titulo:'🎫 Compartir ticket', desc:'Se envía al compartir el ticket PDF de la orden.', needLink:true,
+      vars:['cliente','orden','equipo','estado','falla','total','saldo','fecha_ingreso','whatsapp_taller','link'],
+      texto:'Hola {cliente}! 👋\nTe comparto el ticket de tu orden.\n\n📌 Orden: {orden}\n📱 Equipo: {equipo}\n🛠️ Estado: {estado}\n\nPodés verlo y descargarlo acá: {link}',
+      ejemplo: ej({orden:'ORD-0042', estado:'En reparación'}) },
+    recibo: { grupo:'Recordatorios y envíos', titulo:'🧾 Enviar recibo', desc:'Se envía al compartir el recibo de una reparación entregada.', needLink:true,
+      vars:['cliente','taller','comprobante','equipo','total','fecha_entrega','garantia','whatsapp_taller','link'],
+      texto:'Hola {cliente}! 👋\nTe comparto el recibo de tu reparación en {taller}.\n\n📄 Comprobante: {comprobante}\n📱 Equipo: {equipo}\n💰 Total: {total}\n\nPodés verlo y descargarlo acá: {link}\n\nGracias por tu confianza! 🙌',
+      ejemplo: ej({taller:'Mi Taller', comprobante:'REC-0015', fecha_entrega:'15/10/2026'}) },
+    presupuesto: { grupo:'Recordatorios y envíos', titulo:'📋 Envío de presupuesto', desc:'Se envía al mandar un presupuesto. Las líneas cuya variable está vacía (equipo, descripción, vencimiento, observaciones) se omiten solas.', needLink:true,
+      vars:['cliente','taller','nro','fecha','equipo','descripcion','precio','vencimiento','observaciones','whatsapp_taller','link'],
+      texto:'¡Hola {cliente}! 👋 Te envío el presupuesto de *{taller}*.\n\n📋 *PRESUPUESTO N° {nro}*\n📅 Fecha: {fecha}\n📱 Equipo: {equipo}\n🔧 {descripcion}\n\n{precio}\n⏳ *Válido hasta: {vencimiento}*\n\n📌 {observaciones}\n\n🔎 *VER EL PRESUPUESTO COMPLETO Y RESPONDER:*\n{link}\n\n👆 Desde ese link podés *aceptar* o *rechazar* el presupuesto con un solo toque, y también descargarlo en PDF.\n\n💬 Si preferís, respondeme por acá mismo y lo cargamos nosotros. ¡Como te quede más cómodo!',
+      ejemplo:{cliente:'Juan Pérez', taller:'Mi Taller', nro:'0007', fecha:'15/10/2026', equipo:'Celular Samsung A54', descripcion:'Cambio de módulo', precio:'💰 *TOTAL: $45.000*', vencimiento:'22/10/2026', observaciones:'', whatsapp_taller:'5491112345678', link:'https://…/?presid=xyz'} }
+  };
+  var ORDEN = ['estado_pendiente','estado_reparado','estado_entregado','noreparado','estado','olvidado','ticket','recibo','presupuesto'];
+  window.WA_DEF = DEF;
+  window._waCustom = window._waCustom || {};
+
+  function plantillaDe(key, custom){
+    var c = custom || window._waCustom || {};
+    var v = c[key];
+    return (typeof v === 'string' && v.trim() !== '') ? v : DEF[key].texto;
+  }
+
+  // Qué plantilla usar según el estado de la orden
+  window.waKeyEstado = function(estado){
+    var e = String(estado || '');
+    if (e === 'Pendiente') return 'estado_pendiente';
+    if (e === 'Reparado') return 'estado_reparado';
+    if (e.indexOf('Entregado') === 0) return 'estado_entregado';
+    return 'estado';
+  };
+
+  // Variables comunes que salen de la orden y del perfil del taller
+  window.waVarsOrden = function(r, conf){
+    var v = {falla:'', total:'', abonado:'', saldo:'', fecha_ingreso:'', fecha_entrega:'', garantia:'', whatsapp_taller:'', taller:''};
+    try {
+      conf = conf || {};
+      r = r || {};
+      var money = function(n){ var f = window.fmt; return (f && f.format) ? f.format(n) : String(n); };
+      var soloFecha = function(f){ return f ? String(f).split(/[ ,]/)[0] : ''; };
+      v.falla = r.falla || '';
+      v.fecha_ingreso = soloFecha(r.fecha);
+      try { v.fecha_entrega = soloFecha(typeof _fechaEntregaDe === 'function' ? _fechaEntregaDe(r) : r.fechaEntrega); } catch(e) {}
+      v.garantia = conf.garantia || '';
+      v.whatsapp_taller = String(conf.wappTicket || '').replace(/\D/g, '');
+      v.taller = conf.nombreTaller || '';
+      var precio = parseFloat(r.precio) || 0;
+      if (precio > 0) {
+        var descM = parseFloat(r.descuentoMonto) || 0, descE = parseFloat(r.descuentoEntregaMonto) || 0;
+        var efectivo = Math.max(0, precio - descM - descE);
+        var senaOrig = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
+        var cobrado = parseFloat(r.saldoCobrado) || 0;
+        var fueEntregado = r.garantiaYaPagada || (r.historialEstados && r.historialEstados.some(function(h){ return h.estado === 'Entregado' || h.estado === 'Entregado (Cortesía)'; }));
+        var abonado = fueEntregado ? (parseFloat(r.sena) || 0) : senaOrig + cobrado;
+        var saldo = Math.max(0, efectivo - abonado);
+        v.total = money(efectivo);
+        if (abonado > 0) v.abonado = money(abonado);
+        if (saldo > 0) v.saldo = money(saldo);
+      }
+    } catch(e) {}
+    return v;
+  };
+
+  // Reemplaza {variables}. Una línea cuyas variables quedan TODAS vacías se omite.
+  window.waRender = function(key, vars, tplOverride){
+    var tpl = (typeof tplOverride === 'string') ? tplOverride : plantillaDe(key);
+    var out = [];
+    tpl.replace(/\r/g,'').split('\n').forEach(function(line){
+      var hubo = false, todoVacio = true;
+      var res = line.replace(/\{(\w+)\}/g, function(m, k){
+        if (!Object.prototype.hasOwnProperty.call(vars, k)) return m;
+        hubo = true;
+        var v = vars[k] == null ? '' : String(vars[k]);
+        if (v.trim() !== '') todoVacio = false;
+        return v;
+      });
+      if (hubo && todoVacio) return;
+      out.push(res);
+    });
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  };
+
+  function $(id){ return document.getElementById(id); }
+
+  window.waConstruirEditor = function(custom){
+    var cont = $('pfWaLista'); if (!cont) return;
+    custom = custom || {};
+    window._waCustom = custom;
+    cont.innerHTML = '';
+
+    // Guía de variables
+    var guia = document.createElement('details'); guia.className = 'pf-wa-item pf-wa-guia';
+    var gs = document.createElement('summary'); gs.innerHTML = '<span>ℹ️ ¿Qué significa cada variable?</span>'; guia.appendChild(gs);
+    var gi = document.createElement('div'); gi.className = 'pf-wa-inner';
+    var gl = document.createElement('div'); gl.style.cssText = 'font-size:12px;line-height:1.55;';
+    Object.keys(VARS).forEach(function(k){
+      var row = document.createElement('div');
+      var b = document.createElement('b'); b.textContent = '{' + k + '}';
+      row.appendChild(b); row.appendChild(document.createTextNode(' — ' + VARS[k]));
+      gl.appendChild(row);
+    });
+    var nota = document.createElement('p'); nota.className = 'pf-wa-desc'; nota.style.marginTop = '8px';
+    nota.textContent = 'Si una variable queda vacía (por ejemplo {saldo} cuando no debe nada), esa línea del mensaje se omite sola.';
+    gi.appendChild(gl); gi.appendChild(nota); guia.appendChild(gi); cont.appendChild(guia);
+
+    var grupoActual = '';
+    ORDEN.forEach(function(key){
+      var d = DEF[key];
+      if (d.grupo !== grupoActual) {
+        grupoActual = d.grupo;
+        var h = document.createElement('div'); h.className = 'pf-wa-grupo'; h.textContent = grupoActual; cont.appendChild(h);
+      }
+      var det = document.createElement('details'); det.className = 'pf-wa-item'; det.setAttribute('data-key', key);
+      var sum = document.createElement('summary');
+      sum.innerHTML = '<span>' + d.titulo + '<span class="pf-wa-tag">Personalizado</span></span>';
+      det.appendChild(sum);
+      var inner = document.createElement('div'); inner.className = 'pf-wa-inner';
+      var p = document.createElement('p'); p.className = 'pf-wa-desc'; p.textContent = d.desc; inner.appendChild(p);
+      var ta = document.createElement('textarea'); ta.value = plantillaDe(key, custom); ta.spellcheck = false; inner.appendChild(ta);
+      var chips = document.createElement('div'); chips.className = 'pf-chips';
+      d.vars.forEach(function(v){
+        var c = document.createElement('button'); c.type = 'button'; c.className = 'pf-chip'; c.textContent = '{' + v + '}'; c.title = VARS[v] || v;
+        c.addEventListener('click', function(){
+          var ini = ta.selectionStart == null ? ta.value.length : ta.selectionStart, fin = ta.selectionEnd == null ? ini : ta.selectionEnd;
+          ta.value = ta.value.slice(0, ini) + '{' + v + '}' + ta.value.slice(fin);
+          var pos = ini + v.length + 2; ta.focus(); try { ta.setSelectionRange(pos, pos); } catch(e){}
+          marcar();
+        });
+        chips.appendChild(c);
+      });
+      inner.appendChild(chips);
+      var prev = document.createElement('div'); prev.className = 'pf-wa-preview';
+      var acts = document.createElement('div'); acts.className = 'pf-wa-actions';
+      var bReset = document.createElement('button'); bReset.type = 'button'; bReset.className = 'pf-wa-reset'; bReset.textContent = '↩ Restaurar original';
+      var bPrev = document.createElement('button'); bPrev.type = 'button'; bPrev.className = 'pf-wa-prev'; bPrev.textContent = '👁️ Ver ejemplo';
+      bReset.addEventListener('click', function(){ ta.value = d.texto; marcar(); });
+      bPrev.addEventListener('click', function(){
+        if (prev.style.display === 'block') { prev.style.display = 'none'; return; }
+        prev.textContent = window.waRender(key, d.ejemplo, ta.value);
+        prev.style.display = 'block';
+      });
+      acts.appendChild(bReset); acts.appendChild(bPrev); inner.appendChild(acts); inner.appendChild(prev);
+      det.appendChild(inner);
+      function marcar(){
+        det.classList.toggle('custom', ta.value.trim() !== '' && ta.value.trim() !== d.texto.trim());
+        if (prev.style.display === 'block') prev.textContent = window.waRender(key, d.ejemplo, ta.value);
+      }
+      ta.addEventListener('input', marcar);
+      marcar();
+      cont.appendChild(det);
+    });
+    window._waEditorListo = true;
+  };
+
+  // Devuelve solo las plantillas que difieren de las originales
+  window.waLeerEditor = function(){
+    var res = {};
+    var items = document.querySelectorAll('#pfWaLista .pf-wa-item[data-key]');
+    for (var i = 0; i < items.length; i++) {
+      var key = items[i].getAttribute('data-key');
+      var t = (items[i].querySelector('textarea').value || '').replace(/\r/g, '');
+      if (t.trim() !== '' && t.trim() !== DEF[key].texto.trim()) res[key] = t;
+    }
+    return res;
+  };
+
+  window.waPlantillasSinLink = function(custom){
+    var faltan = [];
+    Object.keys(custom || {}).forEach(function(k){
+      if (DEF[k] && DEF[k].needLink && custom[k].indexOf('{link}') === -1) faltan.push(DEF[k].titulo.replace(/^\S+\s/, ''));
+    });
+    return faltan;
+  };
+})();
+</script>
+<script id="top-actions-js">
+(function(){
+  var pagina = 'gestion', abierta = false, tId = null;
+  function $(id){ return document.getElementById(id); }
+  function pintar(){
+    var bar = $('top-search-bar'), lupa = $('btn-top-lupa'), inp = $('search');
+    if (!bar) return;
+    var abre = abierta && pagina === 'gestion';
+    var zona = $('gesture-zone-top');
+    if (zona) zona.classList.toggle('buscando', abre);
+    if (lupa) lupa.classList.toggle('activo', !!(inp && inp.value.trim()));
+    var w = $('top-gestion-actions'); if (w) w.style.display = (pagina === 'gestion') ? 'flex' : 'none';
+  }
+  function irAResultados(){
+    var t = $('search-section'); if (!t) return;
+    var y = t.getBoundingClientRect().top + window.scrollY - 10;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  }
+  window.toggleBuscadorTop = function(){
+    if (pagina !== 'gestion' && typeof showPage === 'function') showPage('gestion');
+    var zonaH = $('gesture-zone-top'); abierta = !(zonaH && zonaH.classList.contains('buscando'));
+    pintar();
+    if (abierta) { var i = $('search'); if (i) setTimeout(function(){ try { i.focus(); } catch(e){} }, 50); }
+    else cerrarBuscadorTop();
+  };
+  window.cerrarBuscadorTop = function(){
+    var i = $('search');
+    abierta = false;
+    if (i && i.value) { i.value = ''; if (typeof busquedaGlobal === 'function') busquedaGlobal(); }
+    pintar();
+  };
+  // Mantiene la barra abierta (y la lupa marcada) si hay una búsqueda activa
+  window.topSearchSync = function(abrir){
+    var i = $('search');
+    if (abrir || (i && i.value.trim())) abierta = true;
+    pintar();
+  };
+  var prev = window._navMenuSync;
+  window._navMenuSync = function(id){
+    if (typeof prev === 'function') prev(id);
+    pagina = id || pagina;
+    pintar();
+  };
+  function init(){
+    var i = $('search'); if (!i) return;
+    i.addEventListener('input', function(){
+      pintar();
+      clearTimeout(tId);
+      if (i.value.trim()) tId = setTimeout(irAResultados, 700);
+    });
+    i.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') { e.preventDefault(); clearTimeout(tId); i.blur(); setTimeout(irAResultados, 120); }
+    });
+    window.addEventListener('resize', pintar);
+    pintar();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script id="selector-mes-js">
+(function(){
+  var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var ctx = 'gestion', anio = 0;
+  function $(id){ return document.getElementById(id); }
+  function offsetActual(){
+    var o = (ctx === 'ventas') ? window.historialMesOffsetVentas : window.historialMesOffset;
+    try { if (ctx === 'ventas') o = historialMesOffsetVentas; else o = historialMesOffset; } catch(e) {}
+    return o || 0;
+  }
+  function seleccion(){
+    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offsetActual());
+    return { y: d.getFullYear(), m: d.getMonth() };
+  }
+  function crear(){
+    if ($('selectorMesModal')) return;
+    var ov = document.createElement('div');
+    ov.id = 'selectorMesModal'; ov.className = 'modal-overlay'; ov.style.zIndex = '4900';
+    ov.addEventListener('click', function(e){ if (e.target === ov) cerrar(); });
+    ov.innerHTML = '<div class="modal-box" style="width:min(320px,92vw);padding:20px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
+        '<button type="button" id="smAnioPrev" style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--gray-200);background:none;font-size:18px;cursor:pointer;color:var(--gray-600);">‹</button>' +
+        '<b id="smAnio" style="font-size:20px;font-family:\'Outfit\',sans-serif;"></b>' +
+        '<button type="button" id="smAnioNext" style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--gray-200);background:none;font-size:18px;cursor:pointer;color:var(--gray-600);">›</button>' +
+      '</div>' +
+      '<div id="smMeses" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>' +
+      '<button type="button" id="smHoy" style="margin-top:14px;width:100%;padding:10px;border-radius:10px;border:none;background:var(--gray-100);color:var(--gray-600);font-weight:800;cursor:pointer;font-family:\'Outfit\',sans-serif;">Ir al mes actual</button>' +
+      '<button type="button" id="smCerrar" style="margin-top:8px;border:none;background:none;color:var(--gray-600);cursor:pointer;font-size:13px;">Cerrar</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    $('smAnioPrev').addEventListener('click', function(){ anio--; pintar(); });
+    $('smAnioNext').addEventListener('click', function(){ anio++; pintar(); });
+    $('smHoy').addEventListener('click', function(){ ir(0); });
+    $('smCerrar').addEventListener('click', cerrar);
+  }
+  function pintar(){
+    var hoy = new Date(), yHoy = hoy.getFullYear(), mHoy = hoy.getMonth();
+    var minY = yHoy - 10;
+    var sel = seleccion();
+    $('smAnio').textContent = anio;
+    $('smAnioPrev').disabled = anio <= minY; $('smAnioPrev').style.opacity = anio <= minY ? '0.35' : '1';
+    $('smAnioNext').disabled = anio >= yHoy; $('smAnioNext').style.opacity = anio >= yHoy ? '0.35' : '1';
+    var c = $('smMeses'); c.innerHTML = '';
+    MESES.forEach(function(nombre, m){
+      var futuro = (anio > yHoy) || (anio === yHoy && m > mHoy);
+      var esSel = (anio === sel.y && m === sel.m);
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = nombre; b.disabled = futuro;
+      b.style.cssText = 'padding:13px 0;border-radius:10px;font-weight:800;font-size:14px;font-family:\'Outfit\',sans-serif;cursor:' + (futuro ? 'not-allowed' : 'pointer') + ';border:1.5px solid ' + (esSel ? 'var(--purple-700)' : 'var(--gray-200)') + ';background:' + (esSel ? 'var(--purple-700)' : 'transparent') + ';color:' + (esSel ? '#fff' : 'inherit') + ';opacity:' + (futuro ? '0.3' : '1') + ';';
+      if (!futuro) b.addEventListener('click', function(){ ir((anio - yHoy) * 12 + (m - mHoy)); });
+      c.appendChild(b);
+    });
+  }
+  function cerrar(){ var ov = $('selectorMesModal'); if (ov) ov.style.display = 'none'; }
+  function ir(off){
+    cerrar();
+    if (off > 0) return;
+    if (ctx === 'ventas') { historialMesOffsetVentas = off; cargarHistorialMesEnVentas(off); }
+    else { historialMesOffset = off; cargarHistorialMes(off); }
+  }
+  window.abrirSelectorMes = function(c){
+    ctx = (c === 'ventas') ? 'ventas' : 'gestion';
+    crear();
+    anio = seleccion().y;
+    pintar();
+    $('selectorMesModal').style.display = 'flex';
+  };
+})();
+</script>
+</body>
 </html>
