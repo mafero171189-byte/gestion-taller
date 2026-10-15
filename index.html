@@ -342,7 +342,7 @@
         
         .container { max-width: 1150px; margin: 0 auto; background: white; padding: 25px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); min-height: 85vh; position: relative; display: none; transition: background-color 0.3s, border-color 0.3s; border-top: 3px solid var(--secondary); }
         
-        #toast-alert { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(0); padding: 7px 16px; border-radius: 16px; color: white; font-weight: 600; z-index: 9999; display: none; box-shadow: 0 3px 12px rgba(0,0,0,0.18); font-size: 12px; font-family: 'Outfit', sans-serif; max-width: 88vw; text-align: center; transition: opacity 0.2s ease, transform 0.2s ease; }
+        #toast-alert { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(0); padding: 7px 16px; border-radius: 16px; color: white; font-weight: 600; z-index: 20000; display: none; box-shadow: 0 3px 12px rgba(0,0,0,0.18); font-size: 12px; font-family: 'Outfit', sans-serif; max-width: 88vw; text-align: center; transition: opacity 0.2s ease, transform 0.2s ease; }
         @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 0.93; transform: translateX(-50%) translateY(0); } }
         
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(8,12,24,0.75); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
@@ -8233,7 +8233,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     clearTimeout(timeoutId);
                     btn.disabled = false;
                     btn.innerHTML = textoOriginal;
-                    showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
+                    showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626', 9000);
                 });
         };
     });
@@ -8297,7 +8297,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 clearTimeout(timeoutId);
                 btn.disabled = false;
                 btn.innerHTML = textoOriginal;
-                showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626');
+                showToast('❌ No se pudo generar el pago: ' + err.message, '#dc2626', 9000);
             });
     }
 
@@ -11553,7 +11553,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         return 'Ocurrió un error. Si persiste, contactá soporte.';
     }
     // ─────────────────────────────────────────────────────────────────────────
-    function showToast(text, color) {
+    function showToast(text, color, ms) {
         if(isClientMode) return;
         const t = document.getElementById('toast-alert');
         t.innerText = text;
@@ -11572,7 +11572,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             t.style.transition = 'opacity 0.2s ease';
             t.style.opacity = '0';
             setTimeout(() => { t.style.display = 'none'; t.style.transition = ''; }, 220);
-        }, 1800);
+        }, ms || 1800);
     }
 
     function togglePagoForm() {
