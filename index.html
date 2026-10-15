@@ -14913,6 +14913,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     })();
 
     function _doShowPage(pageId) {
+        // Páginas SOLO de administrador: cualquier otro usuario no puede entrar,
+        // ni por botón, ni por atajo de teclado, ni llamando showPage() a mano.
+        if ((pageId === 'usuarios' || pageId === 'mantenimiento') && !window.isUserAdmin) return;
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).style.display = 'block';
@@ -19379,6 +19382,8 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
         if (e.altKey && !e.ctrlKey && !e.shiftKey) {
             var pageMap = { '1': 'gestion', '2': 'ventas', '3': 'presupuesto', '4': 'contabilidad', '5': 'stock', '6': 'usuarios', '7': 'mantenimiento' };
             if (pageMap[e.key]) {
+                // Licencias y Mantenimiento son solo del admin
+                if ((pageMap[e.key] === 'usuarios' || pageMap[e.key] === 'mantenimiento') && !window.isUserAdmin) return;
                 e.preventDefault();
                 if (typeof showPage === 'function') showPage(pageMap[e.key]);
                 return;
