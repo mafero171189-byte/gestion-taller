@@ -710,6 +710,50 @@
         }
         .mp-btn-cancelar:hover { color: var(--gray-600); }
         body.dark-mode .mp-modal-box { background: var(--gray-900); }
+        /* ── SUSCRIPCIÓN (pantalla de plan + renovar) ── */
+        #modalPagoMP .sb-box { background: #f4f7fb; border-radius: 22px; width: 92%; max-width: 420px; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.45); animation: mpModalIn 0.3s cubic-bezier(0.34,1.56,0.64,1); font-family: 'Outfit', sans-serif; }
+        .sb-top { display: flex; align-items: center; gap: 12px; padding: 16px 18px; background: #fff; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
+        .sb-top h3 { margin: 0; font-size: 20px; font-weight: 900; color: var(--gray-900); letter-spacing: -0.3px; }
+        .sb-back { width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--gray-100); color: var(--gray-700); font-size: 20px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
+        .sb-scroll { overflow-y: auto; padding: 16px 16px 20px; -webkit-overflow-scrolling: touch; }
+        .sb-card { background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 2px 10px rgba(15,30,60,0.06); margin-bottom: 18px; }
+        .sb-card-title { font-size: 17px; font-weight: 900; color: var(--gray-900); margin-bottom: 12px; }
+        .sb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .sb-cell { background: var(--gray-50); border-radius: 14px; padding: 11px 13px; min-width: 0; }
+        .sb-cell > span { display: block; font-size: 11px; font-weight: 700; color: var(--gray-500); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .sb-cell b { font-size: 15px; font-weight: 800; color: var(--gray-900); }
+        .sb-pill { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+        .sb-pill.ok { background: #d1fae5; color: #047857; } .sb-pill.prueba { background: #cffafe; color: #0e7490; } .sb-pill.warn { background: #fef3c7; color: #b45309; } .sb-pill.bad { background: #fee2e2; color: #b91c1c; }
+        .sb-label { font-size: 13px; font-weight: 800; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.6px; margin: 0 4px 10px; }
+        .sb-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+        .sb-plan { position: relative; text-align: left; background: #fff; border: 2px solid var(--gray-200); border-radius: 16px; padding: 14px 12px 12px; cursor: pointer; font-family: 'Outfit', sans-serif; transition: border-color .15s, box-shadow .15s; color: var(--gray-900); }
+        .sb-plan.sel { border-color: var(--mp-blue); box-shadow: 0 0 0 3px rgba(0,158,227,0.18); }
+        .sb-plan .pn { font-size: 14px; font-weight: 800; color: var(--gray-600); }
+        .sb-plan .pp { font-size: 19px; font-weight: 900; margin-top: 4px; line-height: 1.1; }
+        .sb-plan .pu { font-size: 12px; font-weight: 700; color: var(--gray-500); margin-top: 3px; }
+        .sb-plan .pd { font-size: 11px; color: var(--gray-500); margin-top: 6px; }
+        .sb-plan .pb { position: absolute; top: -9px; right: 10px; background: #059669; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; display: none; }
+        .sb-plan .chk { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gray-300); box-sizing: border-box; }
+        .sb-plan.sel .chk { border-color: var(--mp-blue); background: var(--mp-blue); box-shadow: inset 0 0 0 3px #fff; }
+        .sb-include { background: #fff; border-radius: 16px; padding: 14px 16px; margin: -6px 0 18px; box-shadow: 0 2px 10px rgba(15,30,60,0.06); border-left: 4px solid var(--mp-blue); }
+        .sb-include .ti { font-size: 14px; font-weight: 900; color: var(--gray-900); margin-bottom: 8px; }
+        .sb-include ul { list-style: none; margin: 0; padding: 0; }
+        .sb-include li { position: relative; padding: 3px 0 3px 24px; font-size: 13px; color: var(--gray-700); line-height: 1.4; }
+        .sb-include li::before { content: "✓"; position: absolute; left: 0; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #d1fae5; color: #047857; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .sb-include li b { color: var(--gray-900); }
+        body.dark-mode .sb-include { background: var(--gray-800); }
+        body.dark-mode .sb-include .ti, body.dark-mode .sb-include li b { color: var(--gray-50); }
+        body.dark-mode .sb-include li { color: var(--gray-300); }
+        .sb-pay { display: flex; flex-direction: column; gap: 10px; }
+        .sb-note { font-size: 12.5px; color: var(--gray-600); line-height: 1.45; margin: 4px 4px 2px; }
+        .sb-note b { color: var(--gray-800); }
+        body.dark-mode #modalPagoMP .sb-box { background: var(--gray-900); }
+        body.dark-mode .sb-top, body.dark-mode .sb-card, body.dark-mode .sb-plan { background: var(--gray-800); border-color: var(--gray-700); }
+        body.dark-mode .sb-top h3, body.dark-mode .sb-card-title, body.dark-mode .sb-cell b, body.dark-mode .sb-plan { color: var(--gray-50); }
+        body.dark-mode .sb-cell { background: var(--gray-900); }
+        body.dark-mode .sb-plan .pn { color: var(--gray-300); }
+        body.dark-mode .sb-back { background: var(--gray-700); color: var(--gray-50); }
+        body.dark-mode .sb-note, body.dark-mode .sb-note b { color: var(--gray-300); }
         body.dark-mode .mp-step-text { color: var(--gray-300); }
         body.dark-mode .mp-step-text b { color: var(--gray-50); }
         /* MODAL TIPO LICENCIA */
@@ -2275,7 +2319,7 @@ function showApp() {
 </style>
 <style id="perfil-css">
 /* ===== MI PERFIL (ordenado por secciones) ===== */
-#passModal .modal-box { width: min(480px, 94vw); max-width: 94vw; padding: 0; text-align: left; display: flex; flex-direction: column; max-height: 92vh; overflow: hidden; }
+#passModal .modal-box, #configModal .modal-box { width: min(480px, 94vw); max-width: 94vw; padding: 0; text-align: left; display: flex; flex-direction: column; max-height: 92vh; overflow: hidden; }
 .pf-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--gray-200); flex-shrink: 0; }
 .pf-head b { font-size: 17px; font-family: 'Outfit', sans-serif; }
 .pf-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--gray-500); line-height: 1; padding: 4px 8px; width: auto; }
@@ -2313,6 +2357,29 @@ function showApp() {
 .pf-wa-preview { display: none; white-space: pre-wrap; background: #dcf8c6; color: #111; border-radius: 10px; padding: 10px 12px; margin-top: 8px; font-size: 13px; line-height: 1.4; font-family: 'Outfit', sans-serif; word-break: break-word; }
 body.dark-mode .pf-head, body.dark-mode .pf-foot { border-color: rgba(255,255,255,0.1); }
 body.dark-mode .pf-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+/* ===== CONFIGURACIÓN ===== */
+.cf-session { display: flex; align-items: center; gap: 12px; background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+.cf-ico { width: 44px; height: 44px; border-radius: 12px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.cf-txt { flex: 1; min-width: 0; }
+.cf-txt b { display: block; font-family: 'Outfit', sans-serif; font-size: 15px; color: var(--gray-900); }
+.cf-txt span { display: block; font-size: 12px; color: var(--gray-500); line-height: 1.35; margin-top: 2px; }
+.cf-btn-out { flex-shrink: 0; width: auto; padding: 10px 14px; border-radius: 12px; border: 1.5px solid #fecaca; background: #fef2f2; color: #dc2626; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; }
+.cf-danger { border-color: #fecaca; background: var(--gray-50); }
+.cf-danger .pf-card-title { color: #b91c1c; }
+.cf-danger-row { display: flex; align-items: center; gap: 12px; }
+.cf-danger-row .cf-txt b { color: #b91c1c; }
+.cf-btn-del { flex-shrink: 0; width: auto; padding: 11px 14px; border-radius: 12px; border: none; background: #dc2626; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; }
+.cf-btn-save { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--secondary); color: #fff; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; cursor: pointer; }
+#eliminarCuentaModal .modal-box { max-width: 360px; text-align: left; font-family: 'Outfit', sans-serif; }
+#eliminarCuentaModal ul { margin: 8px 0 12px 18px; padding: 0; font-size: 13px; color: var(--gray-700); line-height: 1.5; }
+#eliminarCuentaModal input { margin: 4px 0 10px; }
+body.dark-mode .cf-session, body.dark-mode .cf-danger { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+body.dark-mode .cf-danger { border-color: rgba(248,113,113,0.35); }
+body.dark-mode .cf-txt b { color: var(--slate-50); }
+body.dark-mode .cf-danger-row .cf-txt b, body.dark-mode .cf-danger .pf-card-title { color: #f87171; }
+body.dark-mode .cf-ico { background: rgba(220,38,38,0.18); }
+body.dark-mode .cf-btn-out { background: rgba(220,38,38,0.15); border-color: rgba(248,113,113,0.35); }
+body.dark-mode #eliminarCuentaModal ul { color: var(--gray-300); }
 body.dark-mode .pf-card-title { color: var(--slate-50); }
 body.dark-mode .pf-logo, body.dark-mode .pf-wa-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
 body.dark-mode .pf-wa-item > summary { color: var(--slate-50); }
@@ -3332,21 +3399,6 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <button class="pf-close" onclick="closePassModal()" aria-label="Cerrar">✕</button>
      </div>
      <div class="pf-body">
-      <!-- LICENCIA -->
-      <div id="perfilLicenciaBox" class="pf-card" style="display:none;">
-       <div class="pf-card-title">🔑 Licencia</div>
-       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <div>
-         <div style="font-size:10px; font-weight:800; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Estado</div>
-         <div id="perfilLicBadge"></div>
-        </div>
-        <div id="perfilDiasBox" style="text-align:right;"></div>
-       </div>
-       <div id="perfilBtnRenovar" style="margin-top:12px; display:none;">
-        <button onclick="closePassModal(); mostrarPanelContactoAdmin();" style="width:100%; padding:12px; background:linear-gradient(135deg,var(--amber-500),var(--warning)); color:white; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; font-family:'Outfit',sans-serif; box-shadow:0 4px 14px rgba(245,158,11,0.35);">🔑 Renovar Licencia</button>
-       </div>
-      </div>
-
       <!-- DATOS DEL TALLER -->
       <div class="pf-card">
        <div class="pf-card-title">🏪 Datos del taller</div>
@@ -3401,6 +3453,20 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        <div id="pfWaLista"></div>
       </div>
 
+     </div>
+     <div class="pf-foot">
+      <button class="pf-cancel" onclick="closePassModal()">CANCELAR</button>
+      <button class="pf-save" onclick="updatePassword()">GUARDAR</button>
+     </div>
+    </div>
+   </div>
+   <div id="configModal" class="modal-overlay">
+    <div class="modal-box">
+     <div class="pf-head">
+      <b>⚙️ Configuración</b>
+      <button class="pf-close" onclick="cerrarConfiguracion()" aria-label="Cerrar">✕</button>
+     </div>
+     <div class="pf-body">
       <!-- CUENTA Y SEGURIDAD -->
       <div class="pf-card">
        <div class="pf-card-title">🔐 Cuenta y seguridad</div>
@@ -3408,13 +3474,44 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        <input type="email" id="confEmailRecuperacion" placeholder="Tu email real, para recuperar la clave" autocomplete="email" style="margin-bottom:4px;">
        <p id="notaEmailRecuperacion" class="pf-note">Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.</p>
        <label>Nueva clave</label>
-       <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar" style="margin-bottom:2px;">
+       <input type="password" id="newPass" placeholder="Dejar vacío para no cambiar" autocomplete="new-password" style="margin-bottom:10px;">
+       <button type="button" class="cf-btn-save" onclick="guardarCuentaSeguridad()">💾 GUARDAR CAMBIOS</button>
+      </div>
+
+      <!-- CERRAR SESIÓN -->
+      <div class="cf-session">
+       <div class="cf-ico">🚪</div>
+       <div class="cf-txt"><b>Cerrar sesión</b><span>Salí de tu cuenta en este dispositivo.</span></div>
+       <button type="button" class="cf-btn-out" onclick="cerrarSesionDesdeConfig()">Cerrar sesión</button>
+      </div>
+
+      <!-- ZONA DE PELIGRO -->
+      <div class="pf-card cf-danger" id="cfZonaPeligro">
+       <div class="pf-card-title">⚠️ Zona de peligro</div>
+       <div class="cf-danger-row">
+        <div class="cf-txt"><b>Eliminar mi cuenta</b><span>Elimina permanentemente tu cuenta y todos los datos de tu taller: órdenes, stock, presupuestos, gastos y fotos. Esta acción no se puede deshacer.</span></div>
+        <button type="button" class="cf-btn-del" onclick="abrirEliminarCuenta()">🗑️ Eliminar cuenta</button>
+       </div>
       </div>
      </div>
-     <div class="pf-foot">
-      <button class="pf-cancel" onclick="closePassModal()">CANCELAR</button>
-      <button class="pf-save" onclick="updatePassword()">GUARDAR</button>
-     </div>
+    </div>
+   </div>
+   <div id="eliminarCuentaModal" class="modal-overlay" style="z-index: 13000;">
+    <div class="modal-box">
+     <p style="margin:0 0 6px; font-size:18px; font-weight:900; color:#b91c1c;">🗑️ Eliminar mi cuenta</p>
+     <p style="margin:0; font-size:13px; color:var(--gray-600);">Se borra <b>todo</b> de forma definitiva:</p>
+     <ul>
+      <li>Órdenes activas e historial</li>
+      <li>Stock, presupuestos y gastos</li>
+      <li>Fotos, logo y configuración del taller</li>
+      <li>Tu licencia y el acceso con esta cuenta</li>
+     </ul>
+     <label style="font-size:12px; font-weight:800;">Tu clave actual</label>
+     <input type="password" id="elimCuentaPass" placeholder="Para confirmar que sos vos" autocomplete="current-password">
+     <label style="font-size:12px; font-weight:800;">Escribí <b>ELIMINAR</b> para confirmar</label>
+     <input type="text" id="elimCuentaTexto" placeholder="ELIMINAR" autocomplete="off" autocapitalize="characters">
+     <button type="button" id="btnConfirmarEliminarCuenta" onclick="ejecutarEliminarCuenta()" style="width:100%; padding:13px; border:none; border-radius:12px; background:#dc2626; color:#fff; font-weight:800; font-size:14px; font-family:'Outfit',sans-serif; cursor:pointer; margin-bottom:8px;">ELIMINAR PARA SIEMPRE</button>
+     <button type="button" onclick="cerrarEliminarCuenta()" style="width:100%; padding:11px; border:none; background:none; color:var(--gray-500); font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;">Cancelar</button>
     </div>
    </div>
    <div id="viewerModal" class="modal-overlay">
@@ -3657,6 +3754,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     <button onclick="showPage('mantenimiento')" id="btn-nav-mantenimiento" style="display:none;">⚙️ MANTENIMIENTO</button>
    </div>
    <div class="nav-fixed-right">
+    <button onclick="abrirConfiguracion()" id="btn-nav-config" style="display:none; color: var(--gray-300);">⚙️ CONFIGURACIÓN</button>
+    <button onclick="mostrarPanelContactoAdmin()" id="btn-nav-suscripcion" style="display:none; color: var(--mp-blue);">💳 SUSCRIPCIÓN</button>
     <button onclick="openPassModal()" id="btn-nav-perfil" style="display:none; color: var(--amber-500);">👤 MI PERFIL</button>
     <button onclick="toggleDarkMode()" id="btn-dark-mode" style="font-size: 16px; background: none; border: none; cursor: pointer;">🌙</button>
     <button onclick="logout()" style="color: #ff7675; font-size: 12px; font-weight: bold; background: none; border: none; cursor: pointer;">✖ SALIR</button>
@@ -4548,7 +4647,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <b>📱 Usando el sistema en el celular</b>
         <ul>
          <li><b>Gestión es la pantalla principal.</b> Arriba ves el botón <b>☰ (tres rayas)</b> con el nombre de la sección en la que estás.</li>
-         <li>Al tocar <b>☰</b> se despliega el menú con todas las secciones: Gestión, Ventas y Reparaciones, Presupuesto, Contabilidad, Stock, <b>❓ Ayuda</b>, <b>👤 Mi Perfil</b>, el <b>modo oscuro/claro</b> y <b>✖ Salir</b>. Tocá afuera del menú o la sección elegida para cerrarlo.</li>
+         <li>Al tocar <b>☰</b> se despliega el menú con todas las secciones: Gestión, Ventas y Reparaciones, Presupuesto, Contabilidad, Stock, <b>❓ Ayuda</b>, <b>👤 Mi Perfil</b>, <b>⚙️ Configuración</b>, <b>💳 Suscripción</b>, el <b>modo oscuro/claro</b> y <b>✖ Salir</b>. Tocá afuera del menú o la sección elegida para cerrarlo.</li>
          <li>Si hay avisos de presupuestos respondidos, ves un globito verde sobre el ☰ y junto a "Presupuesto" dentro del menú.</li>
          <li>En la parte superior de Gestión están los botones <b>🔍 (buscador)</b> y <b>🛒 VENTA RÁPIDA</b>. En PC se ven en el mismo lugar.</li>
         </ul>
@@ -4772,7 +4871,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
          <li><b>🏪 Datos del taller:</b> Logo (JPG o PNG), nombre, subtítulo, el <b>WhatsApp en ticket</b> (el número que aparece en el pie del ticket para que el cliente te contacte) y el <b>País / Moneda</b> para el formato de moneda y fechas.</li>
          <li><b>📄 Documentos:</b> Los <b>términos y condiciones</b> (garantía o condiciones generales) que aparecen al pie de cada PDF.</li>
          <li><b>💬 Mensajes de WhatsApp:</b> Los textos que se envían a tus clientes, ya listos para usar y editables (ver abajo).</li>
-         <li><b>🔐 Cuenta y seguridad:</b> Email de recuperación y <b>Nueva Clave</b>. Dejá la clave vacía si no querés cambiarla.</li>
+         <li><b>⚙️ Configuración:</b> Email de recuperación, <b>Nueva Clave</b>, <b>Cerrar sesión</b> y, en la zona de peligro, <b>Eliminar mi cuenta</b> (borra todo, sin vuelta atrás).</li>
         </ul>
         <b>💬 Personalizar los mensajes de WhatsApp</b>
         <ul>
@@ -4843,7 +4942,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        <summary class="faq-summary">🔐 Acceso y Seguridad <span>+</span></summary>
        <div class="faq-content">
         <p><b>Me olvidé mi contraseña, ¿qué hago?</b><br>Desde la pantalla de inicio de sesión, tocá <b>"🔑 Olvidé mi clave"</b> e ingresá tu número de WhatsApp. Si tenés un email de recuperación cargado, te vamos a mandar un link ahí para elegir una clave nueva. Revisá también la carpeta de spam.</p>
-        <p><b>¿Cómo cambio mi contraseña actual?</b><br>Ingresá a <b>👤 Mi Perfil</b>, escribí la nueva clave en el campo "Nueva clave" (sección Cuenta y seguridad) y presioná "GUARDAR".</p>
+        <p><b>¿Cómo cambio mi contraseña actual?</b><br>Ingresá a <b>⚙️ Configuración</b> (menú ☰), escribí la nueva clave en el campo "Nueva clave" (sección Cuenta y seguridad) y presioná "GUARDAR CAMBIOS".</p>
         <p><b>Me aparece el mensaje "Acceso Denegado".</b><br>Ocurre en dos situaciones: (1) llegaste al máximo de dispositivos conectados a la vez para tu plan y se cerró la sesión más antigua para dejarte entrar; (2) tu licencia fue suspendida — contactá al soporte.</p>
         <p><b>¿Puedo entrar desde varios dispositivos a la vez?</b><br><span id="faq-texto-dispositivos">Depende del plan: con licencia de prueba o mensual, <b>1 dispositivo</b> a la vez. Con licencia anual, <b>hasta 3</b>. Si te conectás en uno de más, se cierra automáticamente la sesión más vieja (no la que recién abriste) para hacerle lugar.</span></p>
        </div>
@@ -5949,6 +6048,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (window._syncListenersPres)  { try { window._syncListenersPres.forEach(fn => fn());  } catch(e) {} }
         ocultarLoader();
         document.getElementById('passModal').style.display = 'none';
+        document.getElementById('configModal').style.display = 'none';
         document.getElementById('statusModal').style.display = 'none';
         document.getElementById('photoModal').style.display = 'none';
         document.getElementById('priceModal').style.display = 'none';
@@ -7966,25 +8066,90 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         _planPagoSeleccionado = plan;
         const btnM = document.getElementById('btnPlanPagoMensual');
         const btnA = document.getElementById('btnPlanPagoAnual');
+        if (btnM) btnM.classList.toggle('sel', plan === 'mensual');
+        if (btnA) btnA.classList.toggle('sel', plan === 'anual');
         const titulo = document.getElementById('mpModalTitulo');
-        if (btnM && btnA) {
-            const activo = { background: 'white', color: 'var(--mp-blue)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' };
-            const inactivo = { background: 'transparent', color: 'rgba(255,255,255,0.75)', boxShadow: 'none' };
-            Object.assign(btnM.style, plan === 'mensual' ? activo : inactivo);
-            Object.assign(btnA.style, plan === 'anual' ? activo : inactivo);
-        }
-        if (titulo) titulo.textContent = plan === 'anual' ? 'Activar Licencia Anual' : 'Activar Licencia Mensual';
+        if (titulo) titulo.textContent = plan === 'anual' ? 'Plan Anual' : 'Plan Mensual';
+        _renderIncluyePlan(plan);
         _refrescarPreciosModalPago();
+    }
+
+    // Lista "qué incluye" del plan elegido. Fotos y dispositivos salen de
+    // window.LIMITES (los mismos valores que configura el admin en Licencias).
+    function _renderIncluyePlan(plan) {
+        const box = document.getElementById('sbIncluye');
+        if (!box) return;
+        const L = window.LIMITES || { dispositivos: { mensual: 1, anual: 3 }, fotos: { mensual: 5, anual: 15 } };
+        const pl = (n, s, p) => n === 1 ? s : p;
+        const fotos = L.fotos[plan], disp = L.dispositivos[plan];
+        let items;
+        if (plan === 'anual') {
+            items = [
+                '<b>Todo lo del plan Mensual</b>',
+                '<b>Precio congelado por 12 meses</b>',
+                '<b>Sin renovaciones</b> mes a mes: un solo pago',
+                'Hasta <b>' + fotos + ' ' + pl(fotos, 'foto', 'fotos') + '</b> por orden',
+                'Hasta <b>' + disp + ' ' + pl(disp, 'dispositivo', 'dispositivos') + '</b> a la vez',
+                'Soporte técnico <b>prioritario</b>'
+            ];
+        } else {
+            items = [
+                'Acceso total todo el mes',
+                'Órdenes, stock con escáner, presupuestos con PDF, venta rápida, contabilidad y tickets',
+                'Hasta <b>' + fotos + ' ' + pl(fotos, 'foto', 'fotos') + '</b> por orden',
+                '<b>' + disp + ' ' + pl(disp, 'dispositivo conectado', 'dispositivos conectados') + '</b>',
+                'Nuevas funciones y actualizaciones incluidas',
+                'Soporte técnico'
+            ];
+        }
+        box.innerHTML = '<div class="ti">Qué incluye el plan ' + (plan === 'anual' ? 'Anual' : 'Mensual') + '</div><ul>' +
+            items.map(t => '<li>' + t + '</li>').join('') + '</ul>';
     }
 
     function _refrescarPreciosModalPago() {
         const esAnual = _planPagoSeleccionado === 'anual';
-        db.ref('configuracion/' + (esAnual ? 'mp_precio_anual' : 'mp_precio')).once('value', snap => {
-            actualizarLabelMP(snap.val() || '...');
-        });
-        db.ref('configuracion/' + (esAnual ? 'paypal_precio_anual' : 'paypal_precio')).once('value', snap => {
-            const label = document.getElementById('paypalPrecioLabel');
-            if (label) label.textContent = `USD ${snap.val() || (esAnual ? 150 : 15)}`;
+        const leer = k => db.ref('configuracion/' + k).once('value').then(s => s.val());
+        Promise.all([leer('mp_precio'), leer('mp_precio_anual'), leer('paypal_precio'), leer('paypal_precio_anual')])
+            .then(([mpM, mpA, ppM, ppA]) => {
+                ppM = ppM || 15; ppA = ppA || 150;
+                const ars = n => (n && !isNaN(n)) ? 'AR$ ' + Number(n).toLocaleString(_localeActual) : 'AR$ ...';
+                const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+                set('sbPrecioMensual', ars(mpM)); set('sbPrecioAnual', ars(mpA));
+                set('sbUsdMensual', 'USD ' + ppM); set('sbUsdAnual', 'USD ' + ppA);
+                set('mpPrecioLabel', ars(esAnual ? mpA : mpM));
+                set('paypalPrecioLabel', 'USD ' + (esAnual ? ppA : ppM));
+                const ah = document.getElementById('sbAhorro');
+                if (ah) {
+                    const pct = (mpM && mpA && mpM * 12 > mpA) ? Math.round((1 - mpA / (mpM * 12)) * 100) : 0;
+                    ah.textContent = pct > 0 ? 'Ahorrás ' + pct + '%' : '';
+                    ah.style.display = pct > 0 ? 'block' : 'none';
+                }
+            }).catch(() => {});
+    }
+
+    function _cargarMiPlan() {
+        const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        if (!currentUser) return;
+        db.ref('usuarios_registrados/' + currentUser).once('value', snap => {
+            const u = snap.val();
+            if (!u) { ['sbEstado','sbTipo','sbVence','sbDias'].forEach(i => set(i, '—')); return; }
+            const tipo = u.tipoLicencia || 'prueba';
+            const exp = u.fechaExpiracion || null;
+            const dias = exp ? Math.ceil((exp - Date.now()) / 86400000) : null;
+            const vencida = dias !== null && dias <= 0;
+            const suspendida = u.estado === 'suspendido';
+            if (suspendida) set('sbEstado', '<span class="sb-pill bad">Suspendida</span>');
+            else if (vencida) set('sbEstado', '<span class="sb-pill bad">Vencida</span>');
+            else if (tipo === 'permanente') set('sbEstado', '<span class="sb-pill ok">Activa</span>');
+            else set('sbEstado', '<span class="sb-pill prueba">Prueba</span>');
+            set('sbTipo', tipo === 'permanente' ? (u.planTipo === 'anual' ? 'Plan anual' : 'Plan mensual') : 'Prueba gratuita');
+            set('sbVence', exp ? new Date(exp).toLocaleDateString(_localeActual) : '—');
+            if (dias === null) set('sbDias', '—');
+            else if (vencida) set('sbDias', '<span style="color:#dc2626;">Vencida</span>');
+            else {
+                const color = dias <= 5 ? '#dc2626' : dias <= 15 ? '#d97706' : '#059669';
+                set('sbDias', '<span style="color:' + color + ';">' + dias + '</span>');
+            }
         });
     }
 
@@ -7995,11 +8160,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
         const modal = document.getElementById('modalPagoMP');
         modal.style.display = 'flex';
-        // NO resetear el plan — mantener lo que el usuario eligió antes
-        // seleccionarPlanPago('mensual');
-        _refrescarPreciosModalPago();
-        cargarPrecioPaypalAdmin();
-        cargarPrecioMPAdmin();
+        seleccionarPlanPago(_planPagoSeleccionado);
+        _cargarMiPlan();
     }
 
     // Asignar el onclick del botón MP UNA SOLA VEZ (no cada vez que se abre
@@ -8928,6 +9090,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (landingEl) landingEl.style.display = 'none';
                 document.querySelector('#app-content .container').style.display = 'block'; 
         document.getElementById('btn-nav-perfil').style.display = 'inline-block';
+        document.getElementById('btn-nav-config').style.display = 'inline-block';
+        document.getElementById('btn-nav-suscripcion').style.display = isUserAdmin ? 'none' : 'inline-block';
         document.getElementById('btn-top-ayuda').style.display = 'flex';
 
         // ── VUELTA DE MERCADO PAGO ────────────────────────────────────────
@@ -9507,24 +9671,6 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             document.getElementById('confWappTicket').value = d.wappTicket || "";
             document.getElementById('confGarantia').value = d.garantia || "";
             document.getElementById('confPais').value = d.pais || "AR";
-            // Una vez que el admin (o el cliente, la primera vez) cargó el
-            // email real, el cliente ya no lo puede cambiar por su cuenta —
-            // si hace falta corregirlo, lo hace el admin desde Licencias.
-            const inputEmail = document.getElementById('confEmailRecuperacion');
-            const notaEmail = document.getElementById('notaEmailRecuperacion');
-            inputEmail.value = d.authEmail || "";
-            _emailRecuperacionBloqueado = !!(d.authEmail && !isUserAdmin);
-            if (_emailRecuperacionBloqueado) {
-                inputEmail.disabled = true;
-                inputEmail.style.background = 'var(--gray-100)';
-                inputEmail.style.color = 'var(--gray-500)';
-                notaEmail.innerText = '✅ Ya está cargado. Si necesitás corregirlo, contactá a soporte.';
-            } else {
-                inputEmail.disabled = false;
-                inputEmail.style.background = '';
-                inputEmail.style.color = '';
-                notaEmail.innerText = 'Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.';
-            }
             if (typeof aplicarLocale === 'function') aplicarLocale(d.pais || 'AR');
             try { waConstruirEditor(d.plantillasWA || {}); } catch(e) { console.error(e); }
             
@@ -9538,106 +9684,197 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             }
         });
 
-        // ===== CARGAR INFO DE LICENCIA (solo usuarios no-admin) =====
-        const licBox = document.getElementById('perfilLicenciaBox');
-        const licBadge = document.getElementById('perfilLicBadge');
-        const diasBox = document.getElementById('perfilDiasBox');
-        const btnRenovar = document.getElementById('perfilBtnRenovar');
-
-        if (!isUserAdmin && currentUser) {
-            db.ref('usuarios_registrados/' + currentUser).once('value', snap => {
-                const u = snap.val();
-                if (!u) { licBox.style.display = 'none'; return; }
-
-                const tipo = u.tipoLicencia || 'prueba';
-                const exp = u.fechaExpiracion || null;
-                const AHORA = Date.now();
-                const diasRestantes = exp ? Math.ceil((exp - AHORA) / (1000 * 60 * 60 * 24)) : null;
-                const vencida = diasRestantes !== null && diasRestantes <= 0;
-                const suspendida = u.estado === 'suspendido';
-
-                // Badge tipo de licencia
-                if (suspendida) {
-                    licBadge.innerHTML = '<span class="badge-licencia lic-suspendida">⏸️ SUSPENDIDA</span>';
-                } else if (vencida) {
-                    licBadge.innerHTML = '<span class="badge-licencia lic-expirada">❌ VENCIDA</span>';
-                } else if (tipo === 'permanente') {
-                    const planTxt = u.planTipo === 'anual' ? ' · Anual' : ' · Mensual';
-                    licBadge.innerHTML = '<span class="badge-licencia lic-permanente">♾️ PERMANENTE' + planTxt + '</span>';
-                } else {
-                    licBadge.innerHTML = '<span class="badge-licencia lic-prueba">🧪 PRUEBA</span>';
-                }
-
-                // Días restantes y fecha de vencimiento
-                if (exp && !suspendida) {
-                    const fechaStr = new Date(exp).toLocaleDateString(_localeActual);
-                    if (vencida) {
-                        diasBox.innerHTML = '<div style="font-size:12px;color:var(--danger);font-weight:800;">Venció el ' + fechaStr + '</div>';
-                    } else {
-                        const urgente = diasRestantes <= 5;
-                        const advertencia = diasRestantes <= 15;
-                        const color = urgente ? '#dc2626' : advertencia ? '#d97706' : '#059669';
-                        diasBox.innerHTML =
-                            '<div style="font-size:28px;font-weight:900;color:' + color + ';line-height:1;font-family:\'Outfit\',sans-serif;">' + diasRestantes + '</div>' +
-                            '<div style="font-size:11px;color:var(--gray-500);font-weight:700;">día' + (diasRestantes !== 1 ? 's' : '') + ' restante' + (diasRestantes !== 1 ? 's' : '') + '</div>' +
-                            '<div style="font-size:10px;color:#c4c4c4;margin-top:2px;">Vence: ' + fechaStr + '</div>';
-                    }
-                } else if (!exp) {
-                    diasBox.innerHTML = '<div style="font-size:12px;color:var(--gray-600);">Sin fecha configurada</div>';
-                }
-
-                // Botón renovar — siempre visible para usuarios no-admin
-                btnRenovar.style.display = 'block';
-                const btnEl = btnRenovar.querySelector('button');
-                if (vencida || suspendida) {
-                    btnEl.style.background = 'linear-gradient(135deg,#dc2626,#b91c1c)';
-                    btnEl.style.boxShadow = '0 4px 14px rgba(220,38,38,0.35)';
-                    btnEl.innerText = '🆘 Activar Licencia';
-                } else if (diasRestantes !== null && diasRestantes <= 10) {
-                    btnEl.style.background = 'linear-gradient(135deg,#dc2626,#b91c1c)';
-                    btnEl.style.boxShadow = '0 4px 14px rgba(220,38,38,0.35)';
-                    btnEl.innerText = '⚠️ Renovar Ahora';
-                } else {
-                    btnEl.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-                    btnEl.style.boxShadow = '0 4px 14px rgba(245,158,11,0.35)';
-                    btnEl.innerText = '🔑 Renovar Licencia';
-                }
-
-                licBox.style.display = 'block';
-            });
-        } else {
-            licBox.style.display = 'none';
-        }
-
         document.getElementById('passModal').style.display = 'flex'; 
     }
     
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
+
+    // ====== CONFIGURACIÓN (cuenta y seguridad, cerrar sesión, eliminar cuenta) ======
+    function abrirConfiguracion() {
+        const inputEmail = document.getElementById('confEmailRecuperacion');
+        const notaEmail = document.getElementById('notaEmailRecuperacion');
+        document.getElementById('newPass').value = '';
+        inputEmail.value = '';
+        // Una vez que el admin (o el cliente, la primera vez) cargó el email
+        // real, el cliente ya no lo puede cambiar por su cuenta — si hace
+        // falta corregirlo, lo hace el admin desde Licencias.
+        db.ref(fbPathPerfil() + '/authEmail').once('value', snap => {
+            const email = snap.val() || '';
+            inputEmail.value = email;
+            _emailRecuperacionBloqueado = !!(email && !isUserAdmin);
+            if (_emailRecuperacionBloqueado) {
+                inputEmail.disabled = true;
+                inputEmail.style.background = 'var(--gray-100)';
+                inputEmail.style.color = 'var(--gray-500)';
+                notaEmail.innerText = '✅ Ya está cargado. Si necesitás corregirlo, contactá a soporte.';
+            } else {
+                inputEmail.disabled = false;
+                inputEmail.style.background = '';
+                inputEmail.style.color = '';
+                notaEmail.innerText = 'Lo usamos únicamente para enviarte el enlace si tocás "Olvidé mi clave". Nadie más lo ve.';
+            }
+        });
+        const zona = document.getElementById('cfZonaPeligro');
+        if (zona) zona.style.display = isUserAdmin ? 'none' : 'block';
+        document.getElementById('configModal').style.display = 'flex';
+    }
+    function cerrarConfiguracion() { document.getElementById('configModal').style.display = 'none'; }
+
+    function cerrarSesionDesdeConfig() {
+        if (confirm('¿Cerrar sesión en este dispositivo?')) logout();
+    }
+
+    function guardarCuentaSeguridad() {
+        const newP = document.getElementById('newPass').value.trim();
+        const nEmail = _emailRecuperacionBloqueado ? '' : document.getElementById('confEmailRecuperacion').value.trim();
+        if (nEmail && !nEmail.includes('@')) {
+            showToast('⚠️ El email de recuperación no es válido', '#dc2626');
+            return;
+        }
+        const authUser = firebase.auth().currentUser;
+        const emailActual = (authUser && authUser.email) || '';
+        const hayEmailNuevo = !!(nEmail && nEmail.toLowerCase() !== emailActual.toLowerCase());
+        if (!hayEmailNuevo && !newP) {
+            showToast('No hay cambios para guardar', '#64748b');
+            return;
+        }
+        mostrarLoader('Guardando...');
+        // Cuentas creadas por el admin desde Licencias arrancan con un email
+        // FALSO en Firebase Auth ({whatsapp}@mitallerweb.com): este es el lugar
+        // donde el taller carga su email real para que "Olvidé mi clave" funcione.
+        const cambiarEmail = hayEmailNuevo ? authUser.updateEmail(nEmail) : Promise.resolve();
+        cambiarEmail
+            .then(() => {
+                if (hayEmailNuevo) {
+                    showToast('EMAIL ACTUALIZADO ✅', '#059669');
+                    return db.ref(fbPathPerfil()).update({ authEmail: nEmail });
+                }
+            })
+            .then(() => newP ? authUser.updatePassword(newP) : null)
+            .then(() => {
+                ocultarLoader();
+                if (newP) showToast('CLAVE ACTUALIZADA ✅', '#059669');
+                document.getElementById('newPass').value = '';
+                cerrarConfiguracion();
+            })
+            .catch(err => {
+                ocultarLoader();
+                if (err.code === 'auth/requires-recent-login') {
+                    alert('⚠️ Para cambiar el email o la contraseña necesitás volver a iniciar sesión.\n\nCerrá sesión, ingresá de nuevo y repetí el cambio.');
+                } else if (err.code === 'auth/email-already-in-use') {
+                    alert('⚠️ Ese email ya está en uso por otra cuenta.');
+                } else if (err.code === 'auth/invalid-email') {
+                    alert('⚠️ El email de recuperación no es válido.');
+                } else if (err.code === 'auth/weak-password') {
+                    alert('⚠️ La clave es muy débil. Usá al menos 6 caracteres.');
+                } else if (err.message) {
+                    alert('Error al guardar: ' + err.message + "\n\n(Si dice 'Permission Denied', revisá las Reglas de tu Firebase).");
+                } else {
+                    showToast(mensajeFirebaseAmigable(err), '#dc2626');
+                }
+            });
+    }
+
+    function abrirEliminarCuenta() {
+        if (isUserAdmin || !currentUser) return;
+        document.getElementById('elimCuentaPass').value = '';
+        document.getElementById('elimCuentaTexto').value = '';
+        document.getElementById('eliminarCuentaModal').style.display = 'flex';
+    }
+    function cerrarEliminarCuenta() { document.getElementById('eliminarCuentaModal').style.display = 'none'; }
+
+    // Borra TODOS los datos del taller y la cuenta de acceso. Orden pensado para
+    // no dejar la cuenta a medias: 1) re-autenticar (si la clave está mal no se
+    // toca nada), 2) borrar datos, 3) borrar el registro del usuario, 4) borrar
+    // la cuenta de Firebase Auth. Los datos se borran ANTES que el Auth porque
+    // las reglas de Firebase necesitan que sigamos logueados para escribir.
+    async function ejecutarEliminarCuenta() {
+        if (isUserAdmin || !currentUser) return;
+        const user = firebase.auth().currentUser;
+        const pass = document.getElementById('elimCuentaPass').value;
+        const texto = document.getElementById('elimCuentaTexto').value.trim().toUpperCase();
+        if (!user) { showToast('⚠️ Sesión inválida, volvé a ingresar', '#dc2626'); return; }
+        if (!pass) { showToast('⚠️ Escribí tu clave actual', '#dc2626'); return; }
+        if (texto !== 'ELIMINAR') { showToast('⚠️ Escribí ELIMINAR para confirmar', '#dc2626'); return; }
+
+        const btn = document.getElementById('btnConfirmarEliminarCuenta');
+        btn.disabled = true;
+        mostrarLoader('Eliminando tu cuenta...');
+        try {
+            const cred = firebase.auth.EmailAuthProvider.credential(user.email, pass);
+            await user.reauthenticateWithCredential(cred);
+        } catch (e) {
+            ocultarLoader(); btn.disabled = false;
+            showToast('❌ La clave no es correcta', '#dc2626');
+            return;
+        }
+
+        const wa = currentUser;
+        // Dejar de escuchar cambios para que no reaccionen al borrado.
+        try { if (dbRef) dbRef.off(); } catch (e) {}
+        try { db.ref('usuarios_registrados/' + wa).off(); } catch (e) {}
+        try { if (window._syncListenersStock) window._syncListenersStock.forEach(fn => fn()); } catch (e) {}
+        try { if (window._syncListenersPres) window._syncListenersPres.forEach(fn => fn()); } catch (e) {}
+
+        const principales = [
+            'reparaciones_usuarios/' + wa,
+            'reparaciones_archivadas_usuarios/' + wa,
+            'stock_usuarios/' + wa,
+            'presupuestos_usuarios/' + wa,
+            'gastos_extra_usuarios/' + wa,
+            'fotos_ordenes/' + wa
+        ];
+        const secundarios = [
+            'presupuestos_respuestas/' + wa,
+            'indices/' + wa,
+            'sync_ts/' + wa,
+            'seguimiento_publico/' + wa,
+            'perfil_publico/' + wa,
+            'solicitudes_registro/' + wa,
+            'solicitudes_reset/' + wa
+        ];
+        try {
+            await Promise.all(principales.map(r => db.ref(r).remove()));
+        } catch (e) {
+            ocultarLoader(); btn.disabled = false;
+            alert('❌ No se pudieron borrar todos tus datos: ' + (e && e.message ? e.message : e) + '\n\nTu cuenta NO fue eliminada. Probá de nuevo o escribile a soporte.');
+            return;
+        }
+        // Estos nodos auxiliares pueden no existir o no tener permiso: no frenan el borrado.
+        await Promise.all(secundarios.map(r => db.ref(r).remove().catch(() => {})));
+        try {
+            await db.ref('usuarios_registrados/' + wa).remove();
+        } catch (e) {
+            ocultarLoader(); btn.disabled = false;
+            alert('❌ No se pudo borrar el registro de tu cuenta: ' + (e && e.message ? e.message : e) + '\n\nEscribile a soporte para terminar la eliminación.');
+            return;
+        }
+        try { await user.delete(); } catch (e) { /* si falla, igual ya no quedan datos */ }
+
+        ocultarLoader();
+        try {
+            localStorage.removeItem('st_matias_token');
+            localStorage.removeItem('st_login_intentos');
+            localStorage.removeItem('st_login_bloqueado');
+            localStorage.removeItem('st_login_wa');
+            localStorage.removeItem('st_session_recordada');
+            sessionStorage.removeItem('st_matias_session');
+            sessionStorage.removeItem('st_landing_skipped');
+        } catch (e) {}
+        try { await firebase.auth().signOut(); } catch (e) {}
+        alert('✅ Tu cuenta y todos tus datos fueron eliminados.');
+        window.location.href = window.location.origin + window.location.pathname;
+    }
     
     // ====== PERFIL ======
     function updatePassword() {
-        const newP = document.getElementById('newPass').value.trim();
         const nTaller = document.getElementById('confNombreTaller').value.trim();
         const nSub = document.getElementById('confSubtitulo').value.trim();
         const nWapp = document.getElementById('confWappTicket').value.trim();
         const nGarantia = document.getElementById('confGarantia').value.trim();
         const nPais = document.getElementById('confPais').value || 'AR';
-        // Si ya estaba bloqueado (el cliente ya tenía un email cargado),
-        // ignoramos cualquier cambio en el campo — por más que esté
-        // "disabled" en el HTML, esto es un respaldo por si alguien lo
-        // edita a mano desde las herramientas de desarrollador.
-        const nEmail = _emailRecuperacionBloqueado
-            ? ''
-            : document.getElementById('confEmailRecuperacion').value.trim();
-
-        if (nEmail && !nEmail.includes('@')) {
-            showToast('⚠️ El email de recuperación no es válido', '#dc2626');
-            return;
-        }
-
         const path = fbPathPerfil();
         let updates = { nombreTaller: nTaller, subtitulo: nSub, wappTicket: nWapp, garantia: nGarantia, pais: nPais };
-        if (nEmail) updates.authEmail = nEmail;
         if(logoTemporalBase64 !== null) updates.logo = logoTemporalBase64;
         // Mensajes de WhatsApp: solo se guardan los que el taller modificó
         // (null borra la personalización y vuelve al texto original).
@@ -9658,35 +9895,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
         mostrarLoader("Guardando Perfil...");
 
-        // Cuentas creadas por el admin desde Licencias arrancan con un email
-        // FALSO en Firebase Auth ({whatsapp}@mitallerweb.com) porque ahí no se
-        // pide email real. Este es el único lugar donde el propio taller puede
-        // cargar su email de verdad y que quede como el email real de su
-        // cuenta — sin esto, "Olvidé mi clave" nunca les va a funcionar.
-        // Igual que con la clave: si cambia, se intenta ANTES de guardar el
-        // resto del perfil, y solo seguimos si tuvo éxito (o no había cambio).
-        const emailActual = (firebase.auth().currentUser && firebase.auth().currentUser.email) || '';
-        const cambiarEmail = (nEmail && nEmail.toLowerCase() !== emailActual.toLowerCase())
-            ? firebase.auth().currentUser.updateEmail(nEmail)
-            : Promise.resolve();
-
-        // Bug 14 fix: si hay nueva clave, intentar cambiarla PRIMERO.
-        // Solo si eso tiene éxito (o no hay clave nueva) guardamos el perfil.
-        // Antes el perfil se guardaba siempre aunque el cambio de clave fallara,
-        // y el usuario veía "PERFIL ACTUALIZADO" creyendo que la clave también cambió.
-        cambiarEmail
-            .then(() => {
-                if (nEmail && nEmail.toLowerCase() !== emailActual.toLowerCase()) {
-                    showToast("EMAIL ACTUALIZADO ✅", "#059669");
-                }
-                return newP
-                    ? firebase.auth().currentUser.updatePassword(newP)
-                    : Promise.resolve();
-            })
-            .then(() => {
-                if (newP) showToast("CLAVE ACTUALIZADA ✅", "#059669");
-                return db.ref(path).update(updates);
-            })
+        Promise.resolve()
+            .then(() => db.ref(path).update(updates))
             .then(() => {
                 // Admin ya es público en configuracion/admin, no necesita espejo.
                 if (isUserAdmin) return null;
@@ -14405,11 +14615,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         });
 
         // Calcular stock bajo para la campana (usa mínimo global como fallback)
-        const minimoGlobal = window._stockMinimoGlobal || 2;
-        const stockBajoItems = stockData.filter(i => {
-            const min = i.stockMinimo != null && i.stockMinimo > 0 ? i.stockMinimo : minimoGlobal;
-            return i.cantidad <= min;
-        });
+        const stockBajoItems = stockData.filter(i => esStockBajo(i));
         const campana = document.getElementById('campana-stock');
         if (campana) {
             if (stockBajoItems.length > 0) {
@@ -14422,9 +14628,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
 
         filtrados.forEach(i => {
-            const minimoGlobal = window._stockMinimoGlobal || 2;
-            const min = i.stockMinimo != null && i.stockMinimo > 0 ? i.stockMinimo : minimoGlobal;
-            const esBajo = i.cantidad <= min;
+            const esBajo = esStockBajo(i);
             const colorCant = esBajo ? 'color:#dc2626; font-weight:bold;' : 'color:#059669; font-weight:bold;';
             const badgeBajo = esBajo
                 ? `<span style="display:inline-block;background:var(--red-50);color:var(--danger);border:1px solid var(--red-300);border-radius:5px;font-size:10px;font-weight:800;padding:1px 6px;margin-left:6px;">⚠️ BAJO</span>`
@@ -14486,7 +14690,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         modal.style.display = 'flex';
         const input = document.getElementById('inputStockMinGlobal');
         const infoEl = document.getElementById('stockMinGlobalInfo');
-        input.value = window._stockMinimoGlobal || 2;
+        input.value = minimoGlobalStock();
         infoEl.style.display = 'none';
 
         db.ref(pathMin).once('value', snap => {
@@ -14520,7 +14724,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 window._stockMinimoGlobal = nuevoMin;
                 modal.style.display = 'none';
                 ocultarLoader();
-                showToast(`🔔 Stock mínimo global: ${nuevoMin} unidad${nuevoMin !== 1 ? 'es' : ''}`, '#1e4d8c');
+                showToast(nuevoMin === 0 ? '🔕 Alertas globales de stock bajo desactivadas' : `🔔 Stock mínimo global: ${nuevoMin} unidad${nuevoMin !== 1 ? 'es' : ''}`, '#1e4d8c');
                 renderStock();
             }).catch(() => { ocultarLoader(); showToast('Error al guardar', '#dc2626'); });
         };
@@ -14532,7 +14736,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (!item) return;
         const valorActual = item.stockMinimo > 0 ? item.stockMinimo : '';
         const nombre = item.nombre || '';
-        const minimoGlobal = window._stockMinimoGlobal || 2;
+        const minimoGlobal = minimoGlobalStock();
 
         let modal = document.getElementById('modalConfigStockMin');
         if (!modal) {
@@ -14559,7 +14763,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
 
         document.getElementById('configStockMinNombre').textContent = '📦 ' + nombre;
-        document.getElementById('configStockMinGlobalInfo').textContent = `Mínimo global actual: ${minimoGlobal} unidad${minimoGlobal !== 1 ? 'es' : ''}`;
+        document.getElementById('configStockMinGlobalInfo').textContent = (minimoGlobal === 0 ? 'Alertas globales desactivadas (mínimo global en 0)' : `Mínimo global actual: ${minimoGlobal} unidad${minimoGlobal !== 1 ? 'es' : ''}`);
         document.getElementById('inputConfigStockMin').value = valorActual;
         modal.style.display = 'flex';
         setTimeout(() => document.getElementById('inputConfigStockMin').focus(), 100);
@@ -14581,6 +14785,17 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     }
 
     // Cargar el mínimo global al iniciar stock
+    // Devuelve el mínimo global (0 = alertas globales desactivadas). Sin configurar => 2.
+    function minimoGlobalStock() {
+        const v = window._stockMinimoGlobal;
+        return (typeof v === 'number' && isFinite(v) && v >= 0) ? v : 2;
+    }
+    // Un artículo está en stock bajo si su mínimo efectivo es > 0 y la cantidad lo alcanza.
+    function esStockBajo(item) {
+        const min = (item.stockMinimo != null && item.stockMinimo > 0) ? item.stockMinimo : minimoGlobalStock();
+        return min > 0 && item.cantidad <= min;
+    }
+
     function cargarStockMinimoGlobal() {
         const pathMin = fbPathPerfil() + '/stockMinimoGlobal';
         db.ref(pathMin).once('value', snap => {
@@ -17008,62 +17223,51 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
 </script>
   <!-- MODAL PAGO MERCADO PAGO -->
-  <div id="modalPagoMP">
-   <div class="mp-modal-box">
-    <div class="mp-modal-header">
-     <div class="mp-logo-wrap">💳</div>
-     <h3 id="mpModalTitulo">Activar Licencia Mensual</h3>
-     <p>Activación automática al confirmarse el pago</p>
-     <div style="display:flex; gap:4px; background:rgba(0,0,0,0.15); border-radius:10px; padding:4px; margin-top:12px;">
-      <button id="btnPlanPagoMensual" onclick="seleccionarPlanPago('mensual')" style="flex:1; padding:9px; border:none; border-radius:7px; font-weight:800; font-size:13px; cursor:pointer; font-family:'Outfit',sans-serif; transition:0.2s;">Mensual</button>
-      <button id="btnPlanPagoAnual" onclick="seleccionarPlanPago('anual')" style="flex:1; padding:9px; border:none; border-radius:7px; font-weight:800; font-size:13px; cursor:pointer; font-family:'Outfit',sans-serif; transition:0.2s;">Anual</button>
-     </div>
+  <div id="modalPagoMP" onclick="if(event.target===this)cerrarModalPagoMP()">
+   <div class="sb-box">
+    <div class="sb-top">
+     <button type="button" class="sb-back" onclick="cerrarModalPagoMP()" aria-label="Volver">←</button>
+     <h3>Suscripción</h3>
     </div>
-    <div class="mp-modal-body">
-     <div class="mp-step">
-      <div class="mp-step-num">1</div>
-      <div class="mp-step-text">
-       Elegí el plan (<b>Mensual</b> o <b>Anual</b>) y tocá <b>Mercado Pago</b> (Argentina) o <b>PayPal</b> (Internacional).
+    <div class="sb-scroll">
+     <div class="sb-card">
+      <div class="sb-card-title">Mi plan</div>
+      <div class="sb-grid">
+       <div class="sb-cell"><span>Estado</span><div id="sbEstado">…</div></div>
+       <div class="sb-cell"><span>Tipo</span><b id="sbTipo">…</b></div>
+       <div class="sb-cell"><span>Vencimiento</span><b id="sbVence">…</b></div>
+       <div class="sb-cell"><span>Días restantes</span><b id="sbDias">…</b></div>
       </div>
      </div>
-     <div class="mp-step">
-      <div class="mp-step-num">2</div>
-      <div class="mp-step-text">
-       Pagás en la plataforma que elegiste y volvés solo a Mi Taller Web.
-      </div>
-     </div>
-     <div class="mp-step">
-      <div class="mp-step-num">3</div>
-      <div class="mp-step-text">
-       Tu licencia se activa <b>automáticamente</b>. No hace falta mandar comprobante. ✅
-      </div>
-     </div>
-    </div>
-    <div class="mp-modal-footer">
-     <button class="mp-btn-pagar" id="mpBtnIrAPagar"><span>💳</span> IR A MERCADO PAGO — <span id="mpPrecioLabel">AR$ ...</span></button>
-     <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde);"><span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span></button>
-     
-     <a href="https://wa.me/5491135654094?text=Hola%2C%20tuve%20un%20problema%20al%20pagar%20mi%20licencia%20de%20Mi%20Taller%20Web%20y%20no%20se%20activ%C3%B3." target="_blank" class="wa-soporte-link" style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 12px 10px;
-        border-radius: 12px;
-        background-color: transparent;
-        border: 1.5px solid #25d366;
-        color: #25d366;
-        font-size: 12.5px;
-        font-weight: 700;
-        font-family: 'Outfit', sans-serif;
-        text-decoration: none;
-        cursor: pointer;
-        width: 100%;
-        box-sizing: border-box;
-        transition: all 0.2s ease;
-      "> <span style="font-size: 16px;">💬</span> <span>¿Pagaste y no se activó? Escribinos</span> </a>
 
-     <button class="mp-btn-cancelar" onclick="cerrarModalPagoMP()">Cancelar</button>
+     <div class="sb-label">Planes disponibles</div>
+     <div class="sb-plans">
+      <button type="button" id="btnPlanPagoMensual" class="sb-plan" onclick="seleccionarPlanPago('mensual')">
+       <span class="chk"></span>
+       <div class="pn">Mensual</div>
+       <div class="pp" id="sbPrecioMensual">AR$ …</div>
+       <div class="pu" id="sbUsdMensual">USD …</div>
+       <div class="pd">Renovás mes a mes</div>
+      </button>
+      <button type="button" id="btnPlanPagoAnual" class="sb-plan" onclick="seleccionarPlanPago('anual')">
+       <span class="pb" id="sbAhorro"></span>
+       <span class="chk"></span>
+       <div class="pn">Anual</div>
+       <div class="pp" id="sbPrecioAnual">AR$ …</div>
+       <div class="pu" id="sbUsdAnual">USD …</div>
+       <div class="pd">Pagás una vez al año</div>
+      </button>
+     </div>
+
+     <div class="sb-include" id="sbIncluye"></div>
+
+     <div class="sb-label">Método de pago · <span id="mpModalTitulo">Plan Mensual</span></div>
+     <div class="sb-pay">
+      <button class="mp-btn-pagar" id="mpBtnIrAPagar"><span>💳</span> IR A MERCADO PAGO — <span id="mpPrecioLabel">AR$ ...</span></button>
+      <button class="mp-btn-pagar" id="btnPayPal" onclick="pagarConPayPal()" style="background: linear-gradient(135deg, #003087, #009cde);"><span>🌍</span> PAGAR CON PAYPAL — <span id="paypalPrecioLabel">USD ...</span></button>
+      <div class="sb-note"><b>Mercado Pago</b> para Argentina y <b>PayPal</b> para el resto del mundo. Pagás en la plataforma, volvés solo a Mi Taller Web y tu licencia se activa <b>automáticamente</b>. No hace falta mandar comprobante. ✅</div>
+      <a href="https://wa.me/5491135654094?text=Hola%2C%20tuve%20un%20problema%20al%20pagar%20mi%20licencia%20de%20Mi%20Taller%20Web%20y%20no%20se%20activ%C3%B3." target="_blank" class="wa-soporte-link" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:12px 10px; border-radius:12px; background-color:transparent; border:1.5px solid #25d366; color:#25d366; font-size:12.5px; font-weight:700; font-family:'Outfit',sans-serif; text-decoration:none; cursor:pointer; width:100%; box-sizing:border-box;"> <span style="font-size:16px;">💬</span> <span>¿Pagaste y no se activó? Escribinos</span> </a>
+     </div>
     </div>
    </div>
   </div>
@@ -20553,6 +20757,14 @@ window.LEGAL_VERSION = '2026-09-24-min';   // cambiala si modificás el texto
     var perfil = $('btn-nav-perfil');
     if (perfil && perfil.style.display !== 'none') {
       panel.appendChild(mkItem('👤 MI PERFIL', 'nm-amber', function(){ perfil.click(); }));
+    }
+    var conf = $('btn-nav-config');
+    if (conf && conf.style.display !== 'none') {
+      panel.appendChild(mkItem('⚙️ CONFIGURACIÓN', '', function(){ if (typeof abrirConfiguracion === 'function') abrirConfiguracion(); }));
+    }
+    var susc = $('btn-nav-suscripcion');
+    if (susc && susc.style.display !== 'none') {
+      panel.appendChild(mkItem('💳 SUSCRIPCIÓN', '', function(){ if (typeof mostrarPanelContactoAdmin === 'function') mostrarPanelContactoAdmin(); }));
     }
     var dark = document.body.classList.contains('dark-mode');
     panel.appendChild(mkItem(dark ? '☀️ Modo claro' : '🌙 Modo oscuro', '', function(){ if (typeof toggleDarkMode === 'function') toggleDarkMode(); }));
