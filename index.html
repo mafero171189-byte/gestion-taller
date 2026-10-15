@@ -2615,7 +2615,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <p class="section-desc">Empezá gratis y escalá cuando necesites. Sin contratos, sin letras chicas.</p>
      </div>
      <div class="planes-grid">
-      <div class="plan-card reveal">
+      <div class="plan-card reveal" id="landing-plan-prueba">
        <div class="plan-name">Prueba</div>
        <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Para conocer el sistema</p>
        <div class="plan-price">Gratis</div>
@@ -2635,7 +2635,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        </ul>
        <a href="#" onclick="showApp(); return false;" class="plan-btn plan-btn-ghost">Empezar prueba gratuita</a>
       </div>
-      <div class="plan-card featured reveal reveal-d1">
+      <div class="plan-card featured reveal reveal-d1" id="landing-plan-mensual">
        <div class="plan-popular">⭐ Más elegido</div>
        <div class="plan-name">Mensual</div>
        <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Para talleres activos</p>
@@ -2658,7 +2658,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Mensual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link">Consultar por WhatsApp 📲</a>
       </div>
-      <div class="plan-card reveal reveal-d2">
+      <div class="plan-card reveal reveal-d2" id="landing-plan-anual">
        <div class="plan-name">Anual</div>
        <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">La opción más conveniente</p>
        <div class="plan-price" style="color:var(--green-400); font-size:36px; display:flex; align-items:baseline; gap:6px;">
@@ -2681,7 +2681,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        </ul>
        <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20el%20plan%20Anual%20de%20Mi%20Taller%20Web" target="_blank" class="plan-btn plan-btn-main wa-soporte-link" style="background:linear-gradient(135deg,#16a34a,#15803d);">Consultar por WhatsApp 📲</a>
       </div>
-      <div class="plan-card reveal reveal-d3">
+      <div class="plan-card reveal reveal-d3" id="landing-plan-desktop">
        <div class="plan-name">Mi Taller Desktop</div>
        <p style="font-size:13px; color:var(--white-dim); margin-bottom:8px;">Versión para PC, sin internet</p>
        <div class="plan-price" style="color:#a78bfa; font-size:36px; display:flex; align-items:baseline; gap:6px;">
@@ -4373,6 +4373,17 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <div id="paypalPrecioDesktopStatus" style="margin-top:10px; font-size:13px; color:var(--gray-600); display:none;"></div>
      </div>
      
+     <div class="card-form" style="background: var(--gray-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--gray-200); margin-bottom: 20px;">
+      <label style="font-weight:800; color:var(--gray-900); margin-bottom:4px;">👁️ Planes visibles en la página de inicio</label>
+      <p style="font-size:12px; color:var(--gray-600); margin:0 0 12px; line-height:1.4;">Tildá los planes que querés mostrar. Si destildás uno, desaparece de la página de inicio. Se guarda al instante.</p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+       <label style="display:flex; align-items:center; gap:10px; text-transform:none; font-size:14px; font-weight:700; color:var(--gray-700); cursor:pointer; margin:0;"><input type="checkbox" id="chkPlanVisiblePrueba" checked onchange="guardarPlanVisible('prueba', this.checked)" style="width:20px; height:20px; margin:0;"> 🧪 Prueba gratuita</label>
+       <label style="display:flex; align-items:center; gap:10px; text-transform:none; font-size:14px; font-weight:700; color:var(--gray-700); cursor:pointer; margin:0;"><input type="checkbox" id="chkPlanVisibleMensual" checked onchange="guardarPlanVisible('mensual', this.checked)" style="width:20px; height:20px; margin:0;"> 📆 Plan Mensual</label>
+       <label style="display:flex; align-items:center; gap:10px; text-transform:none; font-size:14px; font-weight:700; color:var(--gray-700); cursor:pointer; margin:0;"><input type="checkbox" id="chkPlanVisibleAnual" checked onchange="guardarPlanVisible('anual', this.checked)" style="width:20px; height:20px; margin:0;"> 📅 Plan Anual</label>
+       <label style="display:flex; align-items:center; gap:10px; text-transform:none; font-size:14px; font-weight:700; color:var(--gray-700); cursor:pointer; margin:0;"><input type="checkbox" id="chkPlanVisibleDesktop" checked onchange="guardarPlanVisible('desktop', this.checked)" style="width:20px; height:20px; margin:0;"> 🖥️ Mi Taller Desktop</label>
+      </div>
+     </div>
+
      <div id="resetRequestsPanel" style="display:none; background:var(--indigo-25); border:1.5px solid var(--orange-200); border-radius:12px; padding:18px; margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
        <h3 style="margin:0; color:var(--orange-700); font-size:15px;">🔐 Solicitudes de Nueva Clave</h3>
@@ -5052,6 +5063,43 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const inputDP = document.getElementById('inputDiasPrueba');
         if (inputDP && document.activeElement !== inputDP) inputDP.value = d;
     });
+
+    // ── PLANES VISIBLES EN LA LANDING (los elige el admin en Licencias) ─────────
+    // configuracion/sistema es de lectura pública, así que la landing lo puede leer
+    // sin sesión. Si nunca se configuró, se muestran todos. Se guarda una copia en
+    // localStorage para que no "parpadee" un plan oculto mientras llega la respuesta.
+    const _PLANES_LANDING = ['prueba', 'mensual', 'anual', 'desktop'];
+    function _aplicarPlanesVisibles(v) {
+        v = v || {};
+        let visibles = 0;
+        _PLANES_LANDING.forEach(k => {
+            const mostrar = v[k] !== false;
+            if (mostrar) visibles++;
+            const card = document.getElementById('landing-plan-' + k);
+            if (card) card.style.display = mostrar ? '' : 'none';
+            const chk = document.getElementById('chkPlanVisible' + k.charAt(0).toUpperCase() + k.slice(1));
+            if (chk && document.activeElement !== chk) chk.checked = mostrar;
+        });
+        // Si no queda ningún plan, ocultamos toda la sección y sus enlaces.
+        const sec = document.getElementById('planes');
+        if (sec) sec.style.display = visibles === 0 ? 'none' : '';
+        document.querySelectorAll('#landing-page a[href="#planes"]').forEach(a => { a.style.display = visibles === 0 ? 'none' : ''; });
+    }
+    try { _aplicarPlanesVisibles(JSON.parse(localStorage.getItem('mtw_planes_visibles') || 'null')); } catch(e) {}
+    db.ref('configuracion/sistema/planesVisibles').on('value', snap => {
+        const v = snap.val() || {};
+        try { localStorage.setItem('mtw_planes_visibles', JSON.stringify(v)); } catch(e) {}
+        _aplicarPlanesVisibles(v);
+    });
+    window.guardarPlanVisible = function(plan, visible) {
+        db.ref('configuracion/sistema/planesVisibles/' + plan).set(!!visible)
+            .then(() => showToast(visible ? '✅ Plan visible en la página de inicio' : '🙈 Plan oculto en la página de inicio', visible ? '#059669' : '#6b7280'))
+            .catch(err => {
+                showToast('No se pudo guardar: ' + (err && err.message ? err.message : err), '#dc2626');
+                const chk = document.getElementById('chkPlanVisible' + plan.charAt(0).toUpperCase() + plan.slice(1));
+                if (chk) chk.checked = !visible;
+            });
+    };
 
     // ── LÍMITES POR PLAN (DISPOSITIVOS Y FOTOS) EN TIEMPO REAL ──────────────
     // window.LIMITES es lo que consultan _maxDispositivosPorPlan() y
@@ -8619,6 +8667,32 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         try { localStorage.setItem('mtw_guia_bateria_vista', '1'); } catch(e) {}
     }
 
+    // Algunos navegadores de Android (sobre todo con VPN o bloqueadores activos)
+    // dicen navigator.onLine = false aunque haya internet. Firebase Installations
+    // se niega a registrar el dispositivo en ese caso (installations/app-offline).
+    // Si la base de datos de Firebase SÍ está conectada, reintentamos una vez
+    // dejando que el SDK vea el navegador como conectado, y lo restauramos al terminar.
+    async function _pushObtenerToken(messaging, reg) {
+        const opts = { vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg };
+        try {
+            return await messaging.getToken(opts);
+        } catch (e) {
+            const msg = (e && e.message) ? e.message : '';
+            const esOffline = (e && e.code === 'installations/app-offline') || /app-offline/i.test(msg);
+            if (!esOffline || window._fbConectado !== true) throw e;
+            const original = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+            try {
+                Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true });
+                return await messaging.getToken(opts);
+            } finally {
+                try {
+                    if (original) Object.defineProperty(navigator, 'onLine', original);
+                    else delete navigator.onLine;
+                } catch (e2) {}
+            }
+        }
+    }
+
     async function activarAvisosPush(silencioso = false) {
         const _diag = (msg, color) => {
             if (silencioso) return; // en modo automático no molestamos
@@ -8653,9 +8727,22 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
             let token;
             try {
-                token = await messaging.getToken({ vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
+                if (!silencioso) { try { showToast('⏳ Registrando avisos…', '#2563eb'); } catch(e) {} }
+                token = await Promise.race([
+                    _pushObtenerToken(messaging, reg),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('push-timeout')), 20000))
+                ]);
             } catch (eTok) {
-                _diag('🛑 DIAG getToken falló: ' + (eTok && eTok.message ? eTok.message : eTok)); return;
+                const _msgTok = (eTok && eTok.message) ? eTok.message : String(eTok);
+                const _red = ' [red: ' + (navigator.onLine ? 'ok' : 'sin conexión') + ' · firebase: ' + (window._fbConectado ? 'ok' : 'sin conexión') + ']';
+                if (/push-timeout/i.test(_msgTok)) {
+                    _diag('🛑 El servidor de avisos de Google no responde (pasaron 20 segundos). Casi seguro lo bloquea una VPN, un bloqueador de anuncios o el DNS privado: desactivalo un momento y probá de nuevo.' + _red);
+                } else if (/app-offline/i.test(_msgTok)) {
+                    _diag('🛑 No se pudo conectar con el servidor de avisos de Google. Si usás VPN, bloqueador de anuncios o DNS privado, desactivalo un momento y probá de nuevo.' + _red);
+                } else {
+                    _diag('🛑 DIAG getToken falló: ' + _msgTok);
+                }
+                return;
             }
             if (!token) { _diag('🛑 DIAG: getToken devolvió vacío (sin error). Suele ser el navegador bloqueando el push de Google'); return; }
 
@@ -17696,6 +17783,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // Señal REAL y autoritativa de Firebase
         try {
             firebase.database().ref('.info/connected').on('value', snap => {
+                window._fbConectado = (snap.val() === true);
                 setOnline(snap.val() === true);
             });
         } catch (e) {}
