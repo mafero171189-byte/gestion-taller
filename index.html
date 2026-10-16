@@ -3077,6 +3077,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     <button onclick="forzarSalida()" class="btn" style="background: var(--gray-100); color: var(--gray-600);">
      <span id="expulsionBtnTexto">ENTENDIDO</span>
     </button>
+    <div id="expulsionBorrarCuenta" style="display:none; margin-top:12px;">
+     <button type="button" onclick="abrirEliminarCuenta()" style="background:none; border:none; color:var(--gray-600); font-size:12px; text-decoration:underline; cursor:pointer; padding:4px;">Eliminar mi cuenta y todos mis datos</button>
+    </div>
    </div>
   </div>
   <div id="login-overlay">
@@ -3560,7 +3563,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
      </div>
     </div>
    </div>
-   <div id="eliminarCuentaModal" class="modal-overlay" style="z-index: 13000;">
+   <div id="eliminarCuentaModal" class="modal-overlay" style="z-index: 16000;">
     <div class="modal-box">
      <p style="margin:0 0 6px; font-size:18px; font-weight:900; color:#b91c1c;">🗑️ Eliminar mi cuenta</p>
      <p style="margin:0; font-size:13px; color:var(--gray-600);">Se borra <b>todo</b> de forma definitiva:</p>
@@ -6170,7 +6173,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // dejarlo "colgado" en una app sin datos sincronizados).
     let _pagoAbiertoDesdeExpulsion = false;
 
-    function mostrarExpulsion(msg, conOpcionPago) {
+    function mostrarExpulsion(msg, conOpcionPago, conBorrarCuenta) {
         if (dbRef) dbRef.off();
         if (window._syncListenersStock) { try { window._syncListenersStock.forEach(fn => fn()); } catch(e) {} }
         if (window._syncListenersPres)  { try { window._syncListenersPres.forEach(fn => fn());  } catch(e) {} }
@@ -6197,6 +6200,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             btnTexto.innerText = 'ENTENDIDO';
         }
 
+        // Con la licencia vencida o suspendida el usuario queda encerrado en
+        // este modal: si la única puerta a "Eliminar mi cuenta" fuera
+        // Configuración, no habría forma de darse de baja. Por eso la opción
+        // aparece acá también (no en la expulsión por otro dispositivo, que
+        // se resuelve volviendo a entrar).
+        const cajaBorrar = document.getElementById('expulsionBorrarCuenta');
+        if (cajaBorrar) cajaBorrar.style.display = (conOpcionPago || conBorrarCuenta) ? 'block' : 'none';
+
         document.getElementById('expulsadoModal').style.display = 'flex';
     }
 
@@ -6212,7 +6223,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // vencida no expulsaba nunca.
         const tipoLic = dataUser.tipoLicencia || 'prueba';
         if (dataUser.estado === 'suspendido') {
-            mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.");
+            mostrarExpulsion("Tu licencia ha sido suspendida temporalmente.\nComunícate con el administrador.", false, true);
         }
         else if (tipoLic === 'prueba' && dataUser.fechaExpiracion && dataUser.fechaExpiracion < Date.now()) {
             _licenciaVencidaYaMostrada = true;
