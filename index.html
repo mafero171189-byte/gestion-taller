@@ -9054,8 +9054,65 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
     }
 
+    // Crea (o completa) el alta del usuario en usuarios_registrados.
+    // Se llama ANTES que cualquier otra escritura sobre ese nodo: si otro
+    // campo (ultimoIngreso, authEmail, sesiones) creaba el nodo primero, el
+    // viejo chequeo de "¿existe?" daba true y la cuenta quedaba SIN estado,
+    // sin tipoLicencia y sin fechaExpiracion — sin vencimiento ni días
+    // restantes, y sin figurar dada de alta en el panel de Licencias.
+    // Usa update() (no set()) para no pisar sesiones/ultimoIngreso/authEmail.
+    function _asegurarAlta(u) {
+        return db.ref('usuarios_registrados/' + u).once('value').then(snapCheck => {
+            const d = snapCheck.val() || {};
+            if (d.fechaExpiracion && d.estado && d.tipoLicencia) return null;
+            return db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
+                const solData = snapSol.val() || {};
+                const tipo = d.tipoLicencia || solData.tipoLicencia || 'prueba';
+                const expBase = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
+                const pExp = (tipo === 'prueba') ? _expiracionPruebaHeredada(u, expBase) : Promise.resolve(expBase);
+                return pExp.then(expiracion => {
+                    const alta = {
+                        whatsapp: u,
+                        fechaAlta: d.fechaAlta || solData.fecha || _fmtFechaHora(new Date()),
+                        estado: d.estado || 'activo',
+                        tipoLicencia: tipo,
+                        fechaExpiracion: d.fechaExpiracion || expiracion
+                    };
+                    if (!snapCheck.exists()) alta.tokenSesion = "";
+                    return db.ref('usuarios_registrados/' + u).update(alta).then(() => {
+                        db.ref('solicitudes_registro/' + u).update({ estado: 'activado' }).catch(() => {});
+                    }).catch(() => {});
+                });
+            });
+        }).catch(() => {});
+    }
+
+    // Al entrar al sistema la app SIEMPRE tiene que abrir en GESTIÓN.
+    // (Hubo casos de cuentas nuevas que arrancaban en Contabilidad.)
+    // Se re-asegura unas pocas veces durante los primeros segundos, pero se
+    // cancela apenas el usuario toca algo, para no sacarlo de donde fue él.
+    function _forzarGestionInicial() {
+        var tocado = false;
+        var marcar = function() { tocado = true; };
+        document.addEventListener('click', marcar, true);
+        document.addEventListener('keydown', marcar, true);
+        var ir = function() {
+            if (tocado) return;
+            var g = document.getElementById('page-gestion');
+            if (g && g.style.display !== 'block' && typeof showPage === 'function') showPage('gestion');
+        };
+        setTimeout(ir, 50);
+        setTimeout(ir, 1200);
+        setTimeout(function() {
+            ir();
+            document.removeEventListener('click', marcar, true);
+            document.removeEventListener('keydown', marcar, true);
+        }, 3000);
+    }
+
     function grantAccess(u, isAdmin, isStored = false) {
         currentUser = u;
+        _forzarGestionInicial();
         // Marca para el pintado temprano del caché: guardamos el currentUser
         // EXACTO (admin incluido, que no usa st_login_wa). Así el arranque en
         // frío sabe bajo qué clave st_cache_ordenes_<u> está el caché.
@@ -9095,7 +9152,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // ─────────────────────────────────────────────────────────────────
 
         // Registrar último ingreso: máximo 1 escritura por día por dispositivo
+        // (después del alta: escribir antes crearía el nodo sin licencia)
         if (!isAdmin) {
+          _asegurarAlta(u).then(() => {
             const claveLocal = 'st_ultimo_ingreso_' + u;
             const ultimaEscritura = parseInt(localStorage.getItem(claveLocal) || '0');
             if (Date.now() - ultimaEscritura > 24 * 60 * 60 * 1000) {
@@ -9141,6 +9200,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     db.ref('usuarios_registrados/' + u + '/authEmail').set(emailActualAuth).catch(() => {});
                 }
             }).catch(() => {});
+          });
         }
         
         // --- NUEVO: Cargar órdenes del caché para que aparezcan al INSTANTE ---
@@ -9318,25 +9378,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         });
 
         if (!isAdmin) {
-            db.ref('usuarios_registrados/' + u).once('value').then(snapCheck => {
-                if (!snapCheck.exists()) {
-                    db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
-                        const solData = snapSol.val() || {};
-                        const expBase = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
-                        return _expiracionPruebaHeredada(u, expBase).then(expiracion => ({ solData, expiracion }));
-                    }).then(({ solData, expiracion }) => {
-                        db.ref('usuarios_registrados/' + u).set({
-                            whatsapp: u,
-                            fechaAlta: solData.fecha || _fmtFechaHora(new Date()),
-                            estado: 'activo',
-                            tipoLicencia: 'prueba',
-                            fechaExpiracion: expiracion,
-                            tokenSesion: ""
-                        }).catch(() => {});
-                        db.ref('solicitudes_registro/' + u).update({ estado: 'activado' }).catch(() => {});
-                    });
-                }
-            }).catch(() => {});
+            // Red de seguridad: si el alta de arriba no llegó a escribirse
+            // (sin conexión, carrera con las reglas), se vuelve a intentar.
+            _asegurarAlta(u);
 
             db.ref('usuarios_registrados/' + u).on('value', snap => {
                 const dataUser = snap.val();
@@ -9984,14 +10028,18 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             'fcm_tokens/' + wa,
             'error_logs/' + wa
         ];
-        try {
-            await Promise.all(principales.map(r => db.ref(r).remove()));
-        } catch (e) {
-            ocultarLoader(); btn.disabled = false;
-            alert('❌ No se pudieron borrar todos tus datos: ' + (e && e.message ? e.message : e) + '\n\nTu cuenta NO fue eliminada. Probá de nuevo o escribile a soporte.');
-            return;
-        }
-        // Estos nodos auxiliares pueden no existir o no tener permiso: no frenan el borrado.
+        // Borrado tolerante a fallos: si una rama no se puede borrar (por
+        // ejemplo las reglas de Firebase bloquean escrituras cuando la licencia
+        // está vencida o suspendida), NO se frena la eliminación de la cuenta.
+        // El usuario tiene derecho a darse de baja aunque su licencia expiró;
+        // lo que no se pudo borrar se informa al final para que soporte lo
+        // termine a mano.
+        const fallaron = [];
+        const borrarRama = async (r) => {
+            try { await db.ref(r).remove(); }
+            catch (e) { fallaron.push(r.split('/')[0] + ' (' + ((e && (e.code || e.message)) || 'error') + ')'); }
+        };
+        for (const r of principales) { await borrarRama(r); }
         await Promise.all(secundarios.map(r => db.ref(r).remove().catch(() => {})));
         // IMPORTANTE: el registro del usuario y la solicitud de registro se borran AL FINAL y en
         // este orden. Las reglas de Firebase identifican al dueño con el email guardado en
@@ -10000,12 +10048,11 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         try {
             await db.ref('usuarios_registrados/' + wa).remove();
         } catch (e) {
-            ocultarLoader(); btn.disabled = false;
-            alert('❌ No se pudo borrar el registro de tu cuenta: ' + (e && e.message ? e.message : e) + '\n\nEscribile a soporte para terminar la eliminación.');
-            return;
+            fallaron.push('usuarios_registrados (' + ((e && (e.code || e.message)) || 'error') + ')');
         }
         await db.ref('solicitudes_registro/' + wa).remove().catch(() => {});
-        try { await user.delete(); } catch (e) { /* si falla, igual ya no quedan datos */ }
+        let authBorrada = true;
+        try { await user.delete(); } catch (e) { authBorrada = false; }
 
         ocultarLoader();
         try {
@@ -10018,7 +10065,13 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             sessionStorage.removeItem('st_landing_skipped');
         } catch (e) {}
         try { await firebase.auth().signOut(); } catch (e) {}
-        alert('✅ Tu cuenta y todos tus datos fueron eliminados.');
+        if (fallaron.length === 0 && authBorrada) {
+            alert('✅ Tu cuenta y todos tus datos fueron eliminados.');
+        } else if (authBorrada) {
+            alert('✅ Tu cuenta de acceso fue eliminada y ya no vas a poder ingresar.\n\n⚠️ Quedaron datos que el servidor no dejó borrar (suele pasar si la licencia está vencida o suspendida):\n• ' + fallaron.join('\n• ') + '\n\nEscribile a soporte para que los borre y listo.');
+        } else {
+            alert('⚠️ Se borraron tus datos pero no se pudo eliminar la cuenta de acceso.\n\nCerrá sesión y escribile a soporte para terminar la baja.');
+        }
         window.location.href = window.location.origin + window.location.pathname;
     }
     
