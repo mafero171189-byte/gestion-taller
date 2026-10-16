@@ -7,12 +7,13 @@
 <title>Generar licencias · Virus Killer Mobile</title>
 <style>
   :root { color-scheme: dark; }
-  * { -webkit-tap-highlight-color: transparent; }
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { max-width: 100%; overflow-x: hidden; }
   body { margin:0; background:#06122a; color:#e8ecf1; font-family: system-ui, Segoe UI, Arial, sans-serif; }
-  .wrap { max-width: 680px; margin: 0 auto; padding: 16px; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 16px; width: 100%; }
   h1 { font-size: 20px; margin: 8px 0 14px; color:#fff; }
   h2 { font-size: 15px; margin: 22px 0 10px; color:#9fc2e8; }
-  .card { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:12px; padding:14px; }
+  .card { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:12px; padding:14px; width:100%; min-width:0; }
   label { display:block; font-size:12px; color:#9fc2e8; margin:10px 0 4px; }
   input { width:100%; box-sizing:border-box; padding:11px; border-radius:8px; border:1px solid #38455a; background:#0a1630; color:#fff; font-size:16px; }
   input:focus { outline:2px solid #2f7fd6; outline-offset:0; }
@@ -27,20 +28,24 @@
   .chip { width:auto; margin:0; padding:7px 12px; font-size:13px; font-weight:600; background:#16315c; border:1px solid #1e4d8c; border-radius:16px; }
   .chip.on { background:#1e4d8c; border-color:#4a8fd8; }
   textarea { width:100%; box-sizing:border-box; min-height:110px; margin-top:10px; padding:10px; border-radius:8px; border:1px solid #38455a; background:#0a1630; color:#4fc77d; font-family: Consolas, monospace; font-size:12px; word-break: break-all; }
-  .msg { margin-top:10px; font-size:14px; min-height:18px; }
+  .msg { margin-top:10px; font-size:14px; min-height:18px; overflow-wrap:anywhere; }
   .err { color:#ff6b7f; } .ok { color:#4fc77d; } .warn { color:#ffc857; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid #1c2c4d; vertical-align:top; }
-  th { color:#9fc2e8; font-weight:600; }
   .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
   .vig { background:#1e9e53; color:#fff; } .venc { background:#9c2b3d; color:#fff; } .pronto { background:#b8860b; color:#fff; }
   .small { font-size:12px; color:#8fa3bf; }
-  .copy { width:auto; padding:6px 10px; margin:0 4px 4px 0; font-size:12px; }
-  .acts { white-space:nowrap; }
-  .filters { display:flex; gap:6px; margin-top:10px; }
-  details { margin-top:14px; }
-  summary { font-size:12px; color:#8fa3bf; cursor:pointer; }
-  @media (max-width: 480px) { th:nth-child(4), td:nth-child(4) { display:none; } }
+  .filters { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+
+  /* Historial en formato tarjeta (sin tabla, no se desborda) */
+  .item { padding:12px 0; border-bottom:1px solid #1c2c4d; min-width:0; }
+  .item:last-child { border-bottom:0; }
+  .item-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .item-top > div { min-width:0; }
+  .item-name { font-weight:700; font-size:15px; overflow-wrap:anywhere; }
+  .item-right { text-align:right; flex:0 0 auto; }
+  .item-fp { font-size:12px; color:#8fa3bf; margin-top:6px; word-break:break-all; font-family: Consolas, monospace; }
+  .item-meta { font-size:12px; color:#8fa3bf; margin-top:4px; }
+  .item-acts { display:flex; gap:6px; margin-top:10px; }
+  .item-acts button { flex:1; min-width:0; width:auto; margin:0; padding:9px 4px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -252,22 +257,28 @@ function renderHistory() {
   const list = filtered();
   if (!list.length) { $("hist").innerHTML = '<div class="small">Sin resultados.</div>'; $("more").style.display = "none"; return; }
   const vis = list.slice(0, shown);
-  $("hist").innerHTML = "<table><tr><th>Cliente</th><th>Equipo</th><th>Vence</th><th>Duración</th><th></th></tr>" +
-    vis.map((x) => {
+  $("hist").innerHTML = vis.map((x) => {
       const e = estado(x);
       const i = rowsAll.indexOf(x);
-      return `<tr>
-        <td>${esc(x.cliente)}<div class="small">${fmt(x.emitida)}</div></td>
-        <td class="small">${esc(x.fingerprint)}</td>
-        <td>${fmt(x.vence)} <span class="tag ${e.cls}">${e.txt}</span><div class="small">${esc(e.sub)}</div></td>
-        <td>${esc(x.duracion)}</td>
-        <td class="acts">
-          <button type="button" class="sec copy" data-a="copy" data-i="${i}">Copiar</button>
-          <button type="button" class="wa copy" data-a="wa" data-i="${i}">WhatsApp</button>
-          <button type="button" class="sec copy" data-a="renew" data-i="${i}">Renovar</button>
-        </td>
-      </tr>`;
-    }).join("") + "</table>" +
+      return `<div class="item">
+        <div class="item-top">
+          <div>
+            <div class="item-name">${esc(x.cliente)}</div>
+            <div class="item-meta">Emitida ${fmt(x.emitida)} · ${esc(x.duracion)}</div>
+          </div>
+          <div class="item-right">
+            <div>${fmt(x.vence)} <span class="tag ${e.cls}">${e.txt}</span></div>
+            <div class="item-meta">${esc(e.sub)}</div>
+          </div>
+        </div>
+        <div class="item-fp">${esc(x.fingerprint)}</div>
+        <div class="item-acts">
+          <button type="button" class="sec" data-a="copy" data-i="${i}">Copiar</button>
+          <button type="button" class="wa" data-a="wa" data-i="${i}">WhatsApp</button>
+          <button type="button" class="sec" data-a="renew" data-i="${i}">Renovar</button>
+        </div>
+      </div>`;
+    }).join("") +
     `<div class="small" style="margin-top:8px">Mostrando ${vis.length} de ${list.length}</div>`;
   $("more").style.display = list.length > shown ? "block" : "none";
 }
