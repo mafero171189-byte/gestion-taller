@@ -2328,6 +2328,10 @@ function showApp() {
 .pf-card-title { display: flex; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 800; color: var(--gray-900); margin: 0 0 12px; }
 .pf-card-title small { font-weight: 600; font-size: 11px; color: var(--gray-500); }
 .pf-card label { margin-top: 2px; }
+.cf-collapse-head { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+.cf-collapse-head .cf-chev { margin-left: auto; font-size: 16px; line-height: 1; color: var(--gray-500); transition: transform .2s; }
+.cf-collapse-head[aria-expanded="true"] .cf-chev { transform: rotate(180deg); }
+.cf-collapse-head[aria-expanded="false"] { margin-bottom: 0; }
 .pf-card input, .pf-card select, .pf-card textarea { margin-bottom: 10px; background: white; color: var(--gray-700); }
 .pf-note { font-size: 11px; color: var(--gray-500); margin: -4px 0 10px; line-height: 1.4; }
 .pf-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -3480,8 +3484,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
       <!-- ACCESO VIRUS KILLER (solo admin) -->
       <div class="pf-card" id="cfVkCard" style="display:none;">
-       <div class="pf-card-title">🛡️ Acceso Virus Killer <small>solo admin</small></div>
-       <p class="pf-note" style="margin-top:-6px;">Usuario y clave para entrar a la página de licencias de Virus Killer.</p>
+       <div class="pf-card-title cf-collapse-head" id="cfVkHead" role="button" tabindex="0" aria-expanded="false" aria-controls="cfVkBody" onclick="toggleVkCard()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleVkCard();}">🛡️ Acceso Virus Killer <small>solo admin</small><span class="cf-chev" aria-hidden="true">▾</span></div>
+       <div id="cfVkBody" style="display:none; margin-top:12px;">
+       <p class="pf-note" style="margin-top:0;">Usuario y clave para entrar a la página de licencias de Virus Killer.</p>
        <label>Usuario actual</label>
        <input type="text" id="vkUserActual" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-bottom:8px;">
        <label>Clave actual</label>
@@ -3502,6 +3507,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <button type="button" onclick="toggleVkClave('vkPassRepetir', this)" aria-label="Mostrar clave" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:4px 8px; background:none; border:none; font-size:16px; cursor:pointer;">👁</button>
        </div>
        <button type="button" class="cf-btn-save" onclick="guardarCredencialesVK()">💾 CAMBIAR ACCESO</button>
+       </div>
       </div>
 
       <!-- CERRAR SESIÓN -->
@@ -9752,6 +9758,16 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         btn.setAttribute('aria-label', ver ? 'Ocultar clave' : 'Mostrar clave');
     }
 
+    // Expande o contrae la tarjeta de Acceso Virus Killer (viene contraída por defecto).
+    function toggleVkCard(abrir) {
+        const head = document.getElementById('cfVkHead');
+        const body = document.getElementById('cfVkBody');
+        if (!head || !body) return;
+        const open = (typeof abrir === 'boolean') ? abrir : head.getAttribute('aria-expanded') !== 'true';
+        head.setAttribute('aria-expanded', open ? 'true' : 'false');
+        body.style.display = open ? 'block' : 'none';
+    }
+
     // Cambia usuario y clave del acceso de Virus Killer (solo admin). Pide la clave actual.
     async function guardarCredencialesVK() {
         const cu = document.getElementById('vkUserActual').value.trim();
@@ -9784,6 +9800,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     function abrirConfiguracion() {
         const cardVk = document.getElementById('cfVkCard');
         if (cardVk) cardVk.style.display = (typeof isUserAdmin !== 'undefined' && isUserAdmin) ? 'block' : 'none';
+        toggleVkCard(false);
         const inputEmail = document.getElementById('confEmailRecuperacion');
         const notaEmail = document.getElementById('notaEmailRecuperacion');
         document.getElementById('newPass').value = '';
