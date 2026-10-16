@@ -3,7 +3,7 @@
 const fs = require('fs'), path = require('path');
 const { minify } = require('terser');
 const OUT = 'dist';
-const IGNORE = new Set(['node_modules', '.git', OUT, 'build.js', 'package.json', 'package-lock.json', '.github', 'README.md']);
+const IGNORE = new Set(['node_modules', '.git', OUT, 'build.js', 'package.json', 'package-lock.json', '.github', 'README.md', 'functions', 'licencias-schema.sql']);
 
 function copy(src, dst) {
   fs.mkdirSync(dst, { recursive: true });
