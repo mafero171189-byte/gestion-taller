@@ -8095,22 +8095,37 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // terminaba su prueba (el número va cifrado con SHA-256, no se guarda en
     // claro). Si esa persona vuelve a registrarse con el mismo número, hereda
     // los días que le quedaban en vez de arrancar otra prueba completa.
-    function _hashCuenta(wa) {
-        return crypto.subtle.digest('SHA-256', new TextEncoder().encode('mtw-trial:' + wa)).then(buf =>
+    function _hashTexto(t) {
+        return crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)).then(buf =>
             Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 40));
     }
+    function _hashCuenta(wa) { return _hashTexto('mtw-trial:' + wa); }
+    function _hashMail(email) { return _hashTexto('mtw-trial-mail:' + String(email || '').trim().toLowerCase()); }
+    function _emailRealActual() {
+        const e = (firebase.auth().currentUser && firebase.auth().currentUser.email) || '';
+        return (e && !e.toLowerCase().endsWith('@mitallerweb.com')) ? e.toLowerCase() : '';
+    }
+
+    // Busca si este número O este email ya tuvieron una cuenta eliminada, y
+    // devuelve la fecha de fin de prueba más chica entre la nueva y la vieja.
+    // ANTES había un "piso" de 1 minuto a futuro (Math.max(..., now+60000)):
+    // si la prueba anterior ya estaba vencida, la cuenta nueva nacía con un
+    // minuto de vida y mostraba "1 día" restante — o sea, borrar y volver a
+    // registrarse servía para volver a entrar. Las reglas no exigen fecha
+    // futura, así que ahora la cuenta nueva nace VENCIDA si la vieja lo estaba
+    // (entra directo a "elegí un plan").
     function _expiracionPruebaHeredada(wa, base) {
-        return _hashCuenta(wa)
+        const leer = (pHash) => pHash
             .then(h => db.ref('cuentas_eliminadas/' + h).once('value'))
-            .then(snap => {
-                const v = snap.val();
-                if (v && typeof v.trialFin === 'number') {
-                    // Mínimo 1 minuto a futuro para no chocar con reglas que pidan fecha futura.
-                    return Math.max(Math.min(base, v.trialFin), Date.now() + 60000);
-                }
-                return base;
-            })
-            .catch(() => base);
+            .then(snap => { const v = snap.val(); return (v && typeof v.trialFin === 'number') ? v.trialFin : null; })
+            .catch(() => null);
+        const lecturas = [leer(_hashCuenta(wa))];
+        const mail = _emailRealActual();
+        if (mail) lecturas.push(leer(_hashMail(mail)));
+        return Promise.all(lecturas).then(fins => {
+            const previos = fins.filter(f => typeof f === 'number');
+            return previos.length ? Math.min(base, ...previos) : base;
+        });
     }
 
     // ====== REGISTRO AUTOMÁTICO OPTIMIZADO ======
@@ -10121,12 +10136,25 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const wa = currentUser;
         // Registro mínimo cifrado: evita que borrar la cuenta reinicie la prueba gratis.
         // Si las reglas de Firebase todavía no lo permiten, no frena la eliminación.
+        // Se guarda por NÚMERO y por EMAIL (cifrados), para que tampoco sirva
+        // volver con el mismo email y otro número. Si ya existía un registro
+        // de una baja anterior, se conserva la fecha MÁS CHICA de las dos.
         try {
             const snapU = await db.ref('usuarios_registrados/' + wa).once('value');
             const u = snapU.val() || {};
-            const trialFin = ((u.tipoLicencia || 'prueba') === 'prueba' && u.fechaExpiracion) ? u.fechaExpiracion : Date.now();
-            const h = await _hashCuenta(wa);
-            await db.ref('cuentas_eliminadas/' + h).set({ trialFin: trialFin, ts: Date.now() });
+            let trialFin = ((u.tipoLicencia || 'prueba') === 'prueba' && u.fechaExpiracion) ? u.fechaExpiracion : Date.now();
+            trialFin = Math.min(trialFin, Date.now() + 360 * 86400000); // tope de las reglas: 365 días
+            const hashes = [await _hashCuenta(wa)];
+            const mail = _emailRealActual();
+            if (mail) hashes.push(await _hashMail(mail));
+            for (const h of hashes) {
+                try {
+                    const ref = db.ref('cuentas_eliminadas/' + h);
+                    const prev = (await ref.once('value')).val();
+                    if (prev && typeof prev.trialFin === 'number' && prev.trialFin <= trialFin) continue;
+                    await ref.set({ trialFin: trialFin, ts: Date.now() });
+                } catch (e) { console.warn('cuentas_eliminadas:', e && e.message); }
+            }
         } catch (e) { console.warn('No se pudo guardar el registro de cuenta eliminada:', e && e.message); }
         // Dejar de escuchar cambios para que no reaccionen al borrado.
         try { if (dbRef) dbRef.off(); } catch (e) {}
