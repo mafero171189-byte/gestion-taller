@@ -5143,6 +5143,68 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // de cuando solo era Mercado Pago, pero es el mismo Worker para los dos.
     const WORKER_MP_URL = 'https://billowing-star-385d.mafero171189.workers.dev';
 
+    // ── PAYPAL: captura del pago aunque el cliente vuelva SIN sesión ──────
+    // PayPal no usa webhook: si nadie llama a /capturar-pago-paypal, la orden
+    // vence sola y el pago nunca activa la licencia. Antes esto vivía dentro
+    // de grantAccess, así que si al volver de PayPal no había sesión abierta
+    // (persistencia de sesión, otra pestaña, la PWA cerrada) el cliente
+    // pagaba y no se activaba nada. Ahora el orderId se guarda y se reintenta
+    // en cada arranque hasta confirmarlo (máximo 5 intentos).
+    let _paypalCapturando = false;
+    function _ppPendiente() {
+        try { return JSON.parse(localStorage.getItem('mtw_paypal_pending') || 'null'); } catch(e) { return null; }
+    }
+    function _ppGuardar(v) {
+        try { v ? localStorage.setItem('mtw_paypal_pending', JSON.stringify(v)) : localStorage.removeItem('mtw_paypal_pending'); } catch(e) {}
+    }
+    function _capturarPaypalPendiente() {
+        const params = new URLSearchParams(window.location.search);
+        const cleanUrl = window.location.pathname;
+        const avisar = (m, c) => { if (typeof showToast === 'function') showToast(m, c); };
+
+        if (params.get('paypal_cancel')) {
+            window.history.replaceState({}, document.title, cleanUrl);
+            _ppGuardar(null);
+            avisar('El pago con PayPal fue cancelado.', '#f59e0b');
+            return;
+        }
+
+        let pend = _ppPendiente();
+        if (params.get('paypal_return') && params.get('token')) {
+            pend = { id: params.get('token'), intentos: 0 };
+            _ppGuardar(pend);
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+        if (!pend || !pend.id || _paypalCapturando) return;
+        if ((pend.intentos || 0) >= 5) { _ppGuardar(null); return; }
+
+        _paypalCapturando = true;
+        pend.intentos = (pend.intentos || 0) + 1;
+        _ppGuardar(pend);
+        avisar('⏳ Confirmando tu pago con PayPal...', '#f59e0b');
+        fetch(WORKER_MP_URL + '/capturar-pago-paypal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: pend.id })
+        })
+            .then(r => r.json())
+            .then(data => {
+                _paypalCapturando = false;
+                if (data && data.ok) {
+                    _ppGuardar(null);
+                    avisar('✅ ¡Pago confirmado! Tu licencia ya está activa.', '#059669');
+                } else {
+                    avisar('⚠️ El pago no se pudo confirmar (' + ((data && (data.status || data.error)) || 'desconocido') + '). Escribinos por soporte si ya pagaste.', '#dc2626');
+                }
+            })
+            .catch(() => {
+                _paypalCapturando = false;
+                avisar('⚠️ No pudimos confirmar el pago automáticamente. Lo reintentamos al volver a abrir la app.', '#dc2626');
+            });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _capturarPaypalPendiente);
+    else setTimeout(_capturarPaypalPendiente, 0);
+
     // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
@@ -9269,38 +9331,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // el pago activamente al volver (?paypal_return=1&token=<ORDER_ID>,
         // el token lo agrega PayPal solo). El Worker valida y activa la
         // licencia en el mismo paso, ver /capturar-pago-paypal.
-        (function _chequearVueltaPaypal() {
-            const params = new URLSearchParams(window.location.search);
-            const cleanUrl = window.location.pathname;
+        // La captura de PayPal ahora corre al arrancar la app (no depende
+        // de que haya sesión iniciada). Acá solo se reintenta si quedó algo.
+        _capturarPaypalPendiente();
 
-            if (params.get('paypal_cancel')) {
-                window.history.replaceState({}, document.title, cleanUrl);
-                showToast('El pago con PayPal fue cancelado.', '#f59e0b');
-                return;
-            }
-
-            const orderId = params.get('token');
-            if (!params.get('paypal_return') || !orderId) return;
-            window.history.replaceState({}, document.title, cleanUrl);
-
-            showToast('⏳ Confirmando tu pago con PayPal...', '#f59e0b');
-            fetch(WORKER_MP_URL + '/capturar-pago-paypal', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId })
-            })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.ok) {
-                        showToast('✅ ¡Pago confirmado! Tu licencia ya está activa.', '#059669');
-                    } else {
-                        showToast('⚠️ El pago no se pudo confirmar (' + (data.status || data.error || 'desconocido') + '). Escribinos por soporte si ya pagaste.', '#dc2626');
-                    }
-                })
-                .catch(() => {
-                    showToast('⚠️ No pudimos confirmar el pago automáticamente. Escribinos por soporte con el comprobante.', '#dc2626');
-                });
-        })();
 
         // Lógica de Sistema (Bloqueo y Anuncios) - EN VIVO
         db.ref('configuracion/sistema').on('value', snap => {
@@ -10026,7 +10060,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             'seguimiento_publico/' + wa,
             'perfil_publico/' + wa,
             'fcm_tokens/' + wa,
-            'error_logs/' + wa
+            'error_logs/' + wa,
+            'sync_ts/' + wa,
+            'solicitudes_reset/' + wa
         ];
         // Borrado tolerante a fallos: si una rama no se puede borrar (por
         // ejemplo las reglas de Firebase bloquean escrituras cuando la licencia
