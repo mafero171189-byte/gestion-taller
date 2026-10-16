@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="index, follow">
+<title>Descargar Virus Killer Mobile · Mi Taller Web</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#06122a; color:#e8ecf1; font-family: system-ui, Segoe UI, Arial, sans-serif; line-height:1.55; }
+  a { color:#7cc4ff; }
+  .top { display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid #15294d; }
+  .top .brand { font-weight:800; text-decoration:none; color:#fff; }
+  .top nav a { margin-left:16px; text-decoration:none; color:#9fc2e8; font-weight:600; font-size:14px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 22px; }
+  h1 { font-size: 30px; margin: 40px 0 6px; }
+  .sub { color:#b7c6da; margin: 0 0 24px; }
+  .card { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:14px; padding:22px; margin-bottom:18px; }
+  .card h2 { font-size:18px; margin:0 0 10px; color:#fff; }
+  .btn { display:inline-block; padding:13px 22px; border-radius:10px; font-weight:800; text-decoration:none; margin:4px 6px 4px 0; border:0; cursor:pointer; font-size:15px; }
+  .btn-main { background:#1e9e53; color:#fff; }
+  .btn-sec { background:#1e4d8c; color:#fff; }
+  .btn[aria-disabled="true"] { background:#2a3a55; color:#8fa3bf; pointer-events:none; }
+  .meta { color:#8fa3bf; font-size:13px; margin-top:6px; }
+  .note { background:#16232f; border-left:3px solid #f0a93b; padding:10px 14px; border-radius:8px; color:#e8d9b5; font-size:14px; margin-top:12px; }
+  ol, ul { padding-left:20px; color:#cfdcec; }
+  li { margin-bottom:8px; }
+  .foot { text-align:center; color:#6b7f9e; font-size:13px; padding: 26px 0 40px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="/">📱 Mi Taller Web</a>
+  <nav>
+    <a href="/virus-killer.html">Virus Killer</a>
+    <a href="/descargar.html">Descargar</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <h1>Descargar Virus Killer Mobile</h1>
+  <p class="sub">Programa para Windows que limpia malware y publicidad de tu Android desde la PC.</p>
+
+  <div class="card">
+    <h2>Programa para Windows</h2>
+    <a id="btnDescargar" class="btn btn-main" href="#" aria-disabled="true">⬇️ Descargar</a>
+    <div class="meta" id="metaDescarga">Cargando…</div>
+    <div class="note">Como el programa todavía no tiene firma digital, Windows puede mostrar un aviso azul la primera vez. Tocá <b>Más información</b> y después <b>Ejecutar de todas formas</b>.</div>
+  </div>
+
+  <div class="card">
+    <h2>Guía de uso</h2>
+    <p style="margin:0 0 10px; color:#cfdcec;">Paso a paso para conectar el celular, escanear y limpiar.</p>
+    <a id="btnGuia" class="btn btn-sec" href="#" aria-disabled="true">📄 Descargar guía (PDF)</a>
+  </div>
+
+  <div class="card">
+    <h2>Antes de empezar</h2>
+    <ul>
+      <li>PC con Windows 10 u 11.</li>
+      <li>Cable USB y el celular Android con la <b>Depuración USB</b> activada.</li>
+      <li>Incluye <b>7 días de prueba gratis</b>. Después, se activa con una licencia.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>¿Cómo activo la licencia?</h2>
+    <ol>
+      <li>Abrí el programa y tocá <b>🔑 Licencia</b>.</li>
+      <li>Copiá tu <b>ID de equipo</b> y mandalo por WhatsApp.</li>
+      <li>Te responden con una licencia: pegala en el recuadro y tocá <b>Activar</b>.</li>
+    </ol>
+    <a class="btn btn-sec" href="https://wa.me/5491135654094?text=Hola%2C%20quiero%20la%20licencia%20de%20Virus%20Killer%20Mobile" target="_blank" rel="noopener">💬 Pedir licencia por WhatsApp</a>
+  </div>
+</main>
+
+<footer class="foot">Mi Taller Web · Virus Killer Mobile</footer>
+
+<script>
+(async () => {
+  const meta = document.getElementById('metaDescarga');
+  const btnD = document.getElementById('btnDescargar');
+  const btnG = document.getElementById('btnGuia');
+  try {
+    const r = await fetch('/descargas.json', { cache: 'no-store' });
+    const d = (await r.json()).virus_killer || {};
+    if (d.url) {
+      btnD.href = d.url; btnD.removeAttribute('aria-disabled'); btnD.target = '_blank'; btnD.rel = 'noopener';
+      meta.textContent = `Versión ${d.version || ''} · ${d.tamano || ''}`.replace(/ · $/, '');
+    } else {
+      btnD.textContent = '⏳ Próximamente';
+      meta.textContent = 'La descarga se habilita en breve. Consultá por WhatsApp.';
+    }
+    if (d.guia) { btnG.href = d.guia; btnG.removeAttribute('aria-disabled'); btnG.target = '_blank'; }
+  } catch {
+    meta.textContent = 'No se pudo cargar la descarga. Probá de nuevo en un momento.';
+  }
+})();
+</script>
+</body>
+</html>
