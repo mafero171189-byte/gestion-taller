@@ -74,11 +74,6 @@
       <button id="copy" type="button" class="sec" disabled>Copiar token</button>
       <button id="wa" type="button" class="wa" disabled>Enviar por WhatsApp</button>
     </div>
-    <details>
-      <summary>Clave de administrador (opcional)</summary>
-      <label for="key">Se envía en el header x-admin-key</label>
-      <input id="key" type="password" autocomplete="off" placeholder="Solo si tu Worker la exige">
-    </details>
   </form>
 
   <h2>Historial</h2>
@@ -117,14 +112,10 @@ const store = {
   get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
-$("key").value = store.get("adminKey");
-$("key").addEventListener("input", () => store.set("adminKey", $("key").value));
 
 /* ---------- API ---------- */
 async function api(path, opts = {}) {
   const headers = { ...(opts.headers || {}) };
-  const k = $("key").value.trim();
-  if (k) headers["x-admin-key"] = k;
   let r;
   try { r = await fetch(path, { ...opts, headers }); }
   catch { throw new Error("Sin conexión con el servidor."); }
