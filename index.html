@@ -8114,6 +8114,21 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // registrarse servía para volver a entrar. Las reglas no exigen fecha
     // futura, así que ahora la cuenta nueva nace VENCIDA si la vieja lo estaba
     // (entra directo a "elegí un plan").
+    // true si este número o este email ya tuvieron una cuenta que se eliminó
+    // con la prueba/licencia VENCIDA. (Si se eliminó con días a favor, se deja
+    // registrar y hereda solo esos días — ver _expiracionPruebaHeredada.)
+    function _cuentaYaUsada(wa, email) {
+        const leer = (pHash) => pHash
+            .then(h => db.ref('cuentas_eliminadas/' + h).once('value'))
+            .then(snap => snap.val())
+            .catch(() => null);
+        const mail = String(email || '').trim().toLowerCase();
+        const lecturas = [leer(_hashCuenta(wa))];
+        if (mail && !mail.endsWith('@mitallerweb.com')) lecturas.push(leer(_hashMail(mail)));
+        return Promise.all(lecturas).then(vs =>
+            vs.some(v => v && typeof v.trialFin === 'number' && v.trialFin <= Date.now()));
+    }
+
     function _expiracionPruebaHeredada(wa, base) {
         const leer = (pHash) => pHash
             .then(h => db.ref('cuentas_eliminadas/' + h).once('value'))
@@ -8155,14 +8170,30 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // que caiga justo antes de que cargue la config podría chocar contra
         // el tope del servidor y fallar.
         const expiracion = Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000;
-        appIniciada = false;
 
-        // FIX: guardar wa ANTES de crear la cuenta en Firebase
-        // para que onAuthStateChanged lo encuentre y llame grantAccess correctamente
-        localStorage.setItem('st_login_wa', wa);
+        // Mientras verificamos que el número y el email no hayan tenido ya una
+        // cuenta, frenamos el ingreso automático (onAuthStateChanged solo entra
+        // si appIniciada es false). Al final llamamos a grantAccess a mano,
+        // cuando la solicitud YA existe: así las reglas reconocen al dueño
+        // desde el primer momento y ningún listener nace cancelado por
+        // permission_denied (eso dejaba entrar a cuentas vencidas sin bloquear).
+        appIniciada = true;
+        let usuarioCreado = null;
+        const deshacerCuentaNueva = async () => {
+            try { if (usuarioCreado) await usuarioCreado.delete(); } catch (e) {}
+            try { await firebase.auth().signOut(); } catch (e) {}
+            appIniciada = false;
+            localStorage.removeItem('st_login_wa');
+        };
 
         firebase.auth().createUserWithEmailAndPassword(email, pass)
-            .then(() => {
+            .then((cred) => {
+                usuarioCreado = cred && cred.user;
+                return _cuentaYaUsada(wa, email);
+            })
+            .then((usada) => {
+                if (usada) { const e = new Error('ya usada'); e.code = 'mtw/ya-usada'; throw e; }
+                localStorage.setItem('st_login_wa', wa);
                 return db.ref('solicitudes_registro/' + wa).set({
                     whatsapp:      wa,
                     authEmail:     email,
@@ -8176,16 +8207,25 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     terminosAceptadoTs:  Date.now()
                 });
             })
+            // Alta completa (estado + tipoLicencia + fechaExpiracion) ANTES de abrir la app.
+            .then(() => _asegurarAlta(wa))
             .then(() => {
-                // Alta completa (estado + tipoLicencia + fechaExpiracion) apenas
-                // existe la solicitud: recién ahí las reglas reconocen al dueño.
-                // grantAccess también la intenta; _asegurarAlta es idempotente.
-                _asegurarAlta(wa);
                 showToast('🎉 ¡Bienvenido! Tu cuenta fue creada con éxito.', '#059669');
+                grantAccess(wa, false, true);
             })
-            .catch((err) => {
+            .catch(async (err) => {
+                if (err && err.code === 'mtw/ya-usada') {
+                    await deshacerCuentaNueva();
+                    return mostrarRegError('⚠️ Ese número o email ya tuvo una cuenta de prueba en Mi Taller Web y venció. La prueba gratis es una sola vez: para volver a usar el sistema escribinos por WhatsApp y te activamos un plan.');
+                }
+                if (err && (err.code === 'PERMISSION_DENIED' || /permission/i.test(err.message || ''))) {
+                    // La solicitud de ese número ya existe con otro email: el número ya tiene cuenta.
+                    await deshacerCuentaNueva();
+                    return mostrarRegError('⚠️ Ese número de WhatsApp ya tiene una cuenta. Ingresá con tu clave o usá "Olvidé mi clave".');
+                }
+                appIniciada = false;
                 ocultarLoader();
-                localStorage.removeItem('st_login_wa'); 
+                localStorage.removeItem('st_login_wa');
                 if (err.code === 'auth/email-already-in-use') {
                     mostrarRegError('⚠️ Ese email ya está en uso. Probá con otro o usá "Olvidé mi clave".');
                 } else if (err.code === 'auth/invalid-email') {
@@ -8199,6 +8239,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 }
             });
     }
+
 
     // ====== RECUPERACIÓN DE CLAVE ======
     function enviarRecuperacionClave() {
@@ -9520,7 +9561,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             // (sin conexión, carrera con las reglas), se vuelve a intentar.
             _asegurarAlta(u);
 
-            db.ref('usuarios_registrados/' + u).on('value', snap => {
+            const _licHandler = snap => {
                 const dataUser = snap.val();
                 if (!dataUser) return;
                 // Cacheado para _maxFotosPorOrden() y cualquier otro lugar
@@ -9581,7 +9622,17 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                         }
                     }
                 }
-            });
+            };
+            // Si el listener se engancha antes de que las reglas reconozcan al
+            // dueño, Firebase lo CANCELA para siempre (permission_denied) y la
+            // licencia nunca se evalúa en esa sesión: una cuenta vencida usaba
+            // el sistema libre hasta recargar. Ahora se vuelve a enganchar.
+            const _escucharLicencia = (intento) => {
+                db.ref('usuarios_registrados/' + u).on('value', _licHandler, () => {
+                    if (intento < 6) setTimeout(() => _escucharLicencia(intento + 1), 2000 * (intento + 1));
+                });
+            };
+            _escucharLicencia(0);
         }
         
         const pathPerfil = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
