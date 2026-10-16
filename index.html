@@ -3478,6 +3478,23 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        <button type="button" class="cf-btn-save" onclick="guardarCuentaSeguridad()">💾 GUARDAR CAMBIOS</button>
       </div>
 
+      <!-- ACCESO VIRUS KILLER (solo admin) -->
+      <div class="pf-card" id="cfVkCard" style="display:none;">
+       <div class="pf-card-title">🛡️ Acceso Virus Killer <small>solo admin</small></div>
+       <p class="pf-note" style="margin-top:-6px;">Usuario y clave para entrar a la página de licencias de Virus Killer.</p>
+       <label>Usuario actual</label>
+       <input type="text" id="vkUserActual" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-bottom:8px;">
+       <label>Clave actual</label>
+       <input type="password" id="vkPassActual" autocomplete="current-password" style="margin-bottom:8px;">
+       <label>Nuevo usuario <small>(dejar vacío para no cambiar)</small></label>
+       <input type="text" id="vkUserNuevo" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-bottom:8px;">
+       <label>Nueva clave <small>(mínimo 12 caracteres)</small></label>
+       <input type="password" id="vkPassNueva" autocomplete="new-password" style="margin-bottom:8px;">
+       <label>Repetir nueva clave</label>
+       <input type="password" id="vkPassRepetir" autocomplete="new-password" style="margin-bottom:10px;">
+       <button type="button" class="cf-btn-save" onclick="guardarCredencialesVK()">💾 CAMBIAR ACCESO</button>
+      </div>
+
       <!-- CERRAR SESIÓN -->
       <div class="cf-session">
        <div class="cf-ico">🚪</div>
@@ -9717,7 +9734,38 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
 
     // ====== CONFIGURACIÓN (cuenta y seguridad, cerrar sesión, eliminar cuenta) ======
+    // Cambia usuario y clave del acceso de Virus Killer (solo admin). Pide la clave actual.
+    async function guardarCredencialesVK() {
+        const cu = document.getElementById('vkUserActual').value.trim();
+        const cp = document.getElementById('vkPassActual').value;
+        const nu = document.getElementById('vkUserNuevo').value.trim() || cu;
+        const np = document.getElementById('vkPassNueva').value;
+        const rp = document.getElementById('vkPassRepetir').value;
+        if (!cu || !cp) return showToast('⚠️ Poné tu usuario y clave actuales', '#dc2626');
+        if (np.length < 12) return showToast('⚠️ La nueva clave tiene que tener al menos 12 caracteres', '#dc2626');
+        if (np !== rp) return showToast('⚠️ Las claves nuevas no coinciden', '#dc2626');
+        try {
+            const r = await fetch('/api/credenciales', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(unescape(encodeURIComponent(cu + ':' + cp))),
+                },
+                body: JSON.stringify({ user: nu, pass: np }),
+            });
+            if (r.status === 401) return showToast('❌ Usuario o clave actual incorrectos', '#dc2626');
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok) return showToast('❌ ' + (d.error || 'No se pudo cambiar el acceso'), '#dc2626');
+            ['vkUserActual', 'vkPassActual', 'vkUserNuevo', 'vkPassNueva', 'vkPassRepetir'].forEach(id => document.getElementById(id).value = '');
+            showToast('✅ Acceso de Virus Killer actualizado. Usuario: ' + d.user, '#059669');
+        } catch (e) {
+            showToast('❌ Sin conexión con el servidor', '#dc2626');
+        }
+    }
+
     function abrirConfiguracion() {
+        const cardVk = document.getElementById('cfVkCard');
+        if (cardVk) cardVk.style.display = (typeof isUserAdmin !== 'undefined' && isUserAdmin) ? 'block' : 'none';
         const inputEmail = document.getElementById('confEmailRecuperacion');
         const notaEmail = document.getElementById('notaEmailRecuperacion');
         document.getElementById('newPass').value = '';
