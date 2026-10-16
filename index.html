@@ -2275,6 +2275,12 @@
 
     </style>
    <script>
+function volverInicio() {
+    try { sessionStorage.removeItem('st_landing_skipped'); } catch(e) {}
+    document.documentElement.classList.remove('skip-landing-early');
+    var lp = document.getElementById('landing-page');
+    if (lp) { lp.style.display = ''; if (lp.scrollTo) lp.scrollTo(0, 0); }
+}
 function showApp() {
     var overlay = document.getElementById('landing-transition');
     overlay.classList.add('active');
@@ -2318,7 +2324,10 @@ function showApp() {
 }
 </style>
 <style>
-.nav-extras{color:#9fc2e8;font-weight:700;margin-right:14px;white-space:nowrap}
+#landing-page .nav-links{display:flex;align-items:center;gap:6px;position:absolute;left:50%;transform:translateX(-50%)}
+#landing-page .nav-tab{padding:9px 18px;border-radius:10px;color:#9fc2e8;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap;transition:background .2s,color .2s}
+#landing-page .nav-tab:hover{background:rgba(255,255,255,.07);color:#fff}
+#landing-page .nav-tab.active{background:rgba(255,255,255,.1);color:#fff}
 #landing-page .hero h1,#landing-page .hero .hero-sub{margin-left:auto !important;margin-right:auto !important;width:100%;text-align:center !important;align-self:center}
 #landing-page .hero .hero-sub{max-width:560px}
 #landing-page .hero h1{max-width:820px}
@@ -2331,7 +2340,7 @@ function showApp() {
  #landing-page nav{padding:12px 14px !important;gap:8px;flex-wrap:nowrap !important}
  #landing-page .nav-logo{font-size:16px;gap:6px;min-width:0;white-space:nowrap}
  #landing-page .nav-logo-icon{font-size:22px}
- #landing-page .nav-extras{display:none !important}
+ #landing-page .nav-links{display:none !important}
  #landing-page .nav-cta{padding:8px 12px !important;font-size:12px !important;flex-shrink:0;white-space:nowrap}
 }
 </style>
@@ -2446,9 +2455,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
    <nav>
     <a class="nav-logo" href="#"> 
      <div class="nav-logo-icon">📱</div> Mi Taller Web 
-    </a> <a class="nav-extras" href="/extras" style="text-decoration:none;">🧩 EXTRAS</a> <a class="nav-cta" href="#" onclick="showApp(); return false;">Ingresar al Sistema →</a>
+    </a> <div class="nav-links"><a class="nav-tab active" href="#" onclick="var l=document.getElementById('landing-page');if(l&&l.scrollTo)l.scrollTo({top:0,behavior:'smooth'});window.scrollTo({top:0,behavior:'smooth'});return false;">Inicio</a><a class="nav-tab" href="/extras">🧩 Extras</a></div> <a class="nav-cta" href="#" onclick="showApp(); return false;">Ingresar al Sistema →</a>
     <button type="button" class="nav-burger" aria-label="Menú" onclick="var m=document.getElementById('navMenu');m.classList.toggle('open');event.stopPropagation();">☰</button>
-    <div class="nav-menu" id="navMenu"><a href="/extras">🧩 EXTRAS <span>→</span></a></div>
+    <div class="nav-menu" id="navMenu"><a href="#" onclick="var l=document.getElementById('landing-page');if(l&&l.scrollTo)l.scrollTo({top:0,behavior:'smooth'});window.scrollTo({top:0,behavior:'smooth'});return false;">🏠 Inicio <span>→</span></a><a href="/extras">🧩 EXTRAS <span>→</span></a></div>
     <script>document.addEventListener('click',function(){var m=document.getElementById('navMenu');if(m)m.classList.remove('open');});</script>
    </nav>
    <!-- HERO -->
@@ -3072,6 +3081,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
   </div>
   <div id="login-overlay">
    <div class="login-card" id="panelLogin">
+    <div style="text-align:left;margin:-6px 0 8px;"><button type="button" onclick="volverInicio()" style="background:none;border:none;color:var(--secondary);font-size:13px;font-weight:700;cursor:pointer;padding:4px 0;">← Inicio</button></div>
     <div style="font-size: 45px; margin-bottom: -10px; animation: splashFadeIn 0.6s ease both, splashPulse 2.5s ease 0.6s infinite;">📱</div>
     <h2>Mi Taller Web</h2>
     <p>Inicia sesión para continuar</p>
@@ -3103,6 +3113,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     </div>
    </div>
    <div class="login-card" id="panelRegistro" style="display:none; max-width: 400px;">
+<div style="text-align:left;margin:-6px 0 8px;"><button type="button" onclick="volverInicio()" style="background:none;border:none;color:var(--secondary);font-size:13px;font-weight:700;cursor:pointer;padding:4px 0;">← Inicio</button></div>
     <div style="font-size: 40px; margin-bottom: -5px;">✨</div>
     <h2>Crear Cuenta</h2>
     <p style="margin-bottom:18px;">15 días gratis · Sin tarjeta de crédito</p>
