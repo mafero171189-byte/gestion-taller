@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="index, follow">
+<title>Programa · Mi Taller Web</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#06122a; color:#e8ecf1; font-family: system-ui, Segoe UI, Arial, sans-serif; line-height:1.55; }
+  a { color:#7cc4ff; }
+  .top { display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid #15294d; }
+  .top .brand { font-weight:800; color:#fff; text-decoration:none; }
+  .top .volver { color:#9fc2e8; font-weight:600; font-size:14px; text-decoration:none; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 22px; }
+  .head { display:flex; gap:14px; align-items:center; margin: 34px 0 8px; }
+  .head .ico { font-size:40px; }
+  h1 { font-size: 30px; margin: 0; }
+  .meta { color:#8fa3bf; font-size:13px; margin-bottom:18px; }
+  .lead { color:#cfdcec; font-size:17px; margin: 0 0 24px; }
+  .shot { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:14px; padding:10px; margin-bottom:12px; }
+  .shot img { width:100%; display:block; border-radius:8px; }
+  .card { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:14px; padding:20px; margin-bottom:16px; }
+  .card h2 { font-size:18px; margin:0 0 10px; color:#fff; }
+  ul, ol { padding-left:20px; color:#cfdcec; margin:0; }
+  li { margin-bottom:7px; }
+  .btn { display:inline-block; padding:13px 22px; border-radius:10px; font-weight:800; text-decoration:none; margin:4px 6px 4px 0; font-size:15px; }
+  .btn-main { background:#1e9e53; color:#fff; }
+  .btn-sec { background:#1e4d8c; color:#fff; }
+  .btn[aria-disabled="true"] { background:#2a3a55; color:#8fa3bf; pointer-events:none; }
+  .note { background:#16232f; border-left:3px solid #f0a93b; padding:10px 14px; border-radius:8px; color:#e8d9b5; font-size:14px; margin-top:12px; }
+  .vacio { color:#8fa3bf; padding: 40px 0; text-align:center; }
+  .foot { text-align:center; color:#6b7f9e; font-size:13px; padding: 26px 0 40px; border-top:1px solid #15294d; margin-top:30px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="/">📱 Mi Taller Web</a>
+  <a class="volver" href="/extras">← Volver a Extras</a>
+</header>
+
+<main class="wrap" id="contenido">
+  <div class="vacio">Cargando…</div>
+</main>
+
+<footer class="foot">Mi Taller Web · Extras</footer>
+
+<script>
+(async () => {
+  const cont = document.getElementById('contenido');
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const id = new URLSearchParams(location.search).get('id') || '';
+  try {
+    const r = await fetch('/programas.json', { cache: 'no-store' });
+    const programas = await r.json();
+    const p = programas.find((x) => x.id === id);
+    if (!p) { cont.innerHTML = '<div class="vacio">No encontramos ese programa. <a href="/extras">Ver todos los extras</a></div>'; return; }
+
+    document.title = esc(p.nombre) + ' · Mi Taller Web';
+    const shots = (p.capturas || []).map((s) => `<div class="shot"><img src="${esc(s)}" alt="${esc(p.nombre)}"></div>`).join('');
+    const funciones = (p.funciones || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const pasos = (p.pasos || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const requisitos = (p.requisitos || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const tieneUrl = !!p.url;
+    const wa = 'https://wa.me/5491135654094?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
+
+    cont.innerHTML = `
+      <div class="head"><div class="ico">${esc(p.icono || '🧩')}</div><h1>${esc(p.nombre)}</h1></div>
+      <div class="meta">${p.version ? 'Versión ' + esc(p.version) : ''}${p.tamano ? ' · ' + esc(p.tamano) : ''} · Windows</div>
+      <p class="lead">${esc(p.descripcion || p.resumen)}</p>
+
+      ${shots}
+
+      <div class="card">
+        <h2>Descarga</h2>
+        <a class="btn btn-main" href="${tieneUrl ? esc(p.url) : '#'}" ${tieneUrl ? 'target="_blank" rel="noopener"' : ''} aria-disabled="${tieneUrl ? 'false' : 'true'}">${tieneUrl ? '⬇️ Descargar' : '⏳ Próximamente'}</a>
+        ${p.guia ? `<a class="btn btn-sec" href="${esc(p.guia)}" target="_blank" rel="noopener">📄 Guía de uso (PDF)</a>` : ''}
+        <div class="note">Como el programa todavía no tiene firma digital, Windows puede mostrar un aviso azul la primera vez. Tocá <b>Más información</b> y después <b>Ejecutar de todas formas</b>.</div>
+      </div>
+
+      ${funciones ? `<div class="card"><h2>¿Qué hace?</h2><ul>${funciones}</ul></div>` : ''}
+      ${pasos ? `<div class="card"><h2>Cómo se usa</h2><ol>${pasos}</ol></div>` : ''}
+      ${requisitos ? `<div class="card"><h2>Antes de empezar</h2><ul>${requisitos}</ul></div>` : ''}
+
+      <div class="card">
+        <h2>¿Tenés dudas?</h2>
+        <a class="btn btn-sec" href="${wa}" target="_blank" rel="noopener">💬 Consultar por WhatsApp</a>
+      </div>`;
+  } catch {
+    cont.innerHTML = '<div class="vacio">No se pudo cargar el programa. Probá de nuevo en un momento.</div>';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "virus-killer",
+    "nombre": "Virus Killer Mobile",
+    "icono": "🛡️",
+    "resumen": "Limpieza de malware y publicidad en Android desde la PC.",
+    "descripcion": "Conectá el celular por USB a tu PC y Virus Killer Mobile busca apps maliciosas, cazadores de pop-ups y adware, y te deja sacarlos en un clic. Es la herramienta que usamos en el taller.",
+    "version": "1.0",
+    "tamano": "135 MB",
+    "url": "https://github.com/mafero171189-byte/gestion-taller/releases/download/v1.0/VirusKillerMobile.rar",
+    "guia": "/virus-killer/guia.pdf",
+    "capturas": ["/virus-killer/img/captura-principal.png"],
+    "funciones": [
+      "Detecta apps sospechosas y las marca por color según el riesgo, con el motivo de cada una.",
+      "Caza los pop-ups: vigila la pantalla y encuentra la app que muestra la publicidad.",
+      "Corta la publicidad o desinstala la app, sin tocar el resto del teléfono.",
+      "Limpieza rápida: silencia todo el adware de una vez y libera caché.",
+      "Diagnóstico del equipo y ficha técnica.",
+      "Informe en HTML para el cliente."
+    ],
+    "pasos": [
+      "Activá la Depuración USB en el celular (Ajustes → Acerca del teléfono → tocá 7 veces el número de compilación).",
+      "Conectá el celular a la PC con cable y tocá Permitir en la pantalla del teléfono.",
+      "Abrí el programa, tocá Buscar dispositivo y después Escanear.",
+      "Revisá los resultados por color y elegí qué hacer con cada app."
+    ],
+    "requisitos": [
+      "PC con Windows 10 u 11.",
+      "Cable USB y celular Android con la Depuración USB activada.",
+      "Incluye 7 días de prueba gratis. Después se activa con una licencia."
+    ],
+    "whatsapp_texto": "Hola, quiero info sobre Virus Killer Mobile"
+  }
+]
