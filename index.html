@@ -7825,21 +7825,64 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // no expulsar al que recién entró).
     function registrarSesionActiva(u, token) {
         const refUser = db.ref('usuarios_registrados/' + u);
-        refUser.once('value').then(snap => {
+        // Los límites por plan se leen de Firebase en el momento, no de la
+        // copia en memoria: al loguearse, el listener de configuracion/limites
+        // puede no haber disparado todavía y se usarían los valores de
+        // respaldo (1/1/3) en vez de los que configuró el admin — echando
+        // sesiones que en realidad estaban permitidas.
+        Promise.all([
+            refUser.once('value'),
+            db.ref('configuracion/limites').once('value').catch(() => null)
+        ]).then(([snap, snapLim]) => {
             const d = snap.val() || {};
-            const base = _maxDispositivosPorPlan(d.tipoLicencia, d.planTipo);
+            const lim = (snapLim && snapLim.val()) || null;
+            const dispCfg = Object.assign(
+                { prueba: 1, mensual: 1, anual: 3 },
+                ((window.LIMITES && window.LIMITES.dispositivos) || {}),
+                ((lim && lim.dispositivos) || {})
+            );
+            const tipo = d.tipoLicencia, plan = d.planTipo;
+            let base;
+            if (tipo === 'permanente' && plan === 'anual') base = dispCfg.anual;
+            else if (tipo === 'permanente') base = dispCfg.mensual;
+            else base = dispCfg.prueba;
+            base = parseInt(base, 10);
+            if (!(base > 0)) base = 1;
             const maxSesiones = base + (parseInt(d.dispositivosExtra, 10) || 0);
-            const sesiones = Object.assign({}, d.sesiones || {});
-            sesiones[token] = Date.now();
-            // Ordenamos de más vieja a más nueva y sacamos las que sobran.
-            const entradas = Object.entries(sesiones).sort((a, b) => a[1] - b[1]);
-            while (entradas.length > maxSesiones) {
-                const [tokenViejo] = entradas.shift();
-                delete sesiones[tokenViejo];
-            }
+
+            // Transacción (no update): si dos dispositivos entran en el mismo
+            // segundo, el segundo relee lo que dejó el primero en vez de
+            // pisarlo. Antes, con leer-y-escribir, una de las dos sesiones
+            // desaparecía de la lista y ese dispositivo quedaba sin registrar
+            // (o se expulsaba a alguien que sí tenía lugar).
+            refUser.child('sesiones').transaction(cur => {
+                const sesiones = Object.assign({}, cur || {});
+                sesiones[token] = Date.now();
+                // De más vieja a más nueva: se van cerrando las que sobran.
+                const entradas = Object.entries(sesiones).sort((a, b) => a[1] - b[1]);
+                while (entradas.length > maxSesiones) {
+                    const [tokenViejo] = entradas.shift();
+                    delete sesiones[tokenViejo];
+                }
+                return sesiones;
+            }, null, false).catch(() => {
+                // Si la transacción no se puede hacer (reglas que no dejan
+                // leer el subnodo, por ejemplo), se vuelve al método viejo:
+                // mejor registrar la sesión con riesgo de carrera que dejar
+                // al dispositivo sin anotar y que lo expulse el chequeo.
+                const sesiones = Object.assign({}, d.sesiones || {});
+                sesiones[token] = Date.now();
+                const entradas = Object.entries(sesiones).sort((a, b) => a[1] - b[1]);
+                while (entradas.length > maxSesiones) {
+                    const [tokenViejo] = entradas.shift();
+                    delete sesiones[tokenViejo];
+                }
+                refUser.update({ sesiones: sesiones }).catch(() => {});
+            });
+
             // tokenSesion queda como referencia de "última sesión" nada más,
             // ya no es lo que decide si te expulsan.
-            refUser.update({ sesiones: sesiones, tokenSesion: token }).catch(() => {});
+            refUser.update({ tokenSesion: token }).catch(() => {});
         }).catch(() => {});
     }
 
