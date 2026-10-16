@@ -6207,6 +6207,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // se resuelve volviendo a entrar).
         const cajaBorrar = document.getElementById('expulsionBorrarCuenta');
         if (cajaBorrar) cajaBorrar.style.display = (conOpcionPago || conBorrarCuenta) ? 'block' : 'none';
+        // Marca que el bloqueo es por licencia: si después llega un pago y la
+        // licencia se activa, _evaluarEstadoLicencia recarga la app sola.
+        if (conOpcionPago || conBorrarCuenta) window._expulsadoPorLicencia = true;
 
         document.getElementById('expulsadoModal').style.display = 'flex';
     }
@@ -6218,6 +6221,20 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     }
 
     function _evaluarEstadoLicencia(dataUser) {
+        // Pagó estando bloqueado: el webhook de Mercado Pago (o la captura de
+        // PayPal) suele llegar unos segundos DESPUÉS de que la app cargó, así
+        // que la primera lectura todavía ve la licencia vencida y muestra
+        // "Acceso Denegado". Antes quedaba ahí trabado aunque ya hubiera
+        // pagado, hasta recargar a mano. Ahora, apenas llega la licencia
+        // vigente, se avisa y se recarga (mostrarExpulsion apagó los
+        // listeners de datos, así que recargar es lo que los vuelve a armar).
+        if (window._expulsadoPorLicencia && dataUser && dataUser.estado !== 'suspendido' &&
+            dataUser.fechaExpiracion && dataUser.fechaExpiracion > Date.now()) {
+            window._expulsadoPorLicencia = false;
+            showToast('✅ ¡Licencia activada! Abriendo tu taller...', '#059669');
+            setTimeout(() => window.location.reload(), 1500);
+            return;
+        }
         // tipoLicencia ausente se trata como 'prueba', igual que en el resto de la app.
         // Sin esto, un nodo sin el campo nunca entraba a ninguna rama y la licencia
         // vencida no expulsaba nunca.
