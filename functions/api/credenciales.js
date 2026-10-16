@@ -5,7 +5,7 @@
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 
-const ITER = 210000;
+const ITER = 100000; // máximo permitido por Workers
 const b64 = (u) => btoa(String.fromCharCode(...u));
 
 async function hashPass(pass) {

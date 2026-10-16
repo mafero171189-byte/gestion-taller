@@ -5,5 +5,5 @@ CREATE TABLE IF NOT EXISTS config (
 );
 INSERT INTO config (clave, valor) VALUES ('admin_user', 'admin')
   ON CONFLICT(clave) DO NOTHING;
-INSERT INTO config (clave, valor) VALUES ('admin_pass_hash', 'pbkdf2$210000$Ticcmw377VNOeSGm4mhuGg==$TAyj9eaTVQ4xvawq2ZDt+4I7EjCRfBenRijFl84HPgM=')
+INSERT INTO config (clave, valor) VALUES ('admin_pass_hash', 'pbkdf2$100000$bSYl00FvZmCNEvH5wCWtaA==$N/qz+WEq1DPDVnkVU5Oxdho4iRImq3s94W9OllOv87Y=')
   ON CONFLICT(clave) DO NOTHING;
