@@ -1,5 +1,5 @@
 // POST /api/issue  -> emite una licencia firmada para un ID de equipo.
-// Solo accesible detrás de Cloudflare Access (ver SETUP). La clave privada
+// Protegido por usuario y contraseña (functions/_middleware.js). La clave privada
 // viene del secreto PRIVATE_KEY (PKCS8 en base64). Nunca se envía al navegador.
 
 const PRODUCT = "VKM1";
@@ -30,9 +30,8 @@ function addDuration(from, raw) {
 }
 
 export async function onRequestPost({ request, env }) {
-  // Defensa extra: Access inyecta este header solo tras autenticar.
-  const who = request.headers.get("Cf-Access-Authenticated-User-Email");
-  if (!who) return json({ error: "No autorizado." }, 401);
+  // La autenticación la hace functions/_middleware.js antes de llegar acá.
+  const who = env.ADMIN_USER;
 
   let body;
   try { body = await request.json(); } catch { return json({ error: "Datos inválidos." }, 400); }

@@ -1,12 +1,11 @@
 // GET /api/history?q=texto  -> licencias emitidas (filtra por cliente o ID de equipo).
-// Protegido por Cloudflare Access igual que /api/issue.
+// Protegido por usuario y contraseña (functions/_middleware.js), igual que /api/issue.
 
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 
 export async function onRequestGet({ request, env }) {
-  if (!request.headers.get("Cf-Access-Authenticated-User-Email")) return json({ error: "No autorizado." }, 401);
-
+  // La autenticación la hace functions/_middleware.js antes de llegar acá.
   const q = (new URL(request.url).searchParams.get("q") || "").trim().replace(/[-\s]/g, "").toUpperCase();
   const like = `%${q}%`;
   const sql = q
