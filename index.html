@@ -8145,9 +8145,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 });
             })
             .then(() => {
-                // FIX: NO hacer update parcial de usuarios_registrados acá.
-                // grantAccess (disparado por onAuthStateChanged) leerá solicitudes_registro
-                // y creará el nodo completo con fechaExpiracion incluida.
+                // Alta completa (estado + tipoLicencia + fechaExpiracion) apenas
+                // existe la solicitud: recién ahí las reglas reconocen al dueño.
+                // grantAccess también la intenta; _asegurarAlta es idempotente.
+                _asegurarAlta(wa);
                 showToast('🎉 ¡Bienvenido! Tu cuenta fue creada con éxito.', '#059669');
             })
             .catch((err) => {
@@ -9177,19 +9178,36 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // sin tipoLicencia y sin fechaExpiracion — sin vencimiento ni días
     // restantes, y sin figurar dada de alta en el panel de Licencias.
     // Usa update() (no set()) para no pisar sesiones/ultimoIngreso/authEmail.
-    function _asegurarAlta(u) {
+    function _asegurarAlta(u, intento) {
+        intento = intento || 0;
+        // Reintento con espera creciente: en el primer ingreso tras registrarse,
+        // grantAccess corre a la par de la escritura de solicitudes_registro, y
+        // hasta que esa solicitud existe las reglas no reconocen al dueño
+        // (lectura/escritura denegadas). Unos segundos después ya pasa.
+        const reintentar = () => {
+            if (intento >= 5) return null;
+            return new Promise(res => setTimeout(res, 1500 * (intento + 1)))
+                .then(() => _asegurarAlta(u, intento + 1));
+        };
         return db.ref('usuarios_registrados/' + u).once('value').then(snapCheck => {
             const d = snapCheck.val() || {};
             if (d.fechaExpiracion && d.estado && d.tipoLicencia) return null;
-            return db.ref('solicitudes_registro/' + u).once('value').then(snapSol => {
-                const solData = snapSol.val() || {};
-                const tipo = d.tipoLicencia || solData.tipoLicencia || 'prueba';
-                const expBase = solData.fechaExpiracion || (Date.now() + (window.DIAS_PRUEBA || 15) * 24 * 60 * 60 * 1000);
+            // IMPORTANTE: NO leer solicitudes_registro/{u} entero. Las reglas
+            // solo permiten leer su authEmail; esa lectura denegada era la que
+            // abortaba el alta de TODAS las cuentas nuevas (quedaban sin
+            // estado, sin tipoLicencia y sin fechaExpiracion). Los días de
+            // prueba se leen de configuracion/sistema, que es público, para
+            // respetar lo configurado y no chocar con el tope de las reglas.
+            return db.ref('configuracion/sistema/diasPrueba').once('value').then(snapDias => {
+                const n = parseInt(snapDias.val(), 10);
+                const dias = n > 0 ? n : (window.DIAS_PRUEBA || 15);
+                const tipo = d.tipoLicencia || 'prueba';
+                const expBase = Date.now() + dias * 24 * 60 * 60 * 1000;
                 const pExp = (tipo === 'prueba') ? _expiracionPruebaHeredada(u, expBase) : Promise.resolve(expBase);
                 return pExp.then(expiracion => {
                     const alta = {
                         whatsapp: u,
-                        fechaAlta: d.fechaAlta || solData.fecha || _fmtFechaHora(new Date()),
+                        fechaAlta: d.fechaAlta || _fmtFechaHora(new Date()),
                         estado: d.estado || 'activo',
                         tipoLicencia: tipo,
                         fechaExpiracion: d.fechaExpiracion || expiracion
@@ -9197,10 +9215,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     if (!snapCheck.exists()) alta.tokenSesion = "";
                     return db.ref('usuarios_registrados/' + u).update(alta).then(() => {
                         db.ref('solicitudes_registro/' + u).update({ estado: 'activado' }).catch(() => {});
-                    }).catch(() => {});
+                    });
                 });
             });
-        }).catch(() => {});
+        }).catch(reintentar);
     }
 
     // Al entrar al sistema la app SIEMPRE tiene que abrir en GESTIÓN.
