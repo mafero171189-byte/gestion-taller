@@ -3485,13 +3485,22 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        <label>Usuario actual</label>
        <input type="text" id="vkUserActual" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-bottom:8px;">
        <label>Clave actual</label>
-       <input type="password" id="vkPassActual" autocomplete="current-password" style="margin-bottom:8px;">
+       <div style="position:relative; margin-bottom:8px;">
+        <input type="password" id="vkPassActual" autocomplete="current-password" style="padding-right:44px;">
+        <button type="button" onclick="toggleVkClave('vkPassActual', this)" aria-label="Mostrar clave" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:4px 8px; background:none; border:none; font-size:16px; cursor:pointer;">👁</button>
+       </div>
        <label>Nuevo usuario <small>(dejar vacío para no cambiar)</small></label>
        <input type="text" id="vkUserNuevo" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-bottom:8px;">
        <label>Nueva clave <small>(mínimo 12 caracteres)</small></label>
-       <input type="password" id="vkPassNueva" autocomplete="new-password" style="margin-bottom:8px;">
+       <div style="position:relative; margin-bottom:8px;">
+        <input type="password" id="vkPassNueva" autocomplete="new-password" style="padding-right:44px;">
+        <button type="button" onclick="toggleVkClave('vkPassNueva', this)" aria-label="Mostrar clave" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:4px 8px; background:none; border:none; font-size:16px; cursor:pointer;">👁</button>
+       </div>
        <label>Repetir nueva clave</label>
-       <input type="password" id="vkPassRepetir" autocomplete="new-password" style="margin-bottom:10px;">
+       <div style="position:relative; margin-bottom:10px;">
+        <input type="password" id="vkPassRepetir" autocomplete="new-password" style="padding-right:44px;">
+        <button type="button" onclick="toggleVkClave('vkPassRepetir', this)" aria-label="Mostrar clave" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); width:auto; margin:0; padding:4px 8px; background:none; border:none; font-size:16px; cursor:pointer;">👁</button>
+       </div>
        <button type="button" class="cf-btn-save" onclick="guardarCredencialesVK()">💾 CAMBIAR ACCESO</button>
       </div>
 
@@ -9734,6 +9743,15 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     function closePassModal() { document.getElementById('passModal').style.display = 'none'; }
 
     // ====== CONFIGURACIÓN (cuenta y seguridad, cerrar sesión, eliminar cuenta) ======
+    // Muestra u oculta la clave de un campo (botón 👁).
+    function toggleVkClave(id, btn) {
+        const inp = document.getElementById(id);
+        const ver = inp.type === 'password';
+        inp.type = ver ? 'text' : 'password';
+        btn.textContent = ver ? '🙈' : '👁';
+        btn.setAttribute('aria-label', ver ? 'Ocultar clave' : 'Mostrar clave');
+    }
+
     // Cambia usuario y clave del acceso de Virus Killer (solo admin). Pide la clave actual.
     async function guardarCredencialesVK() {
         const cu = document.getElementById('vkUserActual').value.trim();

@@ -36,7 +36,15 @@ async function loadDbCreds(env) {
   } catch { return null; }
 }
 
-function unauthorized() {
+// Para la API no se manda WWW-Authenticate: si no, el navegador muestra su propio
+// cuadro de "Iniciar sesión" en cada llamada. Solo la página /admin lo pide.
+function unauthorized(path) {
+  if (path.startsWith("/api/")) {
+    return new Response(JSON.stringify({ error: "Usuario o clave incorrectos." }), {
+      status: 401,
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    });
+  }
   return new Response("Acceso restringido.", {
     status: 401,
     headers: { "WWW-Authenticate": 'Basic realm="Mi Taller Web - admin", charset="UTF-8"', "cache-control": "no-store" },
@@ -48,7 +56,7 @@ export async function onRequest({ request, env, next }) {
   if (!PROTECTED(url.pathname)) return next();
 
   const auth = request.headers.get("Authorization") || "";
-  if (!auth.startsWith("Basic ")) return unauthorized();
+  if (!auth.startsWith("Basic ")) return unauthorized(url.pathname);
 
   let user = "", pass = "";
   try {
@@ -56,7 +64,7 @@ export async function onRequest({ request, env, next }) {
     const i = decoded.indexOf(":");
     user = decoded.slice(0, i);
     pass = decoded.slice(i + 1);
-  } catch { return unauthorized(); }
+  } catch { return unauthorized(url.pathname); }
 
   const db = await loadDbCreds(env);
   let ok;
@@ -69,7 +77,7 @@ export async function onRequest({ request, env, next }) {
   } else {
     ok = false;
   }
-  if (!ok) return unauthorized();
+  if (!ok) return unauthorized(url.pathname);
 
   return next();
 }
