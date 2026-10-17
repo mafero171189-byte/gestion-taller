@@ -87,14 +87,17 @@
     lista.innerHTML = programas.map((p) => {
       const cap = pickImg(p);
       const ic = p.icono || '🧩';
-      const pr = precios[p.id] && precios[p.id].precio ? String(precios[p.id].precio).trim() : '';
-      const esGratis = !pr || /^gratis$/i.test(pr);
-      const plan = esGratis ? 'Gratis' : (/^[\d.,\s]+$/.test(pr) ? '$ ' + pr : pr);
+      const x = precios[p.id] || {};
+      const partes = [];
+      if (x.ars) partes.push('$ ' + esc(x.ars));
+      if (x.usd) partes.push('US$ ' + esc(x.usd));
+      const esGratis = !partes.length;
+      const plan = esGratis ? 'Gratis' : partes.join(' · ');
       const pl = plan.toLowerCase();
       const cls = esGratis ? '' : 'plus';
       return `
       <a class="card" href="/programa?id=${encodeURIComponent(p.id)}">
-        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="" onerror="this.remove()">` : ''}<span class="badge ${cls}">${esc(plan)}</span></div>
+        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="" onerror="this.remove()">` : ''}<span class="badge ${cls}">${esGratis ? 'Gratis' : plan}</span></div>
         <div class="ico">${esUrl(ic) ? `<img src="${esc2(ic)}" alt="">` : esc(ic)}</div>
         <div class="body">
           <div class="row"><h2>${esc(p.nombre)}</h2>${p.version ? `<span class="ver">${esc(p.version)}</span>` : ''}</div>

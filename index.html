@@ -3835,6 +3835,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
     <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
     <button onclick="showPage('mantenimiento')" id="btn-nav-mantenimiento" style="display:none;">⚙️ MANTENIMIENTO</button>
+    <button onclick="showPage('extras')" id="btn-nav-extras" style="display:none;">💰 PRECIOS EXTRAS</button>
    </div>
    <div class="nav-fixed-right">
     <button onclick="abrirConfiguracion()" id="btn-nav-config" style="display:none; color: var(--gray-300);">⚙️ CONFIGURACIÓN</button>
@@ -4648,16 +4649,6 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       </div>
      </div>
 
-     <!-- PRECIOS DE EXTRAS -->
-     <div class="card-form" style="background: var(--blue-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--blue-200); margin-bottom: 20px;">
-      <label style="color:var(--blue-700); font-weight:900; font-size:15px;">💰 Precios de Extras</label>
-      <p style="font-size:12px; color:var(--slate-600); margin:6px 0 12px 0;">Poné el precio de cada programa y tu alias de pago. Se ve en la página de Extras y en cada programa. Para consultas usa el WhatsApp de Soporte. Dejá vacío o escribí "Gratis" si es gratis.</p>
-      <label style="font-size:12px; font-weight:700; color:var(--blue-700);">Alias para transferencias</label>
-      <input type="text" id="inputAliasExtras" placeholder="ej: mi.alias.mp" style="width:100%; box-sizing:border-box; margin:4px 0 14px 0; padding:10px 12px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:15px; font-weight:700; font-family:'Outfit',sans-serif;">
-      <div id="listaPreciosExtras" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"><div style="font-size:12px; color:var(--gray-600);">Cargando programas…</div></div>
-      <button id="btnGuardarPreciosExtras" onclick="guardarPreciosExtras()" class="btn" style="background:var(--blue-700); color:white; padding:12px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">💾 GUARDAR PRECIOS</button>
-     </div>
-
      <!-- MIGRACIÓN PERFIL PÚBLICO (usar una vez) -->
      <div class="card-form" style="background: var(--amber-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--amber-300); margin-bottom: 20px;">
       <label style="color:var(--amber-800); font-weight:900; font-size:15px;">🔒 Migrar Perfiles Públicos</label>
@@ -4667,6 +4658,16 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
      </div>
 
 
+    </div>
+
+    <!-- PÁGINA: PRECIOS DE EXTRAS (solo admin) -->
+    <div id="page-extras" class="page" style="display:none;">
+     <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h2 style="margin:0;">💰 Precios de Extras</h2>
+     </div>
+     <p style="font-size:13px; color:var(--slate-600); margin:0 0 16px 0;">Cargá el precio de cada programa en pesos y/o dólares, cada uno con su alias. Lo que dejes vacío no se muestra en la página de Extras. Si no cargás ningún precio, el programa figura como gratis. Para consultas se usa el WhatsApp de Soporte.</p>
+     <div id="listaPreciosExtras" style="display:flex; flex-direction:column; gap:14px; margin-bottom:16px;"><div style="font-size:12px; color:var(--gray-600);">Cargando programas…</div></div>
+     <button id="btnGuardarPreciosExtras" onclick="guardarPreciosExtras()" class="btn" style="background:var(--blue-700); color:white; padding:14px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">💾 GUARDAR PRECIOS</button>
     </div>
 
     <!-- MODAL GASTO EXTRA -->
@@ -9937,6 +9938,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if(isAdmin) {
             document.getElementById('btn-nav-usuarios').style.display = 'inline-block';
             document.getElementById('btn-nav-mantenimiento').style.display = 'inline-block'; // NUEVO BOTON
+            document.getElementById('btn-nav-extras').style.display = 'inline-block';
             cargarUsuariosAdmin();
             limpiarFotosAntiguas(false); 
             limpiarLicenciasExpiradas();
@@ -15314,7 +15316,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     function _doShowPage(pageId) {
         // Páginas SOLO de administrador: cualquier otro usuario no puede entrar,
         // ni por botón, ni por atajo de teclado, ni llamando showPage() a mano.
-        if ((pageId === 'usuarios' || pageId === 'mantenimiento') && !window.isUserAdmin) return;
+        if ((pageId === 'usuarios' || pageId === 'mantenimiento' || pageId === 'extras') && !window.isUserAdmin) return;
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + pageId).style.display = 'block';
@@ -15340,6 +15342,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             }
         }
         if (pageId === 'stock') window.cargarStockData();
+        if (pageId === 'extras') cargarPreciosExtras();
         if (pageId === 'usuarios') {
             // Si ya hay listener y datos, renderizar inmediatamente; si no, cargar desde Firebase
             if (_usuariosListener && listadoUsuarios.length > 0) {
@@ -17498,46 +17501,48 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const cont = document.getElementById('listaPreciosExtras');
         if (!cont) return;
         const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const inp = 'width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:\'Outfit\',sans-serif;';
+        const lab = 'font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase; letter-spacing:.5px;';
         Promise.all([
             fetch('/programas.json', { cache: 'no-store' }).then(r => r.json()).catch(() => []),
-            db.ref('configuracion/sistema/extrasPrecios').once('value'),
-            db.ref('configuracion/sistema/aliasPago').once('value')
-        ]).then(([progs, snapP, snapA]) => {
+            db.ref('configuracion/sistema/extrasPrecios').once('value')
+        ]).then(([progs, snapP]) => {
             const precios = snapP.val() || {};
-            const alias = document.getElementById('inputAliasExtras');
-            if (alias && document.activeElement !== alias) alias.value = snapA.val() || '';
             if (!progs.length) { cont.innerHTML = '<div style="font-size:12px; color:var(--gray-600);">No se encontraron programas en /programas.json.</div>'; return; }
-            cont.innerHTML = progs.map(p => `
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <span style="flex:1; font-weight:700; font-size:14px; color:var(--slate-800,#1e293b);">${esc(p.nombre)}</span>
-                  <input type="text" data-extra-id="${esc(p.id)}" value="${esc((precios[p.id] && precios[p.id].precio) || '')}" placeholder="Gratis" style="width:130px; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:'Outfit',sans-serif;">
-                </div>`).join('');
+            cont.innerHTML = progs.map(p => {
+                const x = precios[p.id] || {};
+                return `
+                <div class="card-form" data-extra-card="${esc(p.id)}" style="background: var(--blue-50); padding: 16px; border-radius: 12px; border: 1.5px solid var(--blue-200);">
+                  <div style="font-weight:900; font-size:16px; color:var(--blue-700); margin-bottom:10px;">${esc(p.icono || '🧩')} ${esc(p.nombre)}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div><label style="${lab}">Precio en pesos (ARS)</label><input type="text" inputmode="decimal" data-f="ars" value="${esc(x.ars)}" placeholder="ej: 15000" style="${inp}"></div>
+                    <div><label style="${lab}">Alias pesos</label><input type="text" data-f="aliasArs" value="${esc(x.aliasArs)}" placeholder="mi.alias.mp" style="${inp}"></div>
+                    <div><label style="${lab}">Precio en dólares (USD)</label><input type="text" inputmode="decimal" data-f="usd" value="${esc(x.usd)}" placeholder="ej: 10" style="${inp}"></div>
+                    <div><label style="${lab}">Alias / cuenta dólares</label><input type="text" data-f="aliasUsd" value="${esc(x.aliasUsd)}" placeholder="alias, CBU o PayPal" style="${inp}"></div>
+                  </div>
+                </div>`;
+            }).join('');
         }).catch(() => { cont.innerHTML = '<div style="font-size:12px; color:#dc2626;">No se pudo cargar. Probá de nuevo.</div>'; });
     }
 
     function guardarPreciosExtras() {
         const btn = document.getElementById('btnGuardarPreciosExtras');
         const data = {};
-        document.querySelectorAll('#listaPreciosExtras [data-extra-id]').forEach(i => {
-            const v = i.value.trim();
-            if (v) data[i.getAttribute('data-extra-id')] = { precio: v };
+        document.querySelectorAll('#listaPreciosExtras [data-extra-card]').forEach(card => {
+            const o = {};
+            card.querySelectorAll('[data-f]').forEach(i => { const v = i.value.trim(); if (v) o[i.getAttribute('data-f')] = v; });
+            if (Object.keys(o).length) data[card.getAttribute('data-extra-card')] = o;
         });
-        const alias = (document.getElementById('inputAliasExtras').value || '').trim();
         if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
-        Promise.all([
-            db.ref('configuracion/sistema/extrasPrecios').set(Object.keys(data).length ? data : null),
-            db.ref('configuracion/sistema/aliasPago').set(alias || null)
-        ]).then(() => {
+        db.ref('configuracion/sistema/extrasPrecios').set(Object.keys(data).length ? data : null).then(() => {
             if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
             showToast('✅ Precios de Extras actualizados', '#059669');
             setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR PRECIOS'; }, 3000);
         }).catch(() => {
             if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR PRECIOS'; }
-            showToast('Error al guardar (revisá las reglas de Firebase)', '#dc2626');
+            showToast('Error al guardar', '#dc2626');
         });
     }
-    // Se carga cuando se abre el sistema; si el panel aún no existe no hace nada.
-    window.addEventListener('load', () => setTimeout(cargarPreciosExtras, 2500));
 
     function guardarWhatsappSoporte() {
         const raw = document.getElementById('inputWhatsappSoporte').value.trim();
@@ -19850,7 +19855,7 @@ function showPresPickerModal(title, options, currentVal, onSelect, btnEl, esMarc
             if (!isInInput && !anyModalOpen) {
                 var navPages = ['gestion','ventas','presupuesto','contabilidad','stock'];
                 // agregar opcionales si están visibles
-                ['usuarios','mantenimiento'].forEach(function(p) {
+                ['usuarios','mantenimiento','extras'].forEach(function(p) {
                     var btn = document.getElementById('btn-nav-' + p);
                     if (btn && btn.style.display !== 'none') navPages.push(p);
                 });
@@ -21210,8 +21215,8 @@ window.LEGAL_VERSION = '2026-10-15-min';   // cambiala si modificás el texto
 
  <script id="mobile-hamburger-js">
 (function(){
-  var TITLES = {gestion:'🖥️ GESTIÓN', ventas:'🛒 VENTAS Y REPARACIONES', presupuesto:'📋 PRESUPUESTO', contabilidad:'💰 CONTABILIDAD', stock:'📦 STOCK', usuarios:'🔑 LICENCIAS', mantenimiento:'⚙️ MANTENIMIENTO', ayuda:'❓ AYUDA'};
-  var ITEMS = ['gestion','ventas','presupuesto','contabilidad','stock','usuarios','mantenimiento'];
+  var TITLES = {gestion:'🖥️ GESTIÓN', ventas:'🛒 VENTAS Y REPARACIONES', presupuesto:'📋 PRESUPUESTO', contabilidad:'💰 CONTABILIDAD', stock:'📦 STOCK', usuarios:'🔑 LICENCIAS', mantenimiento:'⚙️ MANTENIMIENTO', extras:'💰 PRECIOS EXTRAS', ayuda:'❓ AYUDA'};
+  var ITEMS = ['gestion','ventas','presupuesto','contabilidad','stock','usuarios','mantenimiento','extras'];
   var current = 'gestion';
   function $(id){ return document.getElementById(id); }
   function esMovil(){ return window.matchMedia && window.matchMedia('(max-width: 599px)').matches; }

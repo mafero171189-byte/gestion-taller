@@ -53,7 +53,7 @@
 <footer class="foot">Mi Taller Web · Extras</footer>
 
 <script>
-function copiarAlias(b){ var t=document.getElementById('aliasTxt').textContent; var ok=function(){b.textContent='¡Copiado!';setTimeout(function(){b.textContent='Copiar';},2000);}; if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,ok);}else{ok();} }
+function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var ok=function(){b.textContent='¡Copiado!';setTimeout(function(){b.textContent='Copiar';},2000);}; if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,ok);}else{ok();} }
 (async () => {
   const cont = document.getElementById('contenido');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -73,11 +73,14 @@ function copiarAlias(b){ var t=document.getElementById('aliasTxt').textContent; 
     // Precio, alias y WhatsApp se administran desde Mi Taller Web > Precios de Extras
     const FB = 'https://github-c3e96-default-rtdb.firebaseio.com/configuracion/sistema/';
     const leer = (n) => fetch(FB + n + '.json').then((x) => x.json()).catch(() => null);
-    const [precios, aliasPago, waNum] = await Promise.all([leer('extrasPrecios'), leer('aliasPago'), leer('soporteWhatsapp')]);
+    const [precios, waNum] = await Promise.all([leer('extrasPrecios'), leer('soporteWhatsapp')]);
     const num = String(waNum || '5491135654094').replace(/\D/g, '');
-    let precio = precios && precios[p.id] && precios[p.id].precio ? String(precios[p.id].precio).trim() : '';
-    const esPago = !!precio && !/^gratis$/i.test(precio);
-    if (esPago && /^[\d.,\s]+$/.test(precio)) precio = '$ ' + precio;
+    const x = (precios && precios[p.id]) || {};
+    const monedas = [];
+    if (x.ars) monedas.push({ txt: '$ ' + x.ars + ' ARS', etiqueta: 'Pesos argentinos', alias: x.aliasArs || '' });
+    if (x.usd) monedas.push({ txt: 'US$ ' + x.usd, etiqueta: 'Dólares', alias: x.aliasUsd || '' });
+    const esPago = monedas.length > 0;
+    const precio = monedas.map((m) => m.txt).join(' / ');
     const wa = 'https://wa.me/' + num + '?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
     const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar ' + p.nombre + ' (' + precio + '). Ya hice la transferencia / quiero coordinar el pago.');
 
@@ -90,8 +93,11 @@ function copiarAlias(b){ var t=document.getElementById('aliasTxt').textContent; 
 
       ${esPago ? `<div class="card">
         <h2>Comprar</h2>
-        <div class="precio">${esc(precio)}</div>
-        ${aliasPago ? `<div>Pagá por transferencia al alias:</div><div class="alias"><b id="aliasTxt">${esc(aliasPago)}</b><button type="button" onclick="copiarAlias(this)">Copiar</button></div>` : ''}
+        ${monedas.map((m, i) => `<div style="margin-bottom:14px;">
+          <div style="color:#8fa3bf;font-size:13px;">${m.etiqueta}</div>
+          <div class="precio">${esc(m.txt)}</div>
+          ${m.alias ? `<div class="alias"><span>Alias:</span><b id="alias${i}">${esc(m.alias)}</b><button type="button" onclick="copiarAlias(this,'alias${i}')">Copiar</button></div>` : ''}
+        </div>`).join('')}
         <a class="btn btn-main" href="${waCompra}" target="_blank" rel="noopener">💬 Comprar por WhatsApp</a>
         <div class="note">Después de pagar, mandanos el comprobante por WhatsApp y te pasamos el link de descarga y la activación.</div>
       </div>` : `<div class="card">
