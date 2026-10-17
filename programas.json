@@ -9,14 +9,18 @@
     "tamano": "135 MB",
     "url": "https://github.com/mafero171189-byte/gestion-taller/releases/download/v1.0/VirusKillerMobile.rar",
     "guia": "/virus-killer/guia.pdf",
-    "capturas": ["/virus-killer/img/captura-principal.png"],
+    "capturas": [
+      "/virus-killer/img/captura-principal.png"
+    ],
     "funciones": [
-      "Detecta apps sospechosas y las marca por color según el riesgo, con el motivo de cada una.",
-      "Caza los pop-ups: vigila la pantalla y encuentra la app que muestra la publicidad.",
-      "Corta la publicidad o desinstala la app, sin tocar el resto del teléfono.",
-      "Limpieza rápida: silencia todo el adware de una vez y libera caché.",
+      "Detecta apps sospechosas y las marca por color (alto, medio, OK) con el motivo de cada una.",
+      "Análisis profundo de permisos, accesibilidad, superposición de pantalla e instalador de cada app.",
+      "Caza los pop-ups: te muestra qué app está tapando la pantalla.",
+      "Corta la publicidad, deshabilita, fuerza la detención o desinstala la app, sin tocar el resto del teléfono.",
+      "Limpieza rápida: silencia el adware de una vez y libera caché (Chrome/Play).",
+      "Respalda el APK antes de desinstalar.",
       "Diagnóstico del equipo y ficha técnica.",
-      "Informe en HTML para el cliente."
+      "Exporta un informe para entregarle al cliente."
     ],
     "pasos": [
       "Activá la Depuración USB en el celular (Ajustes → Acerca del teléfono → tocá 7 veces el número de compilación).",
@@ -27,8 +31,9 @@
     "requisitos": [
       "PC con Windows 10 u 11.",
       "Cable USB y celular Android con la Depuración USB activada.",
-      "Incluye 7 días de prueba gratis. Después se activa con una licencia."
+      "La descarga es gratis e incluye 7 días de prueba. Para seguir usándolo después se compra una licencia."
     ],
-    "whatsapp_texto": "Hola, quiero info sobre Virus Killer Mobile"
+    "whatsapp_texto": "Hola, quiero info sobre Virus Killer Mobile",
+    "dias_prueba": 7
   }
 ]

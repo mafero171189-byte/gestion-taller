@@ -98,10 +98,11 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
     let ahorro = 0;
     if (m && an) { const par = m.ars && an.ars ? [num0(m.ars), num0(an.ars)] : (m.usd && an.usd ? [num0(m.usd), num0(an.usd)] : null); if (par && par[0] > 0 && par[1] > 0 && par[1] < par[0] * 12) ahorro = Math.round((1 - par[1] / (par[0] * 12)) * 100); }
     const esPago = periodos.length > 0;
+    const dias = p.dias_prueba || p.diasPrueba || '';
     const hayArs = periodos.some((o) => o.ars), hayUsd = periodos.some((o) => o.usd);
     const precio = periodos.map((o) => o.nom + ': ' + [o.ars ? '$ ' + o.ars : '', o.usd ? 'US$ ' + o.usd : ''].filter(Boolean).join(' / ') + (o.suf ? ' ' + o.suf : '')).join(' | ');
     const wa = 'https://wa.me/' + num + '?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
-    const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar ' + p.nombre + ' (' + precio + '). Quiero coordinar el pago.');
+    const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar la licencia de ' + p.nombre + ' (' + precio + '). Quiero coordinar el pago.');
 
     cont.innerHTML = `
       <div class="head"><div class="ico">${esc(p.icono || '🧩')}</div><h1>${esc(p.nombre)}</h1></div>
@@ -110,27 +111,30 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
 
       ${shots}
 
+      <div class="card">
+        <h2>Descarga</h2>
+        <a class="btn btn-main" href="${tieneUrl ? esc(p.url) : '#'}" ${tieneUrl ? 'target="_blank" rel="noopener"' : ''} aria-disabled="${tieneUrl ? 'false' : 'true'}">${tieneUrl ? '⬇️ Descargar' : '⏳ Próximamente'}</a>
+        ${p.guia ? `<a class="btn btn-sec" href="${esc(p.guia)}" target="_blank" rel="noopener">📄 Guía de uso (PDF)</a>` : ''}
+        ${esPago ? `<div class="note" style="border-left-color:#1e9e53;background:#10261d;color:#cfe9d8;">✅ La descarga es <b>gratis</b>. Lo que se paga es la <b>licencia</b> para activar el programa.${dias ? ` Incluye <b>${esc(dias)} días de prueba</b> para que lo pruebes antes de comprar.` : ''}</div>` : ''}
+        <div class="note">Como el programa todavía no tiene firma digital, Windows puede mostrar un aviso azul la primera vez. Tocá <b>Más información</b> y después <b>Ejecutar de todas formas</b>.</div>
+      </div>
+
       ${esPago ? `<div class="compra">
-        <h2>Comprar ${esc(p.nombre)}</h2>
-        <div class="sub">Elegí tu plan y pagá por transferencia.</div>
+        <h2>Comprar licencia de ${esc(p.nombre)}</h2>
+        <div class="sub">Elegí tu plan de licencia y pagá por transferencia.</div>
         <div class="planes">
         ${periodos.map((o) => `<div class="plan ${o.k === 'Anual' && ahorro ? 'dest' : ''}">
           ${o.k === 'Anual' && ahorro ? `<div class="tag">Ahorrás ${ahorro}%</div>` : ''}
-          <div class="nom">${o.nom}</div>
+          <div class="nom">Licencia ${o.nom.toLowerCase()}</div>
           ${o.ars ? `<div class="p"><b>$ ${esc(fmt(o.ars))}</b><span>${o.suf}</span><small>ARS</small></div>` : ''}
           ${o.usd ? `<div class="p"><b>US$ ${esc(fmt(o.usd))}</b><span>${o.suf}</span><small>USD</small></div>` : ''}
         </div>`).join('')}
         </div>
         ${hayArs && al.ars ? `<div class="alias"><span>Alias pesos</span><b id="aliasArs">${esc(al.ars)}</b><button type="button" onclick="copiarAlias(this,'aliasArs')">Copiar</button></div>` : ''}
         ${hayUsd && al.usd ? `<div class="alias"><span>Alias dólares</span><b id="aliasUsd">${esc(al.usd)}</b><button type="button" onclick="copiarAlias(this,'aliasUsd')">Copiar</button></div>` : ''}
-        <a class="btn btn-main" href="${waCompra}" target="_blank" rel="noopener">💬 Comprar por WhatsApp</a>
-        <div class="note">Después de pagar, mandanos el comprobante por WhatsApp y te pasamos el link de descarga y la activación.</div>
-      </div>` : `<div class="card">
-        <h2>Descarga</h2>
-        <a class="btn btn-main" href="${tieneUrl ? esc(p.url) : '#'}" ${tieneUrl ? 'target="_blank" rel="noopener"' : ''} aria-disabled="${tieneUrl ? 'false' : 'true'}">${tieneUrl ? '⬇️ Descargar' : '⏳ Próximamente'}</a>
-        ${p.guia ? `<a class="btn btn-sec" href="${esc(p.guia)}" target="_blank" rel="noopener">📄 Guía de uso (PDF)</a>` : ''}
-        <div class="note">Como el programa todavía no tiene firma digital, Windows puede mostrar un aviso azul la primera vez. Tocá <b>Más información</b> y después <b>Ejecutar de todas formas</b>.</div>
-      </div>`}
+        <a class="btn btn-main" href="${waCompra}" target="_blank" rel="noopener">💬 Comprar licencia por WhatsApp</a>
+        <div class="note">Después de pagar, mandanos el comprobante por WhatsApp y te pasamos el código de activación de tu licencia.</div>
+      </div>` : ''}
 
       ${funciones ? `<div class="card"><h2>¿Qué hace?</h2><ul>${funciones}</ul></div>` : ''}
       ${pasos ? `<div class="card"><h2>Cómo se usa</h2><ol>${pasos}</ol></div>` : ''}
