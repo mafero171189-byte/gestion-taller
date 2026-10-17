@@ -115,7 +115,9 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
     if (!base && !catAll) { cont.innerHTML = '<div class="vacio">No encontramos ese programa. <a href="/extras">Ver todos los extras</a></div>'; return; }
     const p = { ...(base || { id }), ...(catAll || {}) };
     if (p.oculto || !p.nombre) { cont.innerHTML = '<div class="vacio">No encontramos ese programa. <a href="/extras">Ver todos los extras</a></div>'; return; }
-    const cld = (u) => (/res\.cloudinary\.com\/[^/]+\/image\/upload\/(?!.*(?:w_|c_|f_|q_))/.test(u) ? u.replace('/upload/', '/upload/f_auto,q_auto,w_1600/') : u);
+    const cld = (u) => (/res\.cloudinary\.com\/[^/]+\/image\/upload\/v\d+\//.test(u) ? u.replace(/\/upload\/(v\d+\/)/, '/upload/f_auto,q_auto,w_1600/$1') : u);
+    // Solo links http(s) o rutas del sitio (evita javascript: en links cargados desde el panel)
+    const safe = (u) => (/^(https?:\/\/|\/)/i.test(String(u || '')) ? String(u) : '');
     p.capturas = arr(p.capturas).map((u) => (String(u).startsWith('fb:') ? u : cld(u))); p.funciones = arr(p.funciones); p.pasos = arr(p.pasos); p.requisitos = arr(p.requisitos);
     // Capturas subidas desde el panel ("fb:clave") se leen aparte, solo para este programa.
     if (p.capturas.some((c) => String(c).startsWith('fb:'))) {
@@ -129,6 +131,7 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
     const funciones = p.funciones.map((x) => `<li>${esc(x)}</li>`).join('');
     const pasos = p.pasos.map((x) => `<li>${esc(x)}</li>`).join('');
     const requisitos = p.requisitos.map((x) => `<li>${esc(x)}</li>`).join('');
+    p.url = safe(p.url); p.guia = safe(p.guia);
     const tieneUrl = !!p.url;
     // Precio, alias y WhatsApp se administran desde Mi Taller Web > Programas Extras
     const leer = (n) => get('configuracion/sistema/' + n);

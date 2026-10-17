@@ -1665,7 +1665,7 @@
         /* ── HERO ── */
         #landing-page .hero{
             position: relative;
-            min-height: auto;
+            min-height: 0;
             display: flex; align-items: center; justify-content: center;
             flex-direction: column;
             text-align: center;
@@ -1673,6 +1673,8 @@
             overflow: hidden;
         }
 
+
+        @media (min-width: 900px) { #landing-page .hero{ min-height: 100vh; padding: 120px 24px 80px; } }
 
         /* Grid lines background */
         #landing-page .hero::after{
@@ -17635,7 +17637,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // Versiones livianas de una foto de Cloudinary (miniatura / mediana).
     function _exCld(u, w) {
         u = String(u || '');
-        return /res\.cloudinary\.com\/[^/]+\/image\/upload\/(?!.*(?:w_|c_|f_|q_))/.test(u) ? u.replace('/upload/', '/upload/f_auto,q_auto,w_' + w + '/') : u;
+        return /res\.cloudinary\.com\/[^/]+\/image\/upload\/v\d+\//.test(u) ? u.replace(/\/upload\/(v\d+\/)/, '/upload/f_auto,q_auto,w_' + w + '/$1') : u;
     }
 
     function exRenderImgs(i) {
