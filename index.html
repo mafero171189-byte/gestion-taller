@@ -3835,7 +3835,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     <button onclick="showPage('stock')" id="btn-nav-stock">📦 STOCK</button>
     <button onclick="showPage('usuarios')" id="btn-nav-usuarios" style="display:none;">🔑 LICENCIAS</button>
     <button onclick="showPage('mantenimiento')" id="btn-nav-mantenimiento" style="display:none;">⚙️ MANTENIMIENTO</button>
-    <button onclick="showPage('extras')" id="btn-nav-extras" style="display:none;">💰 PRECIOS EXTRAS</button>
+    <button onclick="showPage('extras')" id="btn-nav-extras" style="display:none;">🧩 PROGRAMAS EXTRAS</button>
    </div>
    <div class="nav-fixed-right">
     <button onclick="abrirConfiguracion()" id="btn-nav-config" style="display:none; color: var(--gray-300);">⚙️ CONFIGURACIÓN</button>
@@ -4660,12 +4660,38 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
     </div>
 
-    <!-- PÁGINA: PRECIOS DE EXTRAS (solo admin) -->
+    <!-- PÁGINA: PROGRAMAS EXTRAS (solo admin) -->
     <div id="page-extras" class="page" style="display:none;">
+     <style>
+      #page-extras .pex-card{ background:var(--blue-50); border:1.5px solid var(--blue-200); border-radius:12px; margin-bottom:12px; overflow:hidden; }
+      #page-extras .pex-card > summary{ list-style:none; cursor:pointer; padding:14px 16px; display:flex; align-items:center; gap:10px; font-weight:900; font-size:16px; color:var(--blue-700); }
+      #page-extras .pex-card > summary::-webkit-details-marker{ display:none; }
+      #page-extras .pex-card > summary .pex-chev{ margin-left:auto; transition:transform .2s; }
+      #page-extras .pex-card[open] > summary .pex-chev{ transform:rotate(180deg); }
+      #page-extras .pex-tag{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; background:#dbeafe; color:#1e40af; }
+      #page-extras .pex-tag.lic{ background:#fef3c7; color:#92400e; }
+      #page-extras .pex-tag.off{ background:#e5e7eb; color:#374151; }
+      #page-extras .pex-body{ padding:4px 16px 16px; }
+      #page-extras .pex-body label{ display:block; font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase; letter-spacing:.5px; margin:10px 0 4px; }
+      #page-extras .pex-body input[type=text], #page-extras .pex-body input[type=number], #page-extras .pex-body textarea{ width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif; }
+      #page-extras .pex-body textarea{ min-height:84px; resize:vertical; }
+      #page-extras .pex-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      #page-extras .pex-h{ font-size:13px; font-weight:900; color:var(--slate-700,#334155); margin:16px 0 2px; padding-top:12px; border-top:1px dashed var(--blue-200); }
+      #page-extras .pex-imgs{ display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; }
+      #page-extras .pex-img{ position:relative; width:104px; }
+      #page-extras .pex-img img{ width:104px; height:70px; object-fit:cover; border-radius:8px; border:1.5px solid var(--blue-200); background:#0b1a36; display:block; }
+      #page-extras .pex-img .pex-x{ position:absolute; top:-6px; right:-6px; width:24px; height:24px; border-radius:50%; border:0; background:#dc2626; color:#fff; font-weight:900; cursor:pointer; line-height:1; }
+      #page-extras .pex-img .pex-star{ display:block; width:100%; margin-top:4px; padding:3px 0; border:1px solid var(--blue-200); background:#fff; border-radius:6px; font-size:11px; font-weight:800; cursor:pointer; color:var(--blue-700); }
+      #page-extras .pex-img .pex-star.on{ background:#fef3c7; border-color:#f59e0b; color:#92400e; }
+      #page-extras .pex-btns{ display:flex; gap:10px; margin-top:16px; }
+      #page-extras .pex-btns button{ flex:1; padding:13px; border:0; border-radius:8px; font-weight:800; color:#fff; cursor:pointer; font-size:14px; }
+     </style>
      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <h2 style="margin:0;">💰 Precios de Extras</h2>
+      <h2 style="margin:0;">🧩 Programas Extras</h2>
      </div>
-     <p style="font-size:13px; color:var(--slate-600); margin:0 0 16px 0;">Cargá el precio de cada programa en pesos y/o dólares, cada uno con su alias. Lo que dejes vacío no se muestra en la página de Extras. Si no cargás ningún precio, el programa figura como gratis. Para consultas se usa el WhatsApp de Soporte.</p>
+     <p style="font-size:13px; color:var(--slate-600); margin:0 0 16px 0;">Desde acá manejás todos los programas de la página <b>Extras</b>: datos, precios de la licencia, alias de pago y capturas (se suben a Cloudinary). Todo lo que guardes se ve al instante en Extras y en la página de cada programa. Lo que dejes vacío no se muestra.</p>
+     <div id="exAvisoReglas" style="display:none; background:#fef2f2; border:1.5px solid #fca5a5; color:#991b1b; padding:12px 14px; border-radius:10px; font-size:13px; margin-bottom:14px;">⚠️ Para guardar datos y capturas falta actualizar las <b>reglas de Firebase</b> con el archivo <b>database.rules.json</b> nuevo (agrega el nodo <code>extras_catalogo</code>).</div>
+
      <div class="card-form" style="background: var(--blue-50); padding: 16px; border-radius: 12px; border: 1.5px solid var(--blue-200); margin-bottom:14px;">
       <div style="font-weight:900; font-size:16px; color:var(--blue-700); margin-bottom:4px;">🏦 Alias de pago (para todos los programas)</div>
       <div style="font-size:12px; color:var(--slate-600); margin-bottom:10px;">Si dejás uno vacío, no se muestra.</div>
@@ -4673,9 +4699,11 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
        <div><label style="display:block; white-space:nowrap; margin-bottom:4px; font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase;">Alias pesos (ARS)</label><input type="text" id="inputAliasArsExtras" placeholder="mi.alias.mp" style="width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:'Outfit',sans-serif;"></div>
        <div><label style="display:block; white-space:nowrap; margin-bottom:4px; font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase;">Alias dólares (USD)</label><input type="text" id="inputAliasUsdExtras" placeholder="alias, CBU o PayPal" style="width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:'Outfit',sans-serif;"></div>
       </div>
+      <button id="btnGuardarAliasExtras" onclick="guardarAliasExtras()" class="btn" style="background:var(--blue-700); color:white; padding:12px 18px; font-weight:bold; border:none; border-radius:8px; width:100%; margin-top:12px;">💾 GUARDAR ALIAS</button>
      </div>
-     <div id="listaPreciosExtras" style="display:flex; flex-direction:column; gap:14px; margin-bottom:16px;"><div style="font-size:12px; color:var(--gray-600);">Cargando programas…</div></div>
-     <button id="btnGuardarPreciosExtras" onclick="guardarPreciosExtras()" class="btn" style="background:var(--blue-700); color:white; padding:14px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">💾 GUARDAR PRECIOS</button>
+
+     <div id="listaProgramasExtras"><div style="font-size:12px; color:var(--gray-600);">Cargando programas…</div></div>
+     <button onclick="exNuevoPrograma()" class="btn" style="background:#059669; color:white; padding:14px 18px; font-weight:bold; border:none; border-radius:8px; width:100%; margin:4px 0 20px;">➕ AGREGAR PROGRAMA</button>
     </div>
 
     <!-- MODAL GASTO EXTRA -->
@@ -15350,7 +15378,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             }
         }
         if (pageId === 'stock') window.cargarStockData();
-        if (pageId === 'extras') cargarPreciosExtras();
+        if (pageId === 'extras') cargarProgramasExtras();
         if (pageId === 'usuarios') {
             // Si ya hay listener y datos, renderizar inmediatamente; si no, cargar desde Firebase
             if (_usuariosListener && listadoUsuarios.length > 0) {
@@ -17501,71 +17529,256 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         });
     }
 
-    // ── PRECIOS DE EXTRAS (programas de /extras) ──────────────────────────
-    // Se guardan en configuracion/sistema/extrasPrecios/{idPrograma}/{ars,usd,arsMensual,usdMensual,arsAnual,usdAnual}
-    // y los alias globales en configuracion/sistema/extrasAlias. La página /extras y
-    // /programa los leen de ahí.
-    function cargarPreciosExtras() {
-        const cont = document.getElementById('listaPreciosExtras');
+    // ── PROGRAMAS EXTRAS (página /extras y /programa) ───────────────────────
+    // Datos del programa:      extras_catalogo/{id}                (pisa a programas.json)
+    // Capturas: se suben a Cloudinary (igual que las fotos de las órdenes) y acá se guarda solo el link.
+    // Precios de la licencia:  configuracion/sistema/extrasPrecios/{id}
+    // Alias de pago globales:  configuracion/sistema/extrasAlias
+    const _EX = { progs: [], abiertos: {} };
+    const _exEsc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const _exArr = (v) => (Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : [])).filter(x => x != null && x !== '');
+    const _EX_PER = [['', 'Pago único'], ['Mensual', 'Mensual'], ['Anual', 'Anual']];
+
+    function cargarProgramasExtras() {
+        const cont = document.getElementById('listaProgramasExtras');
         if (!cont) return;
-        const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        const inp = 'width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:\'Outfit\',sans-serif;';
-        const lab = 'font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase; letter-spacing:.5px;';
+        const aviso = document.getElementById('exAvisoReglas');
+        let sinReglas = false;
         Promise.all([
             fetch('/programas.json', { cache: 'no-store' }).then(r => r.json()).catch(() => []),
-            db.ref('configuracion/sistema/extrasPrecios').once('value'),
-            db.ref('configuracion/sistema/extrasAlias').once('value')
-        ]).then(([progs, snapP, snapA]) => {
-            const precios = snapP.val() || {};
-            const al = snapA.val() || {};
+            db.ref('extras_catalogo').once('value').then(s => s.val() || {}).catch(() => { sinReglas = true; return {}; }),
+            db.ref('configuracion/sistema/extrasPrecios').once('value').then(s => s.val() || {}).catch(() => ({})),
+            db.ref('configuracion/sistema/extrasAlias').once('value').then(s => s.val() || {}).catch(() => ({}))
+        ]).then(([est, cat, precios, al]) => {
+            if (aviso) aviso.style.display = sinReglas ? 'block' : 'none';
             const iA = document.getElementById('inputAliasArsExtras'), iU = document.getElementById('inputAliasUsdExtras');
             if (iA && document.activeElement !== iA) iA.value = al.ars || '';
             if (iU && document.activeElement !== iU) iU.value = al.usd || '';
-            if (!progs.length) { cont.innerHTML = '<div style="font-size:12px; color:var(--gray-600);">No se encontraron programas en /programas.json.</div>'; return; }
-            const filas = [['','Pago único'],['Mensual','Mensual'],['Anual','Anual']];
-            cont.innerHTML = progs.map(p => {
-                const x = precios[p.id] || {};
-                const bloques = filas.map(([suf, nom]) => `
-                    <div style="font-size:12px; font-weight:900; color:var(--slate-700,#334155); margin:10px 0 4px;">${nom}</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                      <div><label style="${lab}">Pesos (ARS)</label><input type="text" inputmode="decimal" data-f="ars${suf}" value="${esc(x['ars'+suf])}" placeholder="ej: 15000" style="${inp}"></div>
-                      <div><label style="${lab}">Dólares (USD)</label><input type="text" inputmode="decimal" data-f="usd${suf}" value="${esc(x['usd'+suf])}" placeholder="ej: 10" style="${inp}"></div>
-                    </div>`).join('');
-                return `
-                <div class="card-form" data-extra-card="${esc(p.id)}" style="background: var(--blue-50); padding: 16px; border-radius: 12px; border: 1.5px solid var(--blue-200);">
-                  <div style="font-weight:900; font-size:16px; color:var(--blue-700);">${esc(p.icono || '🧩')} ${esc(p.nombre)}</div>
-                  ${bloques}
-                </div>`;
-            }).join('');
-        }).catch(() => { cont.innerHTML = '<div style="font-size:12px; color:#dc2626;">No se pudo cargar. Probá de nuevo.</div>'; });
+            const lista = est.map(p => ({ ...p, ...(cat[p.id] || {}), _static: true }));
+            Object.keys(cat).filter(id => !est.some(p => p.id === id))
+                .sort((a, b) => (cat[a].creado || 0) - (cat[b].creado || 0))
+                .forEach(id => lista.push({ id, ...cat[id], _static: false }));
+            lista.forEach(p => {
+                ['capturas', 'funciones', 'pasos', 'requisitos'].forEach(k => p[k] = _exArr(p[k]));
+                p._precios = precios[p.id] || {};
+            });
+            _EX.progs = lista;
+            exRender();
+        });
     }
 
-    function guardarPreciosExtras() {
-        const btn = document.getElementById('btnGuardarPreciosExtras');
-        const data = {};
-        document.querySelectorAll('#listaPreciosExtras [data-extra-card]').forEach(card => {
-            const o = {};
-            card.querySelectorAll('[data-f]').forEach(i => { const v = i.value.trim(); if (v) o[i.getAttribute('data-f')] = v; });
-            if (Object.keys(o).length) data[card.getAttribute('data-extra-card')] = o;
+    function exTagPrecio(p) {
+        const x = p._precios || {};
+        return ['ars', 'usd', 'arsMensual', 'usdMensual', 'arsAnual', 'usdAnual'].some(k => x[k]);
+    }
+
+    function exRender() {
+        const cont = document.getElementById('listaProgramasExtras');
+        if (!cont) return;
+        if (!_EX.progs.length) { cont.innerHTML = '<div style="font-size:13px; color:var(--gray-600); margin-bottom:12px;">Todavía no hay programas. Tocá "Agregar programa".</div>'; return; }
+        cont.innerHTML = _EX.progs.map((p, i) => {
+            const x = p._precios || {};
+            const abierto = _EX.abiertos[p.id || ('n' + i)] ? ' open' : '';
+            const precios = _EX_PER.map(([suf, nom]) => `
+                <div style="font-size:12px; font-weight:900; margin:10px 0 2px;">${nom}</div>
+                <div class="pex-2">
+                  <div><label>Pesos (ARS)</label><input type="text" inputmode="decimal" data-f="ars${suf}" value="${_exEsc(x['ars' + suf])}" placeholder="ej: 15000"></div>
+                  <div><label>Dólares (USD)</label><input type="text" inputmode="decimal" data-f="usd${suf}" value="${_exEsc(x['usd' + suf])}" placeholder="ej: 10"></div>
+                </div>`).join('');
+            return `
+            <details class="pex-card" data-i="${i}"${abierto} ontoggle="exToggle(${i}, this)">
+              <summary><span style="font-size:22px;">${_exEsc(p.icono || '🧩')}</span><span>${_exEsc(p.nombre || 'Programa nuevo')}</span>
+                <span class="pex-tag ${exTagPrecio(p) ? 'lic' : ''}">${exTagPrecio(p) ? 'Con licencia' : 'Gratis'}</span>${p.oculto ? '<span class="pex-tag off">Oculto</span>' : ''}<span class="pex-chev">▾</span></summary>
+              <div class="pex-body">
+                <div class="pex-2">
+                  <div><label>Nombre</label><input type="text" data-f="nombre" value="${_exEsc(p.nombre)}"></div>
+                  <div><label>Ícono (emoji)</label><input type="text" data-f="icono" value="${_exEsc(p.icono)}" placeholder="🧩"></div>
+                </div>
+                <label>Resumen (aparece en la tarjeta)</label><input type="text" data-f="resumen" value="${_exEsc(p.resumen)}">
+                <label>Descripción</label><textarea data-f="descripcion">${_exEsc(p.descripcion)}</textarea>
+                <div class="pex-2">
+                  <div><label>Versión</label><input type="text" data-f="version" value="${_exEsc(p.version)}" placeholder="1.0"></div>
+                  <div><label>Tamaño</label><input type="text" data-f="tamano" value="${_exEsc(p.tamano)}" placeholder="135 MB"></div>
+                  <div><label>Plataforma</label><input type="text" data-f="plataforma" value="${_exEsc(p.plataforma || 'Windows')}"></div>
+                  <div><label>Días de prueba</label><input type="number" min="0" data-f="dias_prueba" value="${_exEsc(p.dias_prueba)}" placeholder="vacío = sin prueba"></div>
+                </div>
+                <label>Link de descarga</label><input type="text" data-f="url" value="${_exEsc(p.url)}" placeholder="https://...">
+                <label>Link de la guía (PDF)</label><input type="text" data-f="guia" value="${_exEsc(p.guia)}" placeholder="/virus-killer/guia.pdf">
+                <label>¿Qué hace? (uno por línea)</label><textarea data-f="funciones">${_exEsc(p.funciones.join('\n'))}</textarea>
+                <label>Cómo se usa (un paso por línea)</label><textarea data-f="pasos">${_exEsc(p.pasos.join('\n'))}</textarea>
+                <label>Antes de empezar (uno por línea)</label><textarea data-f="requisitos">${_exEsc(p.requisitos.join('\n'))}</textarea>
+
+                <div class="pex-h">💳 Precio de la licencia <span style="font-weight:600; color:var(--slate-600);">(vacío = no se muestra; sin ningún precio el programa figura "Gratis")</span></div>
+                ${precios}
+
+                <div class="pex-h">🖼️ Capturas <span style="font-weight:600; color:var(--slate-600);">(la ⭐ es la que se ve en la tarjeta de Extras)</span></div>
+                <div class="pex-imgs" id="exImgs${i}"></div>
+                <input type="file" id="exFile${i}" accept="image/*" multiple style="display:none;" onchange="exAgregarImgs(${i}, this)">
+                <button type="button" id="exSubir${i}" onclick="document.getElementById('exFile${i}').click()" class="btn" style="background:var(--blue-700); color:#fff; padding:11px 14px; border:0; border-radius:8px; font-weight:800; width:100%;">📷 SUBIR CAPTURAS</button>
+
+                <label style="display:flex; align-items:center; gap:8px; text-transform:none; font-size:13px; margin-top:14px;"><input type="checkbox" data-f="oculto" ${p.oculto ? 'checked' : ''} style="width:auto;"> Ocultar este programa de la página Extras</label>
+                <div class="pex-btns">
+                  <button type="button" id="exGuardar${i}" style="background:var(--blue-700);" onclick="exGuardar(${i})">💾 GUARDAR PROGRAMA</button>
+                  ${p._static ? '' : `<button type="button" style="background:#dc2626; flex:0 0 auto; padding:13px 16px;" onclick="exEliminar(${i})">🗑️</button>`}
+                </div>
+              </div>
+            </details>`;
+        }).join('');
+        _EX.progs.forEach((p, i) => exRenderImgs(i));
+    }
+
+    function exToggle(i, el) {
+        const p = _EX.progs[i]; if (!p) return;
+        _EX.abiertos[p.id || ('n' + i)] = el.open;
+    }
+
+    // Versiones livianas de una foto de Cloudinary (miniatura / mediana).
+    function _exCld(u, w) {
+        u = String(u || '');
+        return /res\.cloudinary\.com\/[^/]+\/image\/upload\/(?!.*(?:w_|c_|f_|q_))/.test(u) ? u.replace('/upload/', '/upload/f_auto,q_auto,w_' + w + '/') : u;
+    }
+
+    function exRenderImgs(i) {
+        const box = document.getElementById('exImgs' + i); if (!box) return;
+        const p = _EX.progs[i];
+        if (!p.capturas.length) { box.innerHTML = '<div style="font-size:12px; color:var(--gray-600);">Sin capturas todavía.</div>'; return; }
+        box.innerHTML = p.capturas.map((c, n) => `<div class="pex-img">
+                <img src="${_exEsc(_exCld(c, 240))}" alt="">
+                <button type="button" class="pex-x" onclick="exQuitarImg(${i}, ${n})" aria-label="Quitar">✕</button>
+                <button type="button" class="pex-star ${n === 0 ? 'on' : ''}" onclick="exPortada(${i}, ${n})">${n === 0 ? '⭐ Principal' : 'Hacer principal'}</button>
+            </div>`).join('');
+    }
+
+    function exQuitarImg(i, n) {
+        _EX.progs[i].capturas.splice(n, 1);
+        exRenderImgs(i);
+    }
+    function exPortada(i, n) {
+        const p = _EX.progs[i]; const c = p.capturas.splice(n, 1)[0]; p.capturas.unshift(c);
+        exRenderImgs(i);
+    }
+
+    // Achica la foto (máx. 1600px, JPG) antes de subirla a Cloudinary.
+    function _exProcesarImg(file) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const im = new Image();
+            im.onload = () => {
+                const k = Math.min(1, 1600 / Math.max(im.width, im.height));
+                const cv = document.createElement('canvas');
+                cv.width = Math.max(1, Math.round(im.width * k)); cv.height = Math.max(1, Math.round(im.height * k));
+                const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height);
+                URL.revokeObjectURL(url); resolve(cv.toDataURL('image/jpeg', 0.85));
+            };
+            im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img')); };
+            im.src = url;
         });
+    }
+
+    async function exAgregarImgs(i, input) {
+        const p = _EX.progs[i];
+        const files = Array.from(input.files || []); input.value = '';
+        if (!files.length) return;
+        if (p.capturas.length + files.length > 10) { showToast('Máximo 10 capturas por programa', '#f59e0b'); return; }
+        const btn = document.getElementById('exSubir' + i);
+        let ok = 0;
+        for (let n = 0; n < files.length; n++) {
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Subiendo ' + (n + 1) + ' de ' + files.length + '…'; }
+            try {
+                const b64 = await _exProcesarImg(files[n]);
+                const url = await subirACloudinary(b64);
+                if (url) { p.capturas.push(url); ok++; } else showToast('No se pudo subir una de las fotos', '#dc2626');
+            } catch (e) { showToast('No se pudo leer una de las fotos', '#dc2626'); }
+        }
+        if (btn) { btn.disabled = false; btn.textContent = '📷 SUBIR CAPTURAS'; }
+        exRenderImgs(i);
+        if (ok) showToast('Fotos subidas. Tocá GUARDAR PROGRAMA para publicarlas.', '#059669');
+    }
+
+    function exNuevoPrograma() {
+        _EX.progs.push({ id: '', nombre: '', icono: '🧩', resumen: '', descripcion: '', version: '', tamano: '', url: '', guia: '', plataforma: 'Windows', dias_prueba: '', capturas: [], funciones: [], pasos: [], requisitos: [], _static: false, _nuevo: true, _precios: {} });
+        _EX.abiertos['n' + (_EX.progs.length - 1)] = true;
+        exRender();
+        const cards = document.querySelectorAll('#listaProgramasExtras .pex-card');
+        if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function _exSlug(t) {
+        return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'programa';
+    }
+
+    function exGuardar(i) {
+        const p = _EX.progs[i]; if (!p) return;
+        const card = document.querySelector('#listaProgramasExtras .pex-card[data-i="' + i + '"]');
+        const v = (f) => { const el = card.querySelector('[data-f="' + f + '"]'); return el ? (el.type === 'checkbox' ? el.checked : el.value.trim()) : ''; };
+        const nombre = v('nombre');
+        if (!nombre) { showToast('Ponele un nombre al programa', '#f59e0b'); return; }
+                if (!p.id) {
+            let id = _exSlug(nombre), n = 2;
+            while (_EX.progs.some((q, j) => j !== i && q.id === id)) id = _exSlug(nombre) + '-' + (n++);
+            p.id = id;
+            _EX.abiertos[id] = true;
+        }
+        const id = p.id;
+        const lineas = (f) => { const a = v(f).split('\n').map(s => s.trim()).filter(Boolean); return a.length ? a : ['']; };
+        const caps = p.capturas.length ? p.capturas.slice() : [''];
+        const portada = p.capturas[0] ? _exCld(p.capturas[0], 640) : '';
+        const dias = v('dias_prueba');
+        const cat = {
+            nombre, icono: v('icono') || '🧩', resumen: v('resumen'), descripcion: v('descripcion'),
+            version: v('version'), tamano: v('tamano'), plataforma: v('plataforma') || 'Windows',
+            url: v('url'), guia: v('guia'), dias_prueba: dias === '' ? '' : Number(dias),
+            funciones: lineas('funciones'), pasos: lineas('pasos'), requisitos: lineas('requisitos'),
+            capturas: caps, portada, oculto: !!v('oculto'), creado: p.creado || Date.now()
+        };
+        const pr = {};
+        ['ars', 'usd', 'arsMensual', 'usdMensual', 'arsAnual', 'usdAnual'].forEach(k => { const x = v(k); if (x) pr[k] = x; });
+        const up = {};
+        up['extras_catalogo/' + id] = cat;
+        up['configuracion/sistema/extrasPrecios/' + id] = Object.keys(pr).length ? pr : null;
+        const btn = document.getElementById('exGuardar' + i);
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+        db.ref().update(up).then(() => {
+            p.creado = cat.creado;
+            Object.assign(p, cat, { capturas: p.capturas, funciones: lineas('funciones').filter(Boolean), pasos: lineas('pasos').filter(Boolean), requisitos: lineas('requisitos').filter(Boolean), _precios: pr, _nuevo: false });
+            p.dias_prueba = cat.dias_prueba;
+            showToast('✅ ' + nombre + ' guardado. Ya se ve en Extras.', '#059669');
+            exRender();
+        }).catch(() => {
+            if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR PROGRAMA'; }
+            showToast('Error al guardar. ¿Actualizaste las reglas de Firebase?', '#dc2626');
+            const av = document.getElementById('exAvisoReglas'); if (av) av.style.display = 'block';
+        });
+    }
+
+    function exEliminar(i) {
+        const p = _EX.progs[i]; if (!p) return;
+        if (!confirm('¿Eliminar "' + (p.nombre || 'este programa') + '" de Extras? Se borran sus datos, precios y capturas.')) return;
+        if (!p.id) { _EX.progs.splice(i, 1); exRender(); return; }
+        const up = {};
+        up['extras_catalogo/' + p.id] = null; up['configuracion/sistema/extrasPrecios/' + p.id] = null;
+        db.ref().update(up).then(() => { _EX.progs.splice(i, 1); exRender(); showToast('Programa eliminado', '#059669'); })
+            .catch(() => showToast('No se pudo eliminar', '#dc2626'));
+    }
+
+    function guardarAliasExtras() {
+        const btn = document.getElementById('btnGuardarAliasExtras');
         const alias = {};
         const a1 = (document.getElementById('inputAliasArsExtras').value || '').trim();
         const a2 = (document.getElementById('inputAliasUsdExtras').value || '').trim();
         if (a1) alias.ars = a1;
         if (a2) alias.usd = a2;
         if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
-        Promise.all([
-            db.ref('configuracion/sistema/extrasPrecios').set(Object.keys(data).length ? data : null),
-            db.ref('configuracion/sistema/extrasAlias').set(Object.keys(alias).length ? alias : null)
-        ]).then(() => {
+        db.ref('configuracion/sistema/extrasAlias').set(Object.keys(alias).length ? alias : null).then(() => {
             if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
-            showToast('✅ Precios de Extras actualizados', '#059669');
-            setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR PRECIOS'; }, 3000);
+            showToast('✅ Alias actualizados', '#059669');
+            setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR ALIAS'; }, 3000);
         }).catch(() => {
-            if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR PRECIOS'; }
+            if (btn) { btn.disabled = false; btn.textContent = '💾 GUARDAR ALIAS'; }
             showToast('Error al guardar', '#dc2626');
         });
     }
+
 
     function guardarWhatsappSoporte() {
         const raw = document.getElementById('inputWhatsappSoporte').value.trim();
@@ -21238,7 +21451,7 @@ window.LEGAL_VERSION = '2026-10-15-min';   // cambiala si modificás el texto
 
  <script id="mobile-hamburger-js">
 (function(){
-  var TITLES = {gestion:'🖥️ GESTIÓN', ventas:'🛒 VENTAS Y REPARACIONES', presupuesto:'📋 PRESUPUESTO', contabilidad:'💰 CONTABILIDAD', stock:'📦 STOCK', usuarios:'🔑 LICENCIAS', mantenimiento:'⚙️ MANTENIMIENTO', extras:'💰 PRECIOS EXTRAS', ayuda:'❓ AYUDA'};
+  var TITLES = {gestion:'🖥️ GESTIÓN', ventas:'🛒 VENTAS Y REPARACIONES', presupuesto:'📋 PRESUPUESTO', contabilidad:'💰 CONTABILIDAD', stock:'📦 STOCK', usuarios:'🔑 LICENCIAS', mantenimiento:'⚙️ MANTENIMIENTO', extras:'🧩 PROGRAMAS EXTRAS', ayuda:'❓ AYUDA'};
   var ITEMS = ['gestion','ventas','presupuesto','contabilidad','stock','usuarios','mantenimiento','extras'];
   var current = 'gestion';
   function $(id){ return document.getElementById(id); }

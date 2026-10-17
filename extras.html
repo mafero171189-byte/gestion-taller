@@ -60,50 +60,32 @@
 (async () => {
   const lista = document.getElementById('lista');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const FB = 'https://github-c3e96-default-rtdb.firebaseio.com/';
+  const get = (path) => fetch(FB + path + '.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const arr = (v) => (Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : [])).filter((x) => x != null && x !== '');
+  const esUrl = (v) => /^(https?:|\/|data:|\.\/)/i.test(String(v || ''));
   try {
-    const r = await fetch('/programas.json', { cache: 'no-store' });
-    const programas = await r.json();
-    if (!programas.length) { lista.innerHTML = '<div class="vacio">Todavía no hay programas publicados.</div>'; return; }
-    const esc2 = (u) => esc(u);
-    const first = (v) => Array.isArray(v) ? first(v[0]) : (v && typeof v === 'object' ? (v.url || v.src || v.imagen || v.ruta || '') : v);
-    const KEYS = ['imagen','captura','screenshot','portada','miniatura','thumb','thumbnail','foto','imagenPrincipal','capturas','screenshots','imagenes','imágenes','fotos','galeria','galería','gallery','images','img','preview'];
-    const pickImg = (p) => { for (const k of KEYS) { const v = first(p[k]); if (v && typeof v === 'string' && v !== p.icono) return v; } return p._cap || ''; };
-    const esUrl = (v) => /^(https?:|\/|data:|\.\/)/i.test(String(v || ''));
-        // Precios (los carga el admin desde Mi Taller Web > Precios de Extras)
-    let precios = {};
-    try { const rp = await fetch('https://github-c3e96-default-rtdb.firebaseio.com/configuracion/sistema/extrasPrecios.json'); const j = await rp.json(); if (j && typeof j === 'object') precios = j; } catch {}
-    // Respaldo: si el JSON no trae foto, la busco en la página del programa
-    await Promise.all(programas.map(async (p) => {
-      if (pickImg(p)) return;
-      try {
-        const h = await (await fetch('/programa?id=' + encodeURIComponent(p.id))).text();
-        const d = new DOMParser().parseFromString(h, 'text/html');
-        const og = d.querySelector('meta[property="og:image"]');
-        let u = og && og.content;
-        if (!u) { const im = [...d.querySelectorAll('img')].map((i) => i.getAttribute('src')).find((x) => x && !/icon|logo|favicon/i.test(x)); u = im; }
-        if (u) p._cap = new URL(u, location.origin + '/').href;
-      } catch {}
-    }));
-    lista.innerHTML = programas.map((p) => {
-      const cap = pickImg(p);
+    const [est, cat, precios] = await Promise.all([
+      fetch('/programas.json', { cache: 'no-store' }).then((r) => r.json()).catch(() => []),
+      get('extras_catalogo'), get('configuracion/sistema/extrasPrecios')
+    ]);
+    const c = cat || {}, pr = precios || {};
+    // El catálogo que se edita desde Mi Taller Web pisa a programas.json; los programas nuevos se suman.
+    let progs = est.map((p) => ({ ...p, ...(c[p.id] || {}) }));
+    Object.keys(c).filter((id) => !est.some((p) => p.id === id)).sort((x, y) => (c[x].creado || 0) - (c[y].creado || 0))
+      .forEach((id) => progs.push({ id, ...c[id] }));
+    progs = progs.filter((p) => !p.oculto && p.nombre);
+    if (!progs.length) { lista.innerHTML = '<div class="vacio">Todavía no hay programas publicados.</div>'; return; }
+    lista.innerHTML = progs.map((p) => {
+      const caps = arr(p.capturas);
+      const cap = p.portada || caps.find((x) => !String(x).startsWith('fb:')) || '';
       const ic = p.icono || '🧩';
-      const x = precios[p.id] || {};
-      const per = [['', ''], ['Mensual', '/mes'], ['Anual', '/año']].filter(([k]) => x['ars' + k] || x['usd' + k]);
-      let plan = 'Gratis';
-      const esGratis = !per.length;
-      if (!esGratis) {
-        const [k, suf] = per[0];
-        const partes = [];
-        if (x['ars' + k]) partes.push('$ ' + x['ars' + k] + suf);
-        if (x['usd' + k]) partes.push('US$ ' + x['usd' + k] + suf);
-        plan = partes.join(' · ') + (per.length > 1 ? ' +' : '');
-      }
-      const pl = plan.toLowerCase();
-      const cls = esGratis ? '' : 'plus';
+      const x = pr[p.id] || {};
+      const conLicencia = ['ars', 'usd', 'arsMensual', 'usdMensual', 'arsAnual', 'usdAnual'].some((k) => x[k]);
       return `
       <a class="card" href="/programa?id=${encodeURIComponent(p.id)}">
-        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="" onerror="this.remove()">` : ''}<span class="badge ${cls}">${esGratis ? 'Gratis' : plan}</span></div>
-        <div class="ico">${esUrl(ic) ? `<img src="${esc2(ic)}" alt="">` : esc(ic)}</div>
+        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc(cap)}" alt="" onerror="this.remove()">` : ''}<span class="badge ${conLicencia ? 'plus' : ''}">${conLicencia ? 'Con licencia' : 'Gratis'}</span></div>
+        <div class="ico">${esUrl(ic) ? `<img src="${esc(ic)}" alt="">` : esc(ic)}</div>
         <div class="body">
           <div class="row"><h2>${esc(p.nombre)}</h2>${p.version ? `<span class="ver">${esc(p.version)}</span>` : ''}</div>
           <p>${esc(p.resumen)}</p>
