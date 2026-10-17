@@ -28,6 +28,11 @@
   .btn { display:inline-block; padding:13px 22px; border-radius:10px; font-weight:800; text-decoration:none; margin:4px 6px 4px 0; font-size:15px; }
   .btn-main { background:#1e9e53; color:#fff; }
   .btn-sec { background:#1e4d8c; color:#fff; }
+  .precio { font-size:34px; font-weight:800; color:#fff; margin:0 0 4px; }
+  .precio small { font-size:14px; font-weight:600; color:#8fa3bf; }
+  .alias { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#0a1730; border:1px dashed #1e4d8c; border-radius:10px; padding:12px 14px; margin:12px 0; }
+  .alias b { font-size:18px; color:#fff; word-break:break-all; }
+  .alias button { margin-left:auto; background:#1e4d8c; color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; }
   .btn[aria-disabled="true"] { background:#2a3a55; color:#8fa3bf; pointer-events:none; }
   .note { background:#16232f; border-left:3px solid #f0a93b; padding:10px 14px; border-radius:8px; color:#e8d9b5; font-size:14px; margin-top:12px; }
   .vacio { color:#8fa3bf; padding: 40px 0; text-align:center; }
@@ -48,6 +53,7 @@
 <footer class="foot">Mi Taller Web · Extras</footer>
 
 <script>
+function copiarAlias(b){ var t=document.getElementById('aliasTxt').textContent; var ok=function(){b.textContent='¡Copiado!';setTimeout(function(){b.textContent='Copiar';},2000);}; if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,ok);}else{ok();} }
 (async () => {
   const cont = document.getElementById('contenido');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -64,7 +70,16 @@
     const pasos = (p.pasos || []).map((x) => `<li>${esc(x)}</li>`).join('');
     const requisitos = (p.requisitos || []).map((x) => `<li>${esc(x)}</li>`).join('');
     const tieneUrl = !!p.url;
-    const wa = 'https://wa.me/5491135654094?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
+    // Precio, alias y WhatsApp se administran desde Mi Taller Web > Precios de Extras
+    const FB = 'https://github-c3e96-default-rtdb.firebaseio.com/configuracion/sistema/';
+    const leer = (n) => fetch(FB + n + '.json').then((x) => x.json()).catch(() => null);
+    const [precios, aliasPago, waNum] = await Promise.all([leer('extrasPrecios'), leer('aliasPago'), leer('soporteWhatsapp')]);
+    const num = String(waNum || '5491135654094').replace(/\D/g, '');
+    let precio = precios && precios[p.id] && precios[p.id].precio ? String(precios[p.id].precio).trim() : '';
+    const esPago = !!precio && !/^gratis$/i.test(precio);
+    if (esPago && /^[\d.,\s]+$/.test(precio)) precio = '$ ' + precio;
+    const wa = 'https://wa.me/' + num + '?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
+    const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar ' + p.nombre + ' (' + precio + '). Ya hice la transferencia / quiero coordinar el pago.');
 
     cont.innerHTML = `
       <div class="head"><div class="ico">${esc(p.icono || '🧩')}</div><h1>${esc(p.nombre)}</h1></div>
@@ -73,12 +88,18 @@
 
       ${shots}
 
-      <div class="card">
+      ${esPago ? `<div class="card">
+        <h2>Comprar</h2>
+        <div class="precio">${esc(precio)}</div>
+        ${aliasPago ? `<div>Pagá por transferencia al alias:</div><div class="alias"><b id="aliasTxt">${esc(aliasPago)}</b><button type="button" onclick="copiarAlias(this)">Copiar</button></div>` : ''}
+        <a class="btn btn-main" href="${waCompra}" target="_blank" rel="noopener">💬 Comprar por WhatsApp</a>
+        <div class="note">Después de pagar, mandanos el comprobante por WhatsApp y te pasamos el link de descarga y la activación.</div>
+      </div>` : `<div class="card">
         <h2>Descarga</h2>
         <a class="btn btn-main" href="${tieneUrl ? esc(p.url) : '#'}" ${tieneUrl ? 'target="_blank" rel="noopener"' : ''} aria-disabled="${tieneUrl ? 'false' : 'true'}">${tieneUrl ? '⬇️ Descargar' : '⏳ Próximamente'}</a>
         ${p.guia ? `<a class="btn btn-sec" href="${esc(p.guia)}" target="_blank" rel="noopener">📄 Guía de uso (PDF)</a>` : ''}
         <div class="note">Como el programa todavía no tiene firma digital, Windows puede mostrar un aviso azul la primera vez. Tocá <b>Más información</b> y después <b>Ejecutar de todas formas</b>.</div>
-      </div>
+      </div>`}
 
       ${funciones ? `<div class="card"><h2>¿Qué hace?</h2><ul>${funciones}</ul></div>` : ''}
       ${pasos ? `<div class="card"><h2>Cómo se usa</h2><ol>${pasos}</ol></div>` : ''}
