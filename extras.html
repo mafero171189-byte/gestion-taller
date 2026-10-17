@@ -8,23 +8,37 @@
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin:0; background:#06122a; color:#e8ecf1; font-family: system-ui, Segoe UI, Arial, sans-serif; line-height:1.55; }
+  body { margin:0; background:#06122a; color:#e8ecf1; font-family: system-ui, Segoe UI, Arial, sans-serif; line-height:1.55;
+         background-image: linear-gradient(rgba(30,77,140,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(30,77,140,.07) 1px, transparent 1px); background-size:48px 48px; }
   a { color:inherit; text-decoration:none; }
-  .top { display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid #15294d; }
+  .top { display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid #15294d; background:rgba(6,18,42,.85); }
   .top .brand { font-weight:800; color:#fff; }
   .top .volver { color:#9fc2e8; font-weight:600; font-size:14px; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
   h1 { font-size: 30px; margin: 36px 0 6px; }
   .sub { color:#b7c6da; margin: 0 0 26px; }
-  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; padding-bottom:40px; }
-  .card { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:14px; padding:20px; display:block; transition: transform .15s, border-color .15s; }
-  .card:hover { transform: translateY(-2px); border-color:#38bdf8; }
-  .card .ico { font-size:30px; }
-  .card h2 { font-size:18px; margin:8px 0 6px; color:#fff; }
-  .card p { margin:0 0 10px; color:#b7c6da; font-size:14px; }
-  .card .meta { color:#8fa3bf; font-size:12px; }
-  .vacio { color:#8fa3bf; padding: 30px 0; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; padding-bottom:40px; }
+  .card { position:relative; display:flex; flex-direction:column; background:linear-gradient(180deg,#0e1d3a,#0a1730); border:1px solid #1b3a6b; border-radius:18px; overflow:hidden; transition: transform .18s, border-color .18s, box-shadow .18s; }
+  .card:hover { transform: translateY(-4px); border-color:#38bdf8; box-shadow:0 12px 32px rgba(0,0,0,.45), 0 0 0 1px rgba(56,189,248,.25); }
+  .shot { position:relative; height:170px; background:linear-gradient(135deg,#12305e,#0a1a38 60%,#1e4d8c); overflow:hidden; }
+  .shot img.cap { width:100%; height:100%; object-fit:cover; display:block; }
+  .shot::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 55%,rgba(10,23,48,.85)); pointer-events:none; }
+  .badge { position:absolute; right:14px; bottom:12px; z-index:2; padding:4px 14px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; background:rgba(8,20,45,.85); border:1px solid #1e4d8c; color:#38bdf8; }
+  .badge.plus { color:#e0a060; border-color:#a0653a; }
+  .badge.ultra { color:#f0c850; border-color:#b8922a; }
+  .ico { position:relative; z-index:3; width:72px; height:72px; margin:-36px 0 0 18px; border-radius:20px; background:#0b1a36; border:2px solid #15294d; display:flex; align-items:center; justify-content:center; font-size:38px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+  .ico img { width:100%; height:100%; object-fit:cover; }
+  .body { padding:12px 18px 18px; display:flex; flex-direction:column; flex:1; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .card h2 { font-size:20px; margin:0; color:#fff; font-weight:800; }
+  .ver { background:#15294d; border:1px solid #1e3a66; border-radius:8px; padding:2px 10px; font-size:13px; font-weight:700; color:#cfe0f5; white-space:nowrap; }
+  .card p { margin:10px 0 16px; color:#9fb2cc; font-size:14.5px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; flex:1; }
+  .btn { display:block; text-align:center; padding:12px; border-radius:10px; font-weight:800; font-size:15px; color:#fff; background:linear-gradient(180deg,#1e5aa8,#174a8c); border:1px solid #2a6bc0; }
+  .card:hover .btn { background:linear-gradient(180deg,#2467b8,#1b559f); }
+  .meta { color:#8fa3bf; font-size:12px; margin-top:8px; text-align:center; min-height:1em; }
+  .vacio { color:#8fa3bf; padding: 30px 0; grid-column:1/-1; }
   .foot { text-align:center; color:#6b7f9e; font-size:13px; padding: 26px 0 40px; border-top:1px solid #15294d; }
+  @media (max-width:520px){ .grid{ grid-template-columns:1fr; } .shot{ height:150px; } }
 </style>
 </head>
 <body>
@@ -50,13 +64,26 @@
     const r = await fetch('/programas.json', { cache: 'no-store' });
     const programas = await r.json();
     if (!programas.length) { lista.innerHTML = '<div class="vacio">Todavía no hay programas publicados.</div>'; return; }
-    lista.innerHTML = programas.map((p) => `
+    const esc2 = (u) => esc(u);
+    const esUrl = (v) => /^(https?:|\/|data:|\.\/)/i.test(String(v || ''));
+    lista.innerHTML = programas.map((p) => {
+      const cap = p.imagen || p.captura || p.screenshot || p.portada || '';
+      const ic = p.icono || '🧩';
+      const plan = String(p.plan || p.tipo || p.licencia || 'Gratis');
+      const pl = plan.toLowerCase();
+      const cls = pl.includes('ultra') ? 'ultra' : (pl.includes('plus') ? 'plus' : '');
+      return `
       <a class="card" href="/programa?id=${encodeURIComponent(p.id)}">
-        <div class="ico">${esc(p.icono || '🧩')}</div>
-        <h2>${esc(p.nombre)}</h2>
-        <p>${esc(p.resumen)}</p>
-        <div class="meta">${p.version ? 'Versión ' + esc(p.version) : ''}${p.tamano ? ' · ' + esc(p.tamano) : ''}</div>
-      </a>`).join('');
+        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="">` : ''}<span class="badge ${cls}">${esc(plan)}</span></div>
+        <div class="ico">${esUrl(ic) ? `<img src="${esc2(ic)}" alt="">` : esc(ic)}</div>
+        <div class="body">
+          <div class="row"><h2>${esc(p.nombre)}</h2>${p.version ? `<span class="ver">${esc(p.version)}</span>` : ''}</div>
+          <p>${esc(p.resumen)}</p>
+          <span class="btn">Ver información</span>
+          <div class="meta">${p.tamano ? esc(p.tamano) : ''}</div>
+        </div>
+      </a>`;
+    }).join('');
   } catch {
     lista.innerHTML = '<div class="vacio">No se pudo cargar el listado. Probá de nuevo en un momento.</div>';
   }
