@@ -65,16 +65,31 @@
     const programas = await r.json();
     if (!programas.length) { lista.innerHTML = '<div class="vacio">Todavía no hay programas publicados.</div>'; return; }
     const esc2 = (u) => esc(u);
+    const first = (v) => Array.isArray(v) ? first(v[0]) : (v && typeof v === 'object' ? (v.url || v.src || v.imagen || v.ruta || '') : v);
+    const KEYS = ['imagen','captura','screenshot','portada','miniatura','thumb','thumbnail','foto','imagenPrincipal','capturas','screenshots','imagenes','imágenes','fotos','galeria','galería','gallery','images','img','preview'];
+    const pickImg = (p) => { for (const k of KEYS) { const v = first(p[k]); if (v && typeof v === 'string' && v !== p.icono) return v; } return p._cap || ''; };
     const esUrl = (v) => /^(https?:|\/|data:|\.\/)/i.test(String(v || ''));
+        // Respaldo: si el JSON no trae foto, la busco en la página del programa
+    await Promise.all(programas.map(async (p) => {
+      if (pickImg(p)) return;
+      try {
+        const h = await (await fetch('/programa?id=' + encodeURIComponent(p.id))).text();
+        const d = new DOMParser().parseFromString(h, 'text/html');
+        const og = d.querySelector('meta[property="og:image"]');
+        let u = og && og.content;
+        if (!u) { const im = [...d.querySelectorAll('img')].map((i) => i.getAttribute('src')).find((x) => x && !/icon|logo|favicon/i.test(x)); u = im; }
+        if (u) p._cap = new URL(u, location.origin + '/').href;
+      } catch {}
+    }));
     lista.innerHTML = programas.map((p) => {
-      const cap = p.imagen || p.captura || p.screenshot || p.portada || '';
+      const cap = pickImg(p);
       const ic = p.icono || '🧩';
       const plan = String(p.plan || p.tipo || p.licencia || 'Gratis');
       const pl = plan.toLowerCase();
       const cls = pl.includes('ultra') ? 'ultra' : (pl.includes('plus') ? 'plus' : '');
       return `
       <a class="card" href="/programa?id=${encodeURIComponent(p.id)}">
-        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="">` : ''}<span class="badge ${cls}">${esc(plan)}</span></div>
+        <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="" onerror="this.remove()">` : ''}<span class="badge ${cls}">${esc(plan)}</span></div>
         <div class="ico">${esUrl(ic) ? `<img src="${esc2(ic)}" alt="">` : esc(ic)}</div>
         <div class="body">
           <div class="row"><h2>${esc(p.nombre)}</h2>${p.version ? `<span class="ver">${esc(p.version)}</span>` : ''}</div>
