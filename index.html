@@ -13980,9 +13980,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     };
 
     // --- NUEVA FUNCIÓN PARA CLOUDINARY ---
-    async function subirACloudinary(base64Data, intentos = 3) {
-        const cloudName = "dsbiva6k0"; 
-        const uploadPreset = "fotos_taller"; 
+    async function subirACloudinary(base64Data, intentos = 3, preset) {
+        const cloudName = "dsbiva6k0";
+        const uploadPreset = preset || "fotos_taller";
         
         for (let intento = 1; intento <= intentos; intento++) {
             const formData = new FormData();
@@ -17688,7 +17688,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Subiendo ' + (n + 1) + ' de ' + files.length + '…'; }
             try {
                 const b64 = await _exProcesarImg(files[n]);
-                const url = await subirACloudinary(b64);
+                // Preset propio para capturas de programas (carpeta aparte). Si todavía no existe, usa el de siempre.
+                let url = await subirACloudinary(b64, 1, 'extras_programas');
+                if (!url) url = await subirACloudinary(b64);
                 if (url) { p.capturas.push(url); ok++; } else showToast('No se pudo subir una de las fotos', '#dc2626');
             } catch (e) { showToast('No se pudo leer una de las fotos', '#dc2626'); }
         }
