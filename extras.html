@@ -69,7 +69,10 @@
     const KEYS = ['imagen','captura','screenshot','portada','miniatura','thumb','thumbnail','foto','imagenPrincipal','capturas','screenshots','imagenes','imágenes','fotos','galeria','galería','gallery','images','img','preview'];
     const pickImg = (p) => { for (const k of KEYS) { const v = first(p[k]); if (v && typeof v === 'string' && v !== p.icono) return v; } return p._cap || ''; };
     const esUrl = (v) => /^(https?:|\/|data:|\.\/)/i.test(String(v || ''));
-        // Respaldo: si el JSON no trae foto, la busco en la página del programa
+        // Precios (los carga el admin desde Mi Taller Web > Precios de Extras)
+    let precios = {};
+    try { const rp = await fetch('https://github-c3e96-default-rtdb.firebaseio.com/configuracion/sistema/extrasPrecios.json'); const j = await rp.json(); if (j && typeof j === 'object') precios = j; } catch {}
+    // Respaldo: si el JSON no trae foto, la busco en la página del programa
     await Promise.all(programas.map(async (p) => {
       if (pickImg(p)) return;
       try {
@@ -84,9 +87,11 @@
     lista.innerHTML = programas.map((p) => {
       const cap = pickImg(p);
       const ic = p.icono || '🧩';
-      const plan = String(p.plan || p.tipo || p.licencia || 'Gratis');
+      const pr = precios[p.id] && precios[p.id].precio ? String(precios[p.id].precio).trim() : '';
+      const esGratis = !pr || /^gratis$/i.test(pr);
+      const plan = esGratis ? 'Gratis' : (/^[\d.,\s]+$/.test(pr) ? '$ ' + pr : pr);
       const pl = plan.toLowerCase();
-      const cls = pl.includes('ultra') ? 'ultra' : (pl.includes('plus') ? 'plus' : '');
+      const cls = esGratis ? '' : 'plus';
       return `
       <a class="card" href="/programa?id=${encodeURIComponent(p.id)}">
         <div class="shot">${esUrl(cap) ? `<img class="cap" loading="lazy" src="${esc2(cap)}" alt="" onerror="this.remove()">` : ''}<span class="badge ${cls}">${esc(plan)}</span></div>
