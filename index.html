@@ -1665,11 +1665,11 @@
         /* ── HERO ── */
         #landing-page .hero{
             position: relative;
-            min-height: 100vh;
+            min-height: auto;
             display: flex; align-items: center; justify-content: center;
             flex-direction: column;
             text-align: center;
-            padding: 120px 24px 80px;
+            padding: 120px 24px 60px;
             overflow: hidden;
         }
 
@@ -2267,7 +2267,10 @@
 
             #landing-page .hero h1{ letter-spacing: -0.2px; }
 
-            #landing-page .hero-stats{ gap: 24px; }
+            #landing-page .hero-stats{ gap: 24px; margin-top: 40px; }
+            #landing-page .hero{ padding: 100px 20px 40px; }
+            #landing-page section{ padding: 56px 20px; }
+            #landing-page .hero-glow{ width: 420px; height: 420px; }
 
             #landing-page footer{ flex-direction: column; align-items: flex-start; }
 }
@@ -2281,7 +2284,7 @@ function volverInicio() {
     var lp = document.getElementById('landing-page');
     if (lp) { lp.style.display = ''; if (lp.scrollTo) lp.scrollTo(0, 0); }
 }
-function showApp() {
+function showApp(modo) {
     var overlay = document.getElementById('landing-transition');
     overlay.classList.add('active');
     
@@ -2291,6 +2294,9 @@ function showApp() {
         var lp = document.getElementById('landing-page');
         if (lp) lp.style.display = 'none';
         overlay.classList.remove('active');
+        if (modo === 'registro' && typeof mostrarPanelRegistro === 'function') {
+            try { mostrarPanelRegistro(); } catch(e) {}
+        }
     }, 450);
 }
 </script>
@@ -2734,7 +2740,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <li>Tickets y PDF</li>
         <li id="landing-li-disp-prueba">1 dispositivo conectado</li>
        </ul>
-       <a href="#" onclick="showApp(); return false;" class="plan-btn plan-btn-ghost">Empezar prueba gratuita</a>
+       <a href="#" onclick="showApp('registro'); return false;" class="plan-btn plan-btn-ghost">Empezar prueba gratuita</a>
       </div>
       <div class="plan-card featured reveal reveal-d1" id="landing-plan-mensual">
        <div class="plan-popular">⭐ Más elegido</div>
@@ -2865,7 +2871,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     </div>
     <p class="cta-sub reveal" id="landing-cta-sub">Probá Mi Taller Web por 15 días sin ningún costo. Sin tarjeta. Sin compromiso.</p>
     <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap; position:relative;">
-     <a href="#" onclick="showApp(); return false;" class="btn-primary reveal">🚀 Crear mi cuenta gratis</a> <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20Mi%20Taller%20Web" target="_blank" class="btn-ghost reveal reveal-d1 wa-soporte-link">📲 Hablar con soporte</a>
+     <a href="#" onclick="showApp('registro'); return false;" class="btn-primary reveal">🚀 Crear mi cuenta gratis</a> <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20info%20sobre%20Mi%20Taller%20Web" target="_blank" class="btn-ghost reveal reveal-d1 wa-soporte-link">📲 Hablar con soporte</a>
     </div>
    </section>
    <!-- FOOTER -->
@@ -2898,8 +2904,17 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     const revealEls = landingContainer ? landingContainer.querySelectorAll('.reveal') : [];
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
-    }, { threshold: 0.12, root: landingContainer });
+    }, { threshold: 0.05 });
     revealEls.forEach(el => observer.observe(el));
+    // Respaldo: si algo queda oculto, mostrarlo al scrollear
+    function revealFallback() {
+        var h = window.innerHeight || 800;
+        landingContainer && landingContainer.querySelectorAll('.reveal:not(.visible)').forEach(function(el) {
+            var rc = el.getBoundingClientRect();
+            if (rc.top < h * 0.95 && rc.bottom > 0) el.classList.add('visible');
+        });
+    }
+    if (landingContainer) { landingContainer.addEventListener('scroll', revealFallback, { passive: true }); setTimeout(revealFallback, 300); }
 
     // Nav smooth links (scoped to landing page)
     document.querySelectorAll('#landing-page a[href^="#"]').forEach(a => {
