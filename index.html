@@ -4666,6 +4666,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <h2 style="margin:0;">💰 Precios de Extras</h2>
      </div>
      <p style="font-size:13px; color:var(--slate-600); margin:0 0 16px 0;">Cargá el precio de cada programa en pesos y/o dólares, cada uno con su alias. Lo que dejes vacío no se muestra en la página de Extras. Si no cargás ningún precio, el programa figura como gratis. Para consultas se usa el WhatsApp de Soporte.</p>
+     <div class="card-form" style="background: var(--blue-50); padding: 16px; border-radius: 12px; border: 1.5px solid var(--blue-200); margin-bottom:14px;">
+      <div style="font-weight:900; font-size:16px; color:var(--blue-700); margin-bottom:4px;">🏦 Alias de pago (para todos los programas)</div>
+      <div style="font-size:12px; color:var(--slate-600); margin-bottom:10px;">Si dejás uno vacío, no se muestra.</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+       <div><label style="font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase;">Alias pesos (ARS)</label><input type="text" id="inputAliasArsExtras" placeholder="mi.alias.mp" style="width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:'Outfit',sans-serif;"></div>
+       <div><label style="font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase;">Alias / cuenta dólares (USD)</label><input type="text" id="inputAliasUsdExtras" placeholder="alias, CBU o PayPal" style="width:100%; box-sizing:border-box; padding:9px 10px; border:1.5px solid var(--blue-200); border-radius:8px; font-size:14px; font-weight:700; font-family:'Outfit',sans-serif;"></div>
+      </div>
+     </div>
      <div id="listaPreciosExtras" style="display:flex; flex-direction:column; gap:14px; margin-bottom:16px;"><div style="font-size:12px; color:var(--gray-600);">Cargando programas…</div></div>
      <button id="btnGuardarPreciosExtras" onclick="guardarPreciosExtras()" class="btn" style="background:var(--blue-700); color:white; padding:14px 18px; font-weight:bold; border:none; border-radius:8px; width:100%;">💾 GUARDAR PRECIOS</button>
     </div>
@@ -17494,8 +17502,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     }
 
     // ── PRECIOS DE EXTRAS (programas de /extras) ──────────────────────────
-    // Se guardan en configuracion/sistema/extrasPrecios/{idPrograma}/precio
-    // y el alias en configuracion/sistema/aliasPago. La página /extras y
+    // Se guardan en configuracion/sistema/extrasPrecios/{idPrograma}/{ars,usd,arsMensual,usdMensual,arsAnual,usdAnual}
+    // y los alias globales en configuracion/sistema/extrasAlias. La página /extras y
     // /programa los leen de ahí.
     function cargarPreciosExtras() {
         const cont = document.getElementById('listaPreciosExtras');
@@ -17505,21 +17513,28 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const lab = 'font-size:11px; font-weight:800; color:var(--blue-700); text-transform:uppercase; letter-spacing:.5px;';
         Promise.all([
             fetch('/programas.json', { cache: 'no-store' }).then(r => r.json()).catch(() => []),
-            db.ref('configuracion/sistema/extrasPrecios').once('value')
-        ]).then(([progs, snapP]) => {
+            db.ref('configuracion/sistema/extrasPrecios').once('value'),
+            db.ref('configuracion/sistema/extrasAlias').once('value')
+        ]).then(([progs, snapP, snapA]) => {
             const precios = snapP.val() || {};
+            const al = snapA.val() || {};
+            const iA = document.getElementById('inputAliasArsExtras'), iU = document.getElementById('inputAliasUsdExtras');
+            if (iA && document.activeElement !== iA) iA.value = al.ars || '';
+            if (iU && document.activeElement !== iU) iU.value = al.usd || '';
             if (!progs.length) { cont.innerHTML = '<div style="font-size:12px; color:var(--gray-600);">No se encontraron programas en /programas.json.</div>'; return; }
+            const filas = [['','Pago único'],['Mensual','Mensual'],['Anual','Anual']];
             cont.innerHTML = progs.map(p => {
                 const x = precios[p.id] || {};
+                const bloques = filas.map(([suf, nom]) => `
+                    <div style="font-size:12px; font-weight:900; color:var(--slate-700,#334155); margin:10px 0 4px;">${nom}</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                      <div><label style="${lab}">Pesos (ARS)</label><input type="text" inputmode="decimal" data-f="ars${suf}" value="${esc(x['ars'+suf])}" placeholder="ej: 15000" style="${inp}"></div>
+                      <div><label style="${lab}">Dólares (USD)</label><input type="text" inputmode="decimal" data-f="usd${suf}" value="${esc(x['usd'+suf])}" placeholder="ej: 10" style="${inp}"></div>
+                    </div>`).join('');
                 return `
                 <div class="card-form" data-extra-card="${esc(p.id)}" style="background: var(--blue-50); padding: 16px; border-radius: 12px; border: 1.5px solid var(--blue-200);">
-                  <div style="font-weight:900; font-size:16px; color:var(--blue-700); margin-bottom:10px;">${esc(p.icono || '🧩')} ${esc(p.nombre)}</div>
-                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div><label style="${lab}">Precio en pesos (ARS)</label><input type="text" inputmode="decimal" data-f="ars" value="${esc(x.ars)}" placeholder="ej: 15000" style="${inp}"></div>
-                    <div><label style="${lab}">Alias pesos</label><input type="text" data-f="aliasArs" value="${esc(x.aliasArs)}" placeholder="mi.alias.mp" style="${inp}"></div>
-                    <div><label style="${lab}">Precio en dólares (USD)</label><input type="text" inputmode="decimal" data-f="usd" value="${esc(x.usd)}" placeholder="ej: 10" style="${inp}"></div>
-                    <div><label style="${lab}">Alias / cuenta dólares</label><input type="text" data-f="aliasUsd" value="${esc(x.aliasUsd)}" placeholder="alias, CBU o PayPal" style="${inp}"></div>
-                  </div>
+                  <div style="font-weight:900; font-size:16px; color:var(--blue-700);">${esc(p.icono || '🧩')} ${esc(p.nombre)}</div>
+                  ${bloques}
                 </div>`;
             }).join('');
         }).catch(() => { cont.innerHTML = '<div style="font-size:12px; color:#dc2626;">No se pudo cargar. Probá de nuevo.</div>'; });
@@ -17533,8 +17548,16 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             card.querySelectorAll('[data-f]').forEach(i => { const v = i.value.trim(); if (v) o[i.getAttribute('data-f')] = v; });
             if (Object.keys(o).length) data[card.getAttribute('data-extra-card')] = o;
         });
+        const alias = {};
+        const a1 = (document.getElementById('inputAliasArsExtras').value || '').trim();
+        const a2 = (document.getElementById('inputAliasUsdExtras').value || '').trim();
+        if (a1) alias.ars = a1;
+        if (a2) alias.usd = a2;
         if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
-        db.ref('configuracion/sistema/extrasPrecios').set(Object.keys(data).length ? data : null).then(() => {
+        Promise.all([
+            db.ref('configuracion/sistema/extrasPrecios').set(Object.keys(data).length ? data : null),
+            db.ref('configuracion/sistema/extrasAlias').set(Object.keys(alias).length ? alias : null)
+        ]).then(() => {
             if (btn) { btn.disabled = false; btn.textContent = '✅ ¡Guardado!'; }
             showToast('✅ Precios de Extras actualizados', '#059669');
             setTimeout(() => { if (btn) btn.textContent = '💾 GUARDAR PRECIOS'; }, 3000);

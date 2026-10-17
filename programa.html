@@ -73,16 +73,18 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
     // Precio, alias y WhatsApp se administran desde Mi Taller Web > Precios de Extras
     const FB = 'https://github-c3e96-default-rtdb.firebaseio.com/configuracion/sistema/';
     const leer = (n) => fetch(FB + n + '.json').then((x) => x.json()).catch(() => null);
-    const [precios, waNum] = await Promise.all([leer('extrasPrecios'), leer('soporteWhatsapp')]);
+    const [precios, alias, waNum] = await Promise.all([leer('extrasPrecios'), leer('extrasAlias'), leer('soporteWhatsapp')]);
     const num = String(waNum || '5491135654094').replace(/\D/g, '');
     const x = (precios && precios[p.id]) || {};
-    const monedas = [];
-    if (x.ars) monedas.push({ txt: '$ ' + x.ars + ' ARS', etiqueta: 'Pesos argentinos', alias: x.aliasArs || '' });
-    if (x.usd) monedas.push({ txt: 'US$ ' + x.usd, etiqueta: 'Dólares', alias: x.aliasUsd || '' });
-    const esPago = monedas.length > 0;
-    const precio = monedas.map((m) => m.txt).join(' / ');
+    const al = alias || {};
+    const periodos = [['', 'Pago único', ''], ['Mensual', 'Mensual', ' / mes'], ['Anual', 'Anual', ' / año']]
+      .map(([k, nom, suf]) => ({ nom, ars: x['ars' + k] ? '$ ' + x['ars' + k] + suf : '', usd: x['usd' + k] ? 'US$ ' + x['usd' + k] + suf : '' }))
+      .filter((o) => o.ars || o.usd);
+    const esPago = periodos.length > 0;
+    const hayArs = periodos.some((o) => o.ars), hayUsd = periodos.some((o) => o.usd);
+    const precio = periodos.map((o) => o.nom + ': ' + [o.ars, o.usd].filter(Boolean).join(' / ')).join(' | ');
     const wa = 'https://wa.me/' + num + '?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
-    const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar ' + p.nombre + ' (' + precio + '). Ya hice la transferencia / quiero coordinar el pago.');
+    const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar ' + p.nombre + ' (' + precio + '). Quiero coordinar el pago.');
 
     cont.innerHTML = `
       <div class="head"><div class="ico">${esc(p.icono || '🧩')}</div><h1>${esc(p.nombre)}</h1></div>
@@ -93,11 +95,13 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
 
       ${esPago ? `<div class="card">
         <h2>Comprar</h2>
-        ${monedas.map((m, i) => `<div style="margin-bottom:14px;">
-          <div style="color:#8fa3bf;font-size:13px;">${m.etiqueta}</div>
-          <div class="precio">${esc(m.txt)}</div>
-          ${m.alias ? `<div class="alias"><span>Alias:</span><b id="alias${i}">${esc(m.alias)}</b><button type="button" onclick="copiarAlias(this,'alias${i}')">Copiar</button></div>` : ''}
+        ${periodos.map((o) => `<div style="margin-bottom:14px;">
+          <div style="color:#8fa3bf;font-size:13px;">${o.nom}</div>
+          ${o.ars ? `<div class="precio">${esc(o.ars)} <small>ARS</small></div>` : ''}
+          ${o.usd ? `<div class="precio">${esc(o.usd)} <small>USD</small></div>` : ''}
         </div>`).join('')}
+        ${hayArs && al.ars ? `<div class="alias"><span>Alias pesos:</span><b id="aliasArs">${esc(al.ars)}</b><button type="button" onclick="copiarAlias(this,'aliasArs')">Copiar</button></div>` : ''}
+        ${hayUsd && al.usd ? `<div class="alias"><span>Alias dólares:</span><b id="aliasUsd">${esc(al.usd)}</b><button type="button" onclick="copiarAlias(this,'aliasUsd')">Copiar</button></div>` : ''}
         <a class="btn btn-main" href="${waCompra}" target="_blank" rel="noopener">💬 Comprar por WhatsApp</a>
         <div class="note">Después de pagar, mandanos el comprobante por WhatsApp y te pasamos el link de descarga y la activación.</div>
       </div>` : `<div class="card">

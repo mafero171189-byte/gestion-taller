@@ -88,11 +88,16 @@
       const cap = pickImg(p);
       const ic = p.icono || '🧩';
       const x = precios[p.id] || {};
-      const partes = [];
-      if (x.ars) partes.push('$ ' + esc(x.ars));
-      if (x.usd) partes.push('US$ ' + esc(x.usd));
-      const esGratis = !partes.length;
-      const plan = esGratis ? 'Gratis' : partes.join(' · ');
+      const per = [['', ''], ['Mensual', '/mes'], ['Anual', '/año']].filter(([k]) => x['ars' + k] || x['usd' + k]);
+      let plan = 'Gratis';
+      const esGratis = !per.length;
+      if (!esGratis) {
+        const [k, suf] = per[0];
+        const partes = [];
+        if (x['ars' + k]) partes.push('$ ' + x['ars' + k] + suf);
+        if (x['usd' + k]) partes.push('US$ ' + x['usd' + k] + suf);
+        plan = partes.join(' · ') + (per.length > 1 ? ' +' : '');
+      }
       const pl = plan.toLowerCase();
       const cls = esGratis ? '' : 'plus';
       return `
