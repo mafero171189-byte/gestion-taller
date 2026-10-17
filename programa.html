@@ -28,10 +28,21 @@
   .btn { display:inline-block; padding:13px 22px; border-radius:10px; font-weight:800; text-decoration:none; margin:4px 6px 4px 0; font-size:15px; }
   .btn-main { background:#1e9e53; color:#fff; }
   .btn-sec { background:#1e4d8c; color:#fff; }
-  .precio { font-size:34px; font-weight:800; color:#fff; margin:0 0 4px; }
-  .precio small { font-size:14px; font-weight:600; color:#8fa3bf; }
-  .alias { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#0a1730; border:1px dashed #1e4d8c; border-radius:10px; padding:12px 14px; margin:12px 0; }
-  .alias b { font-size:18px; color:#fff; word-break:break-all; }
+  .compra { background:linear-gradient(180deg,#0f2244,#0b1a36); border:1px solid #2a6bc0; border-radius:18px; padding:22px; margin-bottom:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .compra h2 { margin:0 0 4px; font-size:20px; color:#fff; }
+  .compra .sub { color:#8fa3bf; font-size:13px; margin-bottom:16px; }
+  .planes { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+  .plan { position:relative; background:#0a1730; border:1px solid #1e3a66; border-radius:14px; padding:16px 16px 14px; }
+  .plan.dest { border-color:#38bdf8; background:linear-gradient(180deg,#0e2a52,#0a1730); box-shadow:0 0 0 1px rgba(56,189,248,.3); }
+  .plan .nom { font-size:12px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:#7cc4ff; margin-bottom:10px; }
+  .plan .tag { position:absolute; top:-10px; right:12px; background:#1e9e53; color:#fff; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; }
+  .plan .p { display:flex; align-items:baseline; gap:6px; margin:2px 0; color:#fff; }
+  .plan .p b { font-size:26px; font-weight:800; letter-spacing:-.5px; }
+  .plan .p span { font-size:13px; color:#8fa3bf; font-weight:600; }
+  .plan .p small { margin-left:auto; font-size:11px; font-weight:800; color:#9fc2e8; background:#15294d; border-radius:6px; padding:2px 7px; }
+  .alias { display:flex; align-items:center; gap:10px; background:#0a1730; border:1px dashed #2a6bc0; border-radius:12px; padding:10px 12px; margin:8px 0; }
+  .alias span { color:#8fa3bf; font-size:13px; white-space:nowrap; }
+  .alias b { font-size:16px; color:#fff; word-break:break-all; }
   .alias button { margin-left:auto; background:#1e4d8c; color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; }
   .btn[aria-disabled="true"] { background:#2a3a55; color:#8fa3bf; pointer-events:none; }
   .note { background:#16232f; border-left:3px solid #f0a93b; padding:10px 14px; border-radius:8px; color:#e8d9b5; font-size:14px; margin-top:12px; }
@@ -77,12 +88,18 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
     const num = String(waNum || '5491135654094').replace(/\D/g, '');
     const x = (precios && precios[p.id]) || {};
     const al = alias || {};
-    const periodos = [['', 'Pago único', ''], ['Mensual', 'Mensual', ' / mes'], ['Anual', 'Anual', ' / año']]
-      .map(([k, nom, suf]) => ({ nom, ars: x['ars' + k] ? '$ ' + x['ars' + k] + suf : '', usd: x['usd' + k] ? 'US$ ' + x['usd' + k] + suf : '' }))
+    const fmt = (v) => { const n = Number(String(v).replace(/\./g, '').replace(',', '.')); return isFinite(n) && /^[\d.,\s]+$/.test(String(v)) ? n.toLocaleString('es-AR') : String(v); };
+    const periodos = [['', 'Pago único', ''], ['Mensual', 'Mensual', '/ mes'], ['Anual', 'Anual', '/ año']]
+      .map(([k, nom, suf]) => ({ k, nom, suf, ars: x['ars' + k] || '', usd: x['usd' + k] || '' }))
       .filter((o) => o.ars || o.usd);
+    // Ahorro del plan anual vs 12 meses
+    const num0 = (v) => Number(String(v).replace(/\./g, '').replace(',', '.'));
+    const m = periodos.find((o) => o.k === 'Mensual'), an = periodos.find((o) => o.k === 'Anual');
+    let ahorro = 0;
+    if (m && an) { const par = m.ars && an.ars ? [num0(m.ars), num0(an.ars)] : (m.usd && an.usd ? [num0(m.usd), num0(an.usd)] : null); if (par && par[0] > 0 && par[1] > 0 && par[1] < par[0] * 12) ahorro = Math.round((1 - par[1] / (par[0] * 12)) * 100); }
     const esPago = periodos.length > 0;
     const hayArs = periodos.some((o) => o.ars), hayUsd = periodos.some((o) => o.usd);
-    const precio = periodos.map((o) => o.nom + ': ' + [o.ars, o.usd].filter(Boolean).join(' / ')).join(' | ');
+    const precio = periodos.map((o) => o.nom + ': ' + [o.ars ? '$ ' + o.ars : '', o.usd ? 'US$ ' + o.usd : ''].filter(Boolean).join(' / ') + (o.suf ? ' ' + o.suf : '')).join(' | ');
     const wa = 'https://wa.me/' + num + '?text=' + encodeURIComponent(p.whatsapp_texto || ('Hola, quiero info sobre ' + p.nombre));
     const waCompra = 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hola! Quiero comprar ' + p.nombre + ' (' + precio + '). Quiero coordinar el pago.');
 
@@ -93,15 +110,19 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
 
       ${shots}
 
-      ${esPago ? `<div class="card">
-        <h2>Comprar</h2>
-        ${periodos.map((o) => `<div style="margin-bottom:14px;">
-          <div style="color:#8fa3bf;font-size:13px;">${o.nom}</div>
-          ${o.ars ? `<div class="precio">${esc(o.ars)} <small>ARS</small></div>` : ''}
-          ${o.usd ? `<div class="precio">${esc(o.usd)} <small>USD</small></div>` : ''}
+      ${esPago ? `<div class="compra">
+        <h2>Comprar ${esc(p.nombre)}</h2>
+        <div class="sub">Elegí tu plan y pagá por transferencia.</div>
+        <div class="planes">
+        ${periodos.map((o) => `<div class="plan ${o.k === 'Anual' && ahorro ? 'dest' : ''}">
+          ${o.k === 'Anual' && ahorro ? `<div class="tag">Ahorrás ${ahorro}%</div>` : ''}
+          <div class="nom">${o.nom}</div>
+          ${o.ars ? `<div class="p"><b>$ ${esc(fmt(o.ars))}</b><span>${o.suf}</span><small>ARS</small></div>` : ''}
+          ${o.usd ? `<div class="p"><b>US$ ${esc(fmt(o.usd))}</b><span>${o.suf}</span><small>USD</small></div>` : ''}
         </div>`).join('')}
-        ${hayArs && al.ars ? `<div class="alias"><span>Alias pesos:</span><b id="aliasArs">${esc(al.ars)}</b><button type="button" onclick="copiarAlias(this,'aliasArs')">Copiar</button></div>` : ''}
-        ${hayUsd && al.usd ? `<div class="alias"><span>Alias dólares:</span><b id="aliasUsd">${esc(al.usd)}</b><button type="button" onclick="copiarAlias(this,'aliasUsd')">Copiar</button></div>` : ''}
+        </div>
+        ${hayArs && al.ars ? `<div class="alias"><span>Alias pesos</span><b id="aliasArs">${esc(al.ars)}</b><button type="button" onclick="copiarAlias(this,'aliasArs')">Copiar</button></div>` : ''}
+        ${hayUsd && al.usd ? `<div class="alias"><span>Alias dólares</span><b id="aliasUsd">${esc(al.usd)}</b><button type="button" onclick="copiarAlias(this,'aliasUsd')">Copiar</button></div>` : ''}
         <a class="btn btn-main" href="${waCompra}" target="_blank" rel="noopener">💬 Comprar por WhatsApp</a>
         <div class="note">Después de pagar, mandanos el comprobante por WhatsApp y te pasamos el link de descarga y la activación.</div>
       </div>` : `<div class="card">
