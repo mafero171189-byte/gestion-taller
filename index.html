@@ -15734,6 +15734,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (_titDia) _titDia.innerHTML = '📆 ' + (_diaCards === _hoyISO ? 'Hoy' : 'Día') + ' ' + _pD[2] + '/' + _pD[1] + '/' + _pD[0];
         const _contDia = document.getElementById('stats-dia-container');
         if (_contDia) _contDia.innerHTML = _statsHTML(cDiaCards);
+        // Si se mira otro mes (sin día elegido), las tarjetas de "Hoy" no aplican: se ocultan
+        const _ocultarDia = !diaFiltro && (targetMonthStr !== String(_hoyD.getMonth() + 1).padStart(2, '0') || targetYearStr !== String(_hoyD.getFullYear()));
+        if (_titDia) _titDia.style.display = _ocultarDia ? 'none' : '';
+        if (_contDia) { if (_ocultarDia) _contDia.style.setProperty('display', 'none', 'important'); else { _contDia.style.removeProperty('display'); _contDia.style.display = 'grid'; } }
 
         // Tarjetas del MES (abajo)
         const _titStats = document.getElementById('stats-titulo');
