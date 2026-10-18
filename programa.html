@@ -45,6 +45,12 @@
   .alias b { font-size:16px; color:#fff; word-break:break-all; }
   .alias button { margin-left:auto; background:#1e4d8c; color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:700; cursor:pointer; }
   .shot img { cursor: zoom-in; }
+  .gal-main { background:#0e1d3a; border:1px solid #1e4d8c; border-radius:14px; padding:10px; margin-bottom:10px; }
+  .gal-main img { width:100%; max-height:70vh; object-fit:contain; display:block; border-radius:8px; cursor:zoom-in; background:#0a1630; }
+  .gal-thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; margin-bottom:10px; }
+  .gal-thumbs button { padding:0; border:2px solid #1e4d8c; background:#0e1d3a; border-radius:10px; overflow:hidden; aspect-ratio:1/1; cursor:pointer; opacity:.7; }
+  .gal-thumbs button img { width:100%; height:100%; object-fit:cover; display:block; }
+  .gal-thumbs button.on { border-color:#38bdf8; opacity:1; }
   .shots-hint { color:#8fa3bf; font-size:12px; margin:-4px 0 12px; text-align:center; }
   #lb { position:fixed; inset:0; z-index:1000; background:rgba(2,8,20,.96); display:none; flex-direction:column; }
   #lb.open { display:flex; }
@@ -126,8 +132,20 @@ function copiarAlias(b,id){ var t=document.getElementById(id).textContent; var o
     }
     document.title = esc(p.nombre) + ' · Mi Taller Web';
     window.__caps = p.capturas;
-    const shots = p.capturas.map((s, i) => `<div class="shot"><img src="${esc(s)}" alt="${esc(p.nombre)}" loading="lazy" onclick="abrirLb(${i})"></div>`).join('')
-      + (p.capturas.length ? '<div class="shots-hint">Tocá una foto para agrandarla</div>' : '');
+    // Galería: foto grande (la portada, o la primera) + miniaturas abajo para cambiar la vista
+    let __ini = 0;
+    if (p.portada) { const pc = cld(String(p.portada)); const k = p.capturas.indexOf(pc); if (k >= 0) __ini = k; }
+    window.__cur = __ini;
+    window.galCambiar = function (i) {
+      window.__cur = i;
+      const im = document.getElementById('galImg'); if (im) im.src = window.__caps[i] || '';
+      document.querySelectorAll('.gal-thumbs button').forEach(function (b, n) { b.classList.toggle('on', n === i); });
+    };
+    const shots = p.capturas.length
+      ? `<div class="gal-main"><img id="galImg" src="${esc(p.capturas[__ini])}" alt="${esc(p.nombre)}" onclick="abrirLb(window.__cur)"></div>`
+        + (p.capturas.length > 1 ? '<div class="gal-thumbs">' + p.capturas.map((s, i) => `<button type="button" class="${i === __ini ? 'on' : ''}" onclick="galCambiar(${i})" aria-label="Foto ${i + 1}"><img src="${esc(s)}" alt="" loading="lazy"></button>`).join('') + '</div>' : '')
+        + '<div class="shots-hint">Tocá la foto grande para agrandarla</div>'
+      : '';
     const funciones = p.funciones.map((x) => `<li>${esc(x)}</li>`).join('');
     const pasos = p.pasos.map((x) => `<li>${esc(x)}</li>`).join('');
     const requisitos = p.requisitos.map((x) => `<li>${esc(x)}</li>`).join('');
