@@ -484,6 +484,22 @@
         .card-stats b { font-size: 11px; color: var(--gray-500); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 5px; letter-spacing: 0.6px; transition: color 0.3s; font-family: 'Outfit', sans-serif; }
         .card-stats p { font-size: 32px; font-weight: 900; margin: 0; transition: color 0.3s; font-family: 'Outfit', sans-serif; }
         .stat-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 45px; opacity: 0.08; }
+        /* Tarjetas de Contabilidad (día y mes): compactas */
+        .conta-grid { display:grid !important; grid-template-columns:repeat(5, minmax(0,1fr)) !important; gap:12px !important; margin-bottom:18px !important; }
+        .conta-grid .card-stats { padding:14px 14px 12px !important; min-height:0 !important; border-radius:14px; }
+        .conta-grid .card-stats > b { font-size:10.5px; margin-bottom:4px; line-height:1.3; }
+        .conta-grid .card-stats p { font-size:clamp(18px, 2.1vw, 26px) !important; white-space:nowrap; }
+        .conta-grid .stat-icon { font-size:30px; right:10px; }
+        .conta-grid .desg { margin-top:6px !important; padding-top:4px !important; line-height:1.5; }
+        .conta-grid .desg b { display:inline !important; font-size:11px !important; color:inherit !important; text-transform:none !important; letter-spacing:0 !important; margin:0 !important; white-space:nowrap; }
+        @media (max-width: 900px) {
+            .conta-grid { grid-template-columns:repeat(2, minmax(0,1fr)) !important; gap:8px !important; margin-bottom:14px !important; }
+            .conta-grid .card-stats:first-child { grid-column:1 / -1; }
+            .conta-grid .card-stats { padding:10px 12px 9px !important; border-bottom-width:3px !important; }
+            .conta-grid .card-stats p { font-size:21px !important; }
+            .conta-grid .card-stats:hover { transform:none; }
+            .conta-grid .stat-icon { display:none; }
+        }
         
         .caja-success { border-bottom: 4px solid var(--green-500); }
         .caja-warning { border-bottom: 4px solid var(--amber-500); }
@@ -2460,12 +2476,20 @@ body.client-mode #top-search-bar { display: none !important; }
 #btn-top-lupa { width: 34px; height: 34px; padding: 0; border: none; border-radius: 50%; background: var(--gray-100); font-size: 15px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 #btn-top-lupa.activo { background: var(--purple-700); box-shadow: 0 0 0 2px rgba(124,58,237,0.35); }
 body.dark-mode #btn-top-lupa { background: #1e1e2e; }
+#btn-top-caja { display: flex; align-items: center; gap: 5px; background: #0f766e; color: #fff; border: none; border-radius: 18px; padding: 6px 11px; font-size: 11px; font-weight: 800; font-family: 'Outfit', sans-serif; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
 body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 #btn-top-vr { display: flex; align-items: center; gap: 5px; background: var(--purple-700); color: #fff; border: none; border-radius: 18px; padding: 6px 11px; font-size: 11px; font-weight: 800; font-family: 'Outfit', sans-serif; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
 @media (max-width: 599px) {
   #btn-top-ayuda { display: none !important; }
   #top-gestion-actions { gap: 6px !important; }
-  #gesture-zone-top h2 { font-size: 19px; white-space: nowrap; }
+  #btn-top-caja { width: 32px; height: 32px; padding: 0 !important; border-radius: 50%; justify-content: center; align-items: center; flex-shrink: 0; gap: 0 !important; }
+  #btn-top-caja .tx { display: none; }
+  #btn-top-caja .ic { display: block; font-size: 16px; line-height: 1; width: 100%; text-align: center; }
+  #btn-top-lupa { width: 32px; height: 32px; }
+  #btn-top-vr { font-size: 10px; padding: 6px 8px; gap: 3px; }
+  #top-gestion-actions { gap: 4px !important; }
+  #gesture-zone-top .hdr-row > div:last-child { gap: 6px !important; }
+  #gesture-zone-top h2 { font-size: 16px; white-space: nowrap; }
 }
 </style>
 </head>
@@ -3872,6 +3896,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <div id="top-gestion-actions" style="display:flex; align-items:center; gap:8px;">
        <button id="btn-top-lupa" type="button" onclick="toggleBuscadorTop()" aria-label="Buscar">🔍</button>
        <button id="btn-top-vr" type="button" onclick="abrirVentaRapida()">🛒 VENTA RÁPIDA</button>
+       <button id="btn-top-caja" type="button" onclick="abrirCajaRapida()" title="Caja del día" aria-label="Caja del día"><span class="ic">🏦</span><span class="tx">CAJA</span></button>
       </div>
       <button id="btn-top-ayuda" onclick="showPage('ayuda')" style="display:none; background: var(--gray-100); border: none; border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; color: var(--gray-600); font-weight: bold; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;"><span style="font-size: 14px;">❓</span> AYUDA</button>
       <div style="display:flex; align-items:center;">
@@ -4237,7 +4262,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       </div>
      </div>
      <div id="caja-dia-panel" style="display:none;"></div>
-     <div id="stats-container" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 20px;"></div>
+     <div id="stats-dia-titulo" style="font-size:14px; font-weight:800; color:var(--gray-600); margin:0 0 10px;"></div>
+     <div id="stats-dia-container" class="conta-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 26px;"></div>
+     <div id="stats-titulo" style="font-size:14px; font-weight:800; color:var(--gray-600); margin:0 0 10px; text-transform:none;"></div>
+     <div id="stats-container" class="conta-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom: 20px;"></div>
      <div style="margin-bottom: 15px;">
       <input type="text" id="search-conta" placeholder="🔎 Buscar movimiento por Orden, Cliente, Concepto o Método..." oninput="_debounced('conta', renderTablaContabilidad)" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--gray-200); box-sizing: border-box; font-size:15px;">
      </div>
@@ -4734,6 +4762,19 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     </div>
 
     <!-- MODAL GASTO EXTRA -->
+    <div id="modalCajaDia" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.82);z-index:15200;display:none;align-items:flex-start;justify-content:center;backdrop-filter:blur(6px);overflow-y:auto;padding:16px 0;box-sizing:border-box;" onclick="if(event.target===this)cerrarCajaRapida()">
+      <div id="cajaDiaModalBody" style="background:var(--gray-50,#f8fafc);border-radius:20px;width:94%;max-width:520px;margin:auto;box-shadow:0 30px 80px rgba(0,0,0,0.45);padding:14px;box-sizing:border-box;"></div>
+    </div>
+    <div id="modalCajaConfirm" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.82);z-index:15500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)cajaConfirmCancelar()">
+      <div style="background:white;border-radius:20px;width:92%;max-width:400px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,0.45);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
+        <div id="cajaConfirmHead" style="background:linear-gradient(135deg,#0f766e,#115e59);padding:18px 22px;border-radius:20px 20px 0 0;color:white;font-family:'Outfit',sans-serif;font-size:17px;font-weight:800;"></div>
+        <div id="cajaConfirmBody" style="padding:20px 22px 8px;color:#1e293b;"></div>
+        <div style="display:flex;gap:10px;padding:14px 22px 22px;">
+          <button type="button" onclick="cajaConfirmCancelar()" style="flex:1;padding:13px;border:none;border-radius:12px;background:#e2e8f0;color:#334155;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;">Cancelar</button>
+          <button type="button" id="cajaConfirmOk" onclick="cajaConfirmAceptar()" style="flex:1;padding:13px;border:none;border-radius:12px;background:#0f766e;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;"></button>
+        </div>
+      </div>
+    </div>
     <div id="modalGastoExtra" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,12,24,0.82);z-index:15000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
       <div style="background:white;border-radius:20px;width:92%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,0.45);animation:slideUpModal 0.22s cubic-bezier(.34,1.4,.64,1);">
         <div style="background:linear-gradient(135deg,var(--danger),#991b1b);padding:18px 22px;border-radius:20px 20px 0 0;display:flex;justify-content:space-between;align-items:center;">
@@ -4970,6 +5011,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <b>Filtros de Período</b>
         <ul>
          <li>Seleccioná el <b>mes</b> para ver el resumen mensual, o usá el <b>selector de fecha</b> para analizar un día específico.</li>
+         <li>Siempre ves dos filas de tarjetas: arriba las del <b>📆 día</b> (hoy, o el día que elijas) y abajo las del <b>📅 mes completo</b>.</li>
+         <li>Cuando elegís un día, arriba de todo aparece además la <b>🏦 Caja del día</b> y la tabla de movimientos muestra solo los de ese día. Con la <b>✕</b> de la esquina de la caja (o tocando de nuevo <b>🏦 Caja del día</b>) la cerrás y volvés a ver los movimientos de todo el mes.</li>
         </ul>
         <b>Tabla de Movimientos</b>
         <ul>
@@ -5021,7 +5064,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         </ul>
         <b>Venta Rápida de Mostrador 🛒</b>
         <ul>
-         <li>Desde la pestaña <b>Gestión</b>, el botón <b>🛒 VENTA RÁPIDA</b> de la parte superior (al lado de la lupa) abre la Venta Rápida (modal emergente). También podés usar la pestaña <b>Ventas y Reparaciones → Nueva Venta</b> para el mismo resultado con más espacio en pantalla.</li>
+         <li>Desde la pestaña <b>Gestión</b>, el botón <b>🛒 VENTA RÁPIDA</b> de la parte superior (al lado de la lupa) abre la Venta Rápida (modal emergente). Al lado tenés el botón <b>🏦 CAJA</b>, que abre la <b>Caja del día</b> en una ventana, sin salir de Gestión: cargás con cuánto abrís, y al final del día cargás el efectivo contado y la cerrás. También podés usar la pestaña <b>Ventas y Reparaciones → Nueva Venta</b> para el mismo resultado con más espacio en pantalla.</li>
          <li>Ambas opciones permiten armar un carrito con múltiples artículos, ajustar cantidades y confirmar la venta con un solo toque.</li>
          <li>Ambas tienen los mismos botones de <b>🏷️ Descuento</b> y <b>💳 Recargo</b> que aparecen al agregar artículos al carrito.</li>
         </ul>
@@ -15659,6 +15702,65 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             targetMonthStr = partesMes[1] ? partesMes[1].padStart(2, '0') : '01';
         }
 
+        // Mes: el del día elegido, o el mes seleccionado. Las tarjetas siempre muestran el mes.
+        const cMes = _calcConta('', targetMonthStr, targetYearStr);
+        // Día: solo si hay un día específico elegido (caja del día + tabla del día)
+        const cDia = diaFiltro ? _calcConta(diaFiltro, targetMonthStr, targetYearStr) : null;
+
+        const _mesesNom = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        // Mismas tarjetas de siempre, para el período que se le pase (día o mes)
+        const _statsHTML = (c) => {
+            const { ingresosTotales, gastosRepuestos, gastosExtraTotal, gananciaNeta, porCobrar, desgloseHTML } = c;
+            return `
+                <div class="card-stats caja-success"><b>💵 INGRESOS COBRADOS</b><p style="color:var(--success);">${fmt.format(ingresosTotales)}</p><span class="stat-icon">💰</span>
+                    <div class="desg" style="font-size:11px; margin-top:10px; color:var(--gray-600); border-top:1px solid var(--slate-200); padding-top:5px;">
+                        ${desgloseHTML}
+                    </div>
+                </div>
+                <div class="card-stats caja-warning"><b>⏳ SALDOS POR COBRAR</b><p style="color:var(--warning);">${fmt.format(porCobrar)}</p><span class="stat-icon">🕒</span></div>
+                <div class="card-stats caja-danger"><b>📉 COSTOS DE REPUESTOS</b><p style="color:var(--danger);">${fmt.format(gastosRepuestos)}</p><span class="stat-icon">📦</span></div>
+                <div class="card-stats caja-danger"><b>🧾 GASTOS EXTRA</b><p style="color:var(--danger);">${fmt.format(gastosExtraTotal)}</p><span class="stat-icon">🧾</span></div>
+                <div class="card-stats caja-primary"><b>✅ GANANCIA NETA</b><p style="color:var(--primary);">${fmt.format(gananciaNeta)}</p><span class="stat-icon">📊</span></div>
+            `;
+        };
+
+        // Tarjetas del DÍA (arriba): el día elegido, o hoy si no se eligió ninguno
+        const _hoyD = new Date();
+        const _hoyISO = _hoyD.getFullYear() + '-' + String(_hoyD.getMonth() + 1).padStart(2, '0') + '-' + String(_hoyD.getDate()).padStart(2, '0');
+        const _diaCards = diaFiltro || _hoyISO;
+        const cDiaCards = cDia || _calcConta(_hoyISO, String(_hoyD.getMonth() + 1).padStart(2, '0'), String(_hoyD.getFullYear()));
+        const _pD = _diaCards.split('-');
+        const _titDia = document.getElementById('stats-dia-titulo');
+        if (_titDia) _titDia.innerHTML = '📆 ' + (_diaCards === _hoyISO ? 'Hoy' : 'Día') + ' ' + _pD[2] + '/' + _pD[1] + '/' + _pD[0];
+        const _contDia = document.getElementById('stats-dia-container');
+        if (_contDia) _contDia.innerHTML = _statsHTML(cDiaCards);
+
+        // Tarjetas del MES (abajo)
+        const _titStats = document.getElementById('stats-titulo');
+        if (_titStats) _titStats.innerHTML = '📅 Resumen de ' + (_mesesNom[parseInt(targetMonthStr, 10) - 1] || '') + ' ' + targetYearStr;
+        document.getElementById('stats-container').innerHTML = _statsHTML(cMes);
+
+        // Tabla de movimientos: los del día si hay día elegido; si no, los del mes
+        movimientosActuales = (cDia || cMes).movs;
+
+        // Caja del día: solo cuando hay un día específico elegido (si la caja rápida está abierta en Gestión, no se toca)
+        if (!_cajaModal) {
+        _cajaCtx = cDia ? {
+            dia: diaFiltro,
+            ingresoEfectivo: cDia.ingresoEfectivo, ingresoTransf: cDia.ingresoTransf, ingresoTarjeta: cDia.ingresoTarjeta,
+            ingresoDebito: cDia.ingresoDebito, ingresoCredito: cDia.ingresoCredito, ingresoMP: cDia.ingresoMP,
+            ingresosTotales: cDia.ingresosTotales, gastosRepuestos: cDia.gastosRepuestos, gastosExtraTotal: cDia.gastosExtraTotal,
+            gananciaNeta: cDia.gananciaNeta, gastosEfectivo: cDia.gastosEfectivo
+        } : null;
+        renderCajaDia();
+        }
+
+        renderTablaContabilidad();
+    }
+
+    // Cálculo de un período (día o mes). Se usa dos veces: para el mes y para el día elegido.
+    // La lógica de cálculo es la misma de siempre; solo se movió acá adentro.
+    function _calcConta(diaFiltro, targetMonthStr, targetYearStr) {
         let ingresoEfectivo = 0, ingresoTransf = 0, ingresoTarjeta = 0;
         let ingresoDebito = 0, ingresoCredito = 0, ingresoMP = 0;
         // Rutea un ingreso al bucket correcto según el método de pago.
@@ -15681,7 +15783,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             if (!datePart) return;
             let partes = datePart.split('/');
             if (partes.length !== 3) return;
-            
+        
             let coincideIngreso = false;
             if (diaFiltro) {
                 let df = diaFiltro.split('-'); 
@@ -15726,7 +15828,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     let equipoCompleto = `${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`.trim();
                     movsMap[r.id] = { id: r.id, orden: r.orden, cliente: r.esVentaRapida ? (r.cliente && r.cliente !== 'Venta de Mostrador' ? r.cliente : 'Venta de Mostrador') : r.cliente, desc: new Set(), metodo: new Set(), ingreso: 0, egreso: 0, fechaRaw: r.fecha, esVentaRapida: r.esVentaRapida, equipo: equipoCompleto };
                 }
-                
+            
                 let mov = movsMap[r.id];
 
                 // El costo de repuesto se computa siempre que la orden entre en el período
@@ -15748,7 +15850,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                             mov.ingreso += pActual;
                             mov.desc.add('Venta Directa');
                             if(r.metodoPagoSena && r.metodoPagoSena !== '-') mov.metodo.add(r.metodoPagoSena);
-                            
+                        
                             addIngreso(r.metodoPagoSena, pActual);
                         }
                     } else {
@@ -15757,10 +15859,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                             mov.ingreso += senaOrig;
                             mov.desc.add('Seña');
                             if(r.metodoPagoSena && r.metodoPagoSena !== '-' && r.metodoPagoSena !== 'A Cotizar' && r.metodoPagoSena !== 'No pagó') mov.metodo.add(r.metodoPagoSena);
-                            
+                        
                             addIngreso(r.metodoPagoSena, senaOrig);
                         }
-                        
+                    
                         let precioActual = parseFloat(r.precio) || 0;
                         if (precioActual > 0) {
                             let cobroAnterior = parseFloat(r.saldoCobrado) || 0;
@@ -15783,7 +15885,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                         mov.desc.add('Saldo');
                         if(r.metodoPagoSaldo && r.metodoPagoSaldo !== '-') mov.metodo.add(r.metodoPagoSaldo);
                         mov.fechaRaw = fechaSaldoRef || estadoEntregado.fecha; 
-                        
+                    
                         addIngreso(r.metodoPagoSaldo, cobro);
                     } else if (r.entregadoSinCobrar) {
                         // Entregado sin cobrar: aparece en contabilidad como deuda pendiente
@@ -15842,19 +15944,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (ingresoTarjeta > 0) desgloseParts.push(`TJ: <b>${fmt.format(ingresoTarjeta)}</b>`);
         let desgloseHTML = desgloseParts.join(' | ');
 
-        document.getElementById('stats-container').innerHTML = `
-            <div class="card-stats caja-success"><b>💵 INGRESOS COBRADOS</b><p style="color:var(--success);">${fmt.format(ingresosTotales)}</p><span class="stat-icon">💰</span>
-                <div style="font-size:11px; margin-top:10px; color:var(--gray-600); border-top:1px solid var(--slate-200); padding-top:5px;">
-                    ${desgloseHTML}
-                </div>
-            </div>
-            <div class="card-stats caja-warning"><b>⏳ SALDOS POR COBRAR</b><p style="color:var(--warning);">${fmt.format(porCobrar)}</p><span class="stat-icon">🕒</span></div>
-            <div class="card-stats caja-danger"><b>📉 COSTOS DE REPUESTOS</b><p style="color:var(--danger);">${fmt.format(gastosRepuestos)}</p><span class="stat-icon">📦</span></div>
-            <div class="card-stats caja-danger"><b>🧾 GASTOS EXTRA</b><p style="color:var(--danger);">${fmt.format(gastosExtraTotal)}</p><span class="stat-icon">🧾</span></div>
-            <div class="card-stats caja-primary"><b>✅ GANANCIA NETA</b><p style="color:var(--primary);">${fmt.format(gananciaNeta)}</p><span class="stat-icon">📊</span></div>
-        `;
-
-        movimientosActuales = Object.values(movsMap).filter(m =>
+        const movs = Object.values(movsMap).filter(m =>
             m.ingreso > 0 ||
             m.egreso > 0 ||
             (m.deudaPendiente || 0) > 0 ||
@@ -15862,7 +15952,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         ).map(m => {
             const r = getRegistro(m.id);
             let metodoDetallado = m.metodo.size > 0 ? Array.from(m.metodo).join(' / ') : 'Efectivo';
-            
+        
             if (r && !m.esVentaRapida) {
                 let senaVal = parseFloat(r.senaOriginal !== undefined ? r.senaOriginal : r.sena) || 0;
                 let saldoVal = parseFloat(r.saldoCobrado) || 0;
@@ -15881,17 +15971,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 deudaPendiente: m.deudaPendiente || 0
             };
         }).concat(gastosExtraDelPeriodo);
-
-        // Caja del día: solo cuando hay un día específico elegido
-        _cajaCtx = diaFiltro ? {
-            dia: diaFiltro,
-            ingresoEfectivo, ingresoTransf, ingresoTarjeta, ingresoDebito, ingresoCredito, ingresoMP,
-            ingresosTotales, gastosRepuestos, gastosExtraTotal, gananciaNeta,
-            gastosEfectivo: gastosExtraDelPeriodo.filter(g => (g.metodoStr || 'Efectivo') === 'Efectivo').reduce((t, g) => t + g.egreso, 0)
-        } : null;
-        renderCajaDia();
-
-        renderTablaContabilidad();
+        const gastosEfectivo = gastosExtraDelPeriodo.filter(g => (g.metodoStr || 'Efectivo') === 'Efectivo').reduce((t, g) => t + g.egreso, 0);
+        return { ingresoEfectivo, ingresoTransf, ingresoTarjeta, ingresoDebito, ingresoCredito, ingresoMP,
+                 ingresosTotales, gastosRepuestos, gastosExtraTotal, gananciaNeta, porCobrar, desgloseHTML, gastosEfectivo, movs };
     }
 
     // ═══════════ CAJA DEL DÍA ═══════════
@@ -15899,7 +15981,68 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // Nodo: cajas_diarias/{YYYY-MM-DD}  (usuarios: cajas_diarias_usuarios/{wa}/{YYYY-MM-DD})
     var _cajaCtx = null, cajasCache = {}, cajasDescargado = false;
 
+    // ═══ Caja rápida (modal en Gestión) ═══
+    var _cajaModal = false;
+    function _cajaHoyISO() {
+        const h = new Date();
+        return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
+    }
+    // Asegura que estén cargados los datos que usa Contabilidad (una sola vez por sesión)
+    function _cajaDatosListos(cb) {
+        if (!contaDescargado) {
+            mostrarLoader('Cargando caja...');
+            db.ref(fbPathArchivado()).once('value').then(function (snap) {
+                const v = snap.val();
+                archivadosConta = v ? Object.keys(v).map(function (k) { return Object.assign({ id: k }, v[k]); }) : [];
+                contaDescargado = true; ocultarLoader(); _cajaDatosListos(cb);
+            }).catch(function () { ocultarLoader(); showToast('⚠️ No se pudo cargar la caja. Revisá tu conexión.', '#dc2626'); });
+            return;
+        }
+        if (!gastosExtraDescargado) {
+            db.ref(fbPathGastos()).once('value').then(function (snap) {
+                const v = snap.val();
+                gastosExtraCache = v ? Object.keys(v).map(function (k) { return Object.assign({ id: k }, v[k]); }) : [];
+                gastosExtraDescargado = true; _cajaDatosListos(cb);
+            }).catch(function () { gastosExtraDescargado = true; _cajaDatosListos(cb); });
+            return;
+        }
+        cb();
+    }
+    function _cajaCalcDia(dia) {
+        const p = dia.split('-');
+        const c = _calcConta(dia, p[1], p[0]);
+        _cajaCtx = {
+            dia: dia,
+            ingresoEfectivo: c.ingresoEfectivo, ingresoTransf: c.ingresoTransf, ingresoTarjeta: c.ingresoTarjeta,
+            ingresoDebito: c.ingresoDebito, ingresoCredito: c.ingresoCredito, ingresoMP: c.ingresoMP,
+            ingresosTotales: c.ingresosTotales, gastosRepuestos: c.gastosRepuestos, gastosExtraTotal: c.gastosExtraTotal,
+            gananciaNeta: c.gananciaNeta, gastosEfectivo: c.gastosEfectivo
+        };
+        _cajaDraft = null;
+    }
+    function cajaModalElegirDia(dia) { _cajaCalcDia(dia); renderCajaDia(); }
+    function cerrarCajaRapida() {
+        document.getElementById('modalCajaDia').style.display = 'none';
+        _cajaModal = false; _cajaCtx = null; _cajaDraft = null;
+        document.body.style.overflow = '';
+    }
+    // Acceso rápido desde Gestión: abre la caja de hoy en una ventana, sin salir de Gestión
+    function abrirCajaRapida() {
+        _cajaDatosListos(function () {
+            // Evita ids duplicados con el panel de Contabilidad
+            const pc = document.getElementById('caja-dia-panel'); if (pc) { pc.innerHTML = ''; pc.style.display = 'none'; }
+            _cajaModal = true;
+            _cajaCalcDia(_cajaHoyISO());
+            document.getElementById('modalCajaDia').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            renderCajaDia();
+        });
+    }
+
     function irCajaHoy() {
+        // Si la caja ya está a la vista, el mismo botón la oculta (vuelve al mes)
+        const _pan = document.getElementById('caja-dia-panel');
+        if (_cajaCtx && _pan && _pan.style.display !== 'none') { cajaVolverAlMes(); return; }
         const h = new Date();
         const hoy = h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
         const inp = document.getElementById('inputDia');
@@ -15912,7 +16055,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     function _cajaFechaAR(dia) { const p = String(dia).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 
     function renderCajaDia() {
-        const panel = document.getElementById('caja-dia-panel');
+        const panel = document.getElementById(_cajaModal ? 'cajaDiaModalBody' : 'caja-dia-panel');
         if (!panel) return;
         if (!_cajaCtx) { _cajaDraft = null; panel.style.display = 'none'; panel.innerHTML = ''; return; }
         if (!cajasDescargado) {
@@ -15959,7 +16102,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const hist = Object.keys(cajasCache).sort().reverse().slice(0, 10).map(function (k) {
             const h = cajasCache[k] || {};
             const d = h.contado != null && h.esperado != null ? h.contado - h.esperado : null;
-            return '<tr onclick="document.getElementById(\'inputDia\').value=\'' + k + '\'; cargarDatosContabilidad();" style="cursor:pointer;' + (k === c.dia ? 'background:var(--gray-100);' : '') + '">'
+            return '<tr onclick="' + (_cajaModal ? 'cajaModalElegirDia(\'' + k + '\')' : 'document.getElementById(\'inputDia\').value=\'' + k + '\'; cargarDatosContabilidad();') + '" style="cursor:pointer;' + (k === c.dia ? 'background:var(--gray-100);' : '') + '">'
                 + '<td style="padding:6px 4px;">' + _cajaFechaAR(k) + '</td>'
                 + '<td style="padding:6px 4px;">' + (h.cerrada ? '🔒 Cerrada' : '🟢 Abierta') + '</td>'
                 + '<td style="padding:6px 4px; text-align:right;">' + fmt.format(h.apertura || 0) + '</td>'
@@ -15971,10 +16114,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
         panel.style.display = 'block';
         panel.innerHTML =
-            '<div style="background:var(--gray-100); border:2px solid #0f766e; border-radius:16px; padding:16px; margin-bottom:20px;">'
+            '<div style="position:relative; background:var(--gray-100); border:2px solid #0f766e; border-radius:16px; padding:16px; margin-bottom:' + (_cajaModal ? '0' : '20px') + ';">'
+            + ('<button type="button" onclick="' + (_cajaModal ? 'cerrarCajaRapida()' : 'cajaVolverAlMes()') + '" aria-label="Cerrar" title="' + (_cajaModal ? 'Cerrar' : 'Cerrar la caja y volver al resumen del mes') + '" style="position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; border:none; background:rgba(15,23,42,0.08); color:#334155; font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; z-index:2;">✕</button>')
             + '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">'
-            +   '<h3 style="margin:0; font-size:18px;">🏦 Caja del día ' + _cajaFechaAR(c.dia) + '</h3>'
-            +   '<span style="font-size:12px; font-weight:900; padding:4px 12px; border-radius:20px; ' + (cerrada ? 'background:#fee2e2; color:#991b1b;' : 'background:#d1fae5; color:#065f46;') + '">' + (cerrada ? '🔒 CERRADA' : '🟢 ABIERTA') + '</span>'
+            +   '<h3 style="margin:0; font-size:18px; padding-right:40px;">🏦 Caja del día ' + _cajaFechaAR(c.dia) + '</h3>'
+            +   '<div style="display:flex; align-items:center; gap:8px;">'
+            +     '<span style="font-size:12px; font-weight:900; padding:4px 12px; border-radius:20px; ' + (cerrada ? 'background:#fee2e2; color:#991b1b;' : 'background:#d1fae5; color:#065f46;') + '">' + (cerrada ? '🔒 CERRADA' : '🟢 ABIERTA') + '</span>'
+            +     ''
+            +   '</div>'
             + '</div>'
             + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px;">'
             +   '<div style="' + box + '"><label style="' + lbl + '" for="cajaApertura">💵 Efectivo al abrir el día</label>'
@@ -16015,7 +16162,22 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             + '</div>';
     }
 
-    var _cajaDraft = null;
+    var _cajaDraft = null, _cajaConfirmCb = null;
+    function cajaConfirmAbrir(titulo, okTxt, html, cb) {
+        document.getElementById('cajaConfirmHead').textContent = titulo;
+        document.getElementById('cajaConfirmBody').innerHTML = html;
+        document.getElementById('cajaConfirmOk').textContent = okTxt;
+        _cajaConfirmCb = cb;
+        document.getElementById('modalCajaConfirm').style.display = 'flex';
+    }
+    function cajaConfirmCancelar() { _cajaConfirmCb = null; document.getElementById('modalCajaConfirm').style.display = 'none'; }
+    function cajaConfirmAceptar() {
+        const cb = _cajaConfirmCb; _cajaConfirmCb = null;
+        document.getElementById('modalCajaConfirm').style.display = 'none';
+        if (cb) cb();
+    }
+    // Oculta la caja y vuelve al resumen del mes
+    function cajaVolverAlMes() { _cajaDraft = null; limpiarFiltroDia(); cargarDatosContabilidad(); }
     function cajaRecalc() {
         if (!_cajaCtx) return;
         const a = document.getElementById('cajaApertura'), k = document.getElementById('cajaContado');
@@ -16028,14 +16190,13 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (foco) { const el = document.getElementById(foco); if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
     }
 
-    function guardarCajaDia(cerrar) {
+    function guardarCajaDia(cerrar, forzado) {
         const c = _cajaCtx; if (!c) return;
         const apRaw = document.getElementById('cajaApertura').value.trim();
         const ctRaw = document.getElementById('cajaContado').value.trim();
         const ap = apRaw === '' ? 0 : parseMoney(apRaw);
         const ct = ctRaw === '' ? null : parseMoney(ctRaw);
         if (cerrar && ct == null) { showToast('⚠️ Para cerrar, ingresá el efectivo contado', '#f59e0b'); return; }
-        if (cerrar && !confirm('¿Cerrar la caja del ' + _cajaFechaAR(c.dia) + '?')) return;
         const descRep = !!(document.getElementById('cajaDescRep') && document.getElementById('cajaDescRep').checked);
         const esperado = ap + c.ingresoEfectivo - c.gastosEfectivo - (descRep ? c.gastosRepuestos : 0);
         const data = {
@@ -16046,6 +16207,18 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             ts: Date.now()
         };
         if (ct == null) delete data.contado;
+        if (cerrar && !forzado) {
+            const dif = ct - esperado;
+            const col = dif === 0 ? '#059669' : (dif > 0 ? '#0369a1' : '#dc2626');
+            const txt = dif === 0 ? '✅ La caja cuadra' : (dif > 0 ? '⬆️ Sobrante de ' + fmt.format(dif) : '⬇️ Faltante de ' + fmt.format(Math.abs(dif)));
+            const fl = function (t, v, b) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;' + (b ? 'font-weight:900;border-top:1.5px solid #e2e8f0;margin-top:4px;padding-top:9px;' : '') + '"><span>' + t + '</span><b>' + v + '</b></div>'; };
+            cajaConfirmAbrir('🔒 Cerrar la caja del ' + _cajaFechaAR(c.dia), 'Cerrar caja',
+                fl('Efectivo que debería haber', fmt.format(esperado)) + fl('Efectivo contado', fmt.format(ct)) +
+                '<div style="margin-top:10px;padding:10px 12px;border-radius:10px;font-weight:900;text-align:center;color:' + col + ';border:1.5px solid ' + col + ';">' + txt + '</div>' +
+                '<div style="margin-top:12px;font-size:12px;color:#64748b;">Después podés reabrirla si necesitás corregir algo.</div>',
+                function () { guardarCajaDia(true, true); });
+            return;
+        }
         mostrarLoader('Guardando caja...');
         db.ref(fbPathCajas()).child(c.dia).set(data).then(function () {
             cajasCache[c.dia] = data;
@@ -16059,9 +16232,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         });
     }
 
-    function reabrirCajaDia() {
+    function reabrirCajaDia(forzado) {
         const c = _cajaCtx; if (!c) return;
-        if (!confirm('¿Reabrir la caja del ' + _cajaFechaAR(c.dia) + '?')) return;
+        if (!forzado) {
+            cajaConfirmAbrir('🔓 Reabrir la caja del ' + _cajaFechaAR(c.dia), 'Reabrir',
+                '<div style="font-size:14px;line-height:1.5;">La caja vuelve a quedar abierta y vas a poder editar la apertura, el efectivo contado y la nota.</div>',
+                function () { reabrirCajaDia(true); });
+            return;
+        }
         mostrarLoader('Reabriendo...');
         db.ref(fbPathCajas()).child(c.dia).child('cerrada').set(false).then(function () {
             if (cajasCache[c.dia]) cajasCache[c.dia].cerrada = false;
