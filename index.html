@@ -2338,6 +2338,21 @@ function showApp(modo) {
 #landing-page .nav-tab.active{background:rgba(255,255,255,.1);color:#fff}
 #landing-page .hero h1,#landing-page .hero .hero-sub{margin-left:auto !important;margin-right:auto !important;width:100%;text-align:center !important;align-self:center}
 #landing-page .hero .hero-sub{max-width:560px}
+/* Encabezados centrados: la regla global "#landing-page p{margin:0!important}" anulaba el centrado del texto */
+#landing-page .features-header .section-desc,#landing-page .planes-header .section-desc{margin-left:auto !important;margin-right:auto !important;text-align:center !important}
+#landing-page .plan-popular{white-space:nowrap}
+#landing-page .plan-btn{white-space:nowrap;padding-left:10px !important;padding-right:10px !important;font-size:13.5px !important}
+@media (min-width:900px) and (max-width:1199px){#landing-page .plan-btn{font-size:12px !important;padding-left:6px !important;padding-right:6px !important}}
+/* Funcionalidades compactas en celular */
+@media (max-width:640px){
+ #landing-page .features-header{margin-bottom:28px}
+ #landing-page .features-grid{grid-template-columns:1fr !important;gap:10px !important}
+ #landing-page .feature-card{padding:14px 14px 14px 68px !important;min-height:60px;border-radius:14px}
+ #landing-page .feature-icon{position:absolute;left:14px;top:14px;width:40px !important;height:40px !important;font-size:20px !important;margin:0 !important;border-radius:10px}
+ #landing-page .feature-title{font-size:15px !important;margin:0 0 3px !important}
+ #landing-page .feature-desc{font-size:12.5px !important;line-height:1.45 !important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+ #landing-page .feature-tags{display:none !important}
+}
 #landing-page .hero h1{max-width:820px}
 #landing-page .nav-burger,#landing-page .nav-menu{display:none}
 @media (max-width:640px){
@@ -2622,100 +2637,6 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     </div>
    </section>
    <!-- CÓMO FUNCIONA -->
-   <section id="como-funciona">
-    <div class="container">
-     <div class="how-inner">
-      <div>
-       <div class="section-label reveal">Cómo funciona</div>
-       <h2 class="section-title reveal">Del ingreso a la entrega en pocos clics</h2>
-       <p class="section-desc reveal">Sin curvas de aprendizaje. Si sabés usar el celular, ya sabés usar Mi Taller Web.</p>
-       <div class="steps">
-        <div class="step reveal">
-         <div class="step-num">1</div>
-         <div class="step-content">
-          <div class="step-title">Ingresá el equipo</div>
-          <div class="step-desc">Completá los datos del cliente, el dispositivo, la falla y el precio estimado. Todo en menos de un minuto.</div>
-         </div>
-        </div>
-        <div class="step reveal">
-         <div class="step-num">2</div>
-         <div class="step-content">
-          <div class="step-title">Imprimí o mandá el ticket</div>
-          <div class="step-desc">Compartí el comprobante por WhatsApp o imprimilo. El cliente recibe un link para rastrear su reparación.</div>
-         </div>
-        </div>
-        <div class="step reveal">
-         <div class="step-num">3</div>
-         <div class="step-content">
-          <div class="step-title">Actualizá el estado</div>
-          <div class="step-desc">Cambiá el estado a Reparado cuando esté listo. El cliente puede ver el cambio en tiempo real.</div>
-         </div>
-        </div>
-        <div class="step reveal">
-         <div class="step-num">4</div>
-         <div class="step-content">
-          <div class="step-title">Entregá y archivá</div>
-          <div class="step-desc">Al marcar como Entregado, la orden se archiva automáticamente con todo el historial financiero registrado.</div>
-         </div>
-        </div>
-       </div>
-      </div>
-      <div class="mockup-wrap reveal">
-       <div class="mockup">
-        <div class="mockup-bar">
-         <div class="dot dot-r"></div>
-         <div class="dot dot-y"></div>
-         <div class="dot dot-g"></div>
-         <span class="mockup-title">Mi Taller Web — Órdenes activas</span>
-        </div>
-        <div class="mockup-body">
-         <div class="mock-row">
-          <span class="mock-badge st-pend">⏳ Pendiente</span>
-          <div class="mock-info">
-           <div class="mock-name">García, Luis — Samsung A54</div>
-           <div class="mock-detail">Pantalla rota · #1042</div>
-          </div>
-          <div class="mock-price">$35.000</div>
-         </div>
-         <div class="mock-row">
-          <span class="mock-badge st-rep">✅ Reparado</span>
-          <div class="mock-info">
-           <div class="mock-name">Rodríguez, Ana — iPhone 13</div>
-           <div class="mock-detail">Sin carga · #1041</div>
-          </div>
-          <div class="mock-price">$48.000</div>
-         </div>
-         <div class="mock-row">
-          <span class="mock-badge st-gar">🔄 Garantía</span>
-          <div class="mock-info">
-           <div class="mock-name">Martínez, Pedro — Moto G62</div>
-           <div class="mock-detail">Touch falla · #1039</div>
-          </div>
-          <div class="mock-price">$22.000</div>
-         </div>
-         <div class="mock-row">
-          <span class="mock-badge st-pend">⏳ Pendiente</span>
-          <div class="mock-info">
-           <div class="mock-name">Torres, Sofía — Xiaomi 12T</div>
-           <div class="mock-detail">Micrófono · #1043</div>
-          </div>
-          <div class="mock-price">$18.000</div>
-         </div>
-         <div class="mock-row">
-          <span class="mock-badge st-ent">📦 Entregado</span>
-          <div class="mock-info">
-           <div class="mock-name">Flores, Diego — Redmi Note 11</div>
-           <div class="mock-detail">Batería · #1038</div>
-          </div>
-          <div class="mock-price" style="color:var(--gray-600);">Pagado</div>
-         </div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </section>
-   <!-- PLANES -->
    <section id="planes">
     <div class="container">
      <div class="planes-header reveal">
@@ -2813,6 +2734,100 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <li class="warn">Sin actualizaciones</li>
        </ul>
        <p style="font-size:11.5px; color:var(--white-dim); margin-top:14px; line-height:2.0;"><span style="display:block; margin-bottom:4px;">🔐 Necesitás un código de activación.</span> <a href="https://wa.me/5491135654094?text=Hola!%20Quiero%20comprar%20Mi%20Taller%20Desktop" target="_blank" class="wa-soporte-link" style="color:#a78bfa; font-weight:700;">Comprá aquí</a>
+      </div>
+     </div>
+    </div>
+   </section>
+   <!-- PLANES -->
+   <section id="como-funciona">
+    <div class="container">
+     <div class="how-inner">
+      <div>
+       <div class="section-label reveal">Cómo funciona</div>
+       <h2 class="section-title reveal">Del ingreso a la entrega en pocos clics</h2>
+       <p class="section-desc reveal">Sin curvas de aprendizaje. Si sabés usar el celular, ya sabés usar Mi Taller Web.</p>
+       <div class="steps">
+        <div class="step reveal">
+         <div class="step-num">1</div>
+         <div class="step-content">
+          <div class="step-title">Ingresá el equipo</div>
+          <div class="step-desc">Completá los datos del cliente, el dispositivo, la falla y el precio estimado. Todo en menos de un minuto.</div>
+         </div>
+        </div>
+        <div class="step reveal">
+         <div class="step-num">2</div>
+         <div class="step-content">
+          <div class="step-title">Imprimí o mandá el ticket</div>
+          <div class="step-desc">Compartí el comprobante por WhatsApp o imprimilo. El cliente recibe un link para rastrear su reparación.</div>
+         </div>
+        </div>
+        <div class="step reveal">
+         <div class="step-num">3</div>
+         <div class="step-content">
+          <div class="step-title">Actualizá el estado</div>
+          <div class="step-desc">Cambiá el estado a Reparado cuando esté listo. El cliente puede ver el cambio en tiempo real.</div>
+         </div>
+        </div>
+        <div class="step reveal">
+         <div class="step-num">4</div>
+         <div class="step-content">
+          <div class="step-title">Entregá y archivá</div>
+          <div class="step-desc">Al marcar como Entregado, la orden se archiva automáticamente con todo el historial financiero registrado.</div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="mockup-wrap reveal">
+       <div class="mockup">
+        <div class="mockup-bar">
+         <div class="dot dot-r"></div>
+         <div class="dot dot-y"></div>
+         <div class="dot dot-g"></div>
+         <span class="mockup-title">Mi Taller Web — Órdenes activas</span>
+        </div>
+        <div class="mockup-body">
+         <div class="mock-row">
+          <span class="mock-badge st-pend">⏳ Pendiente</span>
+          <div class="mock-info">
+           <div class="mock-name">García, Luis — Samsung A54</div>
+           <div class="mock-detail">Pantalla rota · #1042</div>
+          </div>
+          <div class="mock-price">$35.000</div>
+         </div>
+         <div class="mock-row">
+          <span class="mock-badge st-rep">✅ Reparado</span>
+          <div class="mock-info">
+           <div class="mock-name">Rodríguez, Ana — iPhone 13</div>
+           <div class="mock-detail">Sin carga · #1041</div>
+          </div>
+          <div class="mock-price">$48.000</div>
+         </div>
+         <div class="mock-row">
+          <span class="mock-badge st-gar">🔄 Garantía</span>
+          <div class="mock-info">
+           <div class="mock-name">Martínez, Pedro — Moto G62</div>
+           <div class="mock-detail">Touch falla · #1039</div>
+          </div>
+          <div class="mock-price">$22.000</div>
+         </div>
+         <div class="mock-row">
+          <span class="mock-badge st-pend">⏳ Pendiente</span>
+          <div class="mock-info">
+           <div class="mock-name">Torres, Sofía — Xiaomi 12T</div>
+           <div class="mock-detail">Micrófono · #1043</div>
+          </div>
+          <div class="mock-price">$18.000</div>
+         </div>
+         <div class="mock-row">
+          <span class="mock-badge st-ent">📦 Entregado</span>
+          <div class="mock-info">
+           <div class="mock-name">Flores, Diego — Redmi Note 11</div>
+           <div class="mock-detail">Batería · #1038</div>
+          </div>
+          <div class="mock-price" style="color:var(--gray-600);">Pagado</div>
+         </div>
+        </div>
+       </div>
       </div>
      </div>
     </div>
