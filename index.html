@@ -4489,6 +4489,15 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <p style="font-size:11px; color:var(--gray-500); margin:6px 0 0 0;">Queda fijo una vez creada la licencia — el cliente no lo puede cambiar solo.</p>
       <button onclick="crearLicencia()" class="btn" style="background:var(--success); color:white; padding:12px 20px; width:100%; margin-top:14px;">ACTIVAR</button>
      </div>
+
+     <!-- LIBERAR NÚMERO / MAIL BLOQUEADO POR PRUEBA YA USADA -->
+     <div class="card-form" style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--gray-200); margin-bottom: 20px;">
+      <label style="font-weight:900;">🔓 Liberar número / email (prueba ya usada)</label>
+      <p style="font-size:12px; color:var(--gray-500); margin:6px 0 10px 0;">Si alguien borró su cuenta con la prueba vencida y no puede volver a registrarse, ponés su número y/o su email y se le habilita otra prueba. Podés completar uno solo o los dos.</p>
+      <input type="text" id="lib-wa" placeholder="WhatsApp. Ej: 54911..." inputmode="numeric" style="margin-bottom:8px;">
+      <input type="email" id="lib-email" placeholder="Email. Ej: cliente@gmail.com">
+      <button onclick="liberarPruebaUsada()" class="btn" style="background:var(--navy-900); color:white; padding:12px 20px; width:100%; margin-top:12px;">🔓 LIBERAR</button>
+     </div>
      
           <!-- CONFIGURACIÓN DÍAS DE PRUEBA -->
      <div class="card-form" style="background: var(--green-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--green-300); margin-bottom: 20px;">
@@ -16261,6 +16270,35 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             ocultarLoader();
             showToast('⚠️ Error: ' + err.message, '#dc2626');
         });
+    }
+
+    // Admin: borra de cuentas_eliminadas las huellas del número y/o del email para permitir otra prueba
+    async function liberarPruebaUsada() {
+        const wa = (document.getElementById('lib-wa').value || '').replace(/\D/g, '');
+        const mail = (document.getElementById('lib-email').value || '').trim().toLowerCase();
+        if (!wa && !mail) { showToast('Poné un número o un email', '#dc2626'); return; }
+        mostrarLoader('Liberando...');
+        try {
+            const hashes = [];
+            if (wa) hashes.push(['número', await _hashCuenta(wa)]);
+            if (mail) hashes.push(['email', await _hashMail(mail)]);
+            const liberados = [], noEstaba = [];
+            for (const [tipo, h] of hashes) {
+                const ref = db.ref('cuentas_eliminadas/' + h);
+                const snap = await ref.once('value');
+                if (snap.exists()) { await ref.remove(); liberados.push(tipo); } else { noEstaba.push(tipo); }
+            }
+            ocultarLoader();
+            if (liberados.length) {
+                showToast('✅ Liberado: ' + liberados.join(' y ') + (noEstaba.length ? ' (el ' + noEstaba.join(' y ') + ' no estaba bloqueado)' : ''), '#16a34a');
+                document.getElementById('lib-wa').value = ''; document.getElementById('lib-email').value = '';
+            } else {
+                showToast('ℹ️ No estaba bloqueado por prueba usada. Si igual no puede registrarse, revisá Authentication → Users en Firebase.', '#d97706');
+            }
+        } catch (e) {
+            ocultarLoader();
+            showToast('Error: ' + (e && (e.message || e.code) || 'fallo'), '#dc2626');
+        }
     }
 
     function ordenarConta(col) {
