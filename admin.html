@@ -45,6 +45,17 @@
   .item-fp { font-size:12px; color:#8fa3bf; margin-top:6px; word-break:break-all; font-family: Consolas, monospace; }
   .item-meta { font-size:12px; color:#8fa3bf; margin-top:4px; }
   .item-acts { display:flex; gap:6px; margin-top:10px; }
+  .resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+  .rbox { background:#0a1630; border:1px solid #1e4d8c; border-radius:10px; padding:9px 6px; text-align:center; }
+  .rbox b { display:block; font-size:20px; color:#fff; }
+  .rbox span { font-size:11px; color:#8fa3bf; }
+  .rbox.g b { color:#4fc77d; } .rbox.y b { color:#ffc857; } .rbox.r b { color:#ff6b7f; }
+  .modal { position:fixed; inset:0; background:rgba(2,8,20,.78); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal.on { display:flex; }
+  .mbox { background:#0e1d3a; border:1px solid #2f7fd6; border-radius:14px; padding:18px; max-width:380px; width:100%; }
+  .mbox h3 { margin:0 0 8px; font-size:16px; color:#fff; }
+  .mbox p { margin:0; font-size:14px; line-height:1.45; color:#cfd9e8; white-space:pre-line; overflow-wrap:anywhere; }
+  .mbox .row button { margin-top:16px; }
   .item-acts button { flex:1; min-width:0; width:auto; margin:0; padding:9px 4px; font-size:13px; }
 </style>
 </head>
@@ -65,6 +76,8 @@
         <input id="dur" value="30d" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="7d, 2w, 3m, 1y">
       </div>
     </div>
+    <label for="phone">WhatsApp del cliente (opcional, con código de país)</label>
+    <input id="phone" type="tel" inputmode="numeric" autocomplete="off" placeholder="ej. 5491122334455">
     <div class="chips" id="chips">
       <button type="button" class="chip" data-d="7d">7 días</button>
       <button type="button" class="chip on" data-d="30d">30 días</button>
@@ -77,8 +90,9 @@
     <textarea id="out" readonly placeholder="Acá aparece el token para enviarle al cliente"></textarea>
     <div class="row">
       <button id="copy" type="button" class="sec" disabled>Copiar token</button>
-      <button id="wa" type="button" class="wa" disabled>Enviar por WhatsApp</button>
+      <button id="copyMsg" type="button" class="sec" disabled>Copiar mensaje</button>
     </div>
+    <button id="wa" type="button" class="wa" disabled>Enviar por WhatsApp</button>
   </form>
 
   <h2>Historial</h2>
@@ -87,13 +101,26 @@
       <input id="q" placeholder="Buscar por cliente o ID de equipo" autocomplete="off" autocorrect="off" spellcheck="false">
       <button id="find" type="submit" class="sec" style="flex:0 0 auto;width:auto;margin:0;padding:0 18px">Buscar</button>
     </form>
+    <div id="resumen" class="resumen"></div>
     <div class="filters">
       <button type="button" class="chip on" data-f="all">Todas</button>
       <button type="button" class="chip" data-f="vig">Vigentes</button>
+      <button type="button" class="chip" data-f="pronto">Por vencer</button>
       <button type="button" class="chip" data-f="venc">Vencidas</button>
     </div>
     <div id="hist" style="margin-top:12px"></div>
     <button id="more" type="button" class="sec" style="display:none">Ver más</button>
+  </div>
+</div>
+
+<div id="modal" class="modal" role="dialog" aria-modal="true">
+  <div class="mbox">
+    <h3 id="mTitle">Confirmar</h3>
+    <p id="mText"></p>
+    <div class="row">
+      <button id="mNo" type="button" class="sec">Cancelar</button>
+      <button id="mYes" type="button">Aceptar</button>
+    </div>
   </div>
 </div>
 
@@ -117,6 +144,28 @@ const store = {
   get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
+
+/* ---------- teléfonos de clientes (guardados solo en este navegador) ---------- */
+function phonesGet() { try { return JSON.parse(store.get("vk_phones") || "{}") || {}; } catch { return {}; } }
+function phoneOf(fp) { return phonesGet()[fp] || ""; }
+function phoneSave(fp, ph) {
+  const d = String(ph || "").replace(/\D/g, "");
+  const m = phonesGet();
+  if (d) m[fp] = d; else delete m[fp];
+  store.set("vk_phones", JSON.stringify(m));
+}
+
+/* ---------- confirmación con estilo (reemplaza confirm()) ---------- */
+function askConfirm(title, text, yesTxt = "Aceptar") {
+  return new Promise((resolve) => {
+    $("mTitle").textContent = title; $("mText").textContent = text; $("mYes").textContent = yesTxt;
+    const m = $("modal"); m.classList.add("on");
+    const done = (v) => { m.classList.remove("on"); $("mYes").onclick = $("mNo").onclick = null; m.onclick = null; resolve(v); };
+    $("mYes").onclick = () => done(true);
+    $("mNo").onclick = () => done(false);
+    m.onclick = (e) => { if (e.target === m) done(false); };
+  });
+}
 
 /* ---------- API ---------- */
 async function api(path, opts = {}) {
@@ -170,9 +219,13 @@ function estado(x) {
   return { cls: "vig", txt: "vigente", sub: "vence en " + d + " d" };
 }
 
-function waLink(name, vence, token) {
-  const t = `Hola${name ? " " + name : ""}! Tu licencia de Virus Killer Mobile está lista (vence el ${fmt(vence)}).\n\nCopiá este código y pegalo en la app:\n\n${token}`;
-  return "https://wa.me/?text=" + encodeURIComponent(t);
+function msgText(name, vence, token) {
+  return `Hola${name ? " " + name : ""}! Tu licencia de Virus Killer Mobile está lista (vence el ${fmt(vence)}).\n\nCopiá este código y pegalo en la app:\n\n${token}`;
+}
+function waLink(name, vence, token, fp) {
+  const t = msgText(name, vence, token);
+  const ph = fp ? phoneOf(fp) : "";
+  return "https://wa.me/" + ph + "?text=" + encodeURIComponent(t);
 }
 
 /* ---------- duración rápida ---------- */
@@ -214,7 +267,7 @@ $("f").addEventListener("submit", async (ev) => {
     try {
       const prev = await api("/api/history?q=" + encodeURIComponent(fp));
       const activa = Array.isArray(prev) ? prev.find((x) => x.fingerprint === fp && estado(x).txt === "vigente") : null;
-      if (activa && !confirm(`Este equipo ya tiene una licencia vigente (${activa.cliente}, vence ${fmt(activa.vence)}).\n\n¿Generar otra igual?`)) {
+      if (activa && !(await askConfirm("Ya tiene licencia vigente", `Este equipo ya tiene una licencia vigente (${activa.cliente}, vence ${fmt(activa.vence)}).\n\n¿Generar otra igual?`, "Generar igual"))) {
         setMsg("Cancelado: ya tenía licencia vigente.", "warn");
         return;
       }
@@ -227,10 +280,11 @@ $("f").addEventListener("submit", async (ev) => {
       body: JSON.stringify({ fingerprint: fp, name, duration: dur }),
     });
     if (!d.token) throw new Error("El servidor no devolvió el token.");
-    lastIssued = d;
+    lastIssued = d; lastIssued._fp = fp;
+    phoneSave(fp, $("phone").value);
     $("out").value = d.token;
     $("copy").disabled = false;
-    $("wa").disabled = false;
+    $("wa").disabled = false; $("copyMsg").disabled = false;
     setMsg(`Licencia lista para ${d.cliente}. Vence ${fmt(d.vence)}.`, "ok");
     loadHistory();
   } catch (e) {
@@ -242,18 +296,34 @@ $("copy").onclick = async () => {
   const ok = await copyText($("out").value, $("copy"));
   setMsg(ok ? "Token copiado." : "No se pudo copiar. Mantené apretado el texto y copialo a mano.", ok ? "ok" : "err");
 };
+$("copyMsg").onclick = async () => {
+  if (!lastIssued) return;
+  const ok = await copyText(msgText(lastIssued.cliente, lastIssued.vence, lastIssued.token), $("copyMsg"));
+  setMsg(ok ? "Mensaje copiado, listo para pegar." : "No se pudo copiar el mensaje.", ok ? "ok" : "err");
+};
 $("wa").onclick = () => {
   if (!lastIssued) return;
-  window.open(waLink(lastIssued.cliente, lastIssued.vence, lastIssued.token), "_blank", "noopener");
+  window.open(waLink(lastIssued.cliente, lastIssued.vence, lastIssued.token, lastIssued.fingerprint || lastIssued._fp), "_blank", "noopener");
 };
 
 /* ---------- historial ---------- */
 function filtered() {
   if (filter === "all") return rowsAll;
+  if (filter === "pronto") return rowsAll.filter((x) => estado(x).cls === "pronto");
   return rowsAll.filter((x) => (estado(x).txt === "vigente") === (filter === "vig"));
 }
 
+function renderResumen() {
+  let v = 0, p = 0, x = 0;
+  rowsAll.forEach((r) => { const e = estado(r); if (e.txt !== "vigente") x++; else { v++; if (e.cls === "pronto") p++; } });
+  $("resumen").innerHTML =
+    `<div class="rbox g"><b>${v}</b><span>vigentes</span></div>` +
+    `<div class="rbox y"><b>${p}</b><span>vencen en 7 d</span></div>` +
+    `<div class="rbox r"><b>${x}</b><span>vencidas</span></div>`;
+}
+
 function renderHistory() {
+  renderResumen();
   const list = filtered();
   if (!list.length) { $("hist").innerHTML = '<div class="small">Sin resultados.</div>'; $("more").style.display = "none"; return; }
   const vis = list.slice(0, shown);
@@ -273,7 +343,8 @@ function renderHistory() {
         </div>
         <div class="item-fp">${esc(x.fingerprint)}</div>
         <div class="item-acts">
-          <button type="button" class="sec" data-a="copy" data-i="${i}">Copiar</button>
+          <button type="button" class="sec" data-a="copy" data-i="${i}">Token</button>
+          <button type="button" class="sec" data-a="msg" data-i="${i}">Mensaje</button>
           <button type="button" class="wa" data-a="wa" data-i="${i}">WhatsApp</button>
           <button type="button" class="sec" data-a="renew" data-i="${i}">Renovar</button>
         </div>
@@ -287,10 +358,12 @@ $("hist").addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-a]"); if (!b) return;
   const x = rowsAll[Number(b.dataset.i)]; if (!x) return;
   if (b.dataset.a === "copy") copyText(x.token, b);
-  else if (b.dataset.a === "wa") window.open(waLink(x.cliente, x.vence, x.token), "_blank", "noopener");
+  else if (b.dataset.a === "msg") copyText(msgText(x.cliente, x.vence, x.token), b);
+  else if (b.dataset.a === "wa") window.open(waLink(x.cliente, x.vence, x.token, x.fingerprint), "_blank", "noopener");
   else if (b.dataset.a === "renew") {
     $("fp").value = x.fingerprint; $("name").value = x.cliente;
     $("dur").value = DUR_RE.test(String(x.duracion || "").toLowerCase()) ? String(x.duracion).toLowerCase() : "30d";
+    $("phone").value = phoneOf(x.fingerprint);
     syncChips(); $("fp").classList.remove("bad");
     setMsg("Datos cargados para renovar. Revisá la duración y generá.", "ok");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -322,6 +395,8 @@ async function loadHistory() {
   }
 }
 $("sf").addEventListener("submit", (e) => { e.preventDefault(); loadHistory(); });
+let qTimer = null;
+$("q").addEventListener("input", () => { clearTimeout(qTimer); qTimer = setTimeout(loadHistory, 350); });
 syncChips();
 loadHistory();
 </script>
