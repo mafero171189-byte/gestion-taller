@@ -44,7 +44,8 @@
   .item-right { text-align:right; flex:0 0 auto; }
   .item-fp { font-size:12px; color:#8fa3bf; margin-top:6px; word-break:break-all; font-family: Consolas, monospace; }
   .item-meta { font-size:12px; color:#8fa3bf; margin-top:4px; }
-  .item-acts { display:flex; gap:6px; margin-top:10px; }
+  .item-acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .item-acts button.del { flex:0 0 auto; background:#7a1f2e; padding:9px 12px; }
   .resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
   .rbox { background:#0a1630; border:1px solid #1e4d8c; border-radius:10px; padding:9px 6px; text-align:center; }
   .rbox b { display:block; font-size:20px; color:#fff; }
@@ -56,7 +57,7 @@
   .mbox h3 { margin:0 0 8px; font-size:16px; color:#fff; }
   .mbox p { margin:0; font-size:14px; line-height:1.45; color:#cfd9e8; white-space:pre-line; overflow-wrap:anywhere; }
   .mbox .row button { margin-top:16px; }
-  .item-acts button { flex:1; min-width:0; width:auto; margin:0; padding:9px 4px; font-size:13px; }
+  .item-acts button { flex:1 1 auto; min-width:0; width:auto; margin:0; padding:9px 4px; font-size:13px; }
 </style>
 </head>
 <body>
@@ -339,6 +340,7 @@ function renderHistory() {
           <button type="button" class="sec" data-a="msg" data-i="${i}">Mensaje</button>
           <button type="button" class="wa" data-a="wa" data-i="${i}">WhatsApp</button>
           <button type="button" class="sec" data-a="renew" data-i="${i}">Renovar</button>
+          <button type="button" class="del" data-a="del" data-i="${i}" aria-label="Eliminar" title="Eliminar del historial">🗑</button>
         </div>
       </div>`;
     }).join("") +
@@ -352,6 +354,16 @@ $("hist").addEventListener("click", async (ev) => {
   if (b.dataset.a === "copy") copyText(x.token, b);
   else if (b.dataset.a === "msg") copyText(msgText(x.cliente, x.vence, x.token), b);
   else if (b.dataset.a === "wa") window.open(waLink(x.cliente, x.vence, x.token), "_blank", "noopener");
+  else if (b.dataset.a === "del") {
+    const ok = await askConfirm("Eliminar del historial",
+      `${x.cliente} · vence ${fmt(x.vence)}\n${x.fingerprint}\n\nSe borra solo del historial. Si el cliente ya tiene el código, le sigue funcionando hasta que venza.`, "Eliminar");
+    if (!ok) return;
+    try {
+      await api("/api/delete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: x.id }) });
+      rowsAll = rowsAll.filter((r) => r !== x);
+      renderHistory();
+    } catch (e) { await askConfirm("No se pudo eliminar", e.message, "Entendido"); }
+  }
   else if (b.dataset.a === "renew") {
     $("fp").value = x.fingerprint; $("name").value = x.cliente;
     $("dur").value = DUR_RE.test(String(x.duracion || "").toLowerCase()) ? String(x.duracion).toLowerCase() : "30d";
