@@ -5012,7 +5012,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <ul>
          <li>Seleccioná el <b>mes</b> para ver el resumen mensual, o usá el <b>selector de fecha</b> para analizar un día específico.</li>
          <li>Siempre ves dos filas de tarjetas: arriba las del <b>📆 día</b> (hoy, o el día que elijas) y abajo las del <b>📅 mes completo</b>.</li>
-         <li>Cuando elegís un día, arriba de todo aparece además la <b>🏦 Caja del día</b> y la tabla de movimientos muestra solo los de ese día. Con la <b>✕</b> de la esquina de la caja (o tocando de nuevo <b>🏦 Caja del día</b>) la cerrás y volvés a ver los movimientos de todo el mes.</li>
+         <li>Cuando elegís un día, la tabla de movimientos muestra solo los de ese día y arriba aparece además su <b>🏦 Caja del día</b>. Adentro tenés <b>🔎 Buscar otro día</b> para pasar a otra fecha. Con la <b>✕</b> de la esquina (o tocando de nuevo el botón) la cerrás y volvés al resumen del mes.</li>
         </ul>
         <b>Tabla de Movimientos</b>
         <ul>
@@ -15749,13 +15749,12 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
         // Caja del día: solo cuando hay un día específico elegido (si la caja rápida está abierta en Gestión, no se toca)
         if (!_cajaModal) {
-        _cajaCtx = cDia ? {
-            dia: diaFiltro,
-            ingresoEfectivo: cDia.ingresoEfectivo, ingresoTransf: cDia.ingresoTransf, ingresoTarjeta: cDia.ingresoTarjeta,
-            ingresoDebito: cDia.ingresoDebito, ingresoCredito: cDia.ingresoCredito, ingresoMP: cDia.ingresoMP,
-            ingresosTotales: cDia.ingresosTotales, gastosRepuestos: cDia.gastosRepuestos, gastosExtraTotal: cDia.gastosExtraTotal,
-            gananciaNeta: cDia.gananciaNeta, gastosEfectivo: cDia.gastosEfectivo
-        } : null;
+        // La caja sigue al filtro de día: al elegir un día se muestra también su caja
+        if (diaFiltro) {
+            const _dr = _cajaDraft;
+            _cajaCalcDia(diaFiltro);
+            if (_dr && _dr.dia === diaFiltro) _cajaDraft = _dr;
+        } else { _cajaCtx = null; }
         renderCajaDia();
         }
 
@@ -16106,7 +16105,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const hist = Object.keys(cajasCache).sort().reverse().slice(0, 10).map(function (k) {
             const h = cajasCache[k] || {};
             const d = h.contado != null && h.esperado != null ? h.contado - h.esperado : null;
-            return '<tr onclick="' + (_cajaModal ? 'cajaModalElegirDia(\'' + k + '\')' : 'document.getElementById(\'inputDia\').value=\'' + k + '\'; cargarDatosContabilidad();') + '" style="cursor:pointer;' + (k === c.dia ? 'background:var(--gray-100);' : '') + '">'
+            return '<tr onclick="' + 'cajaBuscarDia(\'' + k + '\')' + '" style="cursor:pointer;' + (k === c.dia ? 'background:var(--gray-100);' : '') + '">'
                 + '<td style="padding:6px 4px;">' + _cajaFechaAR(k) + '</td>'
                 + '<td style="padding:6px 4px;">' + (h.cerrada ? '🔒 Cerrada' : '🟢 Abierta') + '</td>'
                 + '<td style="padding:6px 4px; text-align:right;">' + fmt.format(h.apertura || 0) + '</td>'
@@ -16127,6 +16126,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             +     ''
             +   '</div>'
             + '</div>'
+            + '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:-4px 0 12px;"><label for="cajaBuscarDia" style="font-size:12px; font-weight:800; color:var(--gray-600);">🔎 Buscar otro día:</label>'
+            +   '<input type="date" id="cajaBuscarDia" value="' + _cajaEsc(c.dia) + '" onchange="cajaBuscarDia(this.value)" style="padding:7px 10px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:14px; font-weight:700; font-family:inherit; background:#fff;"></div>'
             + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px;">'
             +   '<div style="' + box + '"><label style="' + lbl + '" for="cajaApertura">💵 Efectivo al abrir el día</label>'
             +     '<input type="text" inputmode="decimal" id="cajaApertura" placeholder="Ej: 20000" value="' + (dr && dr.aperturaTxt !== undefined ? _cajaEsc(dr.aperturaTxt) : (apertura != null ? _cajaEsc(apertura) : '')) + '" oninput="cajaRecalc()" style="' + inpS + '" ' + dis + '>'
@@ -16182,6 +16183,13 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     }
     // Oculta la caja y vuelve al resumen del mes
     function cajaVolverAlMes() { _cajaDraft = null; limpiarFiltroDia(); cargarDatosContabilidad(); }
+    // Buscar la caja de cualquier día desde adentro de la caja (Contabilidad o ventana de Gestión)
+    function cajaBuscarDia(v) {
+        if (!v) return;
+        if (_cajaModal) { cajaModalElegirDia(v); return; }
+        const inp = document.getElementById('inputDia'); if (inp) inp.value = v;
+        cargarDatosContabilidad();
+    }
     function cajaRecalc() {
         if (!_cajaCtx) return;
         const a = document.getElementById('cajaApertura'), k = document.getElementById('cajaContado');
