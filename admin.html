@@ -76,8 +76,6 @@
         <input id="dur" value="30d" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="7d, 2w, 3m, 1y">
       </div>
     </div>
-    <label for="phone">WhatsApp del cliente (opcional, con código de país)</label>
-    <input id="phone" type="tel" inputmode="numeric" autocomplete="off" placeholder="ej. 5491122334455">
     <div class="chips" id="chips">
       <button type="button" class="chip" data-d="7d">7 días</button>
       <button type="button" class="chip on" data-d="30d">30 días</button>
@@ -144,16 +142,6 @@ const store = {
   get(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
-
-/* ---------- teléfonos de clientes (guardados solo en este navegador) ---------- */
-function phonesGet() { try { return JSON.parse(store.get("vk_phones") || "{}") || {}; } catch { return {}; } }
-function phoneOf(fp) { return phonesGet()[fp] || ""; }
-function phoneSave(fp, ph) {
-  const d = String(ph || "").replace(/\D/g, "");
-  const m = phonesGet();
-  if (d) m[fp] = d; else delete m[fp];
-  store.set("vk_phones", JSON.stringify(m));
-}
 
 /* ---------- confirmación con estilo (reemplaza confirm()) ---------- */
 function askConfirm(title, text, yesTxt = "Aceptar") {
@@ -222,10 +210,9 @@ function estado(x) {
 function msgText(name, vence, token) {
   return `Hola${name ? " " + name : ""}! Tu licencia de Virus Killer Mobile está lista (vence el ${fmt(vence)}).\n\nCopiá este código y pegalo en la app:\n\n${token}`;
 }
-function waLink(name, vence, token, fp) {
+function waLink(name, vence, token) {
   const t = msgText(name, vence, token);
-  const ph = fp ? phoneOf(fp) : "";
-  return "https://wa.me/" + ph + "?text=" + encodeURIComponent(t);
+  return "https://wa.me/?text=" + encodeURIComponent(t);
 }
 
 /* ---------- duración rápida ---------- */
@@ -263,15 +250,21 @@ $("f").addEventListener("submit", async (ev) => {
   $("gen").disabled = true;
   setMsg("Verificando…");
   try {
-    // Aviso si ya hay una licencia vigente para este equipo
+    // Aviso si ya hay una licencia vigente para este equipo (compara sin guiones/espacios y mira también la lista ya cargada)
+    let previas = rowsAll.slice();
     try {
-      const prev = await api("/api/history?q=" + encodeURIComponent(fp));
-      const activa = Array.isArray(prev) ? prev.find((x) => x.fingerprint === fp && estado(x).txt === "vigente") : null;
-      if (activa && !(await askConfirm("Ya tiene licencia vigente", `Este equipo ya tiene una licencia vigente (${activa.cliente}, vence ${fmt(activa.vence)}).\n\n¿Generar otra igual?`, "Generar igual"))) {
-        setMsg("Cancelado: ya tenía licencia vigente.", "warn");
-        return;
-      }
-    } catch {}
+      const prev = await api("/api/history?q=" + encodeURIComponent(fp) + "&limit=200");
+      if (Array.isArray(prev)) previas = previas.concat(prev);
+    } catch (e) { /* si falla, igual se usa la lista ya cargada */ }
+    const normFpKey = (v) => String(v || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    const key = normFpKey(fp);
+    const activa = previas
+      .filter((x) => normFpKey(x.fingerprint) === key && estado(x).txt === "vigente")
+      .sort((m, n) => n.vence - m.vence)[0];
+    if (activa && !(await askConfirm("Ya tiene licencia vigente", `Este equipo ya tiene una licencia vigente (${activa.cliente}, vence ${fmt(activa.vence)}).\n\n¿Generar otra igual?`, "Generar igual"))) {
+      setMsg("Cancelado: ya tenía licencia vigente.", "warn");
+      return;
+    }
 
     setMsg("Generando…");
     const d = await api("/api/issue", {
@@ -280,8 +273,7 @@ $("f").addEventListener("submit", async (ev) => {
       body: JSON.stringify({ fingerprint: fp, name, duration: dur }),
     });
     if (!d.token) throw new Error("El servidor no devolvió el token.");
-    lastIssued = d; lastIssued._fp = fp;
-    phoneSave(fp, $("phone").value);
+    lastIssued = d;
     $("out").value = d.token;
     $("copy").disabled = false;
     $("wa").disabled = false; $("copyMsg").disabled = false;
@@ -303,7 +295,7 @@ $("copyMsg").onclick = async () => {
 };
 $("wa").onclick = () => {
   if (!lastIssued) return;
-  window.open(waLink(lastIssued.cliente, lastIssued.vence, lastIssued.token, lastIssued.fingerprint || lastIssued._fp), "_blank", "noopener");
+    window.open(waLink(lastIssued.cliente, lastIssued.vence, lastIssued.token), "_blank", "noopener");
 };
 
 /* ---------- historial ---------- */
@@ -354,16 +346,15 @@ function renderHistory() {
   $("more").style.display = list.length > shown ? "block" : "none";
 }
 
-$("hist").addEventListener("click", (ev) => {
+$("hist").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button[data-a]"); if (!b) return;
   const x = rowsAll[Number(b.dataset.i)]; if (!x) return;
   if (b.dataset.a === "copy") copyText(x.token, b);
   else if (b.dataset.a === "msg") copyText(msgText(x.cliente, x.vence, x.token), b);
-  else if (b.dataset.a === "wa") window.open(waLink(x.cliente, x.vence, x.token, x.fingerprint), "_blank", "noopener");
+  else if (b.dataset.a === "wa") window.open(waLink(x.cliente, x.vence, x.token), "_blank", "noopener");
   else if (b.dataset.a === "renew") {
     $("fp").value = x.fingerprint; $("name").value = x.cliente;
     $("dur").value = DUR_RE.test(String(x.duracion || "").toLowerCase()) ? String(x.duracion).toLowerCase() : "30d";
-    $("phone").value = phoneOf(x.fingerprint);
     syncChips(); $("fp").classList.remove("bad");
     setMsg("Datos cargados para renovar. Revisá la duración y generá.", "ok");
     window.scrollTo({ top: 0, behavior: "smooth" });
