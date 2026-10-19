@@ -589,6 +589,29 @@
         /* Text Colors Fixes para sobreescribir estilos en línea */
         body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode label { color: var(--slate-50) !important; }
         body.dark-mode .history-item::before, body.dark-mode .history-item b { color: var(--gray-600) !important; }
+
+        /* Dark mode: Caja del día (panel/modal) y Programas Extras — fondos claros que dejaban texto blanco invisible */
+        body.dark-mode .caja-panel { background-color: var(--navy-880) !important; border-color: #0f766e !important; color: var(--slate-100) !important; }
+        body.dark-mode .caja-panel h3 { color: var(--slate-50) !important; }
+        body.dark-mode .caja-panel label, body.dark-mode .caja-panel summary, body.dark-mode .caja-panel th { color: var(--slate-400) !important; }
+        body.dark-mode .caja-panel label[for="cajaApertura"], body.dark-mode .caja-panel label[for="cajaContado"] { color: var(--slate-200) !important; }
+        body.dark-mode .caja-panel > label { color: var(--slate-100) !important; }
+        body.dark-mode .caja-panel b[style*="var(--primary)"] { color: #34d399 !important; }
+        body.dark-mode .caja-panel b[style*="#0f766e"] { color: #2dd4bf !important; }
+        body.dark-mode .caja-panel button[aria-label="Cerrar"] { background: rgba(255,255,255,0.12) !important; color: var(--slate-100) !important; }
+        body.dark-mode .caja-panel tr[style*="background:var(--gray-100)"] { background: var(--navy-850) !important; }
+        body.dark-mode .caja-panel button[onclick*="cajaApertura"] { color: #2dd4bf !important; }
+
+        body.dark-mode #page-extras .pex-card { background-color: var(--navy-880); border-color: var(--navy-850); }
+        body.dark-mode #page-extras .pex-card > summary { color: var(--blue-300); }
+        body.dark-mode #page-extras .pex-body label { color: var(--blue-300) !important; }
+        body.dark-mode #page-extras .pex-h { color: var(--slate-200); border-top-color: var(--navy-850); }
+        body.dark-mode #page-extras .pex-img .pex-star { background: var(--navy-900); border-color: var(--navy-850); color: var(--blue-300); }
+        body.dark-mode #page-extras .pex-img .pex-star.on { background: #44321a; border-color: #f59e0b; color: #fbbf24; }
+        body.dark-mode #page-extras .pex-tag { background: #1e3a8a; color: #bfdbfe; }
+        body.dark-mode #page-extras .pex-tag.lic { background: #44321a; color: #fbbf24; }
+        body.dark-mode #page-extras .pex-tag.off { background: var(--navy-850); color: var(--slate-200); }
+        body.dark-mode #page-extras .card-form [style*="color:var(--blue-700)"] { color: var(--blue-300) !important; }
         
         body.dark-mode [style*="color:var(--gray-900)"], body.dark-mode [style*="color: var(--gray-900)"], body.dark-mode [style*="color: #333"] { color: var(--slate-100) !important; }
         body.dark-mode [style*="color:var(--gray-600)"], body.dark-mode [style*="color: var(--gray-600)"], body.dark-mode [style*="color:var(--gray-600)"], body.dark-mode [style*="color: var(--gray-600)"] { color: var(--gray-500) !important; }
@@ -16126,7 +16149,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
         panel.style.display = 'block';
         panel.innerHTML =
-            '<div style="position:relative; background:var(--gray-100); border:2px solid #0f766e; border-radius:16px; padding:16px; margin-bottom:' + (_cajaModal ? '0' : '20px') + ';">'
+            '<div class="caja-panel" style="position:relative; background:var(--gray-100); border:2px solid #0f766e; border-radius:16px; padding:16px; margin-bottom:' + (_cajaModal ? '0' : '20px') + ';">'
             + ('<button type="button" onclick="' + (_cajaModal ? 'cerrarCajaRapida()' : 'cajaVolverAlMes()') + '" aria-label="Cerrar" title="' + (_cajaModal ? 'Cerrar' : 'Cerrar la caja y volver al resumen del mes') + '" style="position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; border:none; background:rgba(15,23,42,0.08); color:#334155; font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; z-index:2;">✕</button>')
             + '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">'
             +   '<h3 style="margin:0; font-size:18px; padding-right:40px;">🏦 Caja del día ' + _cajaFechaAR(c.dia) + '</h3>'
