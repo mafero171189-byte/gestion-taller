@@ -4433,7 +4433,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         <div id="historial-mes-nav-ventas" style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;margin-bottom:10px;gap:8px;"></div>
         <!-- Buscador -->
         <input type="text" id="historial-reparaciones-search" placeholder="🔎 Buscar por cliente, equipo, N° orden..."
-          oninput="_debounced('histVentas', () => renderHistorialEnVentas(registrosArchivados))"
+          oninput="_debounced('histVentas', () => buscarHistorialVentasGlobal())"
           style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--gray-200);box-sizing:border-box;font-size:14px;font-family:'Outfit',sans-serif;outline:none;margin-bottom:12px;">
         <!-- Cards del historial -->
         <div id="historial-tabla-ventas-wrap"></div>
@@ -12691,82 +12691,138 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     }
 
 
+    // ===== BÚSQUEDA GLOBAL DE ARCHIVADOS (todos los meses) =====
+    let resultadosBusquedaGlobal = [];   // coincidencias de cualquier mes (no pisa registrosArchivados)
+    let _archivadosTodosCache = null;
+    let _archivadosTodosCacheTs = 0;    // descarga completa (solo si el índice no alcanza)
+    let _busquedaGlobalSeq = 0;
+    let _indiceBusquedaCache = null;     // índice liviano en memoria (se baja una vez, no en cada búsqueda)
+    let _indiceBusquedaTs = 0;
+    let _migracionIndiceIntentada = false;
+    let _limiteGlobalGestion = 30;
+    let _busquedaGlobalHayMas = false;
+    let _limiteGlobalVentas = 30;
+    function _obtenerIndiceBusqueda() {
+        if (_indiceBusquedaCache && (Date.now() - _indiceBusquedaTs) < 600000) return Promise.resolve(_indiceBusquedaCache);
+        return db.ref(fbPathIndice()).once('value').then(snap => {
+            _indiceBusquedaCache = snap.val() || {};
+            _indiceBusquedaTs = Date.now();
+            return _indiceBusquedaCache;
+        });
+    }
+
+    function _archivadoCoincide(r, q, qDig, qOrd) {
+        const n = normalizarBusqueda;
+        const eq = n(`${r.equipo || ''} ${r.marca || ''} ${r.modelo || ''}`);
+        const ord = String(r.orden || '').replace(/[^\d]/g, '');
+        return n(r.cliente).includes(q) || eq.includes(q) || n(r.falla).includes(q)
+            || (qDig.length > 0 && String(r.tel || '').replace(/\D/g, '').includes(qDig))
+            || (qOrd.length > 0 && ord.includes(qOrd))
+            || n(r.orden).includes(q);
+    }
+
+    // Caché de órdenes archivadas ya bajadas (por ID, 5 min) para no repetir descargas al refinar la búsqueda
+    const _cacheOrdenesArch = {};
+    function _traerArchivada(id) {
+        const c = _cacheOrdenesArch[id];
+        if (c && (Date.now() - c.ts) < 300000) return Promise.resolve(c.data);
+        return db.ref(fbPathArchivado()).child(id).once('value').then(sn => {
+            const d = sn.val() ? { id, ...sn.val() } : null;
+            if (d) _cacheOrdenesArch[id] = { ts: Date.now(), data: d };
+            return d;
+        });
+    }
+
+    // Devuelve una Promise con las órdenes archivadas (de cualquier mes) que coinciden con el texto.
+    // Mínimo 3 letras (números desde 1 dígito) y tope de resultados (más recientes primero); el array trae .hayMas
+    function buscarArchivadosGlobal(texto, limite) {
+        limite = limite || 30;
+        const q = normalizarBusqueda(texto).trim();
+        const vacio = () => { const v = []; v.hayMas = false; return v; };
+        if (!q) return Promise.resolve(vacio());
+        const qDig = q.replace(/\D/g, '');
+        const qOrd = q.replace(/^ord-?/i, '').replace(/\D/g, '');
+        const soloNumeros = /^(ord-?)?[\d\s+()-]+$/.test(q);
+        if (q.length < 3 && !soloNumeros) return Promise.resolve(vacio());
+        const pathArchivado = fbPathArchivado();
+
+        const recortar = (lista) => {
+            const r = lista.slice(0, limite);
+            r.hayMas = lista.length > limite;
+            return r;
+        };
+        const nroDe = (x) => parseInt(String(x.orden || '').replace(/\D/g, ''), 10) || 0;
+        const desdeCacheCompleto = () => recortar((_archivadosTodosCache || [])
+            .filter(r => _archivadoCoincide(r, q, qDig, qOrd)).sort((x, y) => nroDe(y) - nroDe(x)));
+        const descargarTodo = () => db.ref(pathArchivado).once('value').then(snap => {
+            const v = snap.val();
+            _archivadosTodosCache = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
+            _archivadosTodosCacheTs = Date.now();
+            try { migrarIndiceHistorial(_archivadosTodosCache); } catch (e) {}
+            return desdeCacheCompleto();
+        });
+
+        if (_archivadosTodosCache && (Date.now() - _archivadosTodosCacheTs) < 120000) return Promise.resolve(desdeCacheCompleto());
+
+        return _obtenerIndiceBusqueda().then(indice => {
+            const todos = Object.keys(indice).filter(id => indice[id] && indice[id].archivado);
+            // Índice sin ningún archivado → probablemente nunca se migró: se descarga todo UNA vez por sesión
+            if (todos.length === 0) {
+                if (_migracionIndiceIntentada) return vacio();
+                _migracionIndiceIntentada = true;
+                return descargarTodo().then(r => { _indiceBusquedaCache = null; return r; });
+            }
+            const ids = todos.filter(id => _archivadoCoincide(indice[id], q, qDig, qOrd))
+                .sort((x, y) => nroDe(indice[y]) - nroDe(indice[x]));
+            const sel = ids.slice(0, limite);
+            return Promise.all(sel.map(_traerArchivada)).then(rs => {
+                const out = rs.filter(Boolean);
+                out.hayMas = ids.length > limite;
+                return out;
+            });
+        }).catch(() => vacio());
+    }
+
     function busquedaGlobal() {
         const bus = document.getElementById('search').value.trim();
-        
-        // OPTIMIZACIÓN: Búsqueda instantánea fluida
         clearTimeout(debounceTimer);
 
         debounceTimer = setTimeout(() => {
             limiteTabla = 50;
+            _limiteGlobalGestion = 30;
             if (bus.length === 0) {
                 modoArchivo = false;
                 modoCobro = false;
+                resultadosBusquedaGlobal = [];
+                _busquedaGlobalHayMas = false;
                 renderTable();
                 return;
             }
-            if (!historialDescargado) {
-                const pathArchivado = fbPathArchivado();
-                const pathIndice    = fbPathIndice();
-
-                // Intentar buscar primero por índice (liviano)
-                db.ref(pathIndice).once('value').then(snapIdx => {
-                    const indice = snapIdx.val() || {};
-                    const busNorm = bus.replace(/^ord-?/i, '');
-                    const idsCoinciden = Object.keys(indice).filter(id => {
-                        const e = indice[id];
-                        return e.archivado &&
-                            (e.cliente.includes(bus) || e.modelo.includes(bus) ||
-                             e.equipo.includes(bus) || e.marca.includes(bus) ||
-                             e.tel.includes(bus) || e.orden.includes(busNorm) ||
-                             ('ord-' + e.orden).includes(bus) ||
-                             e.falla.includes(bus));
-                    });
-
-                    if (idsCoinciden.length === 0) {
-                        // Sin resultados en índice — puede ser que no esté migrado aún
-                        // Descargamos todo y migramos silenciosamente
-                        db.ref(pathArchivado).once('value').then(snap => {
-                            const v = snap.val();
-                            registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                            historialDescargado = true;
-                            migrarIndiceHistorial(registrosArchivados);
-                            renderTable();
-                        });
-                        return;
-                    }
-
-                    // Bajar solo las órdenes que coinciden con la búsqueda
-                    const promesas = idsCoinciden.map(id =>
-                        db.ref(pathArchivado).child(id).once('value').then(s => s.val() ? { id, ...s.val() } : null)
-                    );
-                    Promise.all(promesas).then(resultados => {
-                        const encontrados = resultados.filter(Boolean);
-                        // Agregar al array sin duplicar
-                        encontrados.forEach(r => {
-                            if (!registrosArchivados.find(x => x.id === r.id)) {
-                                registrosArchivados.push(r);
-                            }
-                        });
-                        renderTable();
-                    });
-                }).catch(() => {
-                    // Fallback: descarga total
-                    db.ref(pathArchivado).once('value').then(snap => {
-                        const v = snap.val();
-                        registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
-                        historialDescargado = true;
-                        renderTable();
-                    });
-                });
-            } else {
+            // Render inmediato con lo que ya hay y después se suman los de otros meses
+            renderTable();
+            const seq = ++_busquedaGlobalSeq;
+            buscarArchivadosGlobal(bus, _limiteGlobalGestion).then(res => {
+                if (seq !== _busquedaGlobalSeq) return;
+                resultadosBusquedaGlobal = res;
+                _busquedaGlobalHayMas = !!res.hayMas;
                 renderTable();
-            }
+            }).catch(() => {});
         }, 300);
     }
 
     function cargarMasOrdenes() {
         limiteTabla += 50;
+        const _b = (document.getElementById('search') || {}).value || '';
+        if (_busquedaGlobalHayMas && _b.trim() && limiteTabla > _limiteGlobalGestion) {
+            _limiteGlobalGestion += 30;
+            const seq = ++_busquedaGlobalSeq;
+            buscarArchivadosGlobal(_b.trim(), _limiteGlobalGestion).then(res => {
+                if (seq !== _busquedaGlobalSeq) return;
+                resultadosBusquedaGlobal = res;
+                _busquedaGlobalHayMas = !!res.hayMas;
+                renderTable();
+            }).catch(() => {});
+        }
         renderTable();
     }
 
@@ -12844,7 +12900,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         let listaFinal = listaBase;
         if (bus.length > 0 && !modoArchivo && !modoPendientes) {
             const archivadosViejos = registros.filter(r => r.archivado === true);
-            listaFinal = [...registros.filter(r => !r.archivado), ...archivadosViejos, ...registrosArchivados];
+            const _idsYa = new Set([...archivadosViejos, ...registrosArchivados].map(x => x.id));
+            const _otrosMeses = (resultadosBusquedaGlobal || []).filter(x => !_idsYa.has(x.id));
+            listaFinal = [...registros.filter(r => !r.archivado), ...archivadosViejos, ..._otrosMeses, ...registrosArchivados];
         }
 
         const filtrados = listaFinal.filter(r => {
@@ -12971,7 +13029,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // Una sola escritura al DOM con todas las filas ya armadas (rápido, O(n))
         body.innerHTML = _filasHTML.join('');
 
-        if (filtradosReversos.length > limiteTabla) {
+        if (filtradosReversos.length > limiteTabla || (bus.length > 0 && _busquedaGlobalHayMas)) {
             document.getElementById('btnCargarMas').style.display = 'inline-block';
         } else {
             document.getElementById('btnCargarMas').style.display = 'none';
@@ -13489,27 +13547,61 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }, 600);
     }
 
-    function renderHistorialEnVentas(lista) {
+    let _histVentasSeq = 0;
+    function buscarHistorialVentasGlobal() {
+        var inp = document.getElementById('historial-reparaciones-search');
+        var txt = ((inp || {}).value || '').trim();
+        var seq = ++_histVentasSeq;
+        _limiteGlobalVentas = 30;
+        if (!txt) { renderHistorialEnVentas(registrosArchivados); return; }
+        // Primero muestra lo del mes cargado, después suma los de todos los meses
+        renderHistorialEnVentas(registrosArchivados);
+        buscarArchivadosGlobal(txt, _limiteGlobalVentas).then(function(res) {
+            if (seq !== _histVentasSeq) return;
+            var ya = {};
+            var lista = (registrosArchivados || []).slice();
+            lista.forEach(function(x){ ya[x.id] = 1; });
+            res.forEach(function(x){ if (!ya[x.id]) lista.push(x); });
+            renderHistorialEnVentas(lista, true, !!res.hayMas);
+        }).catch(function(){});
+    }
+
+    function verMasHistorialVentas() {
+        _limiteGlobalVentas += 30;
+        var inp = document.getElementById('historial-reparaciones-search');
+        var txt = ((inp || {}).value || '').trim();
+        var seq = ++_histVentasSeq;
+        buscarArchivadosGlobal(txt, _limiteGlobalVentas).then(function(res) {
+            if (seq !== _histVentasSeq) return;
+            var ya = {}; var lista = (registrosArchivados || []).slice();
+            lista.forEach(function(x){ ya[x.id] = 1; });
+            res.forEach(function(x){ if (!ya[x.id]) lista.push(x); });
+            renderHistorialEnVentas(lista, true, !!res.hayMas);
+        }).catch(function(){});
+    }
+
+    function renderHistorialEnVentas(lista, global, hayMas) {
         var wrap = document.getElementById('historial-tabla-ventas-wrap');
         if (!wrap) return;
 
         var busH = (document.getElementById('historial-reparaciones-search') || {}).value || '';
-        busH = busH.toLowerCase().trim();
+        busH = normalizarBusqueda(busH).trim();
         var soloReparaciones = (lista || []).filter(function(r){
             if (r.esVentaRapida) return false;
             if (!busH) return true;
             var nro = String(r.orden || '').replace(/ord-?/i, '');
-            return (r.cliente||'').toLowerCase().includes(busH)
-                || (r.equipo||'').toLowerCase().includes(busH)
-                || (r.marca||'').toLowerCase().includes(busH)
-                || (r.modelo||'').toLowerCase().includes(busH)
-                || (r.falla||'').toLowerCase().includes(busH)
+            var _n = normalizarBusqueda;
+            return _n(r.cliente).includes(busH)
+                || _n(r.equipo).includes(busH)
+                || _n(r.marca).includes(busH)
+                || _n(r.modelo).includes(busH)
+                || _n(r.falla).includes(busH)
                 || (r.tel||'').toLowerCase().includes(busH)
                 || nro.includes(busH);
         }).reverse();
 
         if (soloReparaciones.length === 0) {
-            wrap.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--gray-500);font-family:\'Outfit\',sans-serif;font-size:14px;">📭 Sin reparaciones entregadas en este mes</div>';
+            wrap.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--gray-500);font-family:\'Outfit\',sans-serif;font-size:14px;">📭 ' + (busH ? 'Sin resultados en ningún mes' : 'Sin reparaciones entregadas en este mes') + '</div>';
             return;
         }
 
@@ -13605,7 +13697,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 '</div>';
         });
 
-        wrap.innerHTML = '<div>' + cards + '</div>';
+        wrap.innerHTML = '<div>' + cards + '</div>' + (hayMas ? '<div style="text-align:center;padding:14px;"><button onclick="verMasHistorialVentas()" style="background:var(--secondary);color:white;border:none;padding:10px 25px;border-radius:20px;cursor:pointer;font-weight:bold;font-family:\'Outfit\',sans-serif;">⬇️ Ver más resultados</button></div>' : '');
     }
     // ─────────────────────────────────────────────────────────────────────────
     
@@ -14207,6 +14299,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             fecha:    data.fecha || '',
             fechaEntrega: fechaEntrega
         };
+        if (_indiceBusquedaCache) _indiceBusquedaCache[id] = entrada;
+        delete _cacheOrdenesArch[id]; _archivadosTodosCache = null;
         db.ref(pathIndice).child(id).set(entrada).catch(() => {});
         _proyectarPublico(id, data);
     }
