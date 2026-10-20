@@ -14287,6 +14287,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             const evEnt = data.historialEstados.find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
             if (evEnt) fechaEntrega = evEnt.fecha || '';
         }
+        if (archivado && !fechaEntrega) fechaEntrega = data.fecha || '';
         const entrada = {
             cliente:  (data.cliente  || '').toLowerCase(),
             modelo:   (data.modelo   || '').toLowerCase(),
@@ -14402,12 +14403,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             const existentes = snap.val() || {};
             const batch = {};
             ordenes.forEach(r => {
-                if (!existentes[r.id]) {
-                    let fechaEntradaMigrar = '';
-                    if (r.historialEstados) {
-                        const evE = r.historialEstados.find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
-                        if (evE) fechaEntradaMigrar = evE.fecha || '';
-                    }
+                let fechaEntradaMigrar = '';
+                if (r.historialEstados) {
+                    const evE = r.historialEstados.find(e => e.estado === 'Entregado' || e.estado === 'Entregado (Cortesía)');
+                    if (evE) fechaEntradaMigrar = evE.fecha || '';
+                }
+                // Sin evento de entrega (ej. ventas rápidas): se usa la fecha de la orden, igual que el filtro por mes
+                if (!fechaEntradaMigrar && r.archivado !== false) fechaEntradaMigrar = r.fecha || '';
+                if (!existentes[r.id] || (!existentes[r.id].fechaEntrega && fechaEntradaMigrar)) {
                     batch[r.id] = {
                         cliente:  (r.cliente  || '').toLowerCase(),
                         modelo:   (r.modelo   || '').toLowerCase(),
@@ -15581,6 +15584,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     historialDescargado = true;
                     ocultarLoader();
                     renderTablaVentas();
+                }).catch(() => {
+                    ocultarLoader();
+                    showToast('No se pudo cargar ventas. Probá de nuevo.', '#dc2626');
                 });
             } else {
                 renderTablaVentas();
