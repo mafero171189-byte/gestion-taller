@@ -12707,15 +12707,18 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // ===== BÚSQUEDA GLOBAL DE ARCHIVADOS (todos los meses) =====
     let resultadosBusquedaGlobal = [];   // coincidencias de cualquier mes (no pisa registrosArchivados)
     let _archivadosTodosCache = null;
+    let _archivadosTodosOwner = null;
     let _archivadosTodosCacheTs = 0;    // descarga completa (solo si el índice no alcanza)
     let _busquedaGlobalSeq = 0;
     let _indiceBusquedaCache = null;     // índice liviano en memoria (se baja una vez, no en cada búsqueda)
     let _indiceBusquedaTs = 0;
-    let _migracionIndiceIntentada = false;
+    let _migracionIndiceIntentada = null;
     let _limiteGlobalGestion = 30;
     let _busquedaGlobalHayMas = false;
     let _limiteGlobalVentas = 30;
+    let _indiceBusquedaOwner = null;
     function _obtenerIndiceBusqueda() {
+        if (_indiceBusquedaOwner !== fbPathIndice()) { _indiceBusquedaCache = null; _indiceBusquedaOwner = fbPathIndice(); }
         if (_indiceBusquedaCache && (Date.now() - _indiceBusquedaTs) < 600000) return Promise.resolve(_indiceBusquedaCache);
         return db.ref(fbPathIndice()).once('value').then(snap => {
             _indiceBusquedaCache = snap.val() || {};
@@ -12737,11 +12740,12 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // Caché de órdenes archivadas ya bajadas (por ID, 5 min) para no repetir descargas al refinar la búsqueda
     const _cacheOrdenesArch = {};
     function _traerArchivada(id) {
-        const c = _cacheOrdenesArch[id];
+        const ck = fbPathArchivado() + '|' + id;
+        const c = _cacheOrdenesArch[ck];
         if (c && (Date.now() - c.ts) < 300000) return Promise.resolve(c.data);
         return db.ref(fbPathArchivado()).child(id).once('value').then(sn => {
             const d = sn.val() ? { id, ...sn.val() } : null;
-            if (d) _cacheOrdenesArch[id] = { ts: Date.now(), data: d };
+            if (d) _cacheOrdenesArch[ck] = { ts: Date.now(), data: d };
             return d;
         });
     }
@@ -12775,14 +12779,15 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             return desdeCacheCompleto();
         });
 
+        if (_archivadosTodosOwner !== pathArchivado) { _archivadosTodosCache = null; _archivadosTodosOwner = pathArchivado; }
         if (_archivadosTodosCache && (Date.now() - _archivadosTodosCacheTs) < 120000) return Promise.resolve(desdeCacheCompleto());
 
         return _obtenerIndiceBusqueda().then(indice => {
             const todos = Object.keys(indice).filter(id => indice[id] && indice[id].archivado);
             // Índice sin ningún archivado → probablemente nunca se migró: se descarga todo UNA vez por sesión
             if (todos.length === 0) {
-                if (_migracionIndiceIntentada) return vacio();
-                _migracionIndiceIntentada = true;
+                if (_migracionIndiceIntentada === fbPathIndice()) return vacio();
+                _migracionIndiceIntentada = fbPathIndice();
                 return descargarTodo().then(r => { _indiceBusquedaCache = null; return r; });
             }
             const ids = todos.filter(id => _archivadoCoincide(indice[id], q, qDig, qOrd))
@@ -13151,7 +13156,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // cachea en localStorage 24h para no releer en cada sesión.
     let _clienteACTimer;
     let _indiceClientesCache = null; // { "nombre lower": "tel", ... }
-    const _INDICE_CACHE_KEY = 'mtw_indice_clientes_v1';
+    const _INDICE_CACHE_KEY_BASE = 'mtw_indice_clientes_v2';
+    function _indiceCacheKey() { return _INDICE_CACHE_KEY_BASE + ':' + fbPathIndice(); }
+    let _indiceClientesOwner = null;
+    try { localStorage.removeItem('mtw_indice_clientes_v1'); } catch(e) {}
     const _INDICE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 días
 
     function _buildMapaMemoria() {
@@ -13191,11 +13199,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     }
 
     function _buscarEnIndice(q, mapaMemoria) {
+        // Cache por usuario: si cambió la cuenta, descartar lo de la anterior
+        const _owner = fbPathIndice();
+        if (_indiceClientesOwner !== _owner) { _indiceClientesCache = null; _indiceClientesOwner = _owner; }
         // Primero intentar cache local
         let indice = _indiceClientesCache;
         if (!indice) {
             try {
-                const raw = localStorage.getItem(_INDICE_CACHE_KEY);
+                const raw = localStorage.getItem(_indiceCacheKey());
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     if (Date.now() - parsed.ts < _INDICE_CACHE_TTL) {
@@ -13219,7 +13230,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 });
                 _indiceClientesCache = data;
                 try {
-                    localStorage.setItem(_INDICE_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+                    localStorage.setItem(_indiceCacheKey(), JSON.stringify({ ts: Date.now(), data }));
                 } catch(e) {}
                 _aplicarIndice(q, mapaMemoria, data);
             }).catch(function() {});
@@ -13279,7 +13290,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // Invalidar cache del índice cuando se archiva/registra una orden nueva
     function _invalidarCacheIndiceClientes() {
         _indiceClientesCache = null;
-        try { localStorage.removeItem(_INDICE_CACHE_KEY); } catch(e) {}
+        try { localStorage.removeItem(_indiceCacheKey()); } catch(e) {}
         try { localStorage.removeItem('mtw_indice_full_v1'); } catch(e) {}
     }
 
@@ -14314,7 +14325,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             fechaEntrega: fechaEntrega
         };
         if (_indiceBusquedaCache) _indiceBusquedaCache[id] = entrada;
-        delete _cacheOrdenesArch[id]; _archivadosTodosCache = null;
+        delete _cacheOrdenesArch[fbPathArchivado() + '|' + id]; _archivadosTodosCache = null;
         db.ref(pathIndice).child(id).set(entrada).catch(() => {});
         _proyectarPublico(id, data);
     }
