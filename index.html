@@ -12716,6 +12716,23 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     let _limiteGlobalGestion = 30;
     let _busquedaGlobalHayMas = false;
     let _limiteGlobalVentas = 30;
+    // ===== DESCARGA COMPARTIDA DEL HISTORIAL ARCHIVADO COMPLETO =====
+    // Contabilidad, Ventas y la búsqueda global usan esta misma descarga: se baja
+    // una sola vez (10 min de vigencia) y se invalida cuando se guarda/archiva algo.
+    let _archivoCompletoCache = null, _archivoCompletoTs = 0, _archivoCompletoOwner = null, _archivoCompletoPromise = null;
+    function obtenerArchivoCompleto() {
+        const path = fbPathArchivado();
+        if (_archivoCompletoOwner !== path) { _archivoCompletoCache = null; _archivoCompletoPromise = null; _archivoCompletoOwner = path; }
+        if (_archivoCompletoCache && (Date.now() - _archivoCompletoTs) < 600000) return Promise.resolve(_archivoCompletoCache.slice());
+        if (_archivoCompletoPromise) return _archivoCompletoPromise.then(a => a.slice());
+        _archivoCompletoPromise = db.ref(path).once('value').then(snap => {
+            const v = snap.val();
+            const arr = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
+            _archivoCompletoCache = arr; _archivoCompletoTs = Date.now(); _archivoCompletoPromise = null;
+            return arr;
+        }).catch(err => { _archivoCompletoPromise = null; throw err; });
+        return _archivoCompletoPromise.then(a => a.slice());
+    }
     let _indiceBusquedaOwner = null;
     function _obtenerIndiceBusqueda() {
         if (_indiceBusquedaOwner !== fbPathIndice()) { _indiceBusquedaCache = null; _indiceBusquedaOwner = fbPathIndice(); }
@@ -12771,9 +12788,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const nroDe = (x) => parseInt(String(x.orden || '').replace(/\D/g, ''), 10) || 0;
         const desdeCacheCompleto = () => recortar((_archivadosTodosCache || [])
             .filter(r => _archivadoCoincide(r, q, qDig, qOrd)).sort((x, y) => nroDe(y) - nroDe(x)));
-        const descargarTodo = () => db.ref(pathArchivado).once('value').then(snap => {
-            const v = snap.val();
-            _archivadosTodosCache = v ? Object.keys(v).map(k => ({ id: k, ...v[k] })) : [];
+        const descargarTodo = () => obtenerArchivoCompleto().then(arr => {
+            _archivadosTodosCache = arr;
             _archivadosTodosCacheTs = Date.now();
             try { migrarIndiceHistorial(_archivadosTodosCache); } catch (e) {}
             return desdeCacheCompleto();
@@ -14325,7 +14341,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             fechaEntrega: fechaEntrega
         };
         if (_indiceBusquedaCache) _indiceBusquedaCache[id] = entrada;
-        delete _cacheOrdenesArch[fbPathArchivado() + '|' + id]; _archivadosTodosCache = null;
+        delete _cacheOrdenesArch[fbPathArchivado() + '|' + id]; _archivadosTodosCache = null; _archivoCompletoCache = null;
         db.ref(pathIndice).child(id).set(entrada).catch(() => {});
         _proyectarPublico(id, data);
     }
@@ -15602,9 +15618,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             if (!historialDescargado) {
                 mostrarLoader('Cargando ventas...');
                 const pathArch = fbPathArchivado();
-                db.ref(pathArch).once('value').then(snap => {
-                    const v = snap.val();
-                    registrosArchivados = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+                obtenerArchivoCompleto().then(arr => {
+                    registrosArchivados = arr;
                     historialDescargado = true;
                     ocultarLoader();
                     renderTablaVentas();
@@ -15811,9 +15826,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             mostrarLoader("Calculando finanzas...");
             const pathArchivado = fbPathArchivado();
             
-            db.ref(pathArchivado).once('value').then(snap => {
-                const v = snap.val();
-                archivadosConta = v ? Object.keys(v).map(k => ({id:k, ...v[k]})) : [];
+            obtenerArchivoCompleto().then(arr => {
+                archivadosConta = arr;
                 contaDescargado = true;
                 ocultarLoader();
                 cargarDatosContabilidad();
