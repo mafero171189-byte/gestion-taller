@@ -6679,7 +6679,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         // OJO: esta pantalla la ve el cliente SIN login. No puede leer
         // usuarios_registrados/{wa} entero (ahí vive si pagó, su WhatsApp de
         // login, etc) — usa el espejo público con solo nombre/logo/subtítulo.
-        const pathPerfil = (tecnicoUser === 'Admin') ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
+        const pathPerfil = 'perfil_publico/' + tecnicoUser;
         
         db.ref(pathPerfil).once('value')
         .then(snap => {
@@ -6913,7 +6913,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
         const urlParams = new URLSearchParams(window.location.search);
         const tecnicoUser = urlParams.get('u') || currentUser;
-        const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
+        const path = 'perfil_publico/' + tecnicoUser;
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => {
             generarEImprimirPDF(r, snap.val() || {}, null, null, null, { modo: 'cliente' }); // solo copia cliente
@@ -6933,7 +6933,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         if (_confClientePublicoCache) { generarConConf(_confClientePublicoCache); return; }
         const urlParams = new URLSearchParams(window.location.search);
         const tecnicoUser = urlParams.get('u') || currentUser;
-        const path = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
+        const path = 'perfil_publico/' + tecnicoUser;
         mostrarLoader("Generando PDF...");
         db.ref(path).once('value', snap => { generarConConf(snap.val() || {}); });
     }
@@ -6941,7 +6941,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     function renderVistaPresupuestoCliente(p, container, tecnicoUser) {
         // Misma razón que en renderVistaCliente: acá no hay login, solo el
         // espejo público.
-        const pathPerfil = tecnicoUser === 'Admin' ? 'configuracion/admin' : 'perfil_publico/' + tecnicoUser;
+        const pathPerfil = 'perfil_publico/' + tecnicoUser;
         db.ref(pathPerfil).once('value')
         .then(snap => { generarHTMLPresupuestoCliente(p, container, snap.val() || {}); })
         .catch(() => { generarHTMLPresupuestoCliente(p, container, { nombreTaller: 'Servicio Técnico' }); });
@@ -9814,6 +9814,19 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const pathPerfil = isAdmin ? 'configuracion/admin' : 'usuarios_registrados/' + u;
         db.ref(pathPerfil).once('value', snap => {
             const conf = snap.val() || {};
+            if (isAdmin) {
+                try {
+                    // 'pass' era un campo viejo con una contraseña en texto plano: se elimina
+                    if (conf.pass !== undefined) db.ref('configuracion/admin/pass').remove().catch(() => {});
+                    // Espejo público del admin (configuracion/admin pasa a ser privado)
+                    db.ref('perfil_publico/Admin/nombreTaller').once('value').then(sp => {
+                        if (sp.exists()) return;
+                        const esp = {};
+                        ['nombreTaller','subtitulo','logo','wappTicket','garantia'].forEach(k => { if (conf[k] !== undefined) esp[k] = conf[k]; });
+                        if (Object.keys(esp).length) return db.ref('perfil_publico/Admin').update(esp);
+                    }).catch(() => {});
+                } catch (e) {}
+            }
             if (conf.nombreTaller) {
                 localStorage.setItem('ob_ok_perfil_' + u, '1');
             } else {
@@ -10489,9 +10502,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         Promise.resolve()
             .then(() => db.ref(path).update(updates))
             .then(() => {
-                // Admin ya es público en configuracion/admin, no necesita espejo.
-                if (isUserAdmin) return null;
-                return db.ref('perfil_publico/' + currentUser).update(perfilPublicoUpdates);
+                // configuracion/admin es privado (solo admin). El admin también tiene
+                // espejo público en perfil_publico/Admin.
+                return db.ref('perfil_publico/' + (isUserAdmin ? 'Admin' : currentUser)).update(perfilPublicoUpdates);
             })
             .then(() => {
                 ocultarLoader();
