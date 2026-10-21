@@ -12800,14 +12800,25 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
         return _obtenerIndiceBusqueda().then(indice => {
             const todos = Object.keys(indice).filter(id => indice[id] && indice[id].archivado);
-            // Índice sin ningún archivado → probablemente nunca se migró: se descarga todo UNA vez por sesión
-            if (todos.length === 0) {
-                if (_migracionIndiceIntentada === fbPathIndice()) return vacio();
-                _migracionIndiceIntentada = fbPathIndice();
-                return descargarTodo().then(r => { _indiceBusquedaCache = null; return r; });
-            }
             const ids = todos.filter(id => _archivadoCoincide(indice[id], q, qDig, qOrd))
                 .sort((x, y) => nroDe(indice[y]) - nroDe(indice[x]));
+            // Si no hay coincidencias en el índice, puede ser que haya órdenes viejas que todavía
+            // no tienen entrada (se archivaron antes del índice). Esto se verifica UNA sola vez
+            // por usuario: se baja el archivo completo, se completa el índice y queda marcado.
+            let reconciliado = false;
+            try { reconciliado = !!localStorage.getItem('st_indice_reconciliado_v1_' + fbPathIndice()); } catch(e) {}
+            if (ids.length === 0 && !reconciliado) {
+                return obtenerArchivoCompleto().then(arr => {
+                    try { migrarIndiceHistorial(arr); } catch(e) {}
+                    try { localStorage.setItem('st_indice_reconciliado_v1_' + fbPathIndice(), '1'); } catch(e) {}
+                    _indiceBusquedaCache = null;
+                    const r = arr.filter(x => _archivadoCoincide(x, q, qDig, qOrd))
+                        .sort((x, y) => nroDe(y) - nroDe(x));
+                    const out = r.slice(0, limite);
+                    out.hayMas = r.length > limite;
+                    return out;
+                });
+            }
             const sel = ids.slice(0, limite);
             return Promise.all(sel.map(_traerArchivada)).then(rs => {
                 const out = rs.filter(Boolean);
