@@ -60,6 +60,9 @@
 
       var haySesion = localStorage.getItem('st_login_wa') || localStorage.getItem('st_matias_token');
       if (!haySesion) return; // sin sesión: se muestra el login normal
+      // La última vez Firebase confirmó que esa sesión ya no era válida: directo al login,
+      // sin cascarón vacío ni espera.
+      if (localStorage.getItem('st_auth_invalida')) return;
 
       // Mostrar la app y ocultar el login en cuanto el DOM tenga esos nodos.
       // Usamos un pequeño poll porque este script corre antes que el body.
@@ -71,12 +74,14 @@
         var tbody = document.getElementById('tableBody');
         if (app && login && tbody) {
           clearInterval(t);
+          // Antes se mostraba la app vacía (pantalla en blanco con el encabezado) hasta que
+          // Firebase confirmaba la sesión; si la sesión ya no valía, se veía eso y recién
+          // después el login. Ahora se muestra el cartel de carga, y la app o el login
+          // aparecen recién cuando se sabe cuál corresponde.
           login.style.display = 'none';
-          app.style.display = 'block';
-          // Placeholder mientras Firebase carga las filas reales
-          if (!tbody.children.length) {
-            tbody.innerHTML = '<tr id="fila-cargando-inicial"><td colspan="20" style="text-align:center; padding:40px; color:var(--slate-500); font-size:15px;">⏳ Cargando tus órdenes…</td></tr>';
-          }
+          var gl = document.getElementById('global-loader');
+          var lt = document.getElementById('loader-text');
+          if (gl) { if (lt) lt.innerText = 'Verificando seguridad...'; gl.style.display = 'flex'; }
         }
         if (intentos > 400) clearInterval(t); // ~10s tope de seguridad
       }, 25);
@@ -6444,7 +6449,8 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         const haySesionAdmin = localStorage.getItem('st_matias_token');
         // Si el arranque instantáneo ya mostró la app, NO tapamos con el loader.
         const appYaVisible = document.getElementById('app-content') && document.getElementById('app-content').style.display === 'block';
-        if (posibleSesion || haySesionAdmin || esVistaCliente) {
+        const authInvalida = !!localStorage.getItem('st_auth_invalida');
+        if (esVistaCliente || ((posibleSesion || haySesionAdmin) && !authInvalida)) {
             if (!appYaVisible) mostrarLoader("Verificando seguridad...");
         } else {
             document.getElementById('login-overlay').style.display = 'flex';
@@ -6464,6 +6470,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     checkStoredSession();
                 } else if (!appIniciada) {
                     appIniciada = true;
+                    try { localStorage.removeItem('st_auth_invalida'); } catch(e) {}
 
                     const emailPrefix = user.email.split('@')[0];
                     const isAdmin = (emailPrefix.toLowerCase() === 'admin');
@@ -6505,10 +6512,14 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     if (haySesionGuardadaAuth && _authNullCount === 1 && !appIniciada) {
                         setTimeout(() => {
                             if (appIniciada) return; // el usuario real ya llegó, no hacemos nada
+                            // Firebase no restauró ninguna sesión: la marca guardada quedó vieja.
+                            // Lo recordamos para que el próximo arranque vaya directo al login.
+                            try { localStorage.setItem('st_auth_invalida', '1'); } catch(e) {}
                             ocultarLoader();
                             checkStoredSession();
                         }, 2500);
                     } else {
+                        if (haySesionGuardadaAuth) { try { localStorage.setItem('st_auth_invalida', '1'); } catch(e) {} }
                         ocultarLoader();
                         checkStoredSession(); 
                     }
@@ -6518,7 +6529,11 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
 
         try { verificarAccionURL(); } catch(e) {}
 
+        // Con sesión guardada esperamos el veredicto de Firebase (restaurar la sesión puede
+        // tardar en conexiones lentas); sin sesión guardada, a los 1,5 s va al login.
+        const _esperaSesion = esVistaCliente || ((posibleSesion || haySesionAdmin) && !authInvalida);
         setTimeout(() => {
+            if (_esperaSesion && !esVistaCliente) return;
             if (document.getElementById('global-loader').style.display !== 'none' && !appIniciada) {
                 ocultarLoader();
                 if (!esVistaCliente) {
@@ -6526,6 +6541,13 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 }
             }
         }, 1500);
+        // Último recurso (red caída o Firebase que nunca responde): no dejar la pantalla trabada.
+        setTimeout(() => {
+            if (esVistaCliente || appIniciada) return;
+            if (document.getElementById('app-content').style.display === 'block') return;
+            ocultarLoader();
+            document.getElementById('login-overlay').style.display = 'flex';
+        }, 9000);
     }
 
     function getRegistro(id) {
@@ -10125,6 +10147,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         } catch(e) {}
         firebase.auth().signOut().then(() => {
             localStorage.removeItem('st_matias_token');
+            localStorage.removeItem('st_auth_invalida');
             localStorage.removeItem('st_login_intentos');
             localStorage.removeItem('st_login_bloqueado');
             localStorage.removeItem('st_login_wa');
@@ -10452,6 +10475,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         ocultarLoader();
         try {
             localStorage.removeItem('st_matias_token');
+            localStorage.removeItem('st_auth_invalida');
             localStorage.removeItem('st_login_intentos');
             localStorage.removeItem('st_login_bloqueado');
             localStorage.removeItem('st_login_wa');
