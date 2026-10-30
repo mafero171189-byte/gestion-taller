@@ -5350,8 +5350,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // Worker no está instalado o no responde, el login funciona igual.
     // Dejalo '' para apagar todo esto.
     const SEG_URL = 'https://mtw-seguridad.mafero171189.workers.dev';
-    // APPCHECK_SITE_KEY: clave de SITIO (pública) de reCAPTCHA v3 para Firebase
-    // App Check. Con '' App Check queda apagado y la app anda como antes.
+    // APPCHECK_SITE_KEY: ID de la clave (pública) de reCAPTCHA Enterprise, tipo Web
+    // basada en puntuación, creada en Google Cloud > Fraud Defense. Es la misma que
+    // se registra en Firebase > App Check. Con '' App Check queda apagado y la app
+    // anda como antes.
     const APPCHECK_SITE_KEY = '';
 
     // ── PAYPAL: captura del pago aunque el cliente vuelva SIN sesión ──────
@@ -5420,12 +5422,18 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
 
-    // App Check (reCAPTCHA v3): le prueba a Firebase que el pedido viene de ESTA app
-    // y no de un script ajeno. Va ANTES de usar la base. No hace nada hasta que
-    // pegues APPCHECK_SITE_KEY, y si algo falla la app sigue funcionando igual.
+    // App Check (reCAPTCHA Enterprise / Google Cloud Fraud Defense): le prueba a Firebase
+    // que el pedido viene de ESTA app y no de un script ajeno. Va ANTES de usar la base.
+    // No hace nada hasta que pegues APPCHECK_SITE_KEY, y si algo falla la app sigue
+    // funcionando igual.
     if (APPCHECK_SITE_KEY && typeof firebase.appCheck === 'function') {
-        try { firebase.appCheck().activate(APPCHECK_SITE_KEY, true); }
-        catch (e) { console.warn('App Check no se pudo activar:', e && e.message); }
+        try {
+            if (firebase.appCheck.ReCaptchaEnterpriseProvider) {
+                firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(APPCHECK_SITE_KEY), true);
+            } else {
+                console.warn('App Check: esta versión del SDK no trae ReCaptchaEnterpriseProvider');
+            }
+        } catch (e) { console.warn('App Check no se pudo activar:', e && e.message); }
     }
 
     const db = firebase.database();
