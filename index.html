@@ -4740,6 +4740,20 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <div id="segContenido" style="margin-top:15px;"></div>
 
       <div style="border-top:1px dashed var(--gray-200); margin-top:18px; padding-top:15px;">
+       <div style="font-weight:800; font-size:13px; color:var(--gray-900); margin-bottom:4px;">🚫 Bloquear una IP</div>
+       <p style="font-size:12px; color:var(--gray-600); margin:0 0 10px 0;">Copiá la IP de la lista de arriba (o tocá "Bloquear…" en una fila). No podrá iniciar sesión desde la app mientras dure el bloqueo. No te deja bloquear tu propia IP.</p>
+       <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input type="text" id="segIpBloquear" placeholder="IP (ej: 143.105.21.48)" autocapitalize="off" autocomplete="off" style="flex:1; min-width:150px; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif;">
+        <select id="segHorasBloquear" style="padding:10px 8px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif;">
+         <option value="1">1 hora</option>
+         <option value="24" selected>1 día</option>
+         <option value="720">30 días</option>
+        </select>
+        <button onclick="bloquearIpSeg()" class="btn" style="background:var(--danger); color:white; padding:10px 16px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">BLOQUEAR</button>
+       </div>
+      </div>
+
+      <div style="border-top:1px dashed var(--gray-200); margin-top:18px; padding-top:15px;">
        <div style="font-weight:800; font-size:13px; color:var(--gray-900); margin-bottom:4px;">🔒 Cerrar las sesiones de un usuario</div>
        <p style="font-size:12px; color:var(--gray-600); margin:0 0 10px 0;">Lo saca de todos sus dispositivos y tendrá que volver a ingresar. Si sospechás que le robaron la clave, además hay que cambiársela.</p>
        <div style="display:flex; gap:8px;">
@@ -8212,7 +8226,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
     }
     function segTiempoTexto(seg) {
-        const m = Math.ceil((seg || 60) / 60);
+        const s = seg || 60;
+        if (s >= 86400) { const d = Math.ceil(s / 86400); return d <= 1 ? '1 día' : d + ' días'; }
+        if (s >= 3600) { const h = Math.ceil(s / 3600); return h <= 1 ? '1 hora' : h + ' horas'; }
+        const m = Math.ceil(s / 60);
         return m <= 1 ? '1 minuto' : m + ' minutos';
     }
 
@@ -18730,10 +18747,10 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             if (d.bloqueadas.length) {
                 html += '<div style="font-size:12px;font-weight:800;color:var(--gray-600);margin:0 0 6px;">BLOQUEADAS AHORA</div>';
                 d.bloqueadas.forEach(function (b) {
-                    const min = Math.max(1, Math.ceil((b.hasta - d.ahora) / 60000));
+                    const quedan = segTiempoTexto(Math.max(60, (b.hasta - d.ahora) / 1000));
                     html += '<div style="background:#fff;border:1px solid #fecaca;border-left:4px solid var(--danger);border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:12px;">'
                         + '<div style="flex:1;min-width:0;word-break:break-all;"><b>' + escaparHTML(b.ip) + '</b>' + (b.pais ? ' (' + escaparHTML(b.pais) + ')' : '')
-                        + '<div style="color:var(--gray-600);">' + (b.motivo === 'cuenta' ? 'solo para el usuario ' + escaparHTML(b.u) : 'toda la IP') + ' · quedan ~' + min + ' min</div></div>'
+                        + '<div style="color:var(--gray-600);">' + (b.motivo === 'cuenta' ? 'solo para el usuario ' + escaparHTML(b.u) : (b.motivo === 'manual' ? 'bloqueada a mano' : 'toda la IP')) + ' · quedan ' + quedan + '</div></div>'
                         + '<button data-ip="' + escaparHTML(b.ip) + '" onclick="desbloquearIpSeg(this.dataset.ip)" style="background:var(--gray-600);color:#fff;border:none;border-radius:6px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer;">Desbloquear</button>'
                         + '</div>';
                 });
@@ -18746,7 +18763,9 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     html += '<div style="background:#fff;border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;gap:8px;">'
                         + '<div style="min-width:0;word-break:break-all;"><b>' + escaparHTML(t.ip) + '</b>' + (t.pais ? ' (' + escaparHTML(t.pais) + ')' : '')
                         + '<div style="color:var(--gray-600);">último: ' + _segFechaCorta(t.ultimo) + '</div></div>'
-                        + '<div style="text-align:right;white-space:nowrap;">' + t.fallos + ' intentos · ' + t.bloqueos + ' bloqueos<div style="color:' + (t.bloqueada ? 'var(--danger)' : 'var(--gray-600)') + ';font-weight:700;">' + (t.bloqueada ? 'bloqueada' : 'libre') + '</div></div>'
+                        + '<div style="text-align:right;white-space:nowrap;">' + t.fallos + ' intentos · ' + t.bloqueos + ' bloqueos<div style="color:' + (t.bloqueada ? 'var(--danger)' : 'var(--gray-600)') + ';font-weight:700;">' + (t.bloqueada ? 'bloqueada' : 'libre') + '</div>'
+                        + (t.bloqueada ? '' : '<button data-ip="' + escaparHTML(t.ip) + '" onclick="prepararBloqueoIpSeg(this.dataset.ip)" style="margin-top:4px;background:var(--danger);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-weight:700;font-size:11px;cursor:pointer;">Bloquear…</button>')
+                        + '</div>'
                         + '</div>';
                 });
                 html += '<div style="height:8px;"></div>';
@@ -18757,7 +18776,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                 d.eventos.slice(0, 20).forEach(function (e) {
                     const icono = e.tipo === 'fallo' ? '❌' : e.tipo === 'bloqueo' ? '🚫' : e.tipo === 'desbloqueo' ? '🔓' : '✅';
                     const detalle = e.tipo === 'fallo' ? 'usuario ' + escaparHTML(e.u || '?') + ' · ' + escaparHTML(e.code || '')
-                        : e.tipo === 'bloqueo' ? 'bloqueo de ' + (e.motivo === 'cuenta' ? 'usuario ' + escaparHTML(e.u || '') : 'IP')
+                        : e.tipo === 'bloqueo' ? (e.motivo === 'manual' ? 'bloqueo manual' : 'bloqueo de ' + (e.motivo === 'cuenta' ? 'usuario ' + escaparHTML(e.u || '') : 'IP'))
                         : e.tipo === 'desbloqueo' ? 'desbloqueada a mano'
                         : 'ingreso del admin';
                     html += '<div style="font-size:11px;color:var(--gray-700);padding:5px 0;border-bottom:1px solid var(--gray-200);word-break:break-all;">'
@@ -18782,6 +18801,35 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
             showToast('🔓 IP desbloqueada', '#059669');
             cargarSeguridad();
         }).catch(function (e) { showToast('❌ ' + (e.message || 'No se pudo desbloquear'), '#dc2626'); });
+    }
+
+    // Completa el campo de bloqueo con la IP de una fila de "quién está atacando".
+    function prepararBloqueoIpSeg(ip) {
+        const inp = document.getElementById('segIpBloquear');
+        if (!inp) return;
+        inp.value = ip || '';
+        try { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); inp.focus(); } catch (e) {}
+    }
+
+    // Bloquea una IP a mano por 1 hora, 1 día o 30 días (lo hace cumplir el Worker).
+    function bloquearIpSeg() {
+        const inp = document.getElementById('segIpBloquear');
+        const sel = document.getElementById('segHorasBloquear');
+        const ip = inp ? inp.value.trim() : '';
+        const horas = sel ? parseInt(sel.value, 10) : 24;
+        if (!ip) { showToast('Escribí la IP que querés bloquear', '#d97706'); return; }
+        const texto = horas === 1 ? '1 hora' : (horas === 24 ? '1 día' : '30 días');
+        if (!confirm('¿Bloquear la IP ' + ip + ' por ' + texto + '? No va a poder iniciar sesión desde la app.')) return;
+        _segLlamarAdmin('/seg/bloquear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip, horas: horas })
+        }).then(function (d) {
+            if (!d || !d.ok) throw new Error((d && d.error) || 'Sin respuesta');
+            showToast('🚫 IP bloqueada por ' + texto, '#059669');
+            if (inp) inp.value = '';
+            cargarSeguridad();
+        }).catch(function (e) { showToast('❌ ' + (e.message || 'No se pudo bloquear'), '#dc2626'); });
     }
 
     // Cierra todas las sesiones registradas de un usuario. Usa el mismo mecanismo que ya
