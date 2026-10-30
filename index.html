@@ -92,6 +92,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
@@ -4731,6 +4732,23 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
       <div id="errorLogsContenido" style="margin-top:15px;"></div>
      </div>
 
+     <!-- SEGURIDAD DE ACCESOS -->
+     <div id="segCard" style="width:100%; background:var(--gray-50); padding:20px; border-radius:12px; border:1.5px solid var(--gray-200); margin-bottom:25px; box-sizing:border-box;">
+      <h3 style="margin:0 0 6px 0; font-size:16px; color:var(--gray-900);">🛡️ Seguridad de accesos</h3>
+      <p style="font-size:12px; color:var(--gray-600); margin:0 0 12px 0;">Intentos fallidos de login de las últimas 24 h, IPs bloqueadas y últimos eventos. Los registra el Worker de seguridad.</p>
+      <button onclick="cargarSeguridad()" class="btn" style="width:100%; background:var(--blue-700); color:white; padding:12px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">🔄 Ver / Actualizar</button>
+      <div id="segContenido" style="margin-top:15px;"></div>
+
+      <div style="border-top:1px dashed var(--gray-200); margin-top:18px; padding-top:15px;">
+       <div style="font-weight:800; font-size:13px; color:var(--gray-900); margin-bottom:4px;">🔒 Cerrar las sesiones de un usuario</div>
+       <p style="font-size:12px; color:var(--gray-600); margin:0 0 10px 0;">Lo saca de todos sus dispositivos y tendrá que volver a ingresar. Si sospechás que le robaron la clave, además hay que cambiársela.</p>
+       <div style="display:flex; gap:8px;">
+        <input type="text" id="segUsuarioCerrar" inputmode="numeric" placeholder="WhatsApp del usuario (solo números)" style="flex:1; min-width:0; padding:10px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:14px; font-family:'Outfit',sans-serif;">
+        <button onclick="cerrarSesionesUsuarioSeg()" class="btn" style="background:var(--gray-600); color:white; padding:10px 16px; font-weight:bold; border:none; border-radius:8px; cursor:pointer;">CERRAR</button>
+       </div>
+      </div>
+     </div>
+
      <!-- WHATSAPP DE SOPORTE -->
      <div class="card-form" style="background: var(--blue-50); padding: 20px; border-radius: 12px; border: 1.5px solid var(--blue-200); margin-bottom: 20px;">
       <label style="color:var(--blue-700); font-weight:900; font-size:15px;">📲 WhatsApp de Soporte</label>
@@ -5326,6 +5344,16 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // de cuando solo era Mercado Pago, pero es el mismo Worker para los dos.
     const WORKER_MP_URL = 'https://billowing-star-385d.mafero171189.workers.dev';
 
+    // ── SEGURIDAD ─────────────────────────────────────────────────────────
+    // SEG_URL: Worker de seguridad (mtw-seguridad-worker.js). Registra intentos
+    // fallidos, bloquea IPs y alimenta el panel "Seguridad" del admin. Si el
+    // Worker no está instalado o no responde, el login funciona igual.
+    // Dejalo '' para apagar todo esto.
+    const SEG_URL = 'https://mtw-seguridad.mafero171189.workers.dev';
+    // APPCHECK_SITE_KEY: clave de SITIO (pública) de reCAPTCHA v3 para Firebase
+    // App Check. Con '' App Check queda apagado y la app anda como antes.
+    const APPCHECK_SITE_KEY = '';
+
     // ── PAYPAL: captura del pago aunque el cliente vuelva SIN sesión ──────
     // PayPal no usa webhook: si nadie llama a /capturar-pago-paypal, la orden
     // vence sola y el pago nunca activa la licencia. Antes esto vivía dentro
@@ -5391,7 +5419,15 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
     // Inicialización Dual Segura
     firebase.initializeApp(firebaseConfig);
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
-    
+
+    // App Check (reCAPTCHA v3): le prueba a Firebase que el pedido viene de ESTA app
+    // y no de un script ajeno. Va ANTES de usar la base. No hace nada hasta que
+    // pegues APPCHECK_SITE_KEY, y si algo falla la app sigue funcionando igual.
+    if (APPCHECK_SITE_KEY && typeof firebase.appCheck === 'function') {
+        try { firebase.appCheck().activate(APPCHECK_SITE_KEY, true); }
+        catch (e) { console.warn('App Check no se pudo activar:', e && e.message); }
+    }
+
     const db = firebase.database();
     window.db = db;
 
@@ -8145,6 +8181,33 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         return !!(dataUser.tokenSesion && dataUser.tokenSesion !== miToken);
     }
 
+    // ====== SEGURIDAD: registro y bloqueo de intentos (ver mtw-seguridad-worker.js) ======
+    // Todo "falla abierto": si el Worker no está instalado, no responde o tarda,
+    // el login sigue exactamente como antes. Nunca te deja afuera por una caída.
+    function segPost(ruta, cuerpo, ms) {
+        if (!SEG_URL) return Promise.resolve(null);
+        let ctrl = null, timer = null;
+        try {
+            const op = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) };
+            if (typeof AbortController !== 'undefined') {
+                ctrl = new AbortController();
+                timer = setTimeout(function () { ctrl.abort(); }, ms || 2500);
+                op.signal = ctrl.signal;
+            }
+            return fetch(SEG_URL + ruta, op)
+                .then(function (r) { return r.json(); })
+                .catch(function () { return null; })
+                .then(function (d) { if (timer) clearTimeout(timer); return d; });
+        } catch (e) {
+            if (timer) clearTimeout(timer);
+            return Promise.resolve(null);
+        }
+    }
+    function segTiempoTexto(seg) {
+        const m = Math.ceil((seg || 60) / 60);
+        return m <= 1 ? '1 minuto' : m + ' minutos';
+    }
+
     function checkAccess() {
         let rawU = document.getElementById('userIn').value.trim().toLowerCase();
         const p = document.getElementById('passIn').value.trim();
@@ -8202,6 +8265,16 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                     localStorage.removeItem('st_login_intentos');
                     localStorage.removeItem('st_login_bloqueado');
 
+                    // Avisa al Worker que el ingreso fue correcto (con el token, para que
+                    // no se pueda falsear). No espera la respuesta ni frena el login.
+                    try {
+                        if (userCredential && userCredential.user) {
+                            userCredential.user.getIdToken()
+                                .then(function (tk) { segPost('/seg/ok', { u: u, idToken: tk }, 4000); })
+                                .catch(function () {});
+                        }
+                    } catch (e) {}
+
                     const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
                     // loginTs marca CUÁNDO logueamos localmente. Lo usa
                     // _sesionFueExpulsada para dar unos segundos de gracia:
@@ -8233,29 +8306,54 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
                         err.innerText = `Usuario o clave incorrecta (${restantes} intento${restantes !== 1 ? 's' : ''} restante${restantes !== 1 ? 's' : ''})`;
                     }
                     err.style.display = 'block';
+
+                    // Registra el fallo en el Worker. Si ahí ya quedó bloqueado, pisa el mensaje.
+                    // Un corte de red no cuenta como intento fallido.
+                    if (!error || error.code !== 'auth/network-request-failed') {
+                        segPost('/seg/fallo', { u: u, code: (error && error.code) || 'error' }, 4000).then(function (r) {
+                            if (r && r.bloqueado) {
+                                err.innerText = 'Demasiados intentos desde esta conexión. Probá de nuevo en ' + segTiempoTexto(r.segundos) + '.';
+                                err.style.display = 'block';
+                            }
+                        });
+                    }
                 });
         };
 
-        if (rawU === 'admin') {
-            doLogin('admin@mitallerweb.com');
-        } else if (isEmail) {
-            doLogin(u);
-        } else {
-            try {
-                db.ref('solicitudes_registro/' + u + '/authEmail').once('value')
-                    .then(snap => {
-                        const emailGuardado = snap.val();
-                        if (emailGuardado) {
-                            doLogin(emailGuardado);
-                        } else {
-                            doLogin(u + '@mitallerweb.com');
-                        }
-                    })
-                    .catch(() => doLogin(u + '@mitallerweb.com'));
-            } catch(e) {
-                doLogin(u + '@mitallerweb.com');
+        const continuarLogin = () => {
+            if (rawU === 'admin') {
+                doLogin('admin@mitallerweb.com');
+            } else if (isEmail) {
+                doLogin(u);
+            } else {
+                try {
+                    db.ref('solicitudes_registro/' + u + '/authEmail').once('value')
+                        .then(snap => {
+                            const emailGuardado = snap.val();
+                            if (emailGuardado) {
+                                doLogin(emailGuardado);
+                            } else {
+                                doLogin(u + '@mitallerweb.com');
+                            }
+                        })
+                        .catch(() => doLogin(u + '@mitallerweb.com'));
+                } catch(e) {
+                    doLogin(u + '@mitallerweb.com');
+                }
             }
-        }
+        };
+
+        // Antes de probar la clave, el Worker confirma que esta conexión no esté
+        // bloqueada. Si el Worker no responde (null), se sigue como siempre.
+        segPost('/seg/check', { u: u }, 2500).then((r) => {
+            if (r && r.ok === false) {
+                ocultarLoader();
+                err.innerText = 'Demasiados intentos desde esta conexión. Probá de nuevo en ' + segTiempoTexto(r.segundos) + '.';
+                err.style.display = 'block';
+                return;
+            }
+            continuarLogin();
+        });
     }
 
     // ====== NAVEGACIÓN DE PANELES DEL LOGIN ======
@@ -15668,6 +15766,7 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }
         if (pageId === 'stock') window.cargarStockData();
         if (pageId === 'extras') cargarProgramasExtras();
+        if (pageId === 'mantenimiento' && typeof cargarSeguridad === 'function') cargarSeguridad();
         if (pageId === 'usuarios') {
             // Si ya hay listener y datos, renderizar inmediatamente; si no, cargar desde Firebase
             if (_usuariosListener && listadoUsuarios.length > 0) {
@@ -18570,6 +18669,128 @@ body.dark-mode #btn-top-lupa.activo { background: var(--purple-700); }
         }).catch(err => {
             cont.innerHTML = '<p style="color:var(--danger);font-size:13px;padding:10px;">Error al leer: ' + escaparHTML(err.message || '') + '<br><small>¿Publicaste la regla de seguridad de <b>error_logs</b>?</small></p>';
         });
+    }
+
+    // ── SEGURIDAD DE ACCESOS (panel admin) ───────────────────────────────
+    // Lee del Worker de seguridad (mtw-seguridad-worker.js). Solo responde al admin:
+    // el Worker valida el token de Firebase de esta sesión.
+    function _segFechaCorta(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        const p = function (n) { return String(n).padStart(2, '0'); };
+        return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+
+    function _segLlamarAdmin(ruta, opciones) {
+        const usr = firebase.auth().currentUser;
+        if (!usr) return Promise.reject(new Error('No hay sesión abierta'));
+        return usr.getIdToken().then(function (tk) {
+            const op = Object.assign({}, opciones || {});
+            op.headers = Object.assign({ 'Authorization': 'Bearer ' + tk }, op.headers || {});
+            return fetch(SEG_URL + ruta, op);
+        }).then(function (r) { return r.json(); });
+    }
+
+    function cargarSeguridad() {
+        const cont = document.getElementById('segContenido');
+        if (!cont) return;
+        if (!SEG_URL) {
+            cont.innerHTML = '<p style="color:var(--gray-600);font-size:13px;text-align:center;padding:10px;">El Worker de seguridad está apagado (SEG_URL vacío en el código).</p>';
+            return;
+        }
+        cont.innerHTML = '<p style="color:var(--gray-600);font-size:13px;text-align:center;padding:10px;">Cargando...</p>';
+        _segLlamarAdmin('/seg/estado').then(function (d) {
+            if (!d || !d.ok) throw new Error((d && d.error) || 'Sin respuesta');
+            const caja = function (valor, titulo, color) {
+                return '<div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:10px 12px;">'
+                    + '<div style="font-size:11px;font-weight:800;color:var(--gray-600);text-transform:uppercase;">' + titulo + '</div>'
+                    + '<div style="font-size:24px;font-weight:900;color:' + color + ';">' + valor + '</div></div>';
+            };
+            let html = '';
+            if (d.bloqueos24h >= 3) {
+                html += '<div style="background:#fff7ed;border:1.5px solid #fdba74;color:#9a3412;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;margin-bottom:10px;">⚠️ Ataque en curso: ' + d.bloqueos24h + ' bloqueos en 24 h</div>';
+            } else if (d.fallos24h === 0) {
+                html += '<div style="background:#f0fdf4;border:1.5px solid #86efac;color:#166534;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;margin-bottom:10px;">✅ Sin intentos fallidos en las últimas 24 h</div>';
+            }
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">'
+                + caja(d.fallos24h, 'Intentos fallidos', 'var(--gray-900)')
+                + caja(d.ips24h, 'IPs distintas', 'var(--gray-900)')
+                + caja(d.bloqueos24h, 'Bloqueos', d.bloqueos24h > 0 ? 'var(--danger)' : 'var(--gray-900)')
+                + caja(d.bloqueadas.length, 'Bloqueadas ahora', d.bloqueadas.length > 0 ? 'var(--danger)' : 'var(--gray-900)')
+                + '</div>';
+
+            if (d.bloqueadas.length) {
+                html += '<div style="font-size:12px;font-weight:800;color:var(--gray-600);margin:0 0 6px;">BLOQUEADAS AHORA</div>';
+                d.bloqueadas.forEach(function (b) {
+                    const min = Math.max(1, Math.ceil((b.hasta - d.ahora) / 60000));
+                    html += '<div style="background:#fff;border:1px solid #fecaca;border-left:4px solid var(--danger);border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-size:12px;">'
+                        + '<div style="flex:1;min-width:0;word-break:break-all;"><b>' + escaparHTML(b.ip) + '</b>' + (b.pais ? ' (' + escaparHTML(b.pais) + ')' : '')
+                        + '<div style="color:var(--gray-600);">' + (b.motivo === 'cuenta' ? 'solo para el usuario ' + escaparHTML(b.u) : 'toda la IP') + ' · quedan ~' + min + ' min</div></div>'
+                        + '<button data-ip="' + escaparHTML(b.ip) + '" onclick="desbloquearIpSeg(this.dataset.ip)" style="background:var(--gray-600);color:#fff;border:none;border-radius:6px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer;">Desbloquear</button>'
+                        + '</div>';
+                });
+                html += '<div style="height:8px;"></div>';
+            }
+
+            if (d.top.length) {
+                html += '<div style="font-size:12px;font-weight:800;color:var(--gray-600);margin:0 0 6px;">QUIÉN ESTÁ ATACANDO (24 h)</div>';
+                d.top.forEach(function (t) {
+                    html += '<div style="background:#fff;border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;gap:8px;">'
+                        + '<div style="min-width:0;word-break:break-all;"><b>' + escaparHTML(t.ip) + '</b>' + (t.pais ? ' (' + escaparHTML(t.pais) + ')' : '')
+                        + '<div style="color:var(--gray-600);">último: ' + _segFechaCorta(t.ultimo) + '</div></div>'
+                        + '<div style="text-align:right;white-space:nowrap;">' + t.fallos + ' intentos · ' + t.bloqueos + ' bloqueos<div style="color:' + (t.bloqueada ? 'var(--danger)' : 'var(--gray-600)') + ';font-weight:700;">' + (t.bloqueada ? 'bloqueada' : 'libre') + '</div></div>'
+                        + '</div>';
+                });
+                html += '<div style="height:8px;"></div>';
+            }
+
+            if (d.eventos.length) {
+                html += '<details><summary style="cursor:pointer;font-size:12px;font-weight:800;color:#2563eb;">Ver últimos eventos (' + Math.min(d.eventos.length, 20) + ')</summary><div style="margin-top:8px;">';
+                d.eventos.slice(0, 20).forEach(function (e) {
+                    const icono = e.tipo === 'fallo' ? '❌' : e.tipo === 'bloqueo' ? '🚫' : e.tipo === 'desbloqueo' ? '🔓' : '✅';
+                    const detalle = e.tipo === 'fallo' ? 'usuario ' + escaparHTML(e.u || '?') + ' · ' + escaparHTML(e.code || '')
+                        : e.tipo === 'bloqueo' ? 'bloqueo de ' + (e.motivo === 'cuenta' ? 'usuario ' + escaparHTML(e.u || '') : 'IP')
+                        : e.tipo === 'desbloqueo' ? 'desbloqueada a mano'
+                        : 'ingreso del admin';
+                    html += '<div style="font-size:11px;color:var(--gray-700);padding:5px 0;border-bottom:1px solid var(--gray-200);word-break:break-all;">'
+                        + icono + ' ' + _segFechaCorta(e.t) + ' · ' + escaparHTML(e.ip || '') + ' · ' + detalle + '</div>';
+                });
+                html += '</div></details>';
+            }
+            cont.innerHTML = html;
+        }).catch(function (err) {
+            cont.innerHTML = '<p style="color:var(--danger);font-size:13px;padding:10px;">No se pudo leer: ' + escaparHTML(err.message || '') + '<br><small>¿Instalaste el Worker mtw-seguridad y le conectaste el KV llamado SEG?</small></p>';
+        });
+    }
+
+    function desbloquearIpSeg(ip) {
+        if (!ip) return;
+        _segLlamarAdmin('/seg/desbloquear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip })
+        }).then(function (d) {
+            if (!d || !d.ok) throw new Error((d && d.error) || 'Sin respuesta');
+            showToast('🔓 IP desbloqueada', '#059669');
+            cargarSeguridad();
+        }).catch(function (e) { showToast('❌ ' + (e.message || 'No se pudo desbloquear'), '#dc2626'); });
+    }
+
+    // Cierra todas las sesiones registradas de un usuario. Usa el mismo mecanismo que ya
+    // expulsa a un dispositivo desplazado (ver _sesionFueExpulsada): borra el mapa de
+    // sesiones y deja un token que ya no coincide con el de ningún dispositivo.
+    function cerrarSesionesUsuarioSeg() {
+        const inp = document.getElementById('segUsuarioCerrar');
+        const u = inp ? inp.value.replace(/\D/g, '') : '';
+        if (u.length < 8) { showToast('Escribí el WhatsApp del usuario (solo números)', '#d97706'); return; }
+        db.ref('usuarios_registrados/' + u).once('value').then(function (snap) {
+            if (!snap.exists()) { showToast('No existe un usuario con ese número', '#dc2626'); return; }
+            if (!confirm('¿Cerrar todas las sesiones de ' + u + '? Tendrá que volver a ingresar.')) return;
+            return db.ref('usuarios_registrados/' + u).update({ sesiones: null, tokenSesion: 'revocado-' + Date.now() }).then(function () {
+                showToast('🔒 Sesiones cerradas', '#059669');
+                inp.value = '';
+            });
+        }).catch(function (e) { showToast('❌ ' + (e.message || 'No se pudo cerrar'), '#dc2626'); });
     }
 
     function borrarErrorLogs() {
