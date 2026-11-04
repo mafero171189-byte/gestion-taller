@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="index, follow">
 <title>Política de privacidad · AutoEnvio</title>
+<link rel="alternate" hreflang="en" href="/autoenvio/privacy">
+<link rel="alternate" hreflang="es" href="/autoenvio/privacidad">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -12,9 +14,10 @@
   a { color:#9fc2e8; }
   .top { display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid #15294d; background:rgba(6,18,42,.85); }
   .top .brand { font-weight:800; color:#fff; text-decoration:none; }
+  .top .lang { font-size:14px; }
   .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 40px; }
   h1 { font-size: 28px; margin: 32px 0 4px; }
-  h2 { font-size: 17px; margin: 30px 0 8px; color:#fff; letter-spacing:.03em; text-transform: uppercase; }
+  h2 { font-size: 17px; margin: 30px 0 8px; color:#fff; letter-spacing:.03em; }
   p, li { color:#cbd6e6; font-size: 15px; }
   ul { padding-left: 20px; }
   li { margin-bottom: 6px; }
@@ -25,23 +28,35 @@
 <body>
 <header class="top">
   <a class="brand" href="/extras">← AutoEnvio</a>
+  <a class="lang" href="/autoenvio/privacy" hreflang="en">English</a>
 </header>
 <main class="wrap">
   <h1>Política de privacidad de AutoEnvio</h1>
-  <div class="fecha">Actualizada: 3 de noviembre de 2026</div>
+  <div class="fecha">Actualizada: 4 de noviembre de 2026</div>
 
-  <h2>Resumen</h2>
-  <p>AutoEnvio no tiene cuenta de usuario. Tus mensajes, contactos, destinatarios, reglas y PIN se quedan en este teléfono: la app no los envía a ningún servidor. La app usa Internet para descargar su configuración (por ejemplo, los límites de la versión gratis) y, solo si usas la función de correo, para enviar tus correos a Gmail. Si tú decides enviarnos un reporte de diagnóstico, sale por tu correo (ver más abajo). La app no tiene anuncios. No vendemos tus datos ni los compartimos con nadie.</p>
-  <p>La app la publica Mi Taller Web. Contacto: <a href="mailto:mafero171189@gmail.com">mafero171189@gmail.com</a>.</p>
+  <h2>1. Resumen</h2>
+  <p>AutoEnvio no tiene cuenta de usuario. Tus mensajes, contactos, destinatarios, reglas y PIN se quedan en este teléfono: la app no los envía a ningún servidor. La app usa Internet para descargar su configuración (por ejemplo, los límites de la versión gratis) y, solo si usas la función de correo, para enviar tus correos a Gmail. Si tú decides enviarnos un reporte de diagnóstico, sale por tu correo (ver sección 4). La app no tiene anuncios. No vendemos tus datos ni los compartimos con nadie.</p>
 
-  <h2>Configuración descargada</h2>
-  <p>Para poder ajustar los límites de la versión gratis sin que tengas que actualizar la app, AutoEnvio se conecta al servicio de configuración remota de Firebase (de Google). Al hacerlo, ese servicio puede recibir datos técnicos normales de una conexión: un identificador de la instalación de la app, el modelo y la versión de Android del teléfono, la versión de la app y la dirección IP. No se envía ningún mensaje, contacto, destinatario ni dato personal tuyo. Google trata esos datos según su propia política de privacidad. Si no hay Internet, la app funciona igual con los últimos valores guardados.</p>
+  <h2>2. Quién es el responsable y cómo contactarnos</h2>
+  <p>La app la publica Mi Taller Web y es responsable de esta política. Contacto: <a href="mailto:mafero171189@gmail.com">mafero171189@gmail.com</a>.</p>
 
-  <h2>Diagnóstico y reportes de errores</h2>
+  <h2>3. Servicios de terceros</h2>
+  <ul>
+    <li><b>Firebase Remote Config (Google):</b> descarga la configuración de la app. Ver sección 5.</li>
+    <li><b>Google Play (facturación):</b> procesa el pago de AutoEnvio Pro. Ver sección 11.</li>
+    <li><b>Gmail (Google), solo si usas la función de correo:</b> envía tus correos con tu cuenta.</li>
+    <li><b>SMS, WhatsApp, WhatsApp Business, Telegram, Messenger e Instagram:</b> son las apps y servicios por los que salen tus mensajes. Cada uno se rige por su propia política (ver sección 10).</li>
+  </ul>
+  <p>La app no incluye SDK de publicidad, de análisis ni de perfiles de usuario.</p>
+
+  <h2>4. Diagnóstico y reportes de errores</h2>
   <p>La app guarda en tu teléfono un registro de diagnóstico corto, que solo anota qué pantalla y qué botones encontró, sin nombres ni texto de tus chats. Ese registro no sale del teléfono por sí solo.</p>
   <p>Si algo falla, en Ajustes → Diagnóstico puedes tocar <b>Enviar</b>. Se abre tu app de correo (Gmail, si está instalada) con un mensaje dirigido a <b>mafero171189@gmail.com</b>, que contiene la versión de la app, el modelo del teléfono, la versión de Android y los últimos eventos del registro. Puedes leerlo y cambiarlo antes de enviarlo, y el envío solo ocurre si tú lo mandas desde tu correo. Usamos ese reporte únicamente para encontrar y corregir el error. Si quieres que borremos un reporte que nos enviaste, escríbenos a ese correo.</p>
 
-  <h2>Qué guarda la app en tu teléfono</h2>
+  <h2>5. Configuración descargada</h2>
+  <p>Para poder ajustar los límites de la versión gratis sin que tengas que actualizar la app, AutoEnvio se conecta al servicio de configuración remota de Firebase (de Google). Al hacerlo, ese servicio puede recibir datos técnicos normales de una conexión: un identificador de la instalación de la app, el modelo y la versión de Android del teléfono, la versión de la app y la dirección IP. No se envía ningún mensaje, contacto, destinatario ni dato personal tuyo. Google trata esos datos según su propia política de privacidad y puede procesarlos en servidores de distintos países. Si no hay Internet, la app funciona igual con los últimos valores guardados.</p>
+
+  <h2>6. Qué guarda la app en tu teléfono</h2>
   <ul>
     <li>Tus envíos programados: destinatarios (número y nombre), mensajes, fechas y archivos adjuntos (copia en la carpeta privada de la app).</li>
     <li>El historial de envíos y sus errores.</li>
@@ -53,7 +68,7 @@
   </ul>
   <p>No hay copia de seguridad en la nube: Android no respalda los datos de esta app. Si desinstalas la app, se borran todos.</p>
 
-  <h2>Para qué usa cada permiso</h2>
+  <h2>7. Para qué usa cada permiso</h2>
   <ul>
     <li><b>SMS (enviar y recibir):</b> enviar tus SMS programados y detectar los que te llegan para las reglas automáticas.</li>
     <li><b>Contactos:</b> elegir destinatarios y mostrar su nombre. Los contactos no se suben a ningún servidor.</li>
@@ -71,24 +86,24 @@
   </ul>
   <p>Puedes quitar cualquier permiso en los ajustes de Android; las funciones que dependen de él dejarán de andar.</p>
 
-  <h2>Cuando tú envías un mensaje</h2>
+  <h2>8. Conservación y seguridad</h2>
+  <p>Los datos de la app se conservan en tu teléfono hasta que los borres o desinstales la app. El PIN y la contraseña de aplicación de Gmail se guardan cifrados con una clave del almacén seguro de Android. Los reportes de diagnóstico que nos envíes por correo los conservamos solo el tiempo necesario para corregir el error.</p>
+
+  <h2>9. Tus derechos y cómo borrar tus datos</h2>
+  <p>Como casi todos tus datos están solo en tu teléfono, tienes el control directo: puedes ver, cambiar o borrar envíos, historial y reglas desde la app, quitar el PIN y la contraseña de Gmail en Ajustes, o desinstalar la app para eliminar todo. Para pedirnos acceso, corrección o borrado de un reporte de diagnóstico que nos enviaste, escríbenos a <a href="mailto:mafero171189@gmail.com">mafero171189@gmail.com</a>.</p>
+
+  <h2>10. Cuando tú envías un mensaje</h2>
   <p>Los mensajes salen por SMS, por WhatsApp, WhatsApp Business, Telegram, Messenger o Instagram, o por correo (Gmail). También puedes programar llamadas, llamadas falsas (que no llaman a nadie) y recordatorios. Desde ahí rigen las políticas de esos servicios y de tu operadora. AutoEnvio no ve ni guarda lo que esos servicios hagan con el mensaje.</p>
   <p>El reenvío automático manda el contenido de los mensajes que recibes a otro número o correo que tú elijas. Úsalo solo con tus propias conversaciones y avisa a quien corresponda.</p>
 
-  <h2>Compra de AutoEnvio Pro</h2>
-  <p>AutoEnvio Pro es un pago único que se hace con Google Play. Google procesa el pago según su propia política; Mi Taller Web no recibe los datos de tu tarjeta.</p>
+  <h2>11. Compra de AutoEnvio Pro</h2>
+  <p>AutoEnvio Pro es un pago único que se hace con Google Play. Google procesa el pago según su propia política; Mi Taller Web no recibe los datos de tu tarjeta. Para reconocer tu compra, la app consulta a Google Play qué compras tiene tu cuenta de Google.</p>
 
-  <h2>Borrar tus datos</h2>
-  <p>Puedes borrar envíos, historial y reglas desde la app, quitar el PIN en Ajustes, o desinstalar la app para eliminar todo.</p>
-
-  <h2>Menores</h2>
+  <h2>12. Menores</h2>
   <p>AutoEnvio no está dirigida a menores de 13 años.</p>
 
-  <h2>Cambios</h2>
+  <h2>13. Cambios en esta política</h2>
   <p>Si la app cambia lo que hace con tus datos, esta política se actualiza y la fecha de arriba cambia.</p>
-
-  <h2>Contacto</h2>
-  <p>Mi Taller Web · <a href="mailto:mafero171189@gmail.com">mafero171189@gmail.com</a></p>
 </main>
 <footer class="foot">Mi Taller Web · AutoEnvio</footer>
 </body>
