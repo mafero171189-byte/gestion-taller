@@ -35,5 +35,36 @@
     ],
     "whatsapp_texto": "Hola, quiero info sobre Virus Killer Mobile",
     "dias_prueba": 7
+  },
+  {
+    "id": "autoenvio",
+    "nombre": "AutoEnvio",
+    "icono": "📨",
+    "resumen": "Programá mensajes de WhatsApp, Telegram, SMS y correo para que salgan solos en el día y hora que elijas.",
+    "descripcion": "AutoEnvio es una app de Android para programar envíos de mensajes. Elegís a quién, qué texto y cuándo, y la app los manda por WhatsApp, Telegram, SMS o correo Gmail, sin que tengas que estar mirando el teléfono. Incluye respuestas automáticas a llamadas perdidas y llamadas falsas para simular una llamada entrante.",
+    "version": "2.50.6",
+    "tamano": "1.5 MB",
+    "plataforma": "Android",
+    "url": "/autoenvio/AutoEnvio-v2.50.6.apk",
+    "guia": "",
+    "capturas": [],
+    "funciones": [
+      "Programa mensajes para una fecha y hora, a uno o varios destinatarios.",
+      "Envía por WhatsApp, Telegram, SMS y correo Gmail.",
+      "Respuestas automáticas a llamadas perdidas o finalizadas por SMS (Pro).",
+      "Llamadas falsas en la fecha que elijas (Pro).",
+      "Copia de seguridad en un archivo ZIP (Pro)."
+    ],
+    "pasos": [
+      "Descargá el archivo y abrilo en el celular. Si Android lo pide, permití instalar desde esta fuente.",
+      "Abrí AutoEnvio y seguí los pasos de permisos.",
+      "Configurá tu cuenta de Gmail para los envíos por correo (opcional).",
+      "Creá tu primer envío programado desde la Agenda."
+    ],
+    "requisitos": [
+      "Celular Android 7.0 o superior.",
+      "Permisos de SMS, contactos y accesibilidad de WhatsApp para los envíos automáticos."
+    ],
+    "whatsapp_texto": "Hola, quiero info sobre AutoEnvio"
   }
 ]
