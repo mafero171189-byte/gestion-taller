@@ -40,8 +40,8 @@
     "id": "autoenvio",
     "nombre": "AutoEnvio",
     "icono": "📨",
-    "resumen": "Programá mensajes de WhatsApp, Telegram, SMS y correo para que salgan solos en el día y hora que elijas.",
-    "descripcion": "AutoEnvio es una app de Android para programar envíos de mensajes. Elegís a quién, qué texto y cuándo, y la app los manda por WhatsApp, Telegram, SMS o correo Gmail, sin que tengas que estar mirando el teléfono. Incluye respuestas automáticas a llamadas perdidas y llamadas falsas para simular una llamada entrante.",
+    "resumen": "Programá mensajes por WhatsApp, Telegram, Messenger, Instagram, SMS o Gmail, y también llamadas y recordatorios, para que salgan solos.",
+    "descripcion": "AutoEnvio es una app de Android para programar envíos. Elegís a quién, qué texto y cuándo, y la app lo manda por WhatsApp, WhatsApp Business, Telegram, Messenger, Instagram, SMS o correo Gmail, sin que tengas que estar mirando el teléfono. También programa llamadas normales, llamadas falsas y recordatorios, y puede responder o reenviar mensajes automáticamente. No tiene anuncios.",
     "version": "2.50.6",
     "tamano": "1.5 MB",
     "plataforma": "Android",
@@ -49,21 +49,23 @@
     "guia": "",
     "capturas": [],
     "funciones": [
-      "Programa mensajes para una fecha y hora, a uno o varios destinatarios.",
-      "Envía por WhatsApp, Telegram, SMS y correo Gmail.",
-      "Respuestas automáticas a llamadas perdidas o finalizadas por SMS (Pro).",
-      "Llamadas falsas en la fecha que elijas (Pro).",
-      "Copia de seguridad en un archivo ZIP (Pro)."
+      "Programa mensajes para una fecha y hora, a uno o varios destinatarios, con adjuntos y repetición.",
+      "Canales: WhatsApp, WhatsApp Business, Telegram, Messenger, Instagram, SMS y correo Gmail.",
+      "Llamadas normales programadas, llamadas falsas y recordatorios con sonido.",
+      "Respuestas y reenvíos automáticos de mensajes recibidos, con horario y retardo.",
+      "Plantillas de texto, historial de envíos y envío a varios destinatarios por lotes.",
+      "Pro (pago único): sin tope diario, más destinatarios y adjuntos, múltiples mensajes, respuestas a llamadas perdidas, estilos de llamada falsa de WhatsApp y Telegram, y copia de seguridad en ZIP."
     ],
     "pasos": [
       "Descargá el archivo y abrilo en el celular. Si Android lo pide, permití instalar desde esta fuente.",
-      "Abrí AutoEnvio y seguí los pasos de permisos.",
-      "Configurá tu cuenta de Gmail para los envíos por correo (opcional).",
-      "Creá tu primer envío programado desde la Agenda."
+      "Abrí AutoEnvio y seguí los avisos para dar los permisos de a uno (el de Accesibilidad es el que permite enviar por WhatsApp, Telegram, Messenger e Instagram).",
+      "Si querés enviar correos, configurá tu cuenta de Gmail en Ajustes → Correo.",
+      "En la Agenda tocá + y elegí el canal, el destinatario, el mensaje y cuándo enviarlo."
     ],
     "requisitos": [
       "Celular Android 7.0 o superior.",
-      "Permisos de SMS, contactos y accesibilidad de WhatsApp para los envíos automáticos."
+      "Para enviar por WhatsApp, Telegram, Messenger e Instagram hay que activar la Accesibilidad de AutoEnvio.",
+      "Sin anuncios. La versión gratis tiene topes diarios y de destinatarios; Pro se compra una sola vez."
     ],
     "whatsapp_texto": "Hola, quiero info sobre AutoEnvio"
   }
